@@ -1,0 +1,38 @@
+name: Sync labels ↔ project board
+
+# Keeps issue labels (owner:*, status:*, area:*) and the Project v2 fields in
+# agreement. See .github/scripts/sync_project.py for the conflict rule and for why the
+# scheduled run is needed on top of the issue events.
+
+on:
+  issues:
+    types: [opened, reopened, labeled, unlabeled, closed]
+  schedule:
+    # Every 15 minutes: a field edited by dragging a card on the board raises no webhook
+    # for a user-owned project, so only a poll notices it.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sync-project
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync
+        env:
+          # A fine-grained or classic PAT with `project` + `repo`. The default
+          # GITHUB_TOKEN cannot touch Projects v2 on a user account.
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PROJECT_OWNER: ${{ github.repository_owner }}
+          # The hidden marker name in issue bodies, e.g. crm-sync. Keep it stable once issues carry it.
+          SYNC_MARKER: ${{ vars.SYNC_MARKER || 'pipeline-sync' }}
+          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
+          # On an issue event, sync only that issue; the scheduled run sweeps everything.
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: python .github/scripts/sync_project.py

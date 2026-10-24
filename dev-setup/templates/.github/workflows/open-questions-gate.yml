@@ -1,0 +1,46 @@
+name: Open questions gate
+
+# Warns when an issue reaches `status:done` with a question still unanswered.
+# The rules for what counts as open are in .github/scripts/check_open_questions.py.
+#
+# Why `edited` is here too: the fix for a warning is ticking a checkbox in the body, and
+# that must clear the label without a second label event.
+#
+# Timing note: dragging a card to Done on a user-owned project raises no webhook at all
+# (see sync-project.yml). The label arrives on the next 15-minute sync poll, and only then
+# does this run. Labelling the issue directly is what makes it immediate.
+
+on:
+  issues:
+    types: [labeled, edited, reopened]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number to check
+        required: true
+
+permissions:
+  # Declaring this block sets every unlisted permission to `none`, so `contents: read`
+  # is not redundant - without it actions/checkout cannot read a private repo and the
+  # run dies on "repository not found".
+  contents: read
+  issues: write
+
+concurrency:
+  group: open-questions-${{ github.event.issue.number || inputs.issue }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for open questions
+        env:
+          # The default token is enough: this job only reads and writes issues, never
+          # Projects v2, which is the reason sync-project.yml needs a PAT.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue }}
+        run: python .github/scripts/check_open_questions.py

@@ -1,0 +1,346 @@
+"""Two-way sync between issue labels and the repo's GitHub Project (v2) fields.
+
+Why this exists
+---------------
+Claude reads and writes issue labels only (see reference/pipeline.md in the dev-setup skill); the
+Project board is the human view. This script keeps the two in agreement.
+
+Why it is a poll and not a webhook
+----------------------------------
+`projects_v2_item` webhooks are only delivered for organization-owned projects. This
+project belongs to a user account, so a field edit made by dragging a card on the board
+produces no event. The scheduled run is what notices it.
+
+Why the project is read from the issue side
+-------------------------------------------
+`projectV2.items` returns an empty connection for this project even though the items
+demonstrably exist (verified 2026-09-23: items added through the API were invisible there
+for over ten minutes, on a freshly created project too, while a project populated through
+the web UI reported its items correctly). `issue.projectItems` returns the same items and
+their field values immediately, so that is the read path used here. Do not "simplify" this
+back to iterating `projectV2.items` — it silently yields no state, which this script would
+read as "the board was never touched".
+
+Conflict resolution
+-------------------
+Each issue body carries a hidden marker recording the state at the end of the last sync:
+
+    <!-- <SYNC_MARKER>: owner=claude status=explore area=backend -->
+
+On each run the three states (marker / labels / project) are compared. Whichever of
+labels or project differs from the marker is the side that changed and therefore wins;
+if both changed, the project wins, because that edit was a deliberate human drag while a
+label may have been set by an earlier automated step. The winner is then written to the
+other side and the marker is rewritten.
+
+Sprint is never touched here - Dolev sets it on the board and nothing else writes it.
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+
+REPO = os.environ["GITHUB_REPOSITORY"]
+PROJECT_OWNER = os.environ.get("PROJECT_OWNER") or REPO.split("/", 1)[0]
+
+# The marker name differs per repo (crm-sync, wayout-sync, ...). Never rename it once
+# issues carry it: a body whose marker is not found looks like it was never synced.
+SYNC_MARKER = os.environ.get("SYNC_MARKER") or "pipeline-sync"
+MARKER_RE = re.compile(r"<!--\s*" + re.escape(SYNC_MARKER) + r":(.*?)-->", re.S)
+
+# label suffix  ->  the option name as it appears in the Project's single-select field
+OWNER_OPTIONS = {"claude": "Claude", "dolev": "Dolev"}
+STATUS_OPTIONS = {
+    "explore": "Explore (Claude)",
+    # No owner in the name: an open question can sit with either side, and the Owner
+    # column already says whose turn it is.
+    "plan-questions": "Plan questions",
+    "waiting-approval": "Waiting for Dolev approval",
+    "ready-to-execute": "Ready to execute (Claude)",
+    "needs-repair": "Needs repair (Claude)",
+    "in-review": "Claude done / In review (Dolev)",
+    "done": "Done",
+    "backlog": "Backlog",
+}
+AREA_OPTIONS = {"backend": "Backend", "frontend": "Frontend", "both": "Both", "infra": "Infra"}
+
+DIMENSIONS = [
+    ("owner", "Owner", OWNER_OPTIONS),
+    ("status", "Status", STATUS_OPTIONS),
+    ("area", "Area", AREA_OPTIONS),
+]
+
+
+def gh(*args):
+    p = subprocess.run(
+        ["gh", *args], capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
+    if p.returncode != 0:
+        raise RuntimeError("gh %s failed: %s" % (" ".join(args[:3]), p.stderr.strip()))
+    return p.stdout
+
+
+def graphql(query, **variables):
+    args = ["api", "graphql", "-f", "query=" + query]
+    for k, v in variables.items():
+        args += ["-F", "%s=%s" % (k, v)]
+    out = json.loads(gh(*args))
+    # A GraphQL error can arrive with a 200, which gh reports as success. Without this
+    # check a failed mutation looks like a successful sync.
+    if out.get("errors"):
+        raise RuntimeError(json.dumps(out["errors"], ensure_ascii=False)[:800])
+    return out
+
+
+# --------------------------------------------------------------------------- project
+
+PROJECT_QUERY = """
+query($owner:String!, $number:Int!) {
+  user(login:$owner) {
+    projectV2(number:$number) {
+      id
+      fields(first:30) {
+        nodes {
+          ... on ProjectV2SingleSelectField { id name options { id name } }
+          ... on ProjectV2FieldCommon { id name }
+        }
+      }
+    }
+  }
+}
+"""
+
+ISSUE_ITEMS = """
+query($owner:String!, $repo:String!, $after:String) {
+  repository(owner:$owner, name:$repo) {
+    issues(first:100, after:$after, states:[OPEN, CLOSED]) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        number
+        projectItems(first:10) {
+          nodes {
+            id
+            project { number }
+            fieldValues(first:20) {
+              nodes {
+                ... on ProjectV2ItemFieldSingleSelectValue {
+                  name
+                  field { ... on ProjectV2FieldCommon { name } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def load_project(number):
+    data = graphql(PROJECT_QUERY, owner=PROJECT_OWNER, number=number)["data"]["user"]["projectV2"]
+    fields = {f["name"]: f for f in data["fields"]["nodes"] if f.get("name")}
+
+    repo_owner, repo_name = REPO.split("/", 1)
+    by_issue = {}
+    after = None
+    while True:
+        kw = {"owner": repo_owner, "repo": repo_name}
+        if after:
+            kw["after"] = after
+        page = graphql(ISSUE_ITEMS, **kw)["data"]["repository"]["issues"]
+        for issue in page["nodes"]:
+            for it in issue["projectItems"]["nodes"]:
+                if (it.get("project") or {}).get("number") != number:
+                    continue
+                vals = {}
+                for fv in it["fieldValues"]["nodes"]:
+                    if fv and fv.get("field"):
+                        vals[fv["field"]["name"]] = fv.get("name")
+                by_issue[issue["number"]] = {"id": it["id"], "values": vals}
+        if not page["pageInfo"]["hasNextPage"]:
+            break
+        after = page["pageInfo"]["endCursor"]
+    return data["id"], fields, by_issue
+
+
+ADD_ITEM = """
+mutation($project:ID!, $content:ID!) {
+  addProjectV2ItemById(input:{projectId:$project, contentId:$content}) { item { id } }
+}
+"""
+
+SET_SELECT = """
+mutation($project:ID!, $item:ID!, $field:ID!, $option:String!) {
+  updateProjectV2ItemFieldValue(input:{
+    projectId:$project, itemId:$item, fieldId:$field,
+    value:{singleSelectOptionId:$option}
+  }) { projectV2Item { id } }
+}
+"""
+
+
+def set_field(project_id, item_id, field, option_name):
+    option = next((o for o in field.get("options", []) if o["name"] == option_name), None)
+    if option is None:
+        print("  ! field %r has no option %r - skipped" % (field["name"], option_name))
+        return
+    graphql(SET_SELECT, project=project_id, item=item_id, field=field["id"], option=option["id"])
+
+
+# ---------------------------------------------------------------------------- issues
+
+
+def read_marker(body):
+    m = MARKER_RE.search(body or "")
+    if not m:
+        return {}
+    out = {}
+    for pair in m.group(1).split():
+        if "=" in pair:
+            k, v = pair.split("=", 1)
+            out[k] = v
+    return out
+
+
+def write_marker(body, state):
+    payload = " ".join("%s=%s" % (k, v) for k, v in sorted(state.items()) if v)
+    marker = "<!-- %s: %s -->" % (SYNC_MARKER, payload)
+    body = body or ""
+    if MARKER_RE.search(body):
+        return MARKER_RE.sub(marker, body)
+    return body.rstrip() + "\n\n" + marker + "\n"
+
+
+def labels_state(labels):
+    state = {}
+    for key, _field, options in DIMENSIONS:
+        for name in labels:
+            if name.startswith(key + ":"):
+                suffix = name.split(":", 1)[1]
+                if suffix in options:
+                    state[key] = suffix
+                break
+    return state
+
+
+def project_state(values):
+    state = {}
+    for key, field_name, options in DIMENSIONS:
+        shown = values.get(field_name)
+        if not shown:
+            continue
+        for suffix, option_name in options.items():
+            if option_name == shown:
+                state[key] = suffix
+                break
+    return state
+
+
+def edit_body(number, new_body):
+    f = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8")
+    f.write(new_body)
+    f.close()
+    try:
+        gh("issue", "edit", str(number), "--repo", REPO, "--body-file", f.name)
+    finally:
+        os.unlink(f.name)
+
+
+def check_environment():
+    """Fail loudly on a missing token or project number.
+
+    `gh secret set` cannot tell an empty paste from a real one, so a secret that was
+    never actually pasted still reports success and then arrives here as an empty
+    string. Without this check the first symptom is a gh usage message buried in a
+    traceback, which reads like a bug in this script rather than a missing secret.
+    """
+    if not os.environ.get("GH_TOKEN", "").strip():
+        raise SystemExit(
+            "GH_TOKEN is empty. The PROJECT_TOKEN secret is unset or was stored empty.\n"
+            "Set it again with:  $t = Read-Host 'Paste token'; "
+            "gh secret set PROJECT_TOKEN --body $t; Remove-Variable t"
+        )
+    if not os.environ.get("PROJECT_NUMBER", "").strip():
+        raise SystemExit(
+            "PROJECT_NUMBER is empty. Set the repository variable:  gh variable set PROJECT_NUMBER --body 1"
+        )
+
+
+def main():
+    check_environment()
+    number = int(os.environ["PROJECT_NUMBER"])
+    only = os.environ.get("ISSUE_NUMBER", "").strip()
+
+    project_id, fields, project_items = load_project(number)
+
+    issues = json.loads(
+        gh(
+            "issue", "list", "--repo", REPO, "--state", "all", "--limit", "500",
+            "--json", "number,body,labels,id,state",
+        )
+    )
+    if only:
+        issues = [i for i in issues if i["number"] == int(only)]
+
+    for issue in issues:
+        num = issue["number"]
+        labels = [l["name"] for l in issue["labels"]]
+        if not any(l.startswith("owner:") or l.startswith("status:") for l in labels):
+            continue  # not a pipeline issue - leave it alone
+        if issue["state"].upper() == "CLOSED" and "status:done" not in labels:
+            continue  # closed as not-planned - it does not belong on the board
+
+        item = project_items.get(num)
+        if item is None:
+            res = graphql(ADD_ITEM, project=project_id, content=issue["id"])
+            item = {"id": res["data"]["addProjectV2ItemById"]["item"]["id"], "values": {}}
+            print("#%s added to the project" % num)
+
+        marker = read_marker(issue["body"])
+        from_labels = labels_state(labels)
+        from_project = project_state(item["values"])
+
+        if from_project and from_project != marker:
+            winner, source = from_project, "project"
+        elif from_labels != marker:
+            winner, source = from_labels, "labels"
+        else:
+            continue  # already in agreement
+
+        if source == "project":
+            keep = [l for l in labels if not any(l.startswith(k + ":") for k, _, _ in DIMENSIONS)]
+            desired = keep + ["%s:%s" % (k, v) for k, v in winner.items()]
+            args = []
+            for l in desired:
+                if l not in labels:
+                    args += ["--add-label", l]
+            for l in labels:
+                if l not in desired:
+                    args += ["--remove-label", l]
+            if args:
+                gh("issue", "edit", str(num), "--repo", REPO, *args)
+                print("#%s labels <- project: %s" % (num, winner))
+        else:
+            for key, field_name, options in DIMENSIONS:
+                suffix = winner.get(key)
+                if not suffix or item["values"].get(field_name) == options[suffix]:
+                    continue
+                field = fields.get(field_name)
+                if field is None:
+                    print("  ! the project has no field %r - skipped" % field_name)
+                    continue
+                set_field(project_id, item["id"], field, options[suffix])
+            print("#%s project <- labels: %s" % (num, winner))
+
+        new_body = write_marker(issue["body"], winner)
+        if new_body != (issue["body"] or ""):
+            edit_body(num, new_body)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
