@@ -1,0 +1,2 @@
+# The templates are copied into other repos as is, so keep LF on every checkout.
+* text=auto eol=lf
