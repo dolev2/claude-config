@@ -43,13 +43,27 @@ Show Dolev, in chat, one list, and wait for his yes:
 Without a board the pipeline still works: labels are the source of truth. Then skip step 4
 and `sync-project.yml`, and keep the gate.
 
+**A board costs Actions minutes on a private repo.** `sync-project.yml` polls every 15
+minutes, and the free account's 2,000 minutes a month are shared by all private repos. GitHub
+drops most scheduled runs in practice (CRM: 9 in about 28 hours, 2026-10-24), so this is a
+note for Dolev in the board row, not a reason to skip the board.
+
 ## Step 2: Labels
 
-Exact names; the skills and scripts read them. `--force` updates an existing label instead
-of failing.
+Exact names; the skills and scripts read them. List what exists first:
 
 ```bash
-L() { gh label create "$1" --color "$2" --description "$3" --force; }
+gh label list --limit 300 --json name,description --jq '.[] | "\(.name)\t\(.description)"'
+```
+
+Create only the labels that are missing, without `--force`: it would silently overwrite the
+description and colour of a label that already exists (a new repo already has GitHub's default
+`bug`, "Something isn't working"). An existing label with the right name is kept as is; if its
+description differs from the one below, show both to Dolev and change it only on his yes
+(`gh label edit <name> --description ...`).
+
+```bash
+L() { gh label create "$1" --color "$2" --description "$3" || echo "FAILED $1"; }
 L "owner:claude"            1f6feb "מחכה ל-Claude"
 L "owner:dolev"             8250df "מחכה לדולב"
 L "status:explore"          c5def5 "Claude חוקר וכותב תוכנית"
@@ -77,10 +91,14 @@ Copy from `$HOME/.claude/skills/dev-setup/templates/.github/` into the repo's `.
 only what is missing:
 
 - `ISSUE_TEMPLATE/task.yml`, `bug.yml`, `config.yml`: change the `אזור` dropdown options to
-  the agreed areas (option text = the label suffix, capitalised).
+  the agreed areas (option text = the label suffix, capitalised; an acronym stays upper-case,
+  so `area:seo` is `SEO`). The same option texts go in the board's Area field (step 4) and in
+  `AREA_OPTIONS`. Adapt the field descriptions to the project: the template speaks of an app
+  ("איפה באפליקציה" in `bug.yml`); a website says "באתר".
 - `workflows/open-questions-gate.yml` + `scripts/check_open_questions.py`: as is.
 - `workflows/sync-project.yml` + `scripts/sync_project.py`: as is, when there is a board.
-  If the agreed areas differ, update `AREA_OPTIONS` in `sync_project.py` to match.
+  If the agreed areas differ, update `AREA_OPTIONS` in `sync_project.py` to match, e.g.
+  `{"seo": "SEO", ...}`.
 
 Then set the marker name the sync script reads:
 
@@ -101,7 +119,7 @@ gh project link <number> --owner "$OWNER" --repo "$OWNER/<repo>"
 gh project field-create <number> --owner "$OWNER" --name Owner --data-type SINGLE_SELECT \
   --single-select-options "Claude,Dolev"
 gh project field-create <number> --owner "$OWNER" --name Area --data-type SINGLE_SELECT \
-  --single-select-options "Backend,Frontend,Both,Infra"
+  --single-select-options "Backend,Frontend,Both,Infra"   # the agreed areas' option texts
 gh variable set PROJECT_NUMBER --body <number>
 ```
 
