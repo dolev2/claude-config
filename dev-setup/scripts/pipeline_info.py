@@ -13,6 +13,9 @@ skills work in every repo that carries the pipeline:
 - the sync marker name         - the SYNC_MARKER variable, when the repo has the sync workflow
 - the project number           - the PROJECT_NUMBER repository variable
 - the current sprint           - the lowest-numbered open milestone with open issues
+- where the issue forms live   - the repo's own .github/ISSUE_TEMPLATE, or else the account's
+                                 public <owner>/.github repo, which GitHub serves to every
+                                 repo without forms of its own
 - repo-specific skills         - .claude/skills/* in the repo; when they cover the pipeline,
                                  they win over the generic dev-* skills
 
@@ -38,9 +41,11 @@ REQUIRED_LABELS = [
     "task",
     "bug",
 ]
-PIPELINE_FILES = [
+FORM_FILES = [
     ".github/ISSUE_TEMPLATE/task.yml",
     ".github/ISSUE_TEMPLATE/bug.yml",
+]
+PIPELINE_FILES = [
     ".github/workflows/sync-project.yml",
     ".github/workflows/open-questions-gate.yml",
 ]
@@ -68,6 +73,20 @@ def sync_marker(root: Path | None, repo: str) -> str | None:
         return None
     code, out = run("gh", "variable", "get", "SYNC_MARKER", "--repo", repo)
     return out if code == 0 and out else None
+
+
+def issue_forms(root: Path | None, repo: str) -> str | None:
+    """Where the task and bug forms are read from: "repo", "<owner>/.github", or None.
+
+    A repo with its own .github/ISSUE_TEMPLATE hides every default form, so the local copy
+    wins whenever it exists. Otherwise GitHub serves the forms of the owner's public .github
+    repo, from the same path inside it.
+    """
+    if root and all((root / f).exists() for f in FORM_FILES):
+        return "repo"
+    defaults = f"{repo.split('/')[0]}/.github"
+    code, _ = run("gh", "api", f"repos/{defaults}/contents/{FORM_FILES[0]}", "--jq", ".path")
+    return defaults if code == 0 else None
 
 
 def current_sprint(repo: str) -> str | None:
@@ -101,6 +120,10 @@ def main(argv: list[str] | None = None) -> None:
     if not humans:
         missing.append("owner:<human>")
     code, project = run("gh", "variable", "get", "PROJECT_NUMBER", "--repo", repo)
+    forms = issue_forms(root, repo)
+    missing_files = [f for f in PIPELINE_FILES if not (root / f).exists()] if root else []
+    if not forms:
+        missing_files.insert(0, f".github/ISSUE_TEMPLATE (repo or {repo.split('/')[0]}/.github)")
 
     info = {
         "repo": repo,
@@ -113,7 +136,8 @@ def main(argv: list[str] | None = None) -> None:
         "project_number": int(project) if code == 0 and project.isdigit() else None,
         "current_sprint": current_sprint(repo),
         "root": str(root) if root else None,
-        "missing_files": [f for f in PIPELINE_FILES if root and not (root / f).exists()] if root else None,
+        "issue_forms": forms,
+        "missing_files": missing_files if root or not forms else None,
         "claude_md": bool(root and (root / "CLAUDE.md").exists()),
         "repo_skills": sorted(p.parent.name for p in (root / ".claude/skills").glob("*/SKILL.md")) if root else [],
     }

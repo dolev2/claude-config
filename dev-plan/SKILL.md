@@ -28,7 +28,9 @@ Everything mechanical lives there. Read it before step 1, every run.
 
 Then the repo's **`CLAUDE.md`**: where its requirements and decisions live, its working rules,
 and its issue wording (headings, dependency line, Plan sub-headings) if it differs from the
-standard template.
+standard template. The body headings come from the task and bug forms, read from where
+`issue_forms` points (the repo, or `<owner>/.github`). An issue opened under older headings
+keeps them: edit it in the headings it already has.
 
 ## Steps
 

@@ -18,7 +18,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 - `repo_skills` lists a repo-specific skill for opening issues? Use it
   instead and stop here.
 - `ready` is `False`? The pipeline is not installed in this repo. Offer `dev-setup` and stop.
-- Note `human` (the `owner:<human>` label), `area_labels`, and `current_sprint`.
+- Note `human` (the `owner:<human>` label), `area_labels`, `current_sprint`, and `issue_forms`.
 
 ## Read first
 
@@ -27,7 +27,13 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 - **The repo's `CLAUDE.md`**: its sources of truth, and its rules about business data. Do
   not invent prices, values or business rules. What is missing goes into "שאלות פתוחות" as an
   unticked box, not into the text.
-- **`.github/ISSUE_TEMPLATE/task.yml` and `bug.yml`**: the exact sections of the body.
+- **The task and bug forms**: the exact sections of the body. `issue_forms` says where they
+  live: `repo` is the repo's own `.github/ISSUE_TEMPLATE/`; `<owner>/.github` is the account's
+  default forms, which GitHub serves to every repo without forms of its own:
+  ```bash
+  gh api repos/<owner>/.github/contents/.github/ISSUE_TEMPLATE/task.yml -H "Accept: application/vnd.github.raw"
+  ```
+  (`bug.yml` next to it.)
 
 ## Step 1: Agree on the list before creating anything
 
@@ -47,7 +53,7 @@ How to split a task, when that is the request:
 
 ## Step 2: Write the body
 
-Exactly the sections of the repo's `.github/ISSUE_TEMPLATE/task.yml`, in its order and with
+Exactly the sections of the task form (`task.yml`, from where `issue_forms` says), in its order and with
 its wording (Hebrew or English), because `dev-plan` and `open-questions-gate.yml` read them by
 heading. Use the heading level the repo's existing issues use: issue-form bodies come out as
 `###`, some repos write `##`. Take the dependency line's wording from CLAUDE.md if it gives one
@@ -58,10 +64,6 @@ heading. Use the heading level the repo's existing issues use: issue-form bodies
 
 <what should happen and why; for a sub-issue, which part of the parent it covers>
 *בדיקה:* <how Dolev will know it works>
-
-### אזור
-
-<one of the template's area options>
 
 ### הקשר / קישורים
 
@@ -79,7 +81,10 @@ _אין שאלות פתוחות._
 ```
 
 For a bug, follow `bug.yml` instead (with the standard template: משימה קשורה / מה קורה / מה
-היה אמור לקרות / אזור / Plan / שאלות פתוחות).
+היה אמור לקרות / Plan / שאלות פתוחות).
+
+The area is a label only (`area:*`, below), not a section of the body. Older issues may still
+carry an `אזור` section; leave it as it is.
 
 **Do not write the hidden sync marker (`<!-- <sync_marker>: ... -->`) yourself, and never
 edit an existing one.** `sync_project.py` owns it: it records the last synced state, and a
