@@ -74,3 +74,15 @@ def test_sync_board_edit_wins_over_labels():
     marker = {"status": "explore"}
     board = {"status": "done"}
     assert sync.choose_winner(marker, {"status": "backlog"}, board) == (board, "project")
+
+
+def test_sync_sends_an_all_digit_option_id_as_a_string(monkeypatch):
+    # claude-skills #4: -F sent "84237580" as a number, and the mutation failed.
+    sync = load("sync_project")
+    calls = []
+    monkeypatch.setattr(sync, "gh", lambda *args: calls.append(args) or '{"data": {}}')
+    sync.graphql("query", option="84237580", number=9)
+    args = calls[0]
+    assert args[args.index("option=84237580") - 1] == "-f"
+    assert args[args.index("number=9") - 1] == "-F"
+

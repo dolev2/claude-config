@@ -87,7 +87,10 @@ def gh(*args):
 def graphql(query, **variables):
     args = ["api", "graphql", "-f", "query=" + query]
     for k, v in variables.items():
-        args += ["-F", "%s=%s" % (k, v)]
+        # -F turns anything that looks like a number into one, and an option id can be all
+        # digits ("84237580"), which GitHub then rejects as a String!. Only ints get -F.
+        flag = "-F" if isinstance(v, int) else "-f"
+        args += [flag, "%s=%s" % (k, v)]
     out = json.loads(gh(*args))
     # A GraphQL error can arrive with a 200, which gh reports as success. Without this
     # check a failed mutation looks like a successful sync.
