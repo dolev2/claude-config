@@ -15,9 +15,6 @@
 /.claude/*
 !/.claude/CLAUDE.md
 
-# Temporary: the old path of the shared actions, for repos that still call it.
-!/dev-setup/
-
 __pycache__/
 *.pyc
 .pytest_cache/

@@ -97,16 +97,3 @@ def test_home_repo_workflow_can_read_its_own_action():
     workflow = (ROOT.parents[1] / ".github" / "workflows" / "open-questions-gate.yml").read_text(encoding="utf-8")
     assert "contents: read" in workflow
     assert "uses: dolev2/claude-config/skills/dev-setup/actions/open-questions-gate@main" in workflow
-
-
-def test_old_path_still_runs_the_same_action():
-    # Repos that still call dolev2/claude-config/dev-setup/actions/open-questions-gate@main reach a
-    # temporary copy at the repo root (claude-config #6). It must run the real script, with
-    # the same inputs and env, or their runs break the moment this one changes.
-    old = ROOT.parents[1] / "dev-setup" / "actions" / "open-questions-gate" / "action.yml"
-    shim = old.read_text(encoding="utf-8")
-    real = (ACTION / "action.yml").read_text(encoding="utf-8")
-    relative = "../../../skills/dev-setup/actions/open-questions-gate/check_open_questions.py"
-    assert (old.parent / relative).resolve() == (ACTION / "check_open_questions.py").resolve()
-    expected = real.split("\ninputs:", 1)[1].replace("/check_open_questions.py", "/" + relative)
-    assert shim.split("\ninputs:", 1)[1] == expected
