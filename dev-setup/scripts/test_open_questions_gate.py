@@ -90,3 +90,10 @@ def test_template_calls_the_shared_action_at_main_without_checkout():
 
 def test_no_copy_of_the_gate_script_is_left_to_install():
     assert not (ROOT / "templates" / ".github" / "scripts" / "check_open_questions.py").exists()
+
+
+def test_home_repo_workflow_can_read_its_own_action():
+    # The run in claude-config itself downloads the action with GITHUB_TOKEN (claude-config #9).
+    workflow = (ROOT.parent / ".github" / "workflows" / "open-questions-gate.yml").read_text(encoding="utf-8")
+    assert "contents: read" in workflow
+    assert "uses: dolev2/claude-config/dev-setup/actions/open-questions-gate@main" in workflow
