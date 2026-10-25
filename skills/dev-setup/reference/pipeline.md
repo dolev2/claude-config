@@ -403,7 +403,6 @@ GitHub מציג אותם בכל ריפו של החשבון שאין לו תיק�
 כל ריפו מחזיק רק workflow קצר שקורא ל-`dolev2/claude-config/skills/dev-setup/actions/open-questions-gate@main`.
 
 הנתיב כולל `skills/` כי הריפו `claude-config` הוא התיקייה `~/.claude` כולה (claude-config #6).
-ריפו שעוד קורא לנתיב הישן, `dolev2/claude-config/dev-setup/actions/...`, מגיע לעותק זמני בשורש שמריץ את אותו סקריפט, עד שכל הריפואים עוברים.
 
 תיקון שנכנס ל-main כאן מגיע לכל הריפואים מיד, ותקלה שנכנסת לשם שוברת את כולם יחד; לכן הבדיקות ב-CI.
 

@@ -130,17 +130,17 @@ def test_home_repo_workflow_can_read_its_own_action():
     assert "uses: dolev2/claude-config/skills/dev-setup/actions/project-sync@main" in workflow
 
 
-def test_old_path_still_runs_the_same_action():
-    # Repos that still call dolev2/claude-config/dev-setup/actions/project-sync@main reach a
-    # temporary copy at the repo root (claude-config #6). It must run the real script, with
-    # the same inputs and env, or their runs break the moment this one changes.
-    old = ROOT.parents[1] / "dev-setup" / "actions" / "project-sync" / "action.yml"
-    shim = old.read_text(encoding="utf-8")
-    real = (ACTION / "action.yml").read_text(encoding="utf-8")
-    relative = "../../../skills/dev-setup/actions/project-sync/sync_project.py"
-    assert (old.parent / relative).resolve() == (ACTION / "sync_project.py").resolve()
-    expected = real.split("\ninputs:", 1)[1].replace("/sync_project.py", "/" + relative)
-    assert shim.split("\ninputs:", 1)[1] == expected
+def test_no_workflow_calls_the_old_action_path():
+    # The actions moved under skills/ when this repo became ~/.claude (claude-config #6), and
+    # the temporary copy at the old path is gone (#23). A workflow on the old path would fail
+    # with "Unable to resolve action" in every repo installed from it.
+    repo = ROOT.parents[1]
+    assert not (repo / "dev-setup").exists()
+    workflows = list((repo / ".github" / "workflows").glob("*.yml"))
+    workflows += list((ROOT / "templates" / ".github" / "workflows").glob("*.yml"))
+    assert workflows
+    for workflow in workflows:
+        assert "claude-config/dev-setup/" not in workflow.read_text(encoding="utf-8"), workflow.name
 
 
 def test_no_copy_of_the_sync_script_is_left_to_install():

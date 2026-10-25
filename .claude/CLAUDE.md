@@ -16,8 +16,6 @@
 
 `skills/dev-setup/` הוא גם הבית המשותף של הצינור: המסמך `reference/pipeline.md`, הסקריפטים `scripts/`, ה-actions המשותפים `actions/`, וה-workflows ב-`templates/.github/` שמועתקים לכל ריפו.
 
-`dev-setup/actions/` בשורש הוא נתיב ישן וזמני של ה-actions המשותפים, לריפואים שעוד לא עברו לנתיב `skills/dev-setup/actions/`.
-
 טפסי ה-issues לא כאן. הם גרים בריפו הציבורי [dolev2/.github](https://github.com/dolev2/.github), ומשם מגיעים לכל הריפואים.
 
 ## כללי עבודה
