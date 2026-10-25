@@ -151,7 +151,7 @@ flowchart TD
 
 - **התוויות הן מקור האמת.** זה מה ש-Claude קורא וכותב, תמיד.
 - **לוח ה-Project הוא התצוגה האנושית.** דולב גורר בו כרטיסים, ו-`sync-project.yml` מסנכרן
-  דו-כיוונית, דרך ה-action המשותף ב-`claude-config` (`dev-setup/actions/project-sync/`). כלל
+  דו-כיוונית, דרך ה-action המשותף ב-`claude-config` (`skills/dev-setup/actions/project-sync/`). כלל
   ההכרעה מתועד בראש `sync_project.py` שם. לסקריפט יש עותק אחד, כמו לשער השאלות.
 - Claude **לא** קורא ולא כותב לשדות הפרויקט. ניסיון שנכשל בהרשאות הוא צפוי, לא באג.
 
@@ -398,9 +398,12 @@ GitHub מציג אותם בכל ריפו של החשבון שאין לו תיק�
 משתנה. כשכל התיבות מסומנות, התווית יורדת לבד. סעיף בלי אף תיבה נקרא במצב מקל: כל שורה לא ריקה
 היא שאלה פתוחה.
 
-**לשער יש עותק אחד.** הסקריפט והבדיקות שלו גרים ב-`claude-config`, ב-`dev-setup/actions/open-questions-gate/`.
+**לשער יש עותק אחד.** הסקריפט והבדיקות שלו גרים ב-`claude-config`, ב-`skills/dev-setup/actions/open-questions-gate/`.
 
-כל ריפו מחזיק רק workflow קצר שקורא ל-`dolev2/claude-config/dev-setup/actions/open-questions-gate@main`.
+כל ריפו מחזיק רק workflow קצר שקורא ל-`dolev2/claude-config/skills/dev-setup/actions/open-questions-gate@main`.
+
+הנתיב כולל `skills/` כי הריפו `claude-config` הוא התיקייה `~/.claude` כולה (claude-config #6).
+ריפו שעוד קורא לנתיב הישן, `dolev2/claude-config/dev-setup/actions/...`, מגיע לעותק זמני בשורש שמריץ את אותו סקריפט, עד שכל הריפואים עוברים.
 
 תיקון שנכנס ל-main כאן מגיע לכל הריפואים מיד, ותקלה שנכנסת לשם שוברת את כולם יחד; לכן הבדיקות ב-CI.
 

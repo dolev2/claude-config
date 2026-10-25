@@ -109,11 +109,11 @@ Copy from `$HOME/.claude/skills/dev-setup/templates/.github/` into the repo's `.
 only what is missing:
 
 - `workflows/open-questions-gate.yml`: as is. It calls the shared action
-  `dolev2/claude-config/dev-setup/actions/open-questions-gate@main`; there is no script to copy.
+  `dolev2/claude-config/skills/dev-setup/actions/open-questions-gate@main`; there is no script to copy.
   A repo that still has `.github/scripts/check_open_questions.py` from an older install: replace
   its workflow with the template and delete the script (show Dolev the diff first).
 - `workflows/sync-project.yml`: as is, when there is a board. It calls the shared action
-  `dolev2/claude-config/dev-setup/actions/project-sync@main`; there is no script to copy.
+  `dolev2/claude-config/skills/dev-setup/actions/project-sync@main`; there is no script to copy.
   A repo that still has `.github/scripts/sync_project.py`: first set `SYNC_MARKER` to the marker
   name its issues already carry (the literal in that script), then replace the workflow and
   delete the script.

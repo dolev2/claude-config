@@ -46,7 +46,7 @@ goes on.
 
 One copy for every repo
 -----------------------
-This file lives in dolev2/claude-config, dev-setup/actions/project-sync, and every repo's
+This file lives in dolev2/claude-config, skills/dev-setup/actions/project-sync, and every repo's
 sync-project.yml calls it (claude-config #3; the per-repo copies had drifted). So nothing
 repo-specific is written here: the marker name comes from SYNC_MARKER, the Area options are
 read from the board, and the one Status option whose name differs between boards is

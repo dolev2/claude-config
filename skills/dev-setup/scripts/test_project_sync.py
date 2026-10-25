@@ -117,7 +117,7 @@ def test_action_runs_a_script_that_exists():
 
 def test_template_calls_the_shared_action_at_main_without_checkout():
     workflow = TEMPLATE.read_text(encoding="utf-8")
-    assert "uses: dolev2/claude-config/dev-setup/actions/project-sync@main" in workflow
+    assert "uses: dolev2/claude-config/skills/dev-setup/actions/project-sync@main" in workflow
     assert "actions/checkout" not in workflow
     assert "sync-marker: ${{ vars.SYNC_MARKER }}" in workflow
     assert "if: vars.PROJECT_NUMBER != ''" in workflow
@@ -125,9 +125,22 @@ def test_template_calls_the_shared_action_at_main_without_checkout():
 
 def test_home_repo_workflow_can_read_its_own_action():
     # The run in claude-config itself downloads the action with GITHUB_TOKEN (claude-config #10).
-    workflow = (ROOT.parent / ".github" / "workflows" / "sync-project.yml").read_text(encoding="utf-8")
+    workflow = (ROOT.parents[1] / ".github" / "workflows" / "sync-project.yml").read_text(encoding="utf-8")
     assert "contents: read" in workflow
-    assert "uses: dolev2/claude-config/dev-setup/actions/project-sync@main" in workflow
+    assert "uses: dolev2/claude-config/skills/dev-setup/actions/project-sync@main" in workflow
+
+
+def test_old_path_still_runs_the_same_action():
+    # Repos that still call dolev2/claude-config/dev-setup/actions/project-sync@main reach a
+    # temporary copy at the repo root (claude-config #6). It must run the real script, with
+    # the same inputs and env, or their runs break the moment this one changes.
+    old = ROOT.parents[1] / "dev-setup" / "actions" / "project-sync" / "action.yml"
+    shim = old.read_text(encoding="utf-8")
+    real = (ACTION / "action.yml").read_text(encoding="utf-8")
+    relative = "../../../skills/dev-setup/actions/project-sync/sync_project.py"
+    assert (old.parent / relative).resolve() == (ACTION / "sync_project.py").resolve()
+    expected = real.split("\ninputs:", 1)[1].replace("/sync_project.py", "/" + relative)
+    assert shim.split("\ninputs:", 1)[1] == expected
 
 
 def test_no_copy_of_the_sync_script_is_left_to_install():

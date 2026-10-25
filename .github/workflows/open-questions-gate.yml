@@ -1,7 +1,7 @@
 name: Open questions gate
 
 # Warns when an issue reaches `status:done` with a question still unanswered.
-# The gate itself is shared: dolev2/claude-config, dev-setup/actions/open-questions-gate.
+# The gate itself is shared: dolev2/claude-config, skills/dev-setup/actions/open-questions-gate.
 # It needs claude-config's Actions access set to "user" (Settings → Actions → Access),
 # otherwise this run fails on "Unable to resolve action".
 #
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # @main on purpose: a fix to the gate reaches every repo without touching it.
-      - uses: dolev2/claude-config/dev-setup/actions/open-questions-gate@main
+      - uses: dolev2/claude-config/skills/dev-setup/actions/open-questions-gate@main
         with:
           issue: ${{ github.event.issue.number || inputs.issue }}
           # The default token is enough: this job only reads and writes issues, never

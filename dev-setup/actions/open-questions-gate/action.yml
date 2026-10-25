@@ -3,13 +3,14 @@ description: >
   Warns when an issue reaches status:done with a question still unanswered in its
   open-questions section. The rules are in check_open_questions.py next to this file.
 
-# One copy for every repo with the pipeline: each repo's open-questions-gate.yml calls
-# dolev2/claude-config/dev-setup/actions/open-questions-gate@main, so a fix merged here
-# reaches all of them at once (claude-config #2; the copies had drifted, CRM #55).
+# Temporary, old path. The action moved to skills/dev-setup/actions/open-questions-gate when this
+# repo became ~/.claude (claude-config #6). Repos that still call
+# dolev2/claude-config/dev-setup/actions/open-questions-gate@main land here, and this runs the
+# same script from its new home: GitHub downloads the whole repo with the action, so
+# the relative path exists. Remove once every repo calls the new path.
 #
-# Composite, not a reusable workflow: a reusable workflow must live in this repo's
-# .github/workflows/ and would also run here as a workflow. The script talks only to
-# `gh`, so the calling repo needs no checkout; ubuntu-latest ships python3 and gh.
+# Everything below `inputs:` must stay identical to the real action.yml, apart from
+# the script path (test_open_questions_gate.py checks it).
 
 inputs:
   issue:
@@ -29,4 +30,4 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         ISSUE_NUMBER: ${{ inputs.issue }}
-      run: python3 "${{ github.action_path }}/check_open_questions.py"
+      run: python3 "${{ github.action_path }}/../../../skills/dev-setup/actions/open-questions-gate/check_open_questions.py"
