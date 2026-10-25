@@ -1,0 +1,61 @@
+name: באג
+description: תקלה שהתגלתה — בדרך כלל במשימה שכבר בוצעה
+title: ""
+labels: ["bug", "owner:claude", "status:ready-to-execute"]
+body:
+  - type: input
+    id: related
+    attributes:
+      label: משימה קשורה
+      description: "מספר ה-issue של המשימה שהבאג שייך אליה, בפורמט #N. אם הבאג עצמאי — כתוב \"אין\"."
+      placeholder: "#42"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: מה קורה
+      description: מה ראית בפועל, ובאיזה סקיל, סקריפט או workflow.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: מה היה אמור לקרות
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: אזור
+      options:
+        - Skills
+        - Scripts
+        - Actions
+    validations:
+      required: false
+
+  - type: textarea
+    id: plan
+    attributes:
+      label: Plan
+      description: נכתב ומתוחזק ע"י Claude. לא למלא ידנית.
+      value: |
+        _טרם נכתבה תוכנית._
+    validations:
+      required: false
+
+  - type: textarea
+    id: open_questions
+    attributes:
+      label: שאלות פתוחות
+      description: >
+        נכתב ומתוחזק ע"י Claude. כל שאלה היא תיבת סימון; שאלה שנענתה מסומנת
+        ולא נמחקת, עם ההחלטה לצידה. מעבר ל-status:done עם תיבה לא מסומנת מפעיל אזהרה.
+      value: |
+        _אין שאלות פתוחות._
+    validations:
+      required: false
