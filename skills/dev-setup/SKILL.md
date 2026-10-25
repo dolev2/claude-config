@@ -229,6 +229,11 @@ Add a short section to the repo's `CLAUDE.md` (create the file only if Dolev agr
 `dev-ship` (ב-`~/.claude/skills/`), והמסמך `dev-setup/reference/pipeline.md`.
 ```
 
+Keep `CLAUDE.md` to what is specific to this repo: where its layers and shared components
+live, where its design tokens come from, its glossary, its commands. The code rules in
+`~/.claude/rules/` load in every session, so a rule already written there is not repeated
+here; if the file already repeats one, point it out to Dolev rather than deleting it.
+
 Also make sure it has a tests section with the exact commands; `dev-code` and `dev-ship` run
 whatever it says. If there is none, ask Dolev for them rather than guessing.
 
