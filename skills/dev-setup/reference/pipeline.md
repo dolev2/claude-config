@@ -31,6 +31,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 | שורת התלות ותתי-כותרות ה-Plan | `CLAUDE.md` של ה-repo; בלי הנחיה שם, הנוסח העברי במסמך הזה | `תלוי ב:` / `Depends on:` |
 | תוויות `area:*` | התוויות שקיימות ב-repo | |
 | נהלי הקוד | `~/.claude/rules/` (כללי, Python, React), לכל ה-repos | גודל קובץ, שכבות, design tokens |
+| מה כל קובץ ולמה הוא קיים | סעיף "מדריך קבצים" ב-`README.md` של ה-repo | `dev-setup` יוצר אותו, וכל שינוי שמוסיף קובץ מעדכן אותו |
 | סוגי issues נוספים | תוויות שקיימות ב-repo, למשל `decision` | |
 
 **`CLAUDE.md` של repo מכיל רק את מה שספציפי לו.** נהלי הקוד הכלליים נטענים בכל סשן מ-`~/.claude/rules/`, ולכן לא חוזרים עליהם שם: ה-repo כותב רק איפה הדברים אצלו (השכבות, מקור ה-tokens, המילון).

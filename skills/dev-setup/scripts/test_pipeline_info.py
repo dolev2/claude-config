@@ -84,3 +84,35 @@ def test_missing_forms_are_reported_for_a_remote_repo(monkeypatch, capsys):
     fake_gh(monkeypatch, defaults=False)
     info = run_main(monkeypatch, capsys, ("--json", "--repo", "acme/widgets"))
     assert info["missing_files"] == [".github/ISSUE_TEMPLATE (repo or acme/.github)"]
+
+
+def write_readme(root, text):
+    (root / "README.md").write_text(text, encoding="utf-8")
+
+
+def test_no_readme_is_no_file_guide(tmp_path):
+    assert not pipeline_info.has_file_guide(tmp_path)
+
+
+def test_readme_without_the_heading_is_no_file_guide(tmp_path):
+    write_readme(tmp_path, "# widgets\n\nSee the file guide below, and the מדריך קבצים too.\n")
+    assert not pipeline_info.has_file_guide(tmp_path)
+
+
+def test_file_guide_heading_in_hebrew_or_english_at_any_level(tmp_path):
+    for heading in ("## מדריך קבצים", "# File guide", "### file Guide: root", "#### מדריך קבצים לריפו"):
+        write_readme(tmp_path, f"# widgets\n\n{heading}\n| a | b |\n")
+        assert pipeline_info.has_file_guide(tmp_path), heading
+
+
+def test_missing_file_guide_is_reported(monkeypatch, capsys, tmp_path):
+    fake_gh(monkeypatch, root=tmp_path)
+    info = run_main(monkeypatch, capsys)
+    assert "README.md (file guide)" in info["missing_files"]
+
+
+def test_present_file_guide_is_not_reported(monkeypatch, capsys, tmp_path):
+    write_readme(tmp_path, "# widgets\n\n## מדריך קבצים\n")
+    fake_gh(monkeypatch, root=tmp_path)
+    info = run_main(monkeypatch, capsys)
+    assert not any("file guide" in f for f in info["missing_files"])
