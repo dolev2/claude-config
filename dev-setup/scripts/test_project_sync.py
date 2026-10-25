@@ -132,3 +132,77 @@ def test_home_repo_workflow_can_read_its_own_action():
 
 def test_no_copy_of_the_sync_script_is_left_to_install():
     assert not (ROOT / "templates" / ".github" / "scripts" / "sync_project.py").exists()
+
+
+# The sprint view follows the current sprint (claude-config #17).
+
+def milestone(number, title, open_issues):
+    return {"number": number, "title": title, "open_issues": open_issues}
+
+
+def sprint_view(filter_):
+    return {"id": "V1", "name": "ספרינט נוכחי", "filter": filter_}
+
+
+def test_current_sprint_is_the_first_milestone_with_open_issues():
+    sync = load_sync()
+    milestones = [milestone(3, "M3", 1), milestone(1, "M1", 0), milestone(2, "M2", 4)]
+    assert sync.current_sprint(milestones) == "M2"
+    assert sync.current_sprint([milestone(1, "M1", 0)]) is None
+
+
+def test_finished_sprint_moves_the_filter():
+    sync = load_sync()
+    views = [{"id": "V0", "name": "הכל", "filter": None}, sprint_view('milestone:"M1"')]
+    assert sync.sprint_view_change(views, "M2 - Launch") == ("V1", 'milestone:"M2 - Launch"')
+
+
+def test_a_filter_already_on_the_sprint_is_left_alone():
+    sync = load_sync()
+    assert sync.sprint_view_change([sprint_view('milestone:"M1"')], "M1") is None
+
+
+@pytest.mark.parametrize("views, sprint", [
+    ([sprint_view('milestone:"M1"')], None),               # no milestone has open issues
+    ([{"id": "V0", "name": "View 1", "filter": 'milestone:"M1"'}], "M2"),  # no sprint view
+    ([sprint_view("label:bug")], "M2"),                    # no milestone term to move
+    ([sprint_view(None)], "M2"),
+])
+def test_nothing_to_move(views, sprint):
+    sync = load_sync()
+    assert sync.sprint_view_change(views, sprint) is None
+
+
+def test_only_the_milestone_term_changes():
+    sync = load_sync()
+    change = sync.sprint_view_change([sprint_view('label:bug milestone:"Sprint 1" -status:Done')], "Sprint 2")
+    assert change == ("V1", 'label:bug milestone:"Sprint 2" -status:Done')
+    change = sync.sprint_view_change([sprint_view("milestone:Old")], "New")
+    assert change == ("V1", 'milestone:"New"')
+
+
+def test_sync_sprint_view_sends_the_update(monkeypatch):
+    sync = load_sync()
+    sent = []
+    monkeypatch.setattr(sync, "gh", lambda *args: '[{"number": 1, "title": "M1", "open_issues": 0},'
+                                                  ' {"number": 2, "title": "M2", "open_issues": 2}]')
+    monkeypatch.setattr(sync, "graphql", lambda query, **kw: sent.append(kw))
+    sync.sync_sprint_view([sprint_view('milestone:"M1"')])
+    assert sent == [{"view": "V1", "filter": 'milestone:"M2"'}]
+
+
+def test_a_failed_view_update_does_not_stop_the_issue_sync(monkeypatch, capsys):
+    monkeypatch.setenv("GH_TOKEN", "x")
+    monkeypatch.setenv("PROJECT_NUMBER", "1")
+    monkeypatch.setenv("SYNC_MARKER", "x-sync")
+    sync = load_sync()
+    monkeypatch.setattr(sync, "load_project", lambda n: ("P", {}, {}, [sprint_view('milestone:"M1"')]))
+
+    def gh(*args):
+        if args[0] == "api":
+            raise RuntimeError("gh api failed: boom")
+        return "[]"  # gh issue list: no issues
+
+    monkeypatch.setattr(sync, "gh", gh)
+    sync.main()
+    assert "sprint view not updated" in capsys.readouterr().out
