@@ -215,8 +215,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/board_views.py"
 It turns the board's empty "View 1" into "ספרינט נוכחי" (Status columns, filtered to the
 current sprint) and adds "הכל" (a table). It deletes nothing and skips a view that already
 exists. If it reports that the sprint view has no columns, ask Dolev to choose "Column by:
-Status" in the board; the API cannot set it. Moving the filter to the next sprint stays a
-step at the end of each sprint (reference doc, "ספרינטים").
+Status" in the board; the API cannot set it. From then on the board sync moves the filter
+to each next sprint by itself (reference doc, "ספרינטים").
 
 ## Step 6: CLAUDE.md
 

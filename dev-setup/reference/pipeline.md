@@ -426,8 +426,14 @@ GitHub מציג אותם בכל ריפו של החשבון שאין לו תיק�
 השערים (`owner:claude`, Blocked by, WIP) חלים עליו כרגיל.
 
 **הסינון בלוח מקודד בשם.** אין ל-GitHub `milestone:@current`. את התצוגות עצמן ("ספרינט נוכחי"
-ו"הכל") יוצר `dev-setup/scripts/board_views.py` בהתקנה, מסוננות לספרינט שהיה נוכחי אז. בסיום
-ספרינט מעדכנים את פילטר התצוגות, בממשק או בפקודה:
+ו"הכל") יוצר `dev-setup/scripts/board_views.py` בהתקנה, מסוננות לספרינט שהיה נוכחי אז.
+
+**הסנכרון מזיז את הסינון לבד** (claude-config #17). בכל ריצה של `sync-project.yml` הוא משווה את
+ה-milestone בסינון של "ספרינט נוכחי" לספרינט הנוכחי, ומעדכן אם הם שונים. הריצה הזו קורית גם על
+סגירת issue, אז הלוח עובר לספרינט הבא דקות אחרי שה-issue האחרון נסגר. רק האיבר `milestone:"..."`
+בסינון משתנה, ורק בתצוגה בשם הזה. אין milestone עם issues פתוחים: הסינון נשאר.
+
+לעדכון מיידי: `gh workflow run sync-project.yml`. בלוח בלי סנכרון מעדכנים בממשק או בפקודה:
 
 ```bash
 gh api graphql -f query='query($o:String!,$n:Int!){user(login:$o){projectV2(number:$n){views(first:20){nodes{id name filter}}}}}' -F o=<owner> -F n=<PROJECT_NUMBER>
