@@ -22,7 +22,11 @@ on:
         required: true
 
 permissions:
-  # No checkout, so no `contents: read`: the gate reads and writes issues through `gh` only.
+  # Unlike the template, this repo needs `contents: read`: the action lives here, and a
+  # job downloads an action from its own private repo with GITHUB_TOKEN, which needs read
+  # access to the code. Without it the run dies on "An action could not be found".
+  # Other repos get the action through the Actions access setting instead.
+  contents: read
   issues: write
 
 concurrency:
