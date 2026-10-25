@@ -31,36 +31,6 @@ def test_sync_marker_defaults_to_pipeline_sync(monkeypatch):
     assert sync.write_marker("x", {"owner": "claude"}).endswith("<!-- pipeline-sync: owner=claude -->\n")
 
 
-def test_gate_reads_checkboxes():
-    gate = load("check_open_questions")
-    assert gate.open_questions("### שאלות פתוחות\n- [ ] a?\n- [x] b\n### Next\n") == ["a?"]
-
-
-def test_gate_reads_the_last_section_not_the_plans():
-    gate = load("check_open_questions")
-    body = "## Plan\n### Open questions\nאין.\n### Approach\nx\n## שאלות פתוחות\n- [ ] real?\n"
-    assert gate.open_questions(body) == ["real?"]
-
-
-def test_gate_section_runs_past_lower_headings():
-    gate = load("check_open_questions")
-    body = "## שאלות פתוחות\n### Pricing\n- [ ] price?\n## Next\n- [ ] not here\n"
-    assert gate.open_questions(body) == ["price?"]
-
-
-def test_gate_legacy_section_skips_the_sync_marker():
-    gate = load("check_open_questions")
-    body = "### שאלות פתוחות\nlegacy question\n\n<!-- crm-sync: owner=dolev -->\n"
-    assert gate.open_questions(body) == ["legacy question"]
-
-
-def test_gate_section_with_only_a_placeholder_and_the_marker_is_clear():
-    # CRM #55: the body of CRM #48 when it moved to status:done.
-    gate = load("check_open_questions")
-    body = "### שאלות פתוחות\n\n_אין שאלות פתוחות._\n\n<!-- crm-sync: owner=dolev status=done -->\n"
-    assert gate.open_questions(body) == []
-
-
 def test_sync_blank_board_takes_the_labels_even_when_the_marker_matches():
     sync = load("sync_project")
     state = {"owner": "claude", "status": "explore"}

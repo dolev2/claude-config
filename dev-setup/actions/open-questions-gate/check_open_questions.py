@@ -10,7 +10,7 @@ nobody re-reads the thread.
 
 What counts as an open question
 -------------------------------
-The `## שאלות פתוחות` section of the issue body is the single source of truth. Inside it:
+The `## שאלות פתוחות` (or `Open questions`) section of the issue body is the single source of truth. Inside it:
 
     - [ ] question           -> open
     - [x] question - הוחלט:  -> resolved, kept for the record
@@ -65,8 +65,11 @@ def gh(*args, **kwargs):
     return out.stdout
 
 
-def section_lines(body):
-    """The lines under the open-questions heading, or None if there is no such section.
+def find_section(body):
+    """(heading, lines) of the open-questions section, or None if there is no such section.
+
+    The heading comes back as written, so the warning names the section the way the repo
+    spells it (business-plan-generator writes "Open questions").
 
     A plan may carry its own "open questions" subsection, which comes before the issue's
     section - so the first match is the wrong one (Osea #1, 24.10.2026: the plan's "אין."
@@ -75,21 +78,22 @@ def section_lines(body):
     the next heading of the same or a higher level.
     """
     lines = (body or "").splitlines()
-    headings = [(i, len(m.group(1)), m.group(2).strip().lower())
+    headings = [(i, len(m.group(1)), m.group(2).strip())
                 for i, m in ((i, HEADING_RE.match(l)) for i, l in enumerate(lines)) if m]
-    matches = [(i, level) for i, level, title in headings
-               if any(t in title for t in SECTION_TITLES)]
+    matches = [(i, level, title) for i, level, title in headings
+               if any(t in title.lower() for t in SECTION_TITLES)]
     if not matches:
         return None
-    start, level = matches[-1]
+    start, level, title = matches[-1]
     end = next((i for i, lv, _ in headings if i > start and lv <= level), len(lines))
-    return lines[start + 1:end]
+    return title, lines[start + 1:end]
 
 
 def open_questions(body):
-    lines = section_lines(body)
-    if lines is None:
+    section = find_section(body)
+    if section is None:
         return []
+    lines = section[1]
     structured = any(UNCHECKED_RE.match(l) or CHECKED_RE.match(l) for l in lines)
     found = []
     for line in lines:
@@ -104,6 +108,17 @@ def open_questions(body):
             m = BULLET_RE.match(line)
             found.append(m.group(1) if m else line.strip())
     return found
+
+
+def warning(heading, questions):
+    """The gate comment. `heading` is the section title as the issue spells it."""
+    listed = "\n".join("- %s" % q for q in questions)
+    return (
+        "## ⚠️ עבר ל-`status:done` עם שאלות פתוחות\n\n"
+        "ב-issue הזה יש %d שאלות שעדיין לא נסגרו:\n\n%s\n\n"
+        "אם הן נענו — לסמן אותן בסעיף \"%s\" (`- [x]`) ולהוסיף את ההחלטה "
+        "לצד כל אחת. הסטטוס **לא** שונה, והתווית `%s` תרד אוטומטית ברגע שכולן מסומנות."
+    ) % (len(questions), listed, heading, WARN_LABEL)
 
 
 def upsert_comment(number, text):
@@ -149,13 +164,7 @@ def main():
             upsert_comment(number, "✅ אין יותר שאלות פתוחות ב-issue הזה. האזהרה הוסרה.")
         return 0
 
-    listed = "\n".join("- %s" % q for q in questions)
-    upsert_comment(number, (
-        "## ⚠️ עבר ל-`status:done` עם שאלות פתוחות\n\n"
-        "ב-issue הזה יש %d שאלות שעדיין לא נסגרו:\n\n%s\n\n"
-        "אם הן נענו — לסמן אותן בסעיף \"שאלות פתוחות\" (`- [x]`) ולהוסיף את ההחלטה "
-        "לצד כל אחת. הסטטוס **לא** שונה, והתווית `%s` תרד אוטומטית ברגע שכולן מסומנות."
-    ) % (len(questions), listed, WARN_LABEL))
+    upsert_comment(number, warning(find_section(issue["body"])[0], questions))
 
     if WARN_LABEL not in labels:
         gh("issue", "edit", number, "--repo", REPO, "--add-label", WARN_LABEL)

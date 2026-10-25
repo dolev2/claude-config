@@ -97,7 +97,7 @@ flowchart TD
     REP --> EXEC
     RC -- "תקין" --> DONE["status:done<br/>approved, ready to merge"]:::human
 
-    DONE -.-> GATE["open-questions-gate.yml<br/>בודק את סעיף השאלות הפתוחות"]:::auto
+    DONE -.-> GATE["open-questions-gate.yml<br/>shared action in claude-config<br/>בודק את סעיף השאלות הפתוחות"]:::auto
     GATE -.-> WARN["נשארה תיבה לא מסומנת<br/>תגובה ותווית אזהרה<br/>הפלת ריצה שולחת מייל"]:::gate
 
     DONE --> ASK(["Dolev explicitly asks for the merge<br/>התווית לבדה אינה אישור"]):::human
@@ -131,7 +131,7 @@ flowchart TD
 | **dev-code** | כשדולב מבקש | קולט `status:needs-repair` ואז `status:ready-to-execute`, בספרינט הנוכחי; issue אחד בריצה | `gh` המקומי |
 | **dev-ship** | כשדולב מבקש לשחרר | rebase, בדיקות, PR, CI, squash-merge, `status:done`, ניקוי | `gh` המקומי |
 | `sync-project.yml` | אירוע issue, ועוד סקר כל 15 דקות | מסנכרן תוויות ושדות הלוח, דו-כיוונית | `PROJECT_TOKEN` (PAT) |
-| `open-questions-gate.yml` | כל נגיעה ב-`status:done`, וגם עריכת גוף | מתריע על שאלה פתוחה; מסיר את התווית לבד כשכולן מסומנות | `GITHUB_TOKEN` |
+| `open-questions-gate.yml` | כל נגיעה ב-`status:done`, וגם עריכת גוף | קורא ל-action המשותף ב-`claude-config`; מתריע על שאלה פתוחה, ומסיר את התווית לבד כשכולן מסומנות | `GITHUB_TOKEN` |
 
 **אין תזמון.** שלב התכנון משאיר תוכניות ב-`status:waiting-approval`, ושלב הקוד לוקח רק מה
 שכבר `status:ready-to-execute`. כלומר שום קוד לא נכתב על תוכנית שדולב לא אישר.
@@ -370,6 +370,16 @@ issues. ל-GitHub אין תצוגה כזו: הוא סופר רק חוסמים י
 מגיב, מוסיף `has-open-questions`, **ומפיל את הריצה בכוונה** (המייל הוא ערוץ ההתראה). הסטטוס לא
 משתנה. כשכל התיבות מסומנות, התווית יורדת לבד. סעיף בלי אף תיבה נקרא במצב מקל: כל שורה לא ריקה
 היא שאלה פתוחה.
+
+**לשער יש עותק אחד.** הסקריפט והבדיקות שלו גרים ב-`claude-config`, ב-`dev-setup/actions/open-questions-gate/`.
+
+כל ריפו מחזיק רק workflow קצר שקורא ל-`dolev2/claude-config/dev-setup/actions/open-questions-gate@main`.
+
+תיקון שנכנס ל-main כאן מגיע לכל הריפואים מיד, ותקלה שנכנסת לשם שוברת את כולם יחד; לכן הבדיקות ב-CI.
+
+העותקים המקומיים שהיו קודם התפצלו זה מזה (CRM #55, 25.10.2026).
+
+ה-action נמצא בריפו פרטי, אז הוא זמין רק כשהגישה ל-actions של `claude-config` מוגדרת `user`, ורק לריפואים פרטיים. אחרת הריצה נופלת ב-"Unable to resolve action".
 
 ## ספרינטים: milestones, לא שדה Iteration
 

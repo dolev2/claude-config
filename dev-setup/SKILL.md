@@ -10,8 +10,11 @@ This skill folder is also the shared home of the pipeline:
 - `reference/pipeline.md`: the mechanism every dev-* skill follows (labels, phases, gates).
 - `scripts/pipeline_info.py`: reads everything repo-specific from the repo itself.
 - `scripts/rank_issues.py` (+ `test_rank_issues.py`): the sprint ranking.
-- `scripts/test_templates.py`: tests for the template scripts. Run both with pytest after any change here.
-- `templates/.github/`: the issue forms, the sync workflow, and the open-questions gate.
+- `scripts/test_templates.py`, `scripts/test_open_questions_gate.py`: tests for the template scripts and
+  the shared gate. Run them all with pytest after any change here.
+- `actions/open-questions-gate/`: the open-questions gate, a composite action every repo calls.
+  There is one copy of the gate, here; repos do not get a copy of the script.
+- `templates/.github/`: the issue forms, the sync workflow, and the short workflow that calls the gate.
 
 Read `reference/pipeline.md` before step 1, so you know what each piece is for.
 
@@ -95,7 +98,10 @@ only what is missing:
   so `area:seo` is `SEO`). The same option texts go in the board's Area field (step 4) and in
   `AREA_OPTIONS`. Adapt the field descriptions to the project: the template speaks of an app
   ("איפה באפליקציה" in `bug.yml`); a website says "באתר".
-- `workflows/open-questions-gate.yml` + `scripts/check_open_questions.py`: as is.
+- `workflows/open-questions-gate.yml`: as is. It calls the shared action
+  `dolev2/claude-config/dev-setup/actions/open-questions-gate@main`; there is no script to copy.
+  A repo that still has `.github/scripts/check_open_questions.py` from an older install: replace
+  its workflow with the template and delete the script (show Dolev the diff first).
 - `workflows/sync-project.yml` + `scripts/sync_project.py`: as is, when there is a board.
   If the agreed areas differ, update `AREA_OPTIONS` in `sync_project.py` to match, e.g.
   `{"seo": "SEO", ...}`.
@@ -170,6 +176,18 @@ gh repo edit --delete-branch-on-merge
 ```
 
 Create milestones in sprint order: the lowest number is the current sprint.
+
+The gate workflow resolves its action from `dolev2/claude-config`, which is private. That works
+only while claude-config shares its actions with the owner's other repos, and only for private
+repos (on a user account, a private repo's actions reach only that user's private repos):
+
+```bash
+gh api repos/dolev2/claude-config/actions/permissions/access --jq .access_level   # expect: user
+gh repo view --json visibility --jq .visibility                                  # expect: PRIVATE
+```
+
+Anything other than `user`, or a public repo: tell Dolev. Without it every gate run fails on
+"Unable to resolve action".
 
 ## Step 6: CLAUDE.md
 
