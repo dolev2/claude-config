@@ -22,7 +22,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 | ה-repo | `gh repo view` | `dolev2/charging-crm` |
 | ה-branch הראשי | `defaultBranchRef` | `master` (בהמשך: `<default>`) |
 | תווית האדם | תווית `owner:*` שאינה `owner:claude` | `owner:dolev` (בהמשך: `owner:<human>`) |
-| שם הסמן המוסתר | `.github/scripts/sync_project.py`, או המשתנה `SYNC_MARKER` | `crm-sync`, `wayout-sync` |
+| שם הסמן המוסתר | המשתנה `SYNC_MARKER` | `crm-sync`, `wayout-sync` |
 | מספר הלוח | משתנה ה-repo `PROJECT_NUMBER` | `5` |
 | הספרינט הנוכחי | ה-milestone הפתוח הנמוך ביותר שיש בו issues פתוחים | `W1 - CRM + Gmail` |
 | פקודות הבדיקה | `CLAUDE.md` של ה-repo, סעיף הבדיקות | כולל חבילות מותנות כמו `-m live`, או "אין חבילה, הבדיקה היא preview" |
@@ -151,12 +151,19 @@ flowchart TD
 
 - **התוויות הן מקור האמת.** זה מה ש-Claude קורא וכותב, תמיד.
 - **לוח ה-Project הוא התצוגה האנושית.** דולב גורר בו כרטיסים, ו-`sync-project.yml` מסנכרן
-  דו-כיוונית. כלל ההכרעה מתועד בראש `.github/scripts/sync_project.py`.
+  דו-כיוונית, דרך ה-action המשותף ב-`claude-config` (`dev-setup/actions/project-sync/`). כלל
+  ההכרעה מתועד בראש `sync_project.py` שם. לסקריפט יש עותק אחד, כמו לשער השאלות.
 - Claude **לא** קורא ולא כותב לשדות הפרויקט. ניסיון שנכשל בהרשאות הוא צפוי, לא באג.
 
-**שמות האופציות בלוח הם חוזה עם הסקריפט.** שינוי שם של אופציה בשדה Status, Owner או Area
-מחייב עדכון של `STATUS_OPTIONS` / `OWNER_OPTIONS` / `AREA_OPTIONS` ב-`sync_project.py` באותו
-זמן. בלי זה הסנכרון מדלג בשקט (`field has no option`).
+**שמות האופציות של Status ו-Owner הם חוזה עם הסקריפט.** שינוי שם של אופציה בלוח מחייב עדכון
+של `STATUS_OPTIONS` / `OWNER_OPTIONS` ב-`sync_project.py` באותו זמן. בלי זה הסנכרון מדלג בשקט
+(`field has no option`). לאופציה `Plan questions` יש שם ישן שמתקבל גם הוא, `Plan questions (Dolev)`.
+
+**אופציות ה-Area נקראות מהלוח.** כל ריפו והאזורים שלו: התווית `area:seo` מתאימה לאופציה `SEO`
+לפי השם, בלי תלות ברישיות. אזור חדש נכנס בתווית ובאופציה בלוח, בלי לגעת בסקריפט.
+
+**הסמן נקרא רק מ-`SYNC_MARKER`.** בלעדיו הסנכרון לא רץ: שם שגוי היה גורם לכל issue להיראות
+כאילו לא סונכרן מעולם, והלוח היה מחזיר את התוויות לאחור.
 
 **מוקש (2026-09-23):** `projectV2.items` מחזיר רשימה ריקה עבור פרויקט שאוכלס דרך ה-API, גם
 כשהפריטים קיימים. `issue.projectItems` מחזיר אותם מיד. לכן `sync_project.py` קורא את הלוח

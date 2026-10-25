@@ -10,11 +10,13 @@ This skill folder is also the shared home of the pipeline:
 - `reference/pipeline.md`: the mechanism every dev-* skill follows (labels, phases, gates).
 - `scripts/pipeline_info.py`: reads everything repo-specific from the repo itself.
 - `scripts/rank_issues.py` (+ `test_rank_issues.py`): the sprint ranking.
-- `scripts/test_templates.py`, `scripts/test_open_questions_gate.py`: tests for the template scripts and
-  the shared gate. Run them all with pytest after any change here.
+- `scripts/test_open_questions_gate.py`, `scripts/test_project_sync.py`: tests for the two shared
+  actions. Run them all with pytest after any change here.
 - `actions/open-questions-gate/`: the open-questions gate, a composite action every repo calls.
   There is one copy of the gate, here; repos do not get a copy of the script.
-- `templates/.github/`: the issue forms, the sync workflow, and the short workflow that calls the gate.
+- `actions/project-sync/`: the label ↔ board sync, a composite action every repo with a board calls.
+  It reads the marker name from `SYNC_MARKER` and the Area options from the board itself.
+- `templates/.github/`: the issue forms, and the two short workflows that call the actions.
 
 Read `reference/pipeline.md` before step 1, so you know what each piece is for.
 
@@ -95,18 +97,21 @@ only what is missing:
 
 - `ISSUE_TEMPLATE/task.yml`, `bug.yml`, `config.yml`: change the `אזור` dropdown options to
   the agreed areas (option text = the label suffix, capitalised; an acronym stays upper-case,
-  so `area:seo` is `SEO`). The same option texts go in the board's Area field (step 4) and in
-  `AREA_OPTIONS`. Adapt the field descriptions to the project: the template speaks of an app
+  so `area:seo` is `SEO`). The same option texts go in the board's Area field (step 4); the sync
+  matches labels to them by that rule, so nothing else lists the areas. Adapt the field descriptions to the project: the template speaks of an app
   ("איפה באפליקציה" in `bug.yml`); a website says "באתר".
 - `workflows/open-questions-gate.yml`: as is. It calls the shared action
   `dolev2/claude-config/dev-setup/actions/open-questions-gate@main`; there is no script to copy.
   A repo that still has `.github/scripts/check_open_questions.py` from an older install: replace
   its workflow with the template and delete the script (show Dolev the diff first).
-- `workflows/sync-project.yml` + `scripts/sync_project.py`: as is, when there is a board.
-  If the agreed areas differ, update `AREA_OPTIONS` in `sync_project.py` to match, e.g.
-  `{"seo": "SEO", ...}`.
+- `workflows/sync-project.yml`: as is, when there is a board. It calls the shared action
+  `dolev2/claude-config/dev-setup/actions/project-sync@main`; there is no script to copy.
+  A repo that still has `.github/scripts/sync_project.py`: first set `SYNC_MARKER` to the marker
+  name its issues already carry (the literal in that script), then replace the workflow and
+  delete the script.
 
-Then set the marker name the sync script reads:
+Then set the marker name the sync reads. It is required: without it the sync refuses to run,
+and a wrong name makes every issue look unsynced, so the stale board wins over the labels:
 
 ```bash
 gh variable set SYNC_MARKER --body "<marker>"
@@ -133,7 +138,7 @@ gh variable set PROJECT_NUMBER --body <number>
 `gh auth refresh -s project`, and wait.
 
 **Status is the built-in field**, so it is not created but rewritten. Its options must match
-`STATUS_OPTIONS` in `sync_project.py` exactly. Find its id, then replace its options:
+`STATUS_OPTIONS` in `dev-setup/actions/project-sync/sync_project.py` exactly. Find its id, then replace its options:
 
 ```bash
 gh api graphql -f query='query($o:String!,$n:Int!){user(login:$o){projectV2(number:$n){field(name:"Status"){... on ProjectV2SingleSelectField{id}}}}}' \

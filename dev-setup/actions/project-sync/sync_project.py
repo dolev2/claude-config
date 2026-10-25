@@ -35,6 +35,14 @@ Area at all always takes the labels, even when they match the marker. The winner
 written to the other side and the marker is rewritten.
 
 Sprint is never touched here - Dolev sets it on the board and nothing else writes it.
+
+One copy for every repo
+-----------------------
+This file lives in dolev2/claude-config, dev-setup/actions/project-sync, and every repo's
+sync-project.yml calls it (claude-config #3; the per-repo copies had drifted). So nothing
+repo-specific is written here: the marker name comes from SYNC_MARKER, the Area options are
+read from the board, and the one Status option whose name differs between boards is
+resolved against the board too (resolve_options).
 """
 
 import json
@@ -48,8 +56,10 @@ REPO = os.environ["GITHUB_REPOSITORY"]
 PROJECT_OWNER = os.environ.get("PROJECT_OWNER") or REPO.split("/", 1)[0]
 
 # The marker name differs per repo (crm-sync, wayout-sync, ...). Never rename it once
-# issues carry it: a body whose marker is not found looks like it was never synced.
-SYNC_MARKER = os.environ.get("SYNC_MARKER") or "pipeline-sync"
+# issues carry it: a body whose marker is not found looks like it was never synced. There is
+# no default on purpose - a wrong default makes every issue look unsynced, and the stale
+# board then wins over the labels (check_environment stops the run instead).
+SYNC_MARKER = os.environ.get("SYNC_MARKER", "").strip()
 MARKER_RE = re.compile(r"<!--\s*" + re.escape(SYNC_MARKER) + r":(.*?)-->", re.S)
 
 # label suffix  ->  the option name as it appears in the Project's single-select field
@@ -58,7 +68,7 @@ STATUS_OPTIONS = {
     "explore": "Explore (Claude)",
     # No owner in the name: an open question can sit with either side, and the Owner
     # column already says whose turn it is.
-    "plan-questions": "Plan questions",
+    "plan-questions": "Plan questions",  # or a name from STATUS_ALIASES, per board
     "waiting-approval": "Waiting for Dolev approval",
     "ready-to-execute": "Ready to execute (Claude)",
     "needs-repair": "Needs repair (Claude)",
@@ -66,7 +76,12 @@ STATUS_OPTIONS = {
     "done": "Done",
     "backlog": "Backlog",
 }
-AREA_OPTIONS = {"backend": "Backend", "frontend": "Frontend", "both": "Both", "infra": "Infra"}
+# Older boards (CRM, business-plan-generator, OSEA) name this option "Plan questions (Dolev)".
+# Rewriting a board's options clears the value on every card, so the script adapts instead.
+STATUS_ALIASES = {"plan-questions": ("Plan questions", "Plan questions (Dolev)")}
+# Filled from the board by resolve_options: each repo has its own areas, and the option name
+# is the label suffix with its own capitalisation (area:seo <-> SEO), a dev-setup convention.
+AREA_OPTIONS = {}
 
 DIMENSIONS = [
     ("owner", "Owner", OWNER_OPTIONS),
@@ -188,6 +203,25 @@ mutation($project:ID!, $item:ID!, $field:ID!, $option:String!) {
 """
 
 
+def resolve_options(fields):
+    """Fit AREA_OPTIONS and STATUS_OPTIONS to this board's actual option names."""
+    area = fields.get("Area") or {}
+    AREA_OPTIONS.clear()
+    AREA_OPTIONS.update({o["name"].lower(): o["name"] for o in area.get("options", [])})
+    names = {o["name"] for o in (fields.get("Status") or {}).get("options", [])}
+    for suffix, aliases in STATUS_ALIASES.items():
+        STATUS_OPTIONS[suffix] = next((a for a in aliases if a in names), aliases[0])
+
+
+def doubled_dimensions(labels):
+    """The dimensions an issue carries more than one label of, e.g. two status:* labels.
+
+    Which one is meant cannot be told, and either guess would be written to the board and
+    into the marker as if it were the truth (OSEA, 2026-10-24).
+    """
+    return [k for k, _, _ in DIMENSIONS if sum(l.startswith(k + ":") for l in labels) > 1]
+
+
 def set_field(project_id, item_id, field, option_name):
     option = next((o for o in field.get("options", []) if o["name"] == option_name), None)
     if option is None:
@@ -260,7 +294,7 @@ def choose_winner(marker, from_labels, from_project):
 
 
 def edit_body(number, new_body):
-    f = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8")
+    f = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8", newline="\n")
     f.write(new_body)
     f.close()
     try:
@@ -287,6 +321,11 @@ def check_environment():
         raise SystemExit(
             "PROJECT_NUMBER is empty. Set the repository variable:  gh variable set PROJECT_NUMBER --body 1"
         )
+    if not SYNC_MARKER:
+        raise SystemExit(
+            "SYNC_MARKER is empty. Set it to the marker name the issue bodies already carry\n"
+            "(e.g. crm-sync):  gh variable set SYNC_MARKER --body <name>"
+        )
 
 
 def main():
@@ -295,6 +334,7 @@ def main():
     only = os.environ.get("ISSUE_NUMBER", "").strip()
 
     project_id, fields, project_items = load_project(number)
+    resolve_options(fields)
 
     issues = json.loads(
         gh(
@@ -312,6 +352,10 @@ def main():
             continue  # not a pipeline issue - leave it alone
         if issue["state"].upper() == "CLOSED" and "status:done" not in labels:
             continue  # closed as not-planned - it does not belong on the board
+        doubled = doubled_dimensions(labels)
+        if doubled:
+            print("! #%s has more than one %s label - skipped" % (num, "/".join(doubled)))
+            continue
 
         item = project_items.get(num)
         if item is None:

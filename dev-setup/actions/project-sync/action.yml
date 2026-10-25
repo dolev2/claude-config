@@ -1,0 +1,44 @@
+name: Project board sync
+description: >
+  Two-way sync between issue labels (owner:*, status:*, area:*) and the fields of the repo's
+  Project v2 board. The rules are in sync_project.py next to this file.
+
+# One copy for every repo with the pipeline: each repo's sync-project.yml calls
+# dolev2/claude-config/dev-setup/actions/project-sync@main, so a fix merged here reaches
+# every board at once (claude-config #3; the copies had drifted).
+#
+# Composite, like open-questions-gate: the script talks only to `gh`, so the calling repo
+# needs no checkout; ubuntu-latest ships python3 and gh.
+
+inputs:
+  token:
+    description: PAT with project + repo (the PROJECT_TOKEN secret). GITHUB_TOKEN cannot touch Projects v2 on a user account.
+    required: true
+  project-number:
+    description: The board's number (the PROJECT_NUMBER variable)
+    required: true
+  sync-marker:
+    description: The hidden marker name issue bodies carry, e.g. crm-sync (the SYNC_MARKER variable)
+    required: true
+  project-owner:
+    description: The account that owns the board
+    required: false
+    default: ${{ github.repository_owner }}
+  issue:
+    description: Sync only this issue; empty sweeps every issue
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Sync
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PROJECT_OWNER: ${{ inputs.project-owner }}
+        PROJECT_NUMBER: ${{ inputs.project-number }}
+        SYNC_MARKER: ${{ inputs.sync-marker }}
+        ISSUE_NUMBER: ${{ inputs.issue }}
+      run: python3 "${{ github.action_path }}/sync_project.py"
