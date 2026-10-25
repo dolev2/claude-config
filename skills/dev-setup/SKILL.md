@@ -18,6 +18,7 @@ This skill folder is also the shared home of the pipeline:
 - `actions/project-sync/`: the label ↔ board sync, a composite action every repo with a board calls.
   It reads the marker name from `SYNC_MARKER` and the Area options from the board itself.
 - `templates/.github/`: the two short workflows that call the actions.
+- `templates/README.md`: the skeleton of a repo's file guide (step 6).
 
 The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
 serves them to every repo of the account that has no `.github/ISSUE_TEMPLATE` of its own.
@@ -48,6 +49,7 @@ Show Dolev, in chat, one list, and wait for his yes:
 | Project board | a new user project named after the repo, linked to it | create one, reuse one, or skip |
 | CI tests workflow | only if the repo has none | which commands |
 | "Automatically delete head branches" | on | — |
+| file guide in `README.md` | only if `missing_files` names it | the description line of a new `README.md` |
 
 Without a board the pipeline still works: labels are the source of truth. Then skip step 4
 and `sync-project.yml`, and keep the gate.
@@ -233,6 +235,22 @@ Keep `CLAUDE.md` to what is specific to this repo: where its layers and shared c
 live, where its design tokens come from, its glossary, its commands. The code rules in
 `~/.claude/rules/` load in every session, so a rule already written there is not repeated
 here; if the file already repeats one, point it out to Dolev rather than deleting it.
+
+**The file guide.** Every repo has one (`~/.claude/rules/code-general.md`): a "מדריך קבצים"
+section in `README.md` that says, per folder, what each file is and why it exists. When
+`missing_files` names `README.md (file guide)`:
+
+- no `README.md`: create it from `$HOME/.claude/skills/dev-setup/templates/README.md`;
+- a `README.md` without the section: append the section from the template at its end, and
+  leave the rest of the file untouched.
+
+Fill the tables from the files actually in the repo (`git ls-files`), one table per top-level
+folder; a folder of many similar files gets one row. Never leave the skeleton empty, and never
+guess a file's purpose: read the file, or ask Dolev. Then add one line to `CLAUDE.md`:
+
+```markdown
+- מדריך הקבצים (מה כל קובץ ולמה הוא קיים): [README.md](README.md).
+```
 
 Also make sure it has a tests section with the exact commands; `dev-code` and `dev-ship` run
 whatever it says. If there is none, ask Dolev for them rather than guessing.

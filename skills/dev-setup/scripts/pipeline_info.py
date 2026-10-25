@@ -18,12 +18,15 @@ skills work in every repo that carries the pipeline:
                                  repo without forms of its own
 - repo-specific skills         - .claude/skills/* in the repo; when they cover the pipeline,
                                  they win over the generic dev-* skills
+- the file guide               - a README.md with a "מדריך קבצים" / "File guide" heading;
+                                 without one, missing_files names it
 
 `ready` is true when every pipeline label exists. When it is false, run dev-setup.
 """
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -49,6 +52,9 @@ PIPELINE_FILES = [
     ".github/workflows/sync-project.yml",
     ".github/workflows/open-questions-gate.yml",
 ]
+
+FILE_GUIDE = "README.md"
+FILE_GUIDE_HEADINGS = ("מדריך קבצים", "file guide")
 
 
 def run(*args: str) -> tuple[int, str]:
@@ -89,6 +95,18 @@ def issue_forms(root: Path | None, repo: str) -> str | None:
     return defaults if code == 0 else None
 
 
+def has_file_guide(root: Path) -> bool:
+    """True when README.md has a Markdown heading, at any level, that names the file guide.
+
+    Only a heading counts: the words in a sentence ("see the file guide") are not a guide.
+    """
+    readme = root / FILE_GUIDE
+    if not readme.exists():
+        return False
+    headings = re.findall(r"^#{1,6}\s+(.+)$", readme.read_text(encoding="utf-8", errors="replace"), re.MULTILINE)
+    return any(name in heading.lower() for heading in headings for name in FILE_GUIDE_HEADINGS)
+
+
 def current_sprint(repo: str) -> str | None:
     code, out = run(
         "gh", "api", f"repos/{repo}/milestones?state=open&per_page=100",
@@ -122,6 +140,8 @@ def main(argv: list[str] | None = None) -> None:
     code, project = run("gh", "variable", "get", "PROJECT_NUMBER", "--repo", repo)
     forms = issue_forms(root, repo)
     missing_files = [f for f in PIPELINE_FILES if not (root / f).exists()] if root else []
+    if root and not has_file_guide(root):
+        missing_files.append(f"{FILE_GUIDE} (file guide)")
     if not forms:
         missing_files.insert(0, f".github/ISSUE_TEMPLATE (repo or {repo.split('/')[0]}/.github)")
 
