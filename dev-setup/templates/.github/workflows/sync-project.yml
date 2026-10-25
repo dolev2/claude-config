@@ -1,8 +1,12 @@
 name: Sync labels ↔ project board
 
-# Keeps issue labels (owner:*, status:*, area:*) and the Project v2 fields in
-# agreement. See .github/scripts/sync_project.py for the conflict rule and for why the
-# scheduled run is needed on top of the issue events.
+# Keeps issue labels (owner:*, status:*, area:*) and the Project v2 fields in agreement.
+# The sync itself is shared: dolev2/claude-config, dev-setup/actions/project-sync, where
+# sync_project.py documents the conflict rule and why the scheduled run is needed on top of
+# the issue events. It needs claude-config's Actions access set to "user".
+#
+# Repo settings it reads: the PROJECT_TOKEN secret, and the PROJECT_NUMBER and SYNC_MARKER
+# variables. SYNC_MARKER must be the name the issue bodies already carry.
 
 on:
   issues:
@@ -13,26 +17,25 @@ on:
     - cron: "*/15 * * * *"
   workflow_dispatch:
 
+# No checkout, so no `contents: read`: the sync works through `gh` with PROJECT_TOKEN only.
+permissions: {}
+
 concurrency:
   group: sync-project
   cancel-in-progress: false
 
 jobs:
   sync:
+    # Off until PROJECT_NUMBER is set, which is done only after the PROJECT_TOKEN secret:
+    # without the guard every 15-minute run fails and mails (OSEA, 2026-10-24).
+    if: vars.PROJECT_NUMBER != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Sync
-        env:
-          # A fine-grained or classic PAT with `project` + `repo`. The default
-          # GITHUB_TOKEN cannot touch Projects v2 on a user account.
-          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          PROJECT_OWNER: ${{ github.repository_owner }}
-          # The hidden marker name in issue bodies, e.g. crm-sync. Keep it stable once issues carry it.
-          SYNC_MARKER: ${{ vars.SYNC_MARKER || 'pipeline-sync' }}
-          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
+      # @main on purpose: a fix to the sync reaches every repo without touching it.
+      - uses: dolev2/claude-config/dev-setup/actions/project-sync@main
+        with:
+          token: ${{ secrets.PROJECT_TOKEN }}
+          project-number: ${{ vars.PROJECT_NUMBER }}
+          sync-marker: ${{ vars.SYNC_MARKER }}
           # On an issue event, sync only that issue; the scheduled run sweeps everything.
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-        run: python .github/scripts/sync_project.py
+          issue: ${{ github.event.issue.number }}

@@ -10,7 +10,7 @@ skills work in every repo that carries the pipeline:
 
 - repo and default branch      - from `gh repo view`
 - the human owner label        - the `owner:*` label that is not `owner:claude`
-- the sync marker name         - from .github/scripts/sync_project.py, or the SYNC_MARKER variable
+- the sync marker name         - the SYNC_MARKER variable, when the repo has the sync workflow
 - the project number           - the PROJECT_NUMBER repository variable
 - the current sprint           - the lowest-numbered open milestone with open issues
 - repo-specific skills         - .claude/skills/* in the repo; when they cover the pipeline,
@@ -21,7 +21,6 @@ skills work in every repo that carries the pipeline:
 
 import argparse
 import json
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -43,10 +42,8 @@ PIPELINE_FILES = [
     ".github/ISSUE_TEMPLATE/task.yml",
     ".github/ISSUE_TEMPLATE/bug.yml",
     ".github/workflows/sync-project.yml",
-    ".github/scripts/sync_project.py",
     ".github/workflows/open-questions-gate.yml",
 ]
-MARKER_LITERAL_RE = re.compile(r"<!--\\s\*([\w-]+-sync):")
 
 
 def run(*args: str) -> tuple[int, str]:
@@ -60,16 +57,17 @@ def repo_root() -> Path | None:
 
 
 def sync_marker(root: Path | None, repo: str) -> str | None:
-    """The marker name issue bodies carry, e.g. crm-sync. None when there is no sync."""
-    script = root / ".github/scripts/sync_project.py" if root else None
-    if not script or not script.exists():
+    """The marker name issue bodies carry, e.g. crm-sync. None when there is no sync.
+
+    The shared sync action (dev-setup/actions/project-sync) reads it from the SYNC_MARKER
+    variable only, so that is the one place to look. An empty variable is reported as
+    missing rather than guessed: the action refuses to run without it.
+    """
+    workflow = root / ".github/workflows/sync-project.yml" if root else None
+    if not workflow or not workflow.exists():
         return None
-    m = MARKER_LITERAL_RE.search(script.read_text(encoding="utf-8", errors="replace"))
-    if m:
-        return m.group(1)
-    # The generic template reads the name from the SYNC_MARKER variable.
     code, out = run("gh", "variable", "get", "SYNC_MARKER", "--repo", repo)
-    return out if code == 0 and out else "pipeline-sync"
+    return out if code == 0 and out else None
 
 
 def current_sprint(repo: str) -> str | None:
