@@ -45,7 +45,6 @@ PIPELINE_FILES = [
     ".github/workflows/sync-project.yml",
     ".github/scripts/sync_project.py",
     ".github/workflows/open-questions-gate.yml",
-    ".github/scripts/check_open_questions.py",
 ]
 MARKER_LITERAL_RE = re.compile(r"<!--\\s\*([\w-]+-sync):")
 
