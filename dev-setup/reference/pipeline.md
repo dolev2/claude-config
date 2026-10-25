@@ -425,8 +425,9 @@ GitHub מציג אותם בכל ריפו של החשבון שאין לו תיק�
 ב-WayOut #119, 2026-10-25). מציינים בדיווח שהוא מחוץ לספרינט, ולא משייכים לו milestone. כל שאר
 השערים (`owner:claude`, Blocked by, WIP) חלים עליו כרגיל.
 
-**הסינון בלוח מקודד בשם.** אין ל-GitHub `milestone:@current`. בסיום ספרינט מעדכנים את פילטר
-התצוגות, בממשק או בפקודה:
+**הסינון בלוח מקודד בשם.** אין ל-GitHub `milestone:@current`. את התצוגות עצמן ("ספרינט נוכחי"
+ו"הכל") יוצר `dev-setup/scripts/board_views.py` בהתקנה, מסוננות לספרינט שהיה נוכחי אז. בסיום
+ספרינט מעדכנים את פילטר התצוגות, בממשק או בפקודה:
 
 ```bash
 gh api graphql -f query='query($o:String!,$n:Int!){user(login:$o){projectV2(number:$n){views(first:20){nodes{id name filter}}}}}' -F o=<owner> -F n=<PROJECT_NUMBER>
