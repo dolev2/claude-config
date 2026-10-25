@@ -30,8 +30,9 @@ Each issue body carries a hidden marker recording the state at the end of the la
 On each run the three states (marker / labels / project) are compared. Whichever of
 labels or project differs from the marker is the side that changed and therefore wins;
 if both changed, the project wins, because that edit was a deliberate human drag while a
-label may have been set by an earlier automated step. The winner is then written to the
-other side and the marker is rewritten.
+label may have been set by an earlier automated step. A board item with no Owner/Status/
+Area at all always takes the labels, even when they match the marker. The winner is then
+written to the other side and the marker is rewritten.
 
 Sprint is never touched here - Dolev sets it on the board and nothing else writes it.
 """
@@ -241,6 +242,20 @@ def project_state(values):
     return state
 
 
+def choose_winner(marker, from_labels, from_project):
+    """Return (state, source) for the side that changed, or (None, None) if in agreement.
+
+    A blank board with a marker that matches the labels means the fields were never
+    written (e.g. an issue created with the marker already in its body). Without the
+    second check such an item would stay blank on the board forever.
+    """
+    if from_project and from_project != marker:
+        return from_project, "project"
+    if from_labels != marker or (from_labels and not from_project):
+        return from_labels, "labels"
+    return None, None
+
+
 def edit_body(number, new_body):
     f = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8")
     f.write(new_body)
@@ -305,11 +320,8 @@ def main():
         from_labels = labels_state(labels)
         from_project = project_state(item["values"])
 
-        if from_project and from_project != marker:
-            winner, source = from_project, "project"
-        elif from_labels != marker:
-            winner, source = from_labels, "labels"
-        else:
+        winner, source = choose_winner(marker, from_labels, from_project)
+        if source is None:
             continue  # already in agreement
 
         if source == "project":

@@ -52,3 +52,18 @@ def test_gate_legacy_section_skips_the_sync_marker():
     gate = load("check_open_questions")
     body = "### שאלות פתוחות\nlegacy question\n\n<!-- crm-sync: owner=dolev -->\n"
     assert gate.open_questions(body) == ["legacy question"]
+
+
+def test_sync_blank_board_takes_the_labels_even_when_the_marker_matches():
+    sync = load("sync_project")
+    state = {"owner": "claude", "status": "explore"}
+    assert sync.choose_winner(state, state, {}) == (state, "labels")
+    assert sync.choose_winner(state, state, state) == (None, None)
+    assert sync.choose_winner({}, {}, {}) == (None, None)
+
+
+def test_sync_board_edit_wins_over_labels():
+    sync = load("sync_project")
+    marker = {"status": "explore"}
+    board = {"status": "done"}
+    assert sync.choose_winner(marker, {"status": "backlog"}, board) == (board, "project")
