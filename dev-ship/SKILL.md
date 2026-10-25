@@ -155,15 +155,25 @@ command is a no-op and that is correct; verify rather than assume.
 git checkout <default> && git pull --ff-only   # skip if <default> is checked out in another worktree
 git fetch --prune
 git status --short --branch     # expect: <default>, in sync with origin/<default>
-git branch -d <branch>          # -d, never -D
 git ls-remote --heads origin <branch>   # expect: no output
 ```
 
-When this ran inside a worktree the session owns, leave that worktree instead of checking out
-`<default>` in it, as the reference doc's "עותק העבודה" says.
+Then delete the local branch. `git branch -d` always refuses after a squash merge (the squash
+commit has a new SHA, so git sees the branch as unmerged), so check the merge yourself and use
+`-D` only when the local tip is exactly what was merged:
 
-If `git branch -d` refuses because the branch looks unmerged, that is normal after a squash
-merge; confirm the PR shows as merged on the remote, and surface it instead of forcing.
+```bash
+MERGED=$(gh pr view <N> --json state,headRefOid --jq 'select(.state=="MERGED") | .headRefOid')
+[ -n "$MERGED" ] && [ "$(git rev-parse <branch>)" = "$MERGED" ] && git branch -D <branch>
+```
+
+If the tips differ, the local branch has commits that were never merged: leave it and say so.
+`git pull` does not delete local branches, and `git fetch --prune` only removes `origin/*`
+refs, so without this step the local branch stays forever.
+
+When this ran inside a worktree the session owns, leave that worktree instead of checking out
+`<default>` in it, as the reference doc's "עותק העבודה" says; delete the branch after the
+worktree is removed (git refuses to delete a branch checked out in a worktree).
 
 ## Reporting back
 

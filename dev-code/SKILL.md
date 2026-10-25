@@ -135,6 +135,14 @@ Only on Dolev's explicit request for that specific issue.
    section first; an unticked box is Dolev's call, not yours.
 6. **Do not delete the remote branch.** The harness may block it; the repo's "Automatically
    delete head branches" setting handles it.
+7. **Do delete the local branch**, which GitHub never touches. Remove its worktree first, then
+   delete it only if its tip is exactly the merged PR head (`git branch -d` always refuses after
+   a squash merge, so this check replaces it):
+   ```bash
+   MERGED=$(gh pr view <N> --json state,headRefOid --jq 'select(.state=="MERGED") | .headRefOid')
+   [ -n "$MERGED" ] && [ "$(git rev-parse <branch>)" = "$MERGED" ] && git branch -D <branch>
+   ```
+   Tips differ: leave the branch and say so in the summary.
 
 ## Golden rules
 
