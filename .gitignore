@@ -1,3 +1,23 @@
+# This repo is ~/.claude, which also holds credentials, session transcripts and every
+# project's memory. So everything is ignored, and only what is listed here is tracked:
+# a new file stays out until it is added to this list.
+/*
+!/.gitignore
+!/.gitattributes
+!/README.md
+!/CLAUDE.md
+!/.github/
+!/skills/
+!/rules/
+
+# Only the repo's own instructions; Claude Code also keeps worktrees and local settings here.
+!/.claude/
+/.claude/*
+!/.claude/CLAUDE.md
+
+# Temporary: the old path of the shared actions, for repos that still call it.
+!/dev-setup/
+
 __pycache__/
 *.pyc
 .pytest_cache/

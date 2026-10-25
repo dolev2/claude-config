@@ -1,7 +1,7 @@
 name: Sync labels ↔ project board
 
 # Keeps issue labels (owner:*, status:*, area:*) and the Project v2 fields in agreement.
-# The sync itself is shared: dolev2/claude-config, dev-setup/actions/project-sync, where
+# The sync itself is shared: dolev2/claude-config, skills/dev-setup/actions/project-sync, where
 # sync_project.py documents the conflict rule and why the scheduled run is needed on top of
 # the issue events. It needs claude-config's Actions access set to "user".
 #
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # @main on purpose: a fix to the sync reaches every repo without touching it.
-      - uses: dolev2/claude-config/dev-setup/actions/project-sync@main
+      - uses: dolev2/claude-config/skills/dev-setup/actions/project-sync@main
         with:
           token: ${{ secrets.PROJECT_TOKEN }}
           project-number: ${{ vars.PROJECT_NUMBER }}
