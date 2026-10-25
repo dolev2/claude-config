@@ -370,6 +370,8 @@ GitHub מציג אותם בכל ריפו של החשבון שאין לו תיק�
 
 **הריפו חייב להישאר ציבורי.** מריפו `.github` פרטי GitHub לא מגיש ברירות מחדל.
 
+**כל תווית שטופס מוסיף חייבת להיות קיימת גם ב-`dolev2/.github`**, ולא רק בריפו שבו נפתח ה-issue (התיעוד של GitHub). כרגע: `task`, `bug`, `owner:claude`, `status:explore`, `status:ready-to-execute`. תווית חדשה בטופס נוצרת שם באותו שינוי: `gh label create <name> -R dolev2/.github`.
+
 בטפסים אין שדה אזור: טופס אחד משרת את כל הריפואים, והאזור הוא תווית `area:*` בלבד. issues ישנים שומרים את הכותרות שנפתחו בהן (סעיף `אזור`, ובריפו business-plan-generator כותרות באנגלית).
 
 `pipeline_info.py` מדווח מאיפה הטופס נקרא, תחת `issue_forms`.
