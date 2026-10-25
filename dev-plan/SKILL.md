@@ -86,6 +86,13 @@ standard template.
    human-written sections byte-identical, write the file with LF line endings, preserve the
    hidden sync marker unchanged, then `gh issue edit <N> --body-file <file>` and verify.
 
+   **Two levels, always.** The plan opens with "בקצרה", written for Dolev's decision: the
+   problem, what will change for the users, what is left out and which issue has it, and what
+   waits for him. Business language only, no file or function names, at most 8 lines. Then
+   "פירוט טכני" for the execution. No sections outside the format; a boundary with another
+   issue is a line in "בקצרה", not a section of its own (reference doc, "סעיף ה-Plan").
+   An issue coming back for a revision whose plan predates this format gets it in the same edit.
+
    **Keep the dependencies true.** If exploration shows the issue needs something another issue
    delivers and no link says so, add the "Blocked by" link and the `#B` on the dependency line
    (both, in the same run). If a listed dependency is not needed, remove both and say why in the
