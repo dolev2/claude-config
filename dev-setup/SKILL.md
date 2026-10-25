@@ -10,6 +10,7 @@ This skill folder is also the shared home of the pipeline:
 - `reference/pipeline.md`: the mechanism every dev-* skill follows (labels, phases, gates).
 - `scripts/pipeline_info.py`: reads everything repo-specific from the repo itself.
 - `scripts/rank_issues.py` (+ `test_rank_issues.py`): the sprint ranking.
+- `scripts/board_views.py` (+ `test_board_views.py`): the board's two views, "ספרינט נוכחי" and "הכל".
 - `scripts/test_open_questions_gate.py`, `scripts/test_project_sync.py`: tests for the two shared
   actions. Run them all with pytest after any change here.
 - `actions/open-questions-gate/`: the open-questions gate, a composite action every repo calls.
@@ -181,8 +182,7 @@ him to paste the token into the chat:
 $t = Read-Host 'Paste token'; gh secret set PROJECT_TOKEN --body $t; Remove-Variable t
 ```
 
-Views (by status, current sprint, all) are made in the board UI; the sprint view filters
-`milestone:"<name>"`, which is updated by hand each sprint (reference doc, "ספרינטים").
+The views come after the milestones, at the end of step 5: the sprint view filters on one.
 
 ## Step 5: Milestones and repo settings
 
@@ -204,6 +204,19 @@ gh repo view --json visibility --jq .visibility                                 
 
 Anything other than `user`, or a public repo: tell Dolev. Without it every gate run fails on
 "Unable to resolve action".
+
+With a board, give it its views now that the milestones exist:
+
+```bash
+python "$HOME/.claude/skills/dev-setup/scripts/board_views.py" --dry-run
+python "$HOME/.claude/skills/dev-setup/scripts/board_views.py"
+```
+
+It turns the board's empty "View 1" into "ספרינט נוכחי" (Status columns, filtered to the
+current sprint) and adds "הכל" (a table). It deletes nothing and skips a view that already
+exists. If it reports that the sprint view has no columns, ask Dolev to choose "Column by:
+Status" in the board; the API cannot set it. Moving the filter to the next sprint stays a
+step at the end of each sprint (reference doc, "ספרינטים").
 
 ## Step 6: CLAUDE.md
 
@@ -227,8 +240,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 Expect `ready: True` and `missing_files: []` (the sync files are allowed missing when there
 is no board). The file changes are uncommitted: offer to ship them with `dev-ship`. Then tell
-Dolev what is left for him: the `PROJECT_TOKEN` secret, the board views, and the first issues
-(`dev-issue`).
+Dolev what is left for him: the `PROJECT_TOKEN` secret and the first issues (`dev-issue`).
 
 ## Golden rules
 
