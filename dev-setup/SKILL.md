@@ -1,6 +1,6 @@
 ---
 name: dev-setup
-description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the owner:/status:/area: labels, the task and bug issue forms, the label↔board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference doc and scripts the other dev-* skills use.
+description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the owner:/status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label↔board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference doc and scripts the other dev-* skills use.
 ---
 
 # Set up the pipeline in a repo
@@ -16,7 +16,10 @@ This skill folder is also the shared home of the pipeline:
   There is one copy of the gate, here; repos do not get a copy of the script.
 - `actions/project-sync/`: the label ↔ board sync, a composite action every repo with a board calls.
   It reads the marker name from `SYNC_MARKER` and the Area options from the board itself.
-- `templates/.github/`: the issue forms, and the two short workflows that call the actions.
+- `templates/.github/`: the two short workflows that call the actions.
+
+The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
+serves them to every repo of the account that has no `.github/ISSUE_TEMPLATE` of its own.
 
 Read `reference/pipeline.md` before step 1, so you know what each piece is for.
 
@@ -92,14 +95,18 @@ Use the `area:*` list Dolev agreed to, not necessarily these four.
 
 ## Step 3: Files
 
+The issue forms are not copied. Check `issue_forms` from step 0:
+
+- `<owner>/.github`: the repo gets the shared forms. Nothing to do.
+- `repo`: the repo has its own `.github/ISSUE_TEMPLATE/`, which hides every shared form, not
+  only the files it overrides. Show Dolev the diff against `dolev2/.github` and offer to
+  delete the local folder.
+- empty (`missing_files` names `.github/ISSUE_TEMPLATE`): there are no forms anywhere. Stop and
+  tell Dolev that `<owner>/.github` is missing.
+
 Copy from `$HOME/.claude/skills/dev-setup/templates/.github/` into the repo's `.github/`,
 only what is missing:
 
-- `ISSUE_TEMPLATE/task.yml`, `bug.yml`, `config.yml`: change the `אזור` dropdown options to
-  the agreed areas (option text = the label suffix, capitalised; an acronym stays upper-case,
-  so `area:seo` is `SEO`). The same option texts go in the board's Area field (step 4); the sync
-  matches labels to them by that rule, so nothing else lists the areas. Adapt the field descriptions to the project: the template speaks of an app
-  ("איפה באפליקציה" in `bug.yml`); a website says "באתר".
 - `workflows/open-questions-gate.yml`: as is. It calls the shared action
   `dolev2/claude-config/dev-setup/actions/open-questions-gate@main`; there is no script to copy.
   A repo that still has `.github/scripts/check_open_questions.py` from an older install: replace
@@ -133,6 +140,10 @@ gh project field-create <number> --owner "$OWNER" --name Area --data-type SINGLE
   --single-select-options "Backend,Frontend,Both,Infra"   # the agreed areas' option texts
 gh variable set PROJECT_NUMBER --body <number>
 ```
+
+The Area option texts follow one rule: the label suffix, capitalised; an acronym stays
+upper-case, so `area:seo` is `SEO`. The sync matches labels to options by that rule, so
+nothing else lists the areas.
 
 `gh project` needs the `project` scope: if it is refused, ask Dolev to run
 `gh auth refresh -s project`, and wait.
