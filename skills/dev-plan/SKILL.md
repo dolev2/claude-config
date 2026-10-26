@@ -55,8 +55,10 @@ keeps them: edit it in the headings it already has.
    situations look alike but are not:
    - **a fresh issue**: no Plan content yet. Plan it from scratch.
    - **an issue coming back from `status:plan-questions`**: the plan exists; revise it in place
-     and add a line to the plan log saying what changed and why, citing the comment. The newest
-     comment says which of two things arrived:
+     and add a line to the plan log saying what changed and why, citing where it came from: the
+     comment, or Dolev's words in chat (quoted, with the date). An objection that arrived in chat
+     is cited from chat; never post a comment just to have something to cite. The newest
+     comment, or the chat, says which of two things arrived:
      - **Dolev answered your questions** and flipped `owner` back to Claude.
      - **Dolev read a plan at `status:waiting-approval` and sent it back** with an objection.
        Treat no part of the plan as settled. Address the objection itself.
@@ -101,6 +103,12 @@ keeps them: edit it in the headings it already has.
    plan log. A business detail a person still owes is an open question, not a link. Where the
    plan assumes something about a blocker that has no plan yet, write the assumption down.
 
+   **Content that belongs to another issue goes into that issue's body, never a comment.** A
+   decision another task relies on is a line in its Plan section, for whoever plans it to build
+   on; a question it must answer is an unticked box in its open-questions section. The
+   human-written sections stay byte-identical. If that issue does not carry `owner:claude`, the
+   edit is a step of this plan, made in Execute once Dolev approves.
+
 6. Set `area:*` if it is missing and the exploration made it obvious (only labels that exist).
 
 7. Hand off, exactly one of two paths:
@@ -116,7 +124,8 @@ keeps them: edit it in the headings it already has.
    Hebrew (numbered, each with the options you see and your recommendation, so Dolev can answer
    with a number), copy the same questions into the open-questions section as **unticked
    checkboxes**, and mark the blocked plan sections as pending. The comment is where Dolev
-   reads; **the section is where the gate reads.**
+   reads; **the section is where the gate reads.** When Dolev is in the chat with you, ask the
+   questions there too; his answer in chat counts like an answer in the issue.
    ```bash
    gh issue comment <N> --body-file <file>
    gh issue edit <N> --add-label "status:plan-questions" --add-label "owner:<human>" \
@@ -133,6 +142,8 @@ keeps them: edit it in the headings it already has.
 - A dependency the plan relies on is a "Blocked by" link, not only a sentence in the plan.
 - Never guess on an unclear issue; take the question path.
 - Never touch an issue that does not carry `owner:claude`.
+- A comment is for questions only (the question path). A change Dolev asks for is an edit to
+  the plan with a line in its log, and content for another issue is an edit to that issue.
 - At most three issues per run.
 - A scan never reaches outside the current milestone; an issue Dolev named may. Never assign
   a milestone yourself.
