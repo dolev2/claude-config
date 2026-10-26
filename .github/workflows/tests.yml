@@ -28,6 +28,6 @@ jobs:
         with:
           python-version: "3.13"
 
-      - run: pip install pytest
+      - run: pip install pytest ruff==0.17.2
 
       - run: python -m pytest skills/dev-setup/scripts

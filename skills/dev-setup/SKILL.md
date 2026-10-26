@@ -10,6 +10,8 @@ This skill folder is also the shared home of the pipeline:
 - `reference/pipeline.md`: the mechanism every dev-* skill follows (labels, phases, gates).
 - `scripts/pipeline_info.py`: reads everything repo-specific from the repo itself.
 - `scripts/rank_issues.py` (+ `test_rank_issues.py`): the sprint ranking.
+- `scripts/lint_check.py` (+ `test_lint_check.py`): which lint settings a repo lacks, or holds
+  in a copy that strays from its template. `pipeline_info.py` shows its list under `lint`.
 - `scripts/board_views.py` (+ `test_board_views.py`): the board's two views, "ספרינט נוכחי" and "הכל".
 - `scripts/test_open_questions_gate.py`, `scripts/test_project_sync.py`: tests for the two shared
   actions. Run them all with pytest after any change here.
@@ -17,7 +19,10 @@ This skill folder is also the shared home of the pipeline:
   There is one copy of the gate, here; repos do not get a copy of the script.
 - `actions/project-sync/`: the label ↔ board sync, a composite action every repo with a board calls.
   It reads the marker name from `SYNC_MARKER` and the Area options from the board itself.
-- `templates/.github/`: the two short workflows that call the actions.
+- `templates/.github/`: the two short workflows that call the actions, and the skeleton of
+  `tests.yml` with its lint steps.
+- `templates/ruff.toml`, `templates/eslint.config.js` (+ `test_lint_templates.py`): the lint
+  settings, following `~/.claude/rules/code-*.md`. Each repo keeps a copy; see step 3.
 - `templates/README.md`: the skeleton of a repo's file guide (step 6).
 
 The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
@@ -31,8 +36,9 @@ Read `reference/pipeline.md` before step 1, so you know what each piece is for.
 python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ```
 
-`ready: True` and `missing_files: []` means it is installed. Say so and stop. Otherwise
-note what is missing; only that gets added. Never overwrite an existing workflow, script or
+`ready: True`, `missing_files: []` and `lint: []` means it is installed. Say so and stop.
+Otherwise note what is missing; only that gets added. A repo that has the pipeline but a
+non-empty `lint` goes through the lint parts of steps 1, 3 and 6 only. Never overwrite an existing workflow, script or
 issue form: show the diff against the template and ask.
 
 ## Step 1: Agree on the setup before writing anything
@@ -48,6 +54,7 @@ Show Dolev, in chat, one list, and wait for his yes:
 | milestones (sprints) | none | the names, in order; titles in English |
 | Project board | a new user project named after the repo, linked to it | create one, reuse one, or skip |
 | CI tests workflow | only if the repo has none | which commands |
+| lint | ruff for Python, eslint for React (JavaScript), by the files in the repo | — |
 | "Automatically delete head branches" | on | — |
 | file guide in `README.md` | only if `missing_files` names it | the description line of a new `README.md` |
 
@@ -127,9 +134,30 @@ and a wrong name makes every issue look unsynced, so the stale board wins over t
 gh variable set SYNC_MARKER --body "<marker>"
 ```
 
-If the repo has no CI and Dolev agreed to one, write `.github/workflows/tests.yml` that runs
-the repo's test commands on `pull_request` and on `push` to the default branch. Base it on the
-stack actually in the repo; do not invent commands.
+If the repo has no CI and Dolev agreed to one, build `.github/workflows/tests.yml` from
+`templates/.github/workflows/tests.yml`: the default branch, the folders, the repo's test
+commands in place of each `# <...>` line, and only the jobs of the sides the repo has. Base it
+on the stack actually in the repo; do not invent commands.
+
+**Lint.** Each repo keeps its own copy of the settings, never a shared one: ruff cannot read
+settings from a URL, and one shared change would turn every repo red at once (reference doc,
+"lint"). What `lint` from step 0 lists:
+
+- `missing ruff.toml`: copy `templates/ruff.toml` to the root. Under its `# --- local ---`
+  line add only what is this repo's own, as dotted keys (`target-version`, `extend-exclude`
+  for migrations, `lint.isort.known-first-party`). Pin `ruff==0.17.2` in the requirements the
+  CI installs.
+- `missing <folder>/eslint.config.js`: copy `templates/eslint.config.js` next to that
+  `package.json`, install the packages its header lists as `devDependencies`, and set
+  `"lint": "eslint ."`. A repo that has `oxlint` drops it and its `.oxlintrc.json`.
+- `differs <path>`: show Dolev the diff of the part above the `--- local ---` line against
+  the template, and replace it only on his yes. Never edit the template to match a copy.
+- `missing .github/workflows/tests.yml`, or `no ... step in` it: add the template's lint
+  steps to the existing jobs, before the tests. An existing workflow: show the diff first.
+
+In a repo with code, lint fails on what is already there. Fixing it belongs to the repo's
+lint task (like charging-crm#66), not to a setup run; if the repo has none, open one with
+`dev-issue` and install the settings there.
 
 ## Step 4: The Project board
 
@@ -252,8 +280,9 @@ guess a file's purpose: read the file, or ask Dolev. Then add one line to `CLAUD
 - מדריך הקבצים (מה כל קובץ ולמה הוא קיים): [README.md](README.md).
 ```
 
-Also make sure it has a tests section with the exact commands; `dev-code` and `dev-ship` run
-whatever it says. If there is none, ask Dolev for them rather than guessing.
+Also make sure it has a tests section with the exact commands, the lint commands among them
+(`ruff check .`, `ruff format --check .`, `npm --prefix <folder> run lint`); `dev-code` and
+`dev-ship` run whatever it says. The lint settings files get a row in the file guide. If there is none, ask Dolev for them rather than guessing.
 
 ## Step 7: Verify and hand over
 
@@ -261,7 +290,7 @@ whatever it says. If there is none, ask Dolev for them rather than guessing.
 python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ```
 
-Expect `ready: True` and `missing_files: []` (the sync files are allowed missing when there
+Expect `ready: True`, `missing_files: []` and `lint: []` (the sync files are allowed missing when there
 is no board). The file changes are uncommitted: offer to ship them with `dev-ship`. Then tell
 Dolev what is left for him: the `PROJECT_TOKEN` secret and the first issues (`dev-issue`).
 
