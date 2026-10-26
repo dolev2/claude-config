@@ -1,6 +1,7 @@
 name: Tests
 
-# Runs the command CLAUDE.md lists under "בדיקות", on every PR and on every push to main.
+# Runs the commands CLAUDE.md lists under "בדיקות" (lint, then the tests), on every PR and
+# on every push to main.
 #
 # This marks a PR red, but does not lock its merge button: the repo is private on a free
 # plan, without branch protection. The merge paths (dev-ship, dev-code Part B) check
@@ -29,5 +30,8 @@ jobs:
           python-version: "3.13"
 
       - run: pip install pytest ruff==0.17.2
+
+      - run: ruff check .
+      - run: ruff format --check .
 
       - run: python -m pytest skills/dev-setup/scripts

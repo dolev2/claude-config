@@ -9,12 +9,27 @@ rank_issues = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rank_issues)
 
 
-def node(number, status="explore", owner="claude", milestone=(1, "W1"), blocked_by=(), blocking=()):
+def node(
+    number,
+    status="explore",
+    owner="claude",
+    milestone=(1, "W1"),
+    blocked_by=(),
+    blocking=(),
+):
     return {
         "number": number,
         "title": f"issue {number}",
-        "labels": {"nodes": [{"name": f"status:{status}"}, {"name": f"owner:{owner}"}, {"name": "task"}]},
-        "milestone": {"number": milestone[0], "title": milestone[1], "state": "OPEN"} if milestone else None,
+        "labels": {
+            "nodes": [
+                {"name": f"status:{status}"},
+                {"name": f"owner:{owner}"},
+                {"name": "task"},
+            ]
+        },
+        "milestone": {"number": milestone[0], "title": milestone[1], "state": "OPEN"}
+        if milestone
+        else None,
         "blockedBy": {"nodes": [{"number": n, "state": s} for n, s in blocked_by]},
         "blocking": {"nodes": [{"number": n, "state": "OPEN"} for n in blocking]},
     }
@@ -30,14 +45,25 @@ def numbers(ranked):
 
 def test_indirect_waiters_count():
     # 1 -> 2 -> 3, and 4 -> 3: issue 1 has two waiting, issue 4 one.
-    ranked = rank_issues.rank(issues(node(4, blocking=[3]), node(3), node(2, blocking=[3]), node(1, blocking=[2])))
+    ranked = rank_issues.rank(
+        issues(
+            node(4, blocking=[3]), node(3), node(2, blocking=[3]), node(1, blocking=[2])
+        )
+    )
     assert numbers(ranked) == [1, 2, 4, 3]
     assert ranked[0].waiting == [2, 3]
 
 
 def test_a_shared_waiter_counts_once():
     # 1 -> 2 -> 4 and 1 -> 3 -> 4: three waiting, not four.
-    ranked = rank_issues.rank(issues(node(1, blocking=[2, 3]), node(2, blocking=[4]), node(3, blocking=[4]), node(4)))
+    ranked = rank_issues.rank(
+        issues(
+            node(1, blocking=[2, 3]),
+            node(2, blocking=[4]),
+            node(3, blocking=[4]),
+            node(4),
+        )
+    )
     assert ranked[0].waiting == [2, 3, 4]
 
 
@@ -55,7 +81,12 @@ def test_a_dependency_cycle_terminates():
 
 def test_status_order_is_the_tier_before_weight():
     ranked = rank_issues.rank(
-        issues(node(1, status="explore", blocking=[2, 3]), node(2), node(3), node(4, status="plan-questions")),
+        issues(
+            node(1, status="explore", blocking=[2, 3]),
+            node(2),
+            node(3),
+            node(4, status="plan-questions"),
+        ),
         statuses=["plan-questions", "explore"],
     )
     assert numbers(ranked) == [4, 1, 2, 3]
@@ -64,7 +95,11 @@ def test_status_order_is_the_tier_before_weight():
 def test_owner_and_status_filter_but_others_still_add_weight():
     # 2 is Dolev's backlog: not a candidate, but it still waits on 1.
     ranked = rank_issues.rank(
-        issues(node(1, blocking=[2]), node(2, status="backlog", owner="dolev"), node(3, status="in-review")),
+        issues(
+            node(1, blocking=[2]),
+            node(2, status="backlog", owner="dolev"),
+            node(3, status="in-review"),
+        ),
         statuses=["explore"],
         owner="claude",
     )
@@ -79,7 +114,11 @@ def test_only_open_blockers_block():
 
 
 def test_current_sprint_is_the_lowest_open_milestone_with_open_issues():
-    nodes = [node(1, milestone=(3, "W2")), node(2, milestone=(2, "W1")), node(3, milestone=None)]
+    nodes = [
+        node(1, milestone=(3, "W2")),
+        node(2, milestone=(2, "W1")),
+        node(3, milestone=None),
+    ]
     assert rank_issues.current_sprint(nodes) == "W1"
 
 

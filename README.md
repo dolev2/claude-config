@@ -18,8 +18,9 @@
 | `README.md` | הקובץ הזה | מסביר מה כל קובץ |
 | `.gitignore` | חוסם הכל ומתיר רק רשימה | ב-`~/.claude` יש גם פרטי התחברות, תמלולים וזיכרון. קובץ חדש נכנס לריפו רק אחרי שמוסיפים אותו לרשימה |
 | `.gitattributes` | סיומות שורה LF בכל checkout | התבניות מועתקות לריפואים אחרים כמו שהן |
+| `ruff.toml` | הגדרות ruff לסקריפטים של הריפו: עותק של `skills/dev-setup/templates/ruff.toml` | הריפו שמגדיר את ה-lint לכל הריפואים עומד בו בעצמו |
 | `.claude/CLAUDE.md` | ההנחיות לעבודה על הריפו הזה | נטען רק בסשן שעובד בתוך הריפו |
-| `.github/workflows/tests.yml` | CI: הבדיקות על כל PR ועל כל push ל-`main` | אותה פקודה כמו בסעיף "בדיקות" למטה |
+| `.github/workflows/tests.yml` | CI: lint והבדיקות על כל PR ועל כל push ל-`main` | אותן פקודות כמו בסעיף "בדיקות" ב-`.claude/CLAUDE.md` |
 | `.github/workflows/open-questions-gate.yml`, `sync-project.yml` | הצינור של הריפו הזה עצמו | המשימות של הריפו מנוהלות באותו צינור כמו כל פרויקט |
 
 ### `rules/`: כללים לכל הפרויקטים

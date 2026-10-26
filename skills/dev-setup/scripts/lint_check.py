@@ -1,14 +1,15 @@
 """Reports what a repo is missing of the lint setup that dev-setup installs.
 
-Run on its own from anywhere inside a repo (stdlib only), or through pipeline_info.py, which
-shows the same list under `lint`:
+Run on its own from anywhere inside a repo (stdlib only), or through pipeline_info.py,
+which shows the same list under `lint`:
 
     python "$HOME/.claude/skills/dev-setup/scripts/lint_check.py"
 
 Each repo keeps its own copy of the lint settings, copied from ../templates (decided in
-claude-config#21: ruff cannot read settings from a URL, and a shared copy would turn every
-repo red at once). A copy is identical to its template above the "--- local ---" line, and
-that is what is compared here; below the line each repo writes what is its own.
+claude-config#21: ruff cannot read settings from a URL, and a shared copy would turn
+every repo red at once). A copy is identical to its template above the "--- local ---"
+line, and that is what is compared here; below the line each repo writes what is its
+own.
 
 What is checked, by the files git tracks:
 - a .py file        -> ruff.toml at the root, and `ruff check` in the tests workflow
@@ -26,7 +27,7 @@ WORKFLOW = ".github/workflows/tests.yml"
 
 
 def shared_part(text: str) -> str | None:
-    """The text above the local marker line, with LF line endings; None without a marker."""
+    """The text above the local marker line, LF line endings; None without a marker."""
     lines = text.replace("\r\n", "\n").split("\n")
     for index, line in enumerate(lines):
         if line.strip() in LOCAL_MARKERS:
@@ -35,7 +36,7 @@ def shared_part(text: str) -> str | None:
 
 
 def config_gap(root: Path, path: str, template: str) -> str | None:
-    """A gap line when the copy is absent ("missing") or strays from the template ("differs")."""
+    """A gap line: the copy is "missing", or "differs" from its template."""
     copy = root / path
     if not copy.exists():
         return f"missing {path}"
@@ -45,8 +46,12 @@ def config_gap(root: Path, path: str, template: str) -> str | None:
 
 
 def react_folders(files: list[str]) -> list[str]:
-    """The folders, relative to the root, of the package.json nearest to each .jsx file."""
-    packages = {str(PurePosixPath(f).parent) for f in files if PurePosixPath(f).name == "package.json"}
+    """The folders, from the root, of the package.json nearest to each .jsx file."""
+    packages = {
+        str(PurePosixPath(f).parent)
+        for f in files
+        if PurePosixPath(f).name == "package.json"
+    }
     folders = set()
     for f in files:
         if not f.endswith(".jsx"):
@@ -59,7 +64,7 @@ def react_folders(files: list[str]) -> list[str]:
 
 
 def workflow_gaps(root: Path, has_python: bool, has_react: bool) -> list[str]:
-    """What the tests workflow lacks: the file itself, or a lint step for a language in use."""
+    """What the tests workflow lacks: the file, or a lint step for a language in use."""
     workflow = root / WORKFLOW
     if not workflow.exists():
         return [f"missing {WORKFLOW}"]
@@ -73,7 +78,7 @@ def workflow_gaps(root: Path, has_python: bool, has_react: bool) -> list[str]:
 
 
 def lint_gaps(root: Path, files: list[str]) -> list[str]:
-    """Every gap in the repo's lint setup, given the files git tracks; empty when complete."""
+    """Every gap in the repo's lint setup, given the files git tracks; empty if none."""
     has_python = any(f.endswith(".py") for f in files)
     folders = react_folders(files)
     gaps = [config_gap(root, "ruff.toml", "ruff.toml")] if has_python else []
@@ -88,7 +93,11 @@ def lint_gaps(root: Path, files: list[str]) -> list[str]:
 def tracked_files(root: Path) -> list[str]:
     """The paths git tracks under root, with forward slashes."""
     result = subprocess.run(
-        ["git", "-C", str(root), "ls-files"], capture_output=True, text=True, encoding="utf-8", check=False
+        ["git", "-C", str(root), "ls-files"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
     )
     return result.stdout.splitlines() if result.returncode == 0 else []
 
@@ -96,7 +105,12 @@ def tracked_files(root: Path) -> list[str]:
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=False)
+    top = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     if top.returncode != 0:
         sys.exit("Not inside a git repo.")
     repo = Path(top.stdout.strip())

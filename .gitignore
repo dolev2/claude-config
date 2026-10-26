@@ -5,6 +5,7 @@
 !/.gitignore
 !/.gitattributes
 !/README.md
+!/ruff.toml
 !/CLAUDE.md
 !/.github/
 !/skills/
