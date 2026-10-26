@@ -14,7 +14,8 @@ given.
 The rule is in ../reference/pipeline.md, section "סדר בתוך הספרינט". In short:
 an issue's weight is the number of open issues in the sprint that wait on it through
 "Blocked by" links, directly or through other issues. Order: the order of --status (the
-tier), then weight, highest first, then issue number. Blocked issues stay in the list,
+tier), then `process` and `bug` issues before the rest, then weight, highest first,
+then issue number. Blocked issues stay in the list,
 because planning ignores blockers; Execute skips them itself.
 """
 
@@ -24,6 +25,8 @@ import subprocess
 import sys
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+
+FIRST_KINDS = ["process", "bug"]
 
 QUERY = """
 query($owner: String!, $name: String!, $after: String) {
@@ -51,6 +54,7 @@ class Issue:
     status: str | None
     owner: str | None
     milestone: str | None
+    kind: str | None
     open_blockers: list[int]
     blocking: list[int]
     waiting: list[int] = field(default_factory=list)
@@ -76,6 +80,7 @@ def parse_issue(node: dict) -> Issue:
         status=label_value(labels, "status:"),
         owner=label_value(labels, "owner:"),
         milestone=milestone["title"] if milestone else None,
+        kind=next((kind for kind in FIRST_KINDS if kind in labels), None),
         open_blockers=sorted(
             b["number"] for b in node["blockedBy"]["nodes"] if b["state"] == "OPEN"
         ),
@@ -118,7 +123,10 @@ def with_waiting(issues: list[Issue]) -> list[Issue]:
 def rank(
     issues: list[Issue], statuses: list[str] | None = None, owner: str | None = None
 ) -> list[Issue]:
-    """Filters to the given owner and statuses, then orders by tier, weight, number."""
+    """Filters to the given owner and statuses.
+
+    Orders by tier, then kind (process/bug first), then weight, then number.
+    """
     with_waiting(issues)
     picked = [
         issue
@@ -127,9 +135,9 @@ def rank(
         and (not statuses or issue.status in statuses)
     ]
 
-    def key(issue: Issue) -> tuple[int, int, int]:
+    def key(issue: Issue) -> tuple[int, int, int, int]:
         tier = statuses.index(issue.status) if statuses else 0
-        return (tier, -len(issue.waiting), issue.number)
+        return (tier, 0 if issue.kind else 1, -len(issue.waiting), issue.number)
 
     return sorted(picked, key=key)
 
@@ -214,6 +222,7 @@ def main(argv: list[str] | None = None) -> None:
                 "title": i.title,
                 "status": i.status,
                 "owner": i.owner,
+                "kind": i.kind,
                 "waiting": i.waiting,
                 "open_blockers": i.open_blockers,
             }
@@ -235,7 +244,8 @@ def main(argv: list[str] | None = None) -> None:
         )
         print(
             f"#{i.number:<4} {len(i.waiting):>2} waiting  "
-            f"{i.status or '-':<18} {i.owner or '-':<7} {i.title}{blocked}"
+            f"{i.status or '-':<18} {i.owner or '-':<7} {i.kind or '-':<7} "
+            f"{i.title}{blocked}"
         )
 
 

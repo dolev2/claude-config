@@ -49,6 +49,7 @@ REQUIRED_LABELS = [
     "status:backlog",
     "task",
     "bug",
+    "process",
 ]
 FORM_FILES = [
     ".github/ISSUE_TEMPLATE/task.yml",

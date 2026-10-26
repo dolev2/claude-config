@@ -127,6 +127,8 @@ keeps them: edit it in the headings it already has.
    edit is a step of this plan, made in Execute once Dolev approves.
 
 6. Set `area:*` if it is missing and the exploration made it obvious (only labels that exist).
+   Likewise add `process` when the issue turns out to be work-management, rules or
+   claude-config alignment work (reference doc, vocabulary table). Leave its milestone as it is.
 
 7. Hand off, exactly one of two paths:
 

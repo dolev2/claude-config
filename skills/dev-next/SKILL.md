@@ -22,8 +22,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ## Read first
 
 **`$HOME/.claude/skills/dev-setup/reference/pipeline.md`**, section "סדר בתוך הספרינט": the
-ranking rule and why this skill ranks by weight alone, while the phases put the status tier
-first.
+ranking rule and why this skill ranks without status tiers, while the phases put the status
+tier first. In both, `process` and `bug` issues come before the rest, then weight decides.
 
 ## Steps
 
@@ -31,7 +31,8 @@ first.
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py"
    ```
-   Each row is `#N`, how many sprint issues wait on it, its status, its owner, its title, and
+   `process` and `bug` issues come first, each group by weight. Each row is `#N`, how many
+   sprint issues wait on it, its status, its owner, its kind (`process`, `bug` or `-`), its title, and
    `BLOCKED by #…` if it has an open blocker. The first line names the sprint.
 
 2. Pick the first row, top down, that:
@@ -59,8 +60,8 @@ first.
    | `done` | human | his explicit request to merge (dev-ship) |
    | `backlog` | human | handing it over: writing it up and moving it to `status:explore` + `owner:claude` |
 
-   Before routing, tell Dolev in Hebrew, in one or two lines, which issue you picked and why: how many
-   issues wait on it, and the next one or two below it. Then invoke the phase skill with the
+   Before routing, tell Dolev in Hebrew, in one or two lines, which issue you picked and why: whether it
+   is a `process` or `bug` issue, how many issues wait on it, and the next one or two below it. Then invoke the phase skill with the
    issue number. Both phase skills take the issue Dolev named over their own ranking, and
    still apply every gate of their own (the WIP gate, the blocked check, the sprint).
 
