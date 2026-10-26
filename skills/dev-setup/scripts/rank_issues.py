@@ -1,12 +1,15 @@
 """Ranks the open issues of the current sprint by how much work waits on each one.
 
-Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a logged-in `gh`:
+Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a logged-in
+`gh`:
 
-    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py"                        # the whole sprint
-    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --owner claude --status explore
-    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --repo owner/name --json
+    S="$HOME/.claude/skills/dev-setup/scripts"
+    python "$S/rank_issues.py"                     # the whole sprint
+    python "$S/rank_issues.py" --owner claude --status explore
+    python "$S/rank_issues.py" --repo owner/name --json
 
-The repo is the one `gh repo view` sees from the current directory, unless --repo is given.
+The repo is the one `gh repo view` sees from the current directory, unless --repo is
+given.
 
 The rule is in ../reference/pipeline.md, section "סדר בתוך הספרינט". In short:
 an issue's weight is the number of open issues in the sprint that wait on it through
@@ -73,8 +76,12 @@ def parse_issue(node: dict) -> Issue:
         status=label_value(labels, "status:"),
         owner=label_value(labels, "owner:"),
         milestone=milestone["title"] if milestone else None,
-        open_blockers=sorted(b["number"] for b in node["blockedBy"]["nodes"] if b["state"] == "OPEN"),
-        blocking=sorted(b["number"] for b in node["blocking"]["nodes"] if b["state"] == "OPEN"),
+        open_blockers=sorted(
+            b["number"] for b in node["blockedBy"]["nodes"] if b["state"] == "OPEN"
+        ),
+        blocking=sorted(
+            b["number"] for b in node["blocking"]["nodes"] if b["state"] == "OPEN"
+        ),
     )
 
 
@@ -91,7 +98,8 @@ def current_sprint(nodes: list[dict]) -> str | None:
 def with_waiting(issues: list[Issue]) -> list[Issue]:
     """Fills in `waiting`: every sprint issue that waits on this one, directly or not.
 
-    Only edges between the given issues count, so work outside the sprint adds no weight.
+    Only edges between the given issues count, so work outside the sprint adds no
+    weight.
     """
     by_number = {issue.number: issue for issue in issues}
     for issue in issues:
@@ -107,13 +115,16 @@ def with_waiting(issues: list[Issue]) -> list[Issue]:
     return issues
 
 
-def rank(issues: list[Issue], statuses: list[str] | None = None, owner: str | None = None) -> list[Issue]:
+def rank(
+    issues: list[Issue], statuses: list[str] | None = None, owner: str | None = None
+) -> list[Issue]:
     """Filters to the given owner and statuses, then orders by tier, weight, number."""
     with_waiting(issues)
     picked = [
         issue
         for issue in issues
-        if (owner is None or issue.owner == owner) and (not statuses or issue.status in statuses)
+        if (owner is None or issue.owner == owner)
+        and (not statuses or issue.status in statuses)
     ]
 
     def key(issue: Issue) -> tuple[int, int, int]:
@@ -127,10 +138,16 @@ def current_repo() -> str:
     """owner/name of the repo `gh` resolves from the current directory."""
     result = subprocess.run(
         ["gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"],
-        capture_output=True, text=True, encoding="utf-8", check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
     )
     if result.returncode != 0 or not result.stdout.strip():
-        sys.exit(f"Not inside a GitHub repo that gh can see; pass --repo owner/name.\n{result.stderr}")
+        sys.exit(
+            "Not inside a GitHub repo that gh can see; pass --repo owner/name.\n"
+            + result.stderr
+        )
     return result.stdout.strip()
 
 
@@ -139,10 +156,22 @@ def fetch_nodes(repo: str) -> list[dict]:
     nodes: list[dict] = []
     after = None
     while True:
-        args = ["gh", "api", "graphql", "-f", f"query={QUERY}", "-F", f"owner={owner}", "-F", f"name={name}"]
+        args = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={QUERY}",
+            "-F",
+            f"owner={owner}",
+            "-F",
+            f"name={name}",
+        ]
         if after:
             args += ["-F", f"after={after}"]
-        result = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", check=False)
+        result = subprocess.run(
+            args, capture_output=True, text=True, encoding="utf-8", check=False
+        )
         if result.returncode != 0:
             sys.exit(f"gh api graphql failed:\n{result.stderr}")
         page = json.loads(result.stdout)["data"]["repository"]["issues"]
@@ -154,10 +183,16 @@ def fetch_nodes(repo: str) -> list[dict]:
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--status", action="append", help="status label without the prefix; repeat, in tier order")
+    parser.add_argument(
+        "--status",
+        action="append",
+        help="status label without the prefix; repeat, in tier order",
+    )
     parser.add_argument("--owner", help="owner label without the prefix, e.g. claude")
     parser.add_argument("--milestone", help="defaults to the current sprint")
-    parser.add_argument("--repo", help="owner/name; defaults to the repo of the current directory")
+    parser.add_argument(
+        "--repo", help="owner/name; defaults to the repo of the current directory"
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -165,7 +200,11 @@ def main(argv: list[str] | None = None) -> None:
     sprint = args.milestone or current_sprint(nodes)
     if sprint is None:
         sys.exit("No open milestone has open issues.")
-    issues = [parse_issue(n) for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint]
+    issues = [
+        parse_issue(n)
+        for n in nodes
+        if n["milestone"] and n["milestone"]["title"] == sprint
+    ]
     ranked = rank(issues, args.status, args.owner)
 
     if args.json:
@@ -180,15 +219,24 @@ def main(argv: list[str] | None = None) -> None:
             }
             for i in ranked
         ]
-        print(json.dumps({"sprint": sprint, "issues": rows}, ensure_ascii=False, indent=2))
+        print(
+            json.dumps({"sprint": sprint, "issues": rows}, ensure_ascii=False, indent=2)
+        )
         return
 
     print(f"Sprint: {sprint}")
     if not ranked:
         print("(no matching issues)")
     for i in ranked:
-        blocked = f"  BLOCKED by {', '.join(f'#{n}' for n in i.open_blockers)}" if i.blocked else ""
-        print(f"#{i.number:<4} {len(i.waiting):>2} waiting  {i.status or '-':<18} {i.owner or '-':<7} {i.title}{blocked}")
+        blocked = (
+            f"  BLOCKED by {', '.join(f'#{n}' for n in i.open_blockers)}"
+            if i.blocked
+            else ""
+        )
+        print(
+            f"#{i.number:<4} {len(i.waiting):>2} waiting  "
+            f"{i.status or '-':<18} {i.owner or '-':<7} {i.title}{blocked}"
+        )
 
 
 if __name__ == "__main__":

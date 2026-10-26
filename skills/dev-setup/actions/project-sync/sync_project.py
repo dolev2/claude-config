@@ -2,8 +2,8 @@
 
 Why this exists
 ---------------
-Claude reads and writes issue labels only (see reference/pipeline.md in the dev-setup skill); the
-Project board is the human view. This script keeps the two in agreement.
+Claude reads and writes issue labels only (see reference/pipeline.md in the dev-setup
+skill); the Project board is the human view. This script keeps the two in agreement.
 
 Why it is a poll and not a webhook
 ----------------------------------
@@ -14,12 +14,12 @@ produces no event. The scheduled run is what notices it.
 Why the project is read from the issue side
 -------------------------------------------
 `projectV2.items` returns an empty connection for this project even though the items
-demonstrably exist (verified 2026-09-23: items added through the API were invisible there
-for over ten minutes, on a freshly created project too, while a project populated through
-the web UI reported its items correctly). `issue.projectItems` returns the same items and
-their field values immediately, so that is the read path used here. Do not "simplify" this
-back to iterating `projectV2.items` — it silently yields no state, which this script would
-read as "the board was never touched".
+demonstrably exist (verified 2026-09-23: items added through the API were invisible
+there for over ten minutes, on a freshly created project too, while a project populated
+through the web UI reported its items correctly). `issue.projectItems` returns the same
+items and their field values immediately, so that is the read path used here. Do not
+"simplify" this back to iterating `projectV2.items` — it silently yields no state, which
+this script would read as "the board was never touched".
 
 Conflict resolution
 -------------------
@@ -37,20 +37,20 @@ written to the other side and the marker is rewritten.
 The sprint view
 ---------------
 The board's "ספרינט נוכחי" view filters on one milestone by name: GitHub has no
-`milestone:@current`. Each run moves that filter to the current sprint, the pipeline's rule
-(the lowest-numbered open milestone with open issues), so the board follows the sprint the
-moment its last issue closes (claude-config #17). Only the milestone term of that one view's
-filter changes; a view without one, and every other view, are left alone. When no milestone
-has open issues the filter stays where it is. A failure here is printed and the issue sync
-goes on.
+`milestone:@current`. Each run moves that filter to the current sprint, the pipeline's
+rule (the lowest-numbered open milestone with open issues), so the board follows the
+sprint the moment its last issue closes (claude-config #17). Only the milestone term of
+that one view's filter changes; a view without one, and every other view, are left
+alone. When no milestone has open issues the filter stays where it is. A failure here is
+printed and the issue sync goes on.
 
 One copy for every repo
 -----------------------
-This file lives in dolev2/claude-config, skills/dev-setup/actions/project-sync, and every repo's
-sync-project.yml calls it (claude-config #3; the per-repo copies had drifted). So nothing
-repo-specific is written here: the marker name comes from SYNC_MARKER, the Area options are
-read from the board, and the one Status option whose name differs between boards is
-resolved against the board too (resolve_options).
+This file lives in dolev2/claude-config, skills/dev-setup/actions/project-sync, and
+every repo's sync-project.yml calls it (claude-config #3; the per-repo copies had
+drifted). So nothing repo-specific is written here: the marker name comes from
+SYNC_MARKER, the Area options are read from the board, and the one Status option whose
+name differs between boards is resolved against the board too (resolve_options).
 """
 
 import json
@@ -64,9 +64,9 @@ REPO = os.environ["GITHUB_REPOSITORY"]
 PROJECT_OWNER = os.environ.get("PROJECT_OWNER") or REPO.split("/", 1)[0]
 
 # The marker name differs per repo (crm-sync, wayout-sync, ...). Never rename it once
-# issues carry it: a body whose marker is not found looks like it was never synced. There is
-# no default on purpose - a wrong default makes every issue look unsynced, and the stale
-# board then wins over the labels (check_environment stops the run instead).
+# issues carry it: a body whose marker is not found looks like it was never synced.
+# There is no default on purpose - a wrong default makes every issue look unsynced, and
+# the stale board then wins over the labels (check_environment stops the run instead).
 SYNC_MARKER = os.environ.get("SYNC_MARKER", "").strip()
 MARKER_RE = re.compile(r"<!--\s*" + re.escape(SYNC_MARKER) + r":(.*?)-->", re.S)
 
@@ -84,12 +84,14 @@ STATUS_OPTIONS = {
     "done": "Done",
     "backlog": "Backlog",
 }
-# Older boards (CRM, business-plan-generator, OSEA) name this option "Plan questions (Dolev)".
-# Rewriting a board's options clears the value on every card, so the script adapts instead.
+# Older boards (CRM, business-plan-generator, OSEA) name this option
+# "Plan questions (Dolev)". Rewriting a board's options clears the value on every card,
+# so the script adapts instead.
 STATUS_ALIASES = {"plan-questions": ("Plan questions", "Plan questions (Dolev)")}
-# Filled from the board by resolve_options: each repo has its own areas, and the option name
-# is the label suffix with its own capitalisation (area:seo <-> SEO), a dev-setup convention.
-AREA_OPTIONS = {}
+# Filled from the board by resolve_options: each repo has its own areas, and the option
+# name is the label suffix with its own capitalisation (area:seo <-> SEO), a dev-setup
+# convention.
+AREA_OPTIONS: dict[str, str] = {}
 
 DIMENSIONS = [
     ("owner", "Owner", OWNER_OPTIONS),
@@ -98,22 +100,31 @@ DIMENSIONS = [
 ]
 
 
-def gh(*args):
+def gh(*args: str) -> str:
+    """Run the gh CLI and return its stdout; raise RuntimeError when it fails."""
     p = subprocess.run(
-        ["gh", *args], capture_output=True, text=True, encoding="utf-8", errors="replace"
+        ["gh", *args],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if p.returncode != 0:
-        raise RuntimeError("gh %s failed: %s" % (" ".join(args[:3]), p.stderr.strip()))
+        raise RuntimeError(
+            "gh {} failed: {}".format(" ".join(args[:3]), p.stderr.strip())
+        )
     return p.stdout
 
 
-def graphql(query, **variables):
+def graphql(query: str, **variables: str | int) -> dict:
+    """Run a GraphQL query through gh and return the parsed response."""
     args = ["api", "graphql", "-f", "query=" + query]
     for k, v in variables.items():
-        # -F turns anything that looks like a number into one, and an option id can be all
-        # digits ("84237580"), which GitHub then rejects as a String!. Only ints get -F.
+        # -F turns anything that looks like a number into one, and an option id can be
+        # all digits ("84237580"), which GitHub then rejects as a String!.
+        # Only ints get -F.
         flag = "-F" if isinstance(v, int) else "-f"
-        args += [flag, "%s=%s" % (k, v)]
+        args += [flag, f"{k}={v}"]
     out = json.loads(gh(*args))
     # A GraphQL error can arrive with a 200, which gh reports as success. Without this
     # check a failed mutation looks like a successful sync.
@@ -169,8 +180,11 @@ query($owner:String!, $repo:String!, $after:String) {
 """
 
 
-def load_project(number):
-    data = graphql(PROJECT_QUERY, owner=PROJECT_OWNER, number=number)["data"]["user"]["projectV2"]
+def load_project(number: int) -> tuple[str, dict, dict, list]:
+    """(project id, fields by name, board item per issue number, views) of the board."""
+    data = graphql(PROJECT_QUERY, owner=PROJECT_OWNER, number=number)["data"]["user"][
+        "projectV2"
+    ]
     fields = {f["name"]: f for f in data["fields"]["nodes"] if f.get("name")}
 
     repo_owner, repo_name = REPO.split("/", 1)
@@ -212,7 +226,7 @@ mutation($project:ID!, $item:ID!, $field:ID!, $option:String!) {
 """
 
 
-def resolve_options(fields):
+def resolve_options(fields: dict) -> None:
     """Fit AREA_OPTIONS and STATUS_OPTIONS to this board's actual option names."""
     area = fields.get("Area") or {}
     AREA_OPTIONS.clear()
@@ -222,21 +236,34 @@ def resolve_options(fields):
         STATUS_OPTIONS[suffix] = next((a for a in aliases if a in names), aliases[0])
 
 
-def doubled_dimensions(labels):
+def doubled_dimensions(labels: list[str]) -> list[str]:
     """The dimensions an issue carries more than one label of, e.g. two status:* labels.
 
-    Which one is meant cannot be told, and either guess would be written to the board and
-    into the marker as if it were the truth (OSEA, 2026-10-24).
+    Which one is meant cannot be told, and either guess would be written to the board
+    and into the marker as if it were the truth (OSEA, 2026-10-24).
     """
-    return [k for k, _, _ in DIMENSIONS if sum(l.startswith(k + ":") for l in labels) > 1]
+    return [
+        key
+        for key, _, _ in DIMENSIONS
+        if sum(label.startswith(key + ":") for label in labels) > 1
+    ]
 
 
-def set_field(project_id, item_id, field, option_name):
-    option = next((o for o in field.get("options", []) if o["name"] == option_name), None)
+def set_field(project_id: str, item_id: str, field: dict, option_name: str) -> None:
+    """Set a single-select field on a board item; skip an option the field lacks."""
+    option = next(
+        (o for o in field.get("options", []) if o["name"] == option_name), None
+    )
     if option is None:
-        print("  ! field %r has no option %r - skipped" % (field["name"], option_name))
+        print(f"  ! field {field['name']!r} has no option {option_name!r} - skipped")
         return
-    graphql(SET_SELECT, project=project_id, item=item_id, field=field["id"], option=option["id"])
+    graphql(
+        SET_SELECT,
+        project=project_id,
+        item=item_id,
+        field=field["id"],
+        option=option["id"],
+    )
 
 
 # ------------------------------------------------------------------------ sprint view
@@ -251,33 +278,41 @@ mutation($view:ID!, $filter:String!) {
 """
 
 
-def current_sprint(milestones):
-    """The lowest-numbered open milestone with open issues, as pipeline_info.py reads it."""
-    with_issues = sorted((m for m in milestones if m["open_issues"] > 0), key=lambda m: m["number"])
+def current_sprint(milestones: list[dict]) -> str | None:
+    """The lowest-numbered open milestone with open issues, as pipeline_info.py does."""
+    with_issues = sorted(
+        (m for m in milestones if m["open_issues"] > 0), key=lambda m: m["number"]
+    )
     return with_issues[0]["title"] if with_issues else None
 
 
-def sprint_view_change(views, sprint):
+def sprint_view_change(views: list[dict], sprint: str | None) -> tuple | None:
     """(view id, new filter) when the sprint view shows another milestone, else None."""
     view = next((v for v in views if v["name"] == SPRINT_VIEW), None)
     if not sprint or not view or not MILESTONE_TERM.search(view["filter"] or ""):
         return None
-    wanted = MILESTONE_TERM.sub(lambda _: 'milestone:"%s"' % sprint, view["filter"], count=1)
+    wanted = MILESTONE_TERM.sub(
+        lambda _: f'milestone:"{sprint}"', view["filter"], count=1
+    )
     return (view["id"], wanted) if wanted != view["filter"] else None
 
 
-def sync_sprint_view(views):
-    milestones = json.loads(gh("api", "repos/%s/milestones?state=open&per_page=100" % REPO))
+def sync_sprint_view(views: list[dict]) -> None:
+    """Point the sprint view's milestone filter at the current sprint."""
+    milestones = json.loads(
+        gh("api", f"repos/{REPO}/milestones?state=open&per_page=100")
+    )
     change = sprint_view_change(views, current_sprint(milestones))
     if change:
         graphql(UPDATE_VIEW_FILTER, view=change[0], filter=change[1])
-        print("sprint view -> %s" % change[1])
+        print(f"sprint view -> {change[1]}")
 
 
 # ---------------------------------------------------------------------------- issues
 
 
-def read_marker(body):
+def read_marker(body: str | None) -> dict[str, str]:
+    """The state recorded in the body's sync marker; empty without a marker."""
     m = MARKER_RE.search(body or "")
     if not m:
         return {}
@@ -289,16 +324,18 @@ def read_marker(body):
     return out
 
 
-def write_marker(body, state):
-    payload = " ".join("%s=%s" % (k, v) for k, v in sorted(state.items()) if v)
-    marker = "<!-- %s: %s -->" % (SYNC_MARKER, payload)
+def write_marker(body: str | None, state: dict[str, str]) -> str:
+    """The body with its sync marker set to state, added at the end when missing."""
+    payload = " ".join(f"{k}={v}" for k, v in sorted(state.items()) if v)
+    marker = f"<!-- {SYNC_MARKER}: {payload} -->"
     body = body or ""
     if MARKER_RE.search(body):
         return MARKER_RE.sub(marker, body)
     return body.rstrip() + "\n\n" + marker + "\n"
 
 
-def labels_state(labels):
+def labels_state(labels: list[str]) -> dict[str, str]:
+    """The owner/status/area state the labels express."""
     state = {}
     for key, _field, options in DIMENSIONS:
         for name in labels:
@@ -310,7 +347,8 @@ def labels_state(labels):
     return state
 
 
-def project_state(values):
+def project_state(values: dict[str, str]) -> dict[str, str]:
+    """The owner/status/area state the board item's field values express."""
     state = {}
     for key, field_name, options in DIMENSIONS:
         shown = values.get(field_name)
@@ -323,8 +361,12 @@ def project_state(values):
     return state
 
 
-def choose_winner(marker, from_labels, from_project):
-    """Return (state, source) for the side that changed, or (None, None) if in agreement.
+def choose_winner(
+    marker: dict[str, str],
+    from_labels: dict[str, str],
+    from_project: dict[str, str],
+) -> tuple[dict[str, str] | None, str | None]:
+    """(state, source) for the side that changed, or (None, None) if in agreement.
 
     A blank board with a marker that matches the labels means the fields were never
     written (e.g. an issue created with the marker already in its body). Without the
@@ -337,8 +379,11 @@ def choose_winner(marker, from_labels, from_project):
     return None, None
 
 
-def edit_body(number, new_body):
-    f = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8", newline="\n")
+def edit_body(number: int, new_body: str) -> None:
+    """Replace the issue's body, through a file so line endings survive."""
+    f = tempfile.NamedTemporaryFile(
+        "w", suffix=".md", delete=False, encoding="utf-8", newline="\n"
+    )
     f.write(new_body)
     f.close()
     try:
@@ -347,7 +392,7 @@ def edit_body(number, new_body):
         os.unlink(f.name)
 
 
-def check_environment():
+def check_environment() -> None:
     """Fail loudly on a missing token or project number.
 
     `gh secret set` cannot tell an empty paste from a real one, so a secret that was
@@ -357,22 +402,26 @@ def check_environment():
     """
     if not os.environ.get("GH_TOKEN", "").strip():
         raise SystemExit(
-            "GH_TOKEN is empty. The PROJECT_TOKEN secret is unset or was stored empty.\n"
+            "GH_TOKEN is empty. "
+            "The PROJECT_TOKEN secret is unset or was stored empty.\n"
             "Set it again with:  $t = Read-Host 'Paste token'; "
             "gh secret set PROJECT_TOKEN --body $t; Remove-Variable t"
         )
     if not os.environ.get("PROJECT_NUMBER", "").strip():
         raise SystemExit(
-            "PROJECT_NUMBER is empty. Set the repository variable:  gh variable set PROJECT_NUMBER --body 1"
+            "PROJECT_NUMBER is empty. Set the repository variable:  "
+            "gh variable set PROJECT_NUMBER --body 1"
         )
     if not SYNC_MARKER:
         raise SystemExit(
-            "SYNC_MARKER is empty. Set it to the marker name the issue bodies already carry\n"
+            "SYNC_MARKER is empty. "
+            "Set it to the marker name the issue bodies already carry\n"
             "(e.g. crm-sync):  gh variable set SYNC_MARKER --body <name>"
         )
 
 
-def main():
+def main() -> None:
+    """Sync every pipeline issue (or ISSUE_NUMBER alone) between labels and board."""
     check_environment()
     number = int(os.environ["PROJECT_NUMBER"])
     only = os.environ.get("ISSUE_NUMBER", "").strip()
@@ -382,12 +431,20 @@ def main():
     try:
         sync_sprint_view(views)
     except RuntimeError as e:
-        print("! sprint view not updated: %s" % e)
+        print(f"! sprint view not updated: {e}")
 
     issues = json.loads(
         gh(
-            "issue", "list", "--repo", REPO, "--state", "all", "--limit", "500",
-            "--json", "number,body,labels,id,state",
+            "issue",
+            "list",
+            "--repo",
+            REPO,
+            "--state",
+            "all",
+            "--limit",
+            "500",
+            "--json",
+            "number,body,labels,id,state",
         )
     )
     if only:
@@ -395,21 +452,24 @@ def main():
 
     for issue in issues:
         num = issue["number"]
-        labels = [l["name"] for l in issue["labels"]]
-        if not any(l.startswith("owner:") or l.startswith("status:") for l in labels):
+        labels = [label["name"] for label in issue["labels"]]
+        if not any(label.startswith(("owner:", "status:")) for label in labels):
             continue  # not a pipeline issue - leave it alone
         if issue["state"].upper() == "CLOSED" and "status:done" not in labels:
             continue  # closed as not-planned - it does not belong on the board
         doubled = doubled_dimensions(labels)
         if doubled:
-            print("! #%s has more than one %s label - skipped" % (num, "/".join(doubled)))
+            print(f"! #{num} has more than one {'/'.join(doubled)} label - skipped")
             continue
 
         item = project_items.get(num)
         if item is None:
             res = graphql(ADD_ITEM, project=project_id, content=issue["id"])
-            item = {"id": res["data"]["addProjectV2ItemById"]["item"]["id"], "values": {}}
-            print("#%s added to the project" % num)
+            item = {
+                "id": res["data"]["addProjectV2ItemById"]["item"]["id"],
+                "values": {},
+            }
+            print(f"#{num} added to the project")
 
         marker = read_marker(issue["body"])
         from_labels = labels_state(labels)
@@ -420,18 +480,22 @@ def main():
             continue  # already in agreement
 
         if source == "project":
-            keep = [l for l in labels if not any(l.startswith(k + ":") for k, _, _ in DIMENSIONS)]
-            desired = keep + ["%s:%s" % (k, v) for k, v in winner.items()]
+            keep = [
+                label
+                for label in labels
+                if not any(label.startswith(k + ":") for k, _, _ in DIMENSIONS)
+            ]
+            desired = keep + [f"{k}:{v}" for k, v in winner.items()]
             args = []
-            for l in desired:
-                if l not in labels:
-                    args += ["--add-label", l]
-            for l in labels:
-                if l not in desired:
-                    args += ["--remove-label", l]
+            for label in desired:
+                if label not in labels:
+                    args += ["--add-label", label]
+            for label in labels:
+                if label not in desired:
+                    args += ["--remove-label", label]
             if args:
                 gh("issue", "edit", str(num), "--repo", REPO, *args)
-                print("#%s labels <- project: %s" % (num, winner))
+                print(f"#{num} labels <- project: {winner}")
         else:
             for key, field_name, options in DIMENSIONS:
                 suffix = winner.get(key)
@@ -439,10 +503,10 @@ def main():
                     continue
                 field = fields.get(field_name)
                 if field is None:
-                    print("  ! the project has no field %r - skipped" % field_name)
+                    print(f"  ! the project has no field {field_name!r} - skipped")
                     continue
                 set_field(project_id, item["id"], field, options[suffix])
-            print("#%s project <- labels: %s" % (num, winner))
+            print(f"#{num} project <- labels: {winner}")
 
         new_body = write_marker(issue["body"], winner)
         if new_body != (issue["body"] or ""):

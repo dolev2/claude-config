@@ -1,4 +1,4 @@
-"""lint_check.py: which lint settings a repo is missing, and when a copy strays from its template."""
+"""lint_check.py: the lint settings a repo is missing, and copies that stray."""
 
 import importlib.util
 import shutil
@@ -14,7 +14,7 @@ LINT_STEPS = "      - run: ruff check .\n      - run: npm --prefix frontend run 
 
 
 def make_repo(root: Path, files: dict[str, str]) -> list[str]:
-    """Write the files under root and return their paths, as git ls-files would list them."""
+    """Write the files under root; return their paths as git ls-files lists them."""
     for name, text in files.items():
         (root / name).parent.mkdir(parents=True, exist_ok=True)
         (root / name).write_text(text, encoding="utf-8", newline="")
@@ -34,31 +34,54 @@ def test_no_code_needs_no_lint(tmp_path):
 
 def test_python_without_settings(tmp_path):
     files = make_repo(tmp_path, {"app/main.py": "", WORKFLOW: "jobs: {}\n"})
-    assert lint_check.lint_gaps(tmp_path, files) == ["missing ruff.toml", f"no ruff step in {WORKFLOW}"]
+    assert lint_check.lint_gaps(tmp_path, files) == [
+        "missing ruff.toml",
+        f"no ruff step in {WORKFLOW}",
+    ]
 
 
 def test_python_without_a_workflow(tmp_path):
-    files = make_repo(tmp_path, {"app/main.py": ""}) + [copy_template(tmp_path, "ruff.toml", "ruff.toml")]
+    files = make_repo(tmp_path, {"app/main.py": ""}) + [
+        copy_template(tmp_path, "ruff.toml", "ruff.toml")
+    ]
     assert lint_check.lint_gaps(tmp_path, files) == [f"missing {WORKFLOW}"]
 
 
 def test_complete_setup_with_its_own_local_block(tmp_path):
-    files = make_repo(tmp_path, {"app/main.py": "", "frontend/package.json": "{}", "frontend/src/App.jsx": "", WORKFLOW: LINT_STEPS})
-    files += [copy_template(tmp_path, "ruff.toml", "ruff.toml"), copy_template(tmp_path, "eslint.config.js", "frontend/eslint.config.js")]
+    files = make_repo(
+        tmp_path,
+        {
+            "app/main.py": "",
+            "frontend/package.json": "{}",
+            "frontend/src/App.jsx": "",
+            WORKFLOW: LINT_STEPS,
+        },
+    )
+    files += [
+        copy_template(tmp_path, "ruff.toml", "ruff.toml"),
+        copy_template(tmp_path, "eslint.config.js", "frontend/eslint.config.js"),
+    ]
     with (tmp_path / "ruff.toml").open("a", encoding="utf-8") as f:
         f.write('target-version = "py313"\n')
     assert lint_check.lint_gaps(tmp_path, files) == []
 
 
 def test_a_changed_rule_above_the_marker_differs(tmp_path):
-    files = make_repo(tmp_path, {"app/main.py": "", WORKFLOW: LINT_STEPS}) + [copy_template(tmp_path, "ruff.toml", "ruff.toml")]
+    files = make_repo(tmp_path, {"app/main.py": "", WORKFLOW: LINT_STEPS}) + [
+        copy_template(tmp_path, "ruff.toml", "ruff.toml")
+    ]
     text = (tmp_path / "ruff.toml").read_text(encoding="utf-8")
-    (tmp_path / "ruff.toml").write_text(text.replace("line-length = 88", "line-length = 100"), encoding="utf-8")
+    (tmp_path / "ruff.toml").write_text(
+        text.replace("line-length = 88", "line-length = 100"), encoding="utf-8"
+    )
     assert lint_check.lint_gaps(tmp_path, files) == ["differs ruff.toml"]
 
 
 def test_a_copy_without_the_marker_differs(tmp_path):
-    files = make_repo(tmp_path, {"app/main.py": "", "ruff.toml": "line-length = 88\n", WORKFLOW: LINT_STEPS})
+    files = make_repo(
+        tmp_path,
+        {"app/main.py": "", "ruff.toml": "line-length = 88\n", WORKFLOW: LINT_STEPS},
+    )
     assert lint_check.lint_gaps(tmp_path, files) == ["differs ruff.toml"]
 
 
@@ -70,12 +93,25 @@ def test_crlf_line_endings_are_not_a_difference(tmp_path):
 
 
 def test_eslint_lives_next_to_the_nearest_package_json(tmp_path):
-    files = make_repo(tmp_path, {"web/package.json": "{}", "web/src/pages/Home.jsx": "", WORKFLOW: "jobs: {}\n"})
+    files = make_repo(
+        tmp_path,
+        {
+            "web/package.json": "{}",
+            "web/src/pages/Home.jsx": "",
+            WORKFLOW: "jobs: {}\n",
+        },
+    )
     files.append(copy_template(tmp_path, "eslint.config.js", "web/eslint.config.js"))
     (tmp_path / "web/eslint.config.js").write_text(
-        (tmp_path / "web/eslint.config.js").read_text(encoding="utf-8").replace('"dist/", ', ""), encoding="utf-8"
+        (tmp_path / "web/eslint.config.js")
+        .read_text(encoding="utf-8")
+        .replace('"dist/", ', ""),
+        encoding="utf-8",
     )
-    assert lint_check.lint_gaps(tmp_path, files) == ["differs web/eslint.config.js", f"no lint step in {WORKFLOW}"]
+    assert lint_check.lint_gaps(tmp_path, files) == [
+        "differs web/eslint.config.js",
+        f"no lint step in {WORKFLOW}",
+    ]
 
 
 def test_jsx_without_a_package_json_looks_at_the_root(tmp_path):

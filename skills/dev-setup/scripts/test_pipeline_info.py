@@ -11,14 +11,16 @@ spec.loader.exec_module(pipeline_info)
 
 
 def fake_gh(monkeypatch, *, defaults=True, root=None):
-    """Answer the gh/git calls main() makes; record the paths asked of the contents API."""
+    """Answer the gh/git calls main() makes; record the paths asked of contents API."""
     asked = []
 
     def run(*args):
         if args[:2] == ("git", "rev-parse"):
             return (0, str(root)) if root else (1, "")
         if args[:3] == ("gh", "repo", "view"):
-            return 0, json.dumps({"nameWithOwner": "acme/widgets", "defaultBranchRef": {"name": "main"}})
+            return 0, json.dumps(
+                {"nameWithOwner": "acme/widgets", "defaultBranchRef": {"name": "main"}}
+            )
         if args[:3] == ("gh", "label", "list"):
             return 0, "\n".join(pipeline_info.REQUIRED_LABELS + ["owner:dana"])
         if args[:2] == ("gh", "api") and "/contents/" in args[2]:
@@ -95,12 +97,19 @@ def test_no_readme_is_no_file_guide(tmp_path):
 
 
 def test_readme_without_the_heading_is_no_file_guide(tmp_path):
-    write_readme(tmp_path, "# widgets\n\nSee the file guide below, and the מדריך קבצים too.\n")
+    write_readme(
+        tmp_path, "# widgets\n\nSee the file guide below, and the מדריך קבצים too.\n"
+    )
     assert not pipeline_info.has_file_guide(tmp_path)
 
 
 def test_file_guide_heading_in_hebrew_or_english_at_any_level(tmp_path):
-    for heading in ("## מדריך קבצים", "# File guide", "### file Guide: root", "#### מדריך קבצים לריפו"):
+    for heading in (
+        "## מדריך קבצים",
+        "# File guide",
+        "### file Guide: root",
+        "#### מדריך קבצים לריפו",
+    ):
         write_readme(tmp_path, f"# widgets\n\n{heading}\n| a | b |\n")
         assert pipeline_info.has_file_guide(tmp_path), heading
 

@@ -43,8 +43,11 @@
 ## בדיקות
 מהשורש של הריפו (או של ה-worktree). חייבות לעבור לפני PR:
 ```
+ruff check .
+ruff format --check .
 python -m pytest skills/dev-setup/scripts
 ```
-בסביבה נקייה: קודם `pip install pytest ruff==0.17.2` (הבדיקות של תבנית ruff מריצות אותו).
+בסביבה נקייה: קודם `pip install pytest ruff==0.17.2`.
+ההגדרות ב-`ruff.toml` שבשורש: עותק של `skills/dev-setup/templates/ruff.toml`, כמו בכל ריפו. שינוי בכללים נכנס לתבנית, ואז לעותק.
 
-ב-CI: `.github/workflows/tests.yml` מריץ את אותה פקודה על כל PR ועל כל push ל-`main`.
+ב-CI: `.github/workflows/tests.yml` מריץ את אותן פקודות על כל PR ועל כל push ל-`main`.

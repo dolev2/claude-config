@@ -1,6 +1,7 @@
-"""templates/ruff.toml: clean code passes, and each rule from code-python.md fails what it should.
+"""templates/ruff.toml: clean code passes, and each code-python.md rule fails its case.
 
-Runs the real ruff (pip install ruff==0.17.2, as CI does) on small files in a temporary folder.
+Runs the real ruff (pip install ruff==0.17.2, as CI does) on small files in a temporary
+folder.
 """
 
 import json
@@ -13,7 +14,7 @@ import pytest
 
 TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
 
-CLEAN = '''from fastapi import APIRouter, Depends, Query
+CLEAN = """from fastapi import APIRouter, Depends, Query
 
 router = APIRouter()
 
@@ -25,12 +26,16 @@ def current_user() -> str:
 @router.get("/deals")
 def list_deals(user: str = Depends(current_user), limit: int = Query(10)) -> list[str]:
     return [user] * limit
-'''
+"""
 
 
 def ruff(*args: str, cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "ruff", *args, "--no-cache"], cwd=cwd, capture_output=True, text=True, check=False
+        [sys.executable, "-m", "ruff", *args, "--no-cache"],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
 
@@ -56,14 +61,21 @@ def test_clean_fastapi_route_passes(repo):
 
 
 def test_tests_need_no_type_hints(repo):
-    assert codes(repo, "def test_x(tmp_path):\n    assert tmp_path\n", "tests/test_x.py") == set()
+    assert (
+        codes(repo, "def test_x(tmp_path):\n    assert tmp_path\n", "tests/test_x.py")
+        == set()
+    )
 
 
 @pytest.mark.parametrize(
     ("source", "code"),
     [
         ("def f() -> None:\n    import os\n\n    print(os.sep)\n", "PLC0415"),
-        ("def f() -> None:\n    try:\n        print(1)\n    except Exception:\n        pass\n", "BLE001"),
+        (
+            "def f() -> None:\n    try:\n        print(1)\n"
+            "    except Exception:\n        pass\n",
+            "BLE001",
+        ),
         ("def f(x):\n    return x\n", "ANN001"),
         ("import os\n", "F401"),
         ("def BadName() -> None:\n    pass\n", "N802"),
@@ -85,7 +97,10 @@ def test_local_block_is_honoured(repo):
     assert codes(repo, "import os\n") == set()
 
 
-@pytest.mark.parametrize(("template", "marker"), [("ruff.toml", "# --- local ---"), ("eslint.config.js", "// --- local ---")])
+@pytest.mark.parametrize(
+    ("template", "marker"),
+    [("ruff.toml", "# --- local ---"), ("eslint.config.js", "// --- local ---")],
+)
 def test_one_local_marker_line(template, marker):
     lines = (TEMPLATES / template).read_text(encoding="utf-8").splitlines()
     assert [line.strip() for line in lines].count(marker) == 1
