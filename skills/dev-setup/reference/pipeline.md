@@ -30,11 +30,11 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 | כותרות גוף ה-issue | הטפסים `task.yml` ו-`bug.yml`, מהמקום ש-`issue_forms` מראה (בדרך כלל `dolev2/.github`), ורמת הכותרות של ה-issues הקיימים | `מה רוצים`; issue ישן יכול להיות באנגלית (`Goal`) |
 | שורת התלות ותתי-כותרות ה-Plan | `CLAUDE.md` של ה-repo; בלי הנחיה שם, הנוסח העברי במסמך הזה | `תלוי ב:` / `Depends on:` |
 | תוויות `area:*` | התוויות שקיימות ב-repo | |
-| נהלי הקוד | `~/.claude/rules/` (כללי, Python, React), לכל ה-repos | גודל קובץ, שכבות, design tokens |
+| נהלי הקוד, git והסביבה | `~/.claude/rules/` (כללי, Python, React, git, Windows), לכל ה-repos | גודל קובץ, שכבות, rebase לפני בדיקות |
 | מה כל קובץ ולמה הוא קיים | סעיף "מדריך קבצים" ב-`README.md` של ה-repo | `dev-setup` יוצר אותו, וכל שינוי שמוסיף קובץ מעדכן אותו |
 | סוגי issues נוספים | תוויות שקיימות ב-repo, למשל `decision` | |
 
-**`CLAUDE.md` של repo מכיל רק את מה שספציפי לו.** נהלי הקוד הכלליים נטענים בכל סשן מ-`~/.claude/rules/`, ולכן לא חוזרים עליהם שם: ה-repo כותב רק איפה הדברים אצלו (השכבות, מקור ה-tokens, המילון).
+**`CLAUDE.md` של repo מכיל רק את מה שספציפי לו.** נהלי הקוד, git והסביבה נטענים בכל סשן מ-`~/.claude/rules/`, ולכן לא חוזרים עליהם שם: ה-repo כותב רק איפה הדברים אצלו (השכבות, מקור ה-tokens, המילון).
 
 **הכותרות והנוסחים העבריים במסמך הזה הם של התבנית הסטנדרטית.** repo שהתבניות שלו באנגלית,
 או שה-issues שלו כתובים ב-`##` ולא ב-`###`, נכתב בכותרות וברמה שלו. בכל מקום שכתוב כאן "מה
@@ -471,9 +471,8 @@ gh issue list --state open --label "status:in-review" --json number --jq length
 
 ## עותק העבודה: לא מחליפים branch בתיקייה המשותפת
 
-התיקייה הראשית של ה-repo (`C:\dev\CRM` וכו') היא עותק משותף: דולב וסשנים אחרים עובדים בה,
-לפעמים באמצע branch אחר עם שינויים שלא נשמרו. `git checkout` שם גורר שינויים לא-מקומטים בשקט
-ל-branch הלא נכון. לכן:
+הכלל עצמו, ולמה, ב-`~/.claude/rules/git.md`: לא מחליפים branch בתיקייה הראשית של ה-repo, כי
+היא עותק משותף. כאן רק הנוהל של כל שלב:
 
 - **Plan לא עושה checkout בכלל.** הוא יוצר את ה-branch ישירות ב-remote וקורא את הקוד העדכני
   משם:
@@ -504,8 +503,7 @@ test -z "$(git status --porcelain)" || { echo "working tree not clean — stoppi
 git checkout <default>
 ```
 
-שתי הפקודות, בסדר הזה. `git diff` לא רואה קבצים חדשים, ולכן `git status`. פלט לא ריק: **לעצור
-ולדווח, לא לנקות**.
+שתי הפקודות, בסדר הזה. פלט לא ריק: **לעצור ולדווח, לא לנקות** (`rules/git.md`).
 
 ## מוסכמת branches ו-PR
 
@@ -524,13 +522,10 @@ git fetch origin <default>
 git rebase origin/<default>
 ```
 
-**קודם rebase, אחר כך הבדיקות.** כך מתגלה התנגשות סמויה: שני שינויים שמתמזגים בלי התנגשות
-טקסטואלית, אבל יחד הקוד שבור.
+הכללים (קודם rebase ואז הבדיקות, rebase ולא merge, חיתוך מ-`origin/<default>`,
+`--force-with-lease`, התנגשות היא עצירה) ב-`~/.claude/rules/git.md`. מה שהצינור מוסיף עליהם:
 
-- **rebase ולא merge.** ההיסטוריה לינארית וה-PRים נסגרים ב-squash.
-- **branch נחתך מ-`origin/<default>`** אחרי fetch, לא מה-branch המקומי.
-- **branch שכבר נדחף מתעדכן ב-`git push --force-with-lease`**, לעולם לא `--force`.
-- **התנגשות היא עצירה, לא משימה.** `git rebase --abort`, השארת `owner:claude`, תגובה עם רשימת
+- **התנגשות בשלב Code:** `git rebase --abort`, השארת `owner:claude`, תגובה ב-issue עם רשימת
   הקבצים, ואין PR.
 
 בשלב ה-Merge: `gh pr view <N> --json mergeable,mergeStateStatus`. כל תשובה שאינה `MERGEABLE`:
