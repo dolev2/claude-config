@@ -97,6 +97,23 @@ keeps them: edit it in the headings it already has.
    issue is a line in "בקצרה", not a section of its own (reference doc, "סעיף ה-Plan").
    An issue coming back for a revision whose plan predates this format gets it in the same edit.
 
+   **Check the scope before writing the plan.** Three questions, every issue:
+   - **Too big?** If the issue holds more than one PR that can be reviewed on its own, propose a
+     split in chat: each sub-issue's title, one line of scope, and the blockers between them.
+     On Dolev's OK, split it with `dev-issue`, which holds the split rules; then plan the parts
+     (they count toward the three per run). Size is the reason to split, not dependency: parts
+     that depend on each other stay separate issues joined by "Blocked by".
+   - **No work of its own?** An issue that is only a question or a decision for a single task,
+     with no PR of its own, moves into that task: an unticked box in its open-questions section,
+     or a line in its Plan. Then it is closed with a one-line pointer. A blocker that has work of
+     its own stays a separate issue and stays a "Blocked by" link; blocking alone is never a
+     reason to merge.
+   - **Part of it belongs elsewhere?** Work an existing issue already owns is a line in "מה לא
+     כלול, ואיפה כן", not part of this plan.
+
+   A change to an issue that does not carry `owner:claude` is a step of this plan, made in
+   Execute once Dolev approves.
+
    **Keep the dependencies true.** If exploration shows the issue needs something another issue
    delivers and no link says so, add the "Blocked by" link and the `#B` on the dependency line
    (both, in the same run). If a listed dependency is not needed, remove both and say why in the
@@ -145,6 +162,8 @@ keeps them: edit it in the headings it already has.
 - A comment is for questions only (the question path). A change Dolev asks for is an edit to
   the plan with a line in its log, and content for another issue is an edit to that issue.
 - At most three issues per run.
+- Split for size, link for dependency. An issue merges into another only when it has no PR of
+  its own.
 - A scan never reaches outside the current milestone; an issue Dolev named may. Never assign
   a milestone yourself.
 - Never resolve an open question by picking the option that is easiest to implement. Ask,
