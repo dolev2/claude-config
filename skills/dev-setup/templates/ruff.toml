@@ -1,0 +1,46 @@
+# Ruff for Python, from the dev-setup template
+# (dolev2/claude-config, skills/dev-setup/templates/ruff.toml).
+# The rules follow ~/.claude/rules/code-python.md wherever a machine can check them.
+#
+# Install: ruff==0.17.2, pinned in the repo's requirements.
+# Run:     ruff check .   and   ruff format --check .
+#
+# Everything above the "--- local ---" line is identical in every repo: dev-setup reports a
+# copy whose upper part differs from the template. Change the template, not the copy.
+# Keys are dotted (lint.select = ...), never under a [table] header, so the local block at
+# the end can add keys without landing inside a table opened above it.
+
+line-length = 88
+
+# An explicit list, not ruff's default set, which changes between versions.
+#   E, W   pycodestyle             F    pyflakes (unused imports and names)
+#   I      import order            B    bugbear (likely bugs)
+#   UP     modern syntax           N    names (snake_case, PascalCase, UPPER_CASE)
+#   ANN    type hints in every signature
+#   BLE    no `except Exception` that swallows the error (E722 covers a bare `except:`)
+#   PLC0415  imports at the top of the file; one inside a function needs a noqa and a reason
+# No D (docstrings): enforced in review, in code that is touched (charging-crm#56, question 5).
+lint.select = ["E", "W", "F", "I", "B", "UP", "N", "ANN", "BLE", "PLC0415"]
+
+# pytest fixtures arrive as arguments without type hints.
+lint.per-file-ignores = { "**/tests/**" = ["ANN"], "**/test_*.py" = ["ANN"] }
+
+# FastAPI's Depends(), Query() and the rest are meant to be called as parameter defaults.
+lint.flake8-bugbear.extend-immutable-calls = [
+    "fastapi.Body",
+    "fastapi.Cookie",
+    "fastapi.Depends",
+    "fastapi.File",
+    "fastapi.Form",
+    "fastapi.Header",
+    "fastapi.Path",
+    "fastapi.Query",
+    "fastapi.Security",
+]
+
+# --- local ---
+# What is specific to this repo, as dotted keys. For example:
+# target-version = "py313"
+# extend-exclude = ["backend/migrations"]
+# lint.isort.known-first-party = ["app"]
+# lint.extend-per-file-ignores = { "backend/manage.py" = ["E402"] }

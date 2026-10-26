@@ -48,10 +48,13 @@
 | `scripts/pipeline_info.py` | קורא מהריפו כל מה שמשתנה בין ריפואים | כל סקיל מתחיל בו, כדי ששום דבר לא יוגדר ידנית |
 | `scripts/rank_issues.py` | מדרג את ה-issues בספרינט לפי כמה עבודה מחכה להם | הסדר של `dev-next`, `dev-plan` ו-`dev-code` |
 | `scripts/board_views.py` | יוצר את שתי התצוגות של הלוח, "ספרינט נוכחי" ו"הכל" | התקנה של לוח בלי עבודה ידנית |
+| `scripts/lint_check.py` | מדווח על הגדרות lint שחסרות בריפו, או ששונות מהתבנית | כדי שהעותקים בכל ריפו לא יסטו בשקט |
 | `scripts/test_*.py` | הבדיקות של הסקריפטים ושל שני ה-actions | רצות ב-CI |
 | `actions/open-questions-gate/` | שער השאלות הפתוחות, action שכל ריפו קורא לו | עותק אחד לכל הריפואים |
 | `actions/project-sync/` | הסנכרון בין התוויות ללוח, action שכל ריפו עם לוח קורא לו | עותק אחד לכל הריפואים |
-| `templates/.github/workflows/` | שני ה-workflows הקצרים שקוראים ל-actions | מועתקים לכל ריפו בהתקנה |
+| `templates/.github/workflows/` | שני ה-workflows הקצרים שקוראים ל-actions, ושלד של `tests.yml` עם צעדי lint | מועתקים לכל ריפו בהתקנה |
+| `templates/ruff.toml` | הגדרות ruff ל-Python, לפי נהלי הקוד | כל ריפו עם Python מקבל עותק |
+| `templates/eslint.config.js` | הגדרות eslint ל-React ב-JavaScript, לפי נהלי הקוד | כל ריפו עם React מקבל עותק |
 | `templates/README.md` | שלד של מדריך קבצים | `dev-setup` יוצר ממנו מדריך בריפו שאין לו |
 
 טפסי ה-issues לא כאן: הם בריפו הציבורי [dolev2/.github](https://github.com/dolev2/.github).

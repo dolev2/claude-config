@@ -1,0 +1,62 @@
+name: Tests
+
+# From the dev-setup template (dolev2/claude-config). Runs lint and the commands CLAUDE.md
+# lists under its tests section, on every PR and on every push to the default branch.
+#
+# Fill in before committing: the default branch, the folders, and each `# <...>` line.
+# Delete the job of a side the repo does not have.
+#
+# Lint runs before the tests in the same job: it is fast and fails first, and the job's
+# install step already serves both.
+#
+# This marks a PR red, but does not lock its merge button: a private repo on a free plan has
+# no branch protection. The merge paths (dev-ship, dev-code Part B) check `gh pr checks`.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      # ruff is pinned in the requirements, next to the test packages.
+      - run: pip install -r backend/requirements.txt
+
+      - run: ruff check .
+      - run: ruff format --check .
+
+      # <the backend test command from CLAUDE.md, e.g. python -m pytest backend/tests>
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --prefix frontend
+
+      - run: npm --prefix frontend run lint
+
+      # <the frontend test command from CLAUDE.md, e.g. npm --prefix frontend test>

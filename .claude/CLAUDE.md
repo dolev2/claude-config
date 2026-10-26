@@ -45,6 +45,6 @@
 ```
 python -m pytest skills/dev-setup/scripts
 ```
-בסביבה נקייה: קודם `pip install pytest`.
+בסביבה נקייה: קודם `pip install pytest ruff==0.17.2` (הבדיקות של תבנית ruff מריצות אותו).
 
 ב-CI: `.github/workflows/tests.yml` מריץ את אותה פקודה על כל PR ועל כל push ל-`main`.
