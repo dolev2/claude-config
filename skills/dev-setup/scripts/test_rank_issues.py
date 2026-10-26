@@ -16,17 +16,13 @@ def node(
     milestone=(1, "W1"),
     blocked_by=(),
     blocking=(),
+    labels=("task",),
 ):
+    names = [f"status:{status}", f"owner:{owner}", *labels]
     return {
         "number": number,
         "title": f"issue {number}",
-        "labels": {
-            "nodes": [
-                {"name": f"status:{status}"},
-                {"name": f"owner:{owner}"},
-                {"name": "task"},
-            ]
-        },
+        "labels": {"nodes": [{"name": name} for name in names]},
         "milestone": {"number": milestone[0], "title": milestone[1], "state": "OPEN"}
         if milestone
         else None,
@@ -105,6 +101,61 @@ def test_owner_and_status_filter_but_others_still_add_weight():
     )
     assert numbers(ranked) == [1]
     assert ranked[0].waiting == [2]
+
+
+def test_process_comes_before_weight():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, blocking=[2, 3, 4]),
+            node(2),
+            node(3),
+            node(4),
+            node(5, labels=("task", "process")),
+        )
+    )
+    assert numbers(ranked)[:2] == [5, 1]
+    assert ranked[0].kind == "process"
+
+
+def test_bug_comes_before_weight_like_process():
+    ranked = rank_issues.rank(
+        issues(node(1, blocking=[2]), node(2), node(3, labels=("bug",)))
+    )
+    assert numbers(ranked) == [3, 1, 2]
+    assert ranked[0].kind == "bug"
+
+
+def test_weight_orders_within_process():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, labels=("process",)),
+            node(2, labels=("process",), blocking=[3]),
+            node(3),
+        )
+    )
+    assert numbers(ranked) == [2, 1, 3]
+
+
+def test_status_tier_stays_above_process():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, status="explore", labels=("process",)),
+            node(2, status="plan-questions"),
+        ),
+        statuses=["plan-questions", "explore"],
+    )
+    assert numbers(ranked) == [2, 1]
+
+
+def test_a_blocked_process_issue_stays_listed_and_flagged():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, labels=("process",), blocked_by=[(2, "OPEN")]),
+            node(2, blocking=[1]),
+        )
+    )
+    assert numbers(ranked) == [1, 2]
+    assert ranked[0].blocked
 
 
 def test_only_open_blockers_block():

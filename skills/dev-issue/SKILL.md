@@ -103,10 +103,13 @@ question in the body, not a "Blocked by" link to some other issue.
 | kind | labels | milestone |
 |---|---|---|
 | task | `task`, `area:*`, `owner:claude`, `status:explore` | the sprint it belongs to |
-| bug | `bug`, `area:*`, `owner:claude`, `status:ready-to-execute` | the related task's |
+| bug | `bug`, `area:*`, `owner:claude`, `status:ready-to-execute` | always `current_sprint` |
+| process (work management, rules, aligning with claude-config) | `process` added to the task's labels | always `current_sprint` |
 | backlog idea | `task`, `area:*`, `owner:<human>`, `status:backlog` | none |
 | umbrella (parent split into sub-issues) | keeps `task`, `area:*`; becomes `owner:<human>`, `status:backlog` | unchanged |
 | decision (only if the repo has a `decision` label) | `decision`, `owner:<human>`, no `status:*` | the sprint that waits on it |
+
+Add `process` to any task that is about how the work is managed rather than the project itself: the pipeline, compliance with the rules in `~/.claude/rules/`, or aligning the repo with claude-config (a lint drift, a missing file guide). The definition is in the reference doc's vocabulary table. Not in claude-config itself, where every issue is one.
 
 Use only `area:*` labels that exist in the repo (`area_labels`). A decision issue's body has
 only the goal and context sections: it is closed by Dolev's decision in a comment, not by a PR.
@@ -120,7 +123,8 @@ gh issue create --title "<title>" --body-file <file> \
 ```
 
 The milestone is Dolev's call: use the one he named or the one the parent carries, and ask
-when neither exists. If the repo numbers its tasks in titles, sub-issues continue the
+when neither exists. The exception is a bug or a `process` issue: it always goes into
+`current_sprint`, without asking (agreed in claude-config #38). If the repo numbers its tasks in titles, sub-issues continue the
 parent's numbering (`13א.`, `13ב.`), so the board reads in order.
 
 ## Step 4: Link
@@ -156,4 +160,5 @@ Report each new issue to Dolev, in Hebrew, as a link with its title, milestone a
 - Never write or edit the sync marker.
 - Never invent business data in an issue; missing data is an unticked open question.
 - Every `תלוי ב:` entry has a matching "Blocked by" link, and the other way round.
-- Never assign a milestone on your own judgement.
+- Never assign a milestone on your own judgement, except `current_sprint` for a bug or a
+  `process` issue.
