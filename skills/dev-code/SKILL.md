@@ -99,17 +99,26 @@ working rules and its test commands.
     the failing job with a link. A red PR is never handed to Dolev for review. No checks
     reported: say so.
 
-11. Hand off:
+11. **Start the app for review**, from the worktree, as the reference doc's "הרמה לסקירה"
+    says: the command, ports and URL come from the repo's `CLAUDE.md`. Its outcome is one of:
+    a link to the PR's app (started now, or already running from this branch), a link with a
+    warning that names who holds the port, or a line saying why there is no link (the repo has
+    no app, the session is not on Dolev's machine, the app failed to start). A failure here
+    does not block the hand-off: say so in it.
+
+12. Hand off:
     ```bash
     gh issue edit <N> --add-label "status:in-review" --add-label "owner:<human>" \
                       --remove-label "status:ready-to-execute" --remove-label "owner:claude"
     # (or --remove-label "status:needs-repair" on a repair round)
     ```
     Then comment on the issue, in Hebrew, with what changed, what you tested, and anything Dolev
-    should look at. On a repair round, say which of his points each change addresses.
+    should look at. On a repair round, say which of his points each change addresses. The
+    outcome of step 11 goes into that comment and into the chat message, with one line on what
+    to open in it.
 
-12. Leave the worktree: if it is clean, remove it (`git worktree remove <path>`, or
-    `ExitWorktree`); if it is not, stop and report what is left. The branch stays on the remote.
+13. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
+    `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.
 
 ## Gate: not a Claude action
 
@@ -135,7 +144,8 @@ Only on Dolev's explicit request for that specific issue.
    section first; an unticked box is Dolev's call, not yours.
 6. **Do not delete the remote branch.** The harness may block it; the repo's "Automatically
    delete head branches" setting handles it.
-7. **Do delete the local branch**, which GitHub never touches. Remove its worktree first, then
+7. **Do delete the local branch**, which GitHub never touches. Stop its review app first, if
+   one runs (reference doc, "הרמה לסקירה"), then remove its worktree, then
    delete it only if its tip is exactly the merged PR head (`git branch -d` always refuses after
    a squash merge, so this check replaces it):
    ```bash
