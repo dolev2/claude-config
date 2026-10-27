@@ -325,3 +325,15 @@ def test_without_quiet_mode_the_output_is_unchanged(monkeypatch, capsys):
     assert "#5 project <- labels" in out
     assert 'sprint view -> milestone:"M2"' in out
     assert "updated issues" not in out
+
+
+def test_no_repo_workflow_polls_on_a_schedule():
+    # The poll runs centrally from dolev2/.github; a schedule here costs private
+    # Actions minutes, which ran out in October 2026 (claude-config #46).
+    for workflow in (
+        TEMPLATE,
+        ROOT.parents[1] / ".github" / "workflows" / "sync-project.yml",
+    ):
+        text = workflow.read_text(encoding="utf-8")
+        assert "schedule:" not in text and "cron:" not in text, workflow
+        assert "issues:" in text

@@ -61,10 +61,12 @@ Show Dolev, in chat, one list, and wait for his yes:
 Without a board the pipeline still works: labels are the source of truth. Then skip step 4
 and `sync-project.yml`, and keep the gate.
 
-**A board costs Actions minutes on a private repo.** `sync-project.yml` polls every 15
-minutes, and the free account's 2,000 minutes a month are shared by all private repos. GitHub
-drops most scheduled runs in practice (CRM: 9 in about 28 hours, 2026-10-24), so this is a
-note for Dolev in the board row, not a reason to skip the board.
+**The board's scheduled sync is central.** A card dragged on the board is noticed only by a
+poll every 15 minutes, and that poll runs once for every repo from the public dolev2/.github
+(`sync-boards.yml`, which runs `actions/project-sync/sweep_all.py`), where Actions minutes are
+free. Run in each private repo, it used up the account's 2,000 minutes (October 2026, #46).
+So `sync-project.yml` here has issue events only, never a `schedule`; the central run finds a
+new repo by its `PROJECT_NUMBER` variable, so installing needs nothing more.
 
 ## Step 2: Labels
 

@@ -2,8 +2,12 @@ name: Sync labels ↔ project board
 
 # Keeps issue labels (owner:*, status:*, area:*) and the Project v2 fields in agreement.
 # The sync itself is shared: dolev2/claude-config, skills/dev-setup/actions/project-sync, where
-# sync_project.py documents the conflict rule and why the scheduled run is needed on top of
-# the issue events. It needs claude-config's Actions access set to "user".
+# sync_project.py documents the conflict rule. It needs claude-config's Actions access set
+# to "user".
+#
+# Only issue events run here. The 15-minute poll that notices a card dragged on the board
+# runs for every repo at once from the public dolev2/.github (sync-boards.yml), where
+# Actions minutes are free (claude-config #46). Do not add a schedule back.
 #
 # Repo settings it reads: the PROJECT_TOKEN secret, and the PROJECT_NUMBER and SYNC_MARKER
 # variables. SYNC_MARKER must be the name the issue bodies already carry.
@@ -11,10 +15,6 @@ name: Sync labels ↔ project board
 on:
   issues:
     types: [opened, reopened, labeled, unlabeled, closed]
-  schedule:
-    # Every 15 minutes: a field edited by dragging a card on the board raises no webhook
-    # for a user-owned project, so only a poll notices it.
-    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 # Unlike the template, this repo needs `contents: read`: the action lives here, and a job
@@ -29,7 +29,7 @@ concurrency:
 jobs:
   sync:
     # Off until PROJECT_NUMBER is set, which is done only after the PROJECT_TOKEN secret:
-    # without the guard every 15-minute run fails and mails (OSEA, 2026-10-24).
+    # without the guard every run fails and mails (OSEA, 2026-10-24).
     if: vars.PROJECT_NUMBER != ''
     runs-on: ubuntu-latest
     steps:
@@ -39,5 +39,5 @@ jobs:
           token: ${{ secrets.PROJECT_TOKEN }}
           project-number: ${{ vars.PROJECT_NUMBER }}
           sync-marker: ${{ vars.SYNC_MARKER }}
-          # On an issue event, sync only that issue; the scheduled run sweeps everything.
+          # On an issue event, sync only that issue; a manual run sweeps everything.
           issue: ${{ github.event.issue.number }}

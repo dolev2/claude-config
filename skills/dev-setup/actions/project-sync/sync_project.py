@@ -9,7 +9,8 @@ Why it is a poll and not a webhook
 ----------------------------------
 `projects_v2_item` webhooks are only delivered for organization-owned projects. This
 project belongs to a user account, so a field edit made by dragging a card on the board
-produces no event. The scheduled run is what notices it.
+produces no event. The scheduled run is what notices it: sweep_all.py, run every 15
+minutes for every repo at once from the public dolev2/.github (claude-config #46).
 
 Why the project is read from the issue side
 -------------------------------------------
