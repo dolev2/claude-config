@@ -50,6 +50,7 @@ REQUIRED_LABELS = [
     "task",
     "bug",
     "process",
+    "costs-money",
 ]
 FORM_FILES = [
     ".github/ISSUE_TEMPLATE/task.yml",

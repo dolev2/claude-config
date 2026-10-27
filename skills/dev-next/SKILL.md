@@ -33,7 +33,10 @@ tier first. In both, `process` and `bug` issues come before the rest, then weigh
    ```
    `process` and `bug` issues come first, each group by weight. Each row is `#N`, how many
    sprint issues wait on it, its status, its owner, its kind (`process`, `bug` or `-`), its title, and
-   `BLOCKED by #…` if it has an open blocker. The first line names the sprint.
+   `BLOCKED by #…` if it has an open blocker. The first line names the sprint. Issues
+   labelled `costs-money` are on hold until Dolev approves the expense: they are not ranked,
+   and the last line lists them (`On hold, costs-money: …`). Never pick one, and never
+   remove the label; only Dolev lifts the hold.
 
 2. Pick the first row, top down, that:
    - has no `BLOCKED by`. A blocked issue is never the next one; what blocks it ranks above
@@ -42,6 +45,9 @@ tier first. In both, `process` and `bug` issues come before the rest, then weigh
      waits on, not work to pick up;
    - is not a `decision` issue (no status, `owner:<human>`) with `0 waiting`, unless nothing
      else is left. A decision that others wait on is a real bottleneck and stays a candidate.
+
+   When the bottleneck is an issue on hold (a row is `BLOCKED by` one), say so: the hold is
+   what stops that work, and lifting it is Dolev's call.
 
    No row left means nothing in the sprint can move. Say so, show the ranking, and stop.
    Never reach outside the milestone.

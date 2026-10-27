@@ -158,6 +158,33 @@ def test_a_blocked_process_issue_stays_listed_and_flagged():
     assert ranked[0].blocked
 
 
+def test_costs_money_issues_go_on_hold():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, labels=("task", "costs-money"), blocking=[2, 3]),
+            node(2),
+            node(3),
+            node(4, labels=("process", "costs-money")),
+        )
+    )
+    kept, on_hold = rank_issues.split_on_hold(ranked)
+    assert numbers(kept) == [2, 3]
+    assert numbers(on_hold) == [4, 1]
+
+
+def test_an_issue_waiting_on_a_held_one_stays_blocked():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, labels=("costs-money",), blocking=[2]),
+            node(2, blocked_by=[(1, "OPEN")]),
+            node(3),
+        )
+    )
+    kept, _ = rank_issues.split_on_hold(ranked)
+    assert numbers(kept) == [2, 3]
+    assert kept[0].blocked
+
+
 def test_only_open_blockers_block():
     (issue,) = issues(node(1, blocked_by=[(5, "CLOSED"), (6, "OPEN")]))
     assert issue.open_blockers == [6]

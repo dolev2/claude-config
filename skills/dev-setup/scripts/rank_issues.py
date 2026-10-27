@@ -17,6 +17,10 @@ an issue's weight is the number of open issues in the sprint that wait on it thr
 tier), then `process` and `bug` issues before the rest, then weight, highest first,
 then issue number. Blocked issues stay in the list,
 because planning ignores blockers; Execute skips them itself.
+
+Issues labelled `costs-money` are on hold until Dolev approves the expense: they leave
+the ranking and are listed apart, unless --include-costs-money is given. They still add
+weight to what they wait on.
 """
 
 import argparse
@@ -27,6 +31,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 FIRST_KINDS = ["process", "bug"]
+ON_HOLD_LABEL = "costs-money"
 
 QUERY = """
 query($owner: String!, $name: String!, $after: String) {
@@ -55,6 +60,7 @@ class Issue:
     owner: str | None
     milestone: str | None
     kind: str | None
+    costs_money: bool
     open_blockers: list[int]
     blocking: list[int]
     waiting: list[int] = field(default_factory=list)
@@ -81,6 +87,7 @@ def parse_issue(node: dict) -> Issue:
         owner=label_value(labels, "owner:"),
         milestone=milestone["title"] if milestone else None,
         kind=next((kind for kind in FIRST_KINDS if kind in labels), None),
+        costs_money=ON_HOLD_LABEL in labels,
         open_blockers=sorted(
             b["number"] for b in node["blockedBy"]["nodes"] if b["state"] == "OPEN"
         ),
@@ -142,6 +149,14 @@ def rank(
     return sorted(picked, key=key)
 
 
+def split_on_hold(ranked: list[Issue]) -> tuple[list[Issue], list[Issue]]:
+    """Returns (the ranking without `costs-money` issues, those issues in order)."""
+    return (
+        [issue for issue in ranked if not issue.costs_money],
+        [issue for issue in ranked if issue.costs_money],
+    )
+
+
 def current_repo() -> str:
     """owner/name of the repo `gh` resolves from the current directory."""
     result = subprocess.run(
@@ -201,6 +216,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--repo", help="owner/name; defaults to the repo of the current directory"
     )
+    parser.add_argument(
+        "--include-costs-money",
+        action="store_true",
+        help="keep issues labelled costs-money in the ranking instead of on hold",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -214,6 +234,9 @@ def main(argv: list[str] | None = None) -> None:
         if n["milestone"] and n["milestone"]["title"] == sprint
     ]
     ranked = rank(issues, args.status, args.owner)
+    on_hold: list[Issue] = []
+    if not args.include_costs_money:
+        ranked, on_hold = split_on_hold(ranked)
 
     if args.json:
         rows = [
@@ -223,14 +246,18 @@ def main(argv: list[str] | None = None) -> None:
                 "status": i.status,
                 "owner": i.owner,
                 "kind": i.kind,
+                "costs_money": i.costs_money,
                 "waiting": i.waiting,
                 "open_blockers": i.open_blockers,
             }
             for i in ranked
         ]
-        print(
-            json.dumps({"sprint": sprint, "issues": rows}, ensure_ascii=False, indent=2)
-        )
+        payload = {
+            "sprint": sprint,
+            "issues": rows,
+            "on_hold": [i.number for i in on_hold],
+        }
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
 
     print(f"Sprint: {sprint}")
@@ -247,6 +274,9 @@ def main(argv: list[str] | None = None) -> None:
             f"{i.status or '-':<18} {i.owner or '-':<7} {i.kind or '-':<7} "
             f"{i.title}{blocked}"
         )
+    if on_hold:
+        held = ", ".join(f"#{i.number} {i.title}" for i in on_hold)
+        print(f"On hold, {ON_HOLD_LABEL}: {held}")
 
 
 if __name__ == "__main__":
