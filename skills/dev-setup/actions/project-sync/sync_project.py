@@ -44,6 +44,13 @@ that one view's filter changes; a view without one, and every other view, are le
 alone. When no milestone has open issues the filter stays where it is. A failure here is
 printed and the issue sync goes on.
 
+Quiet mode
+----------
+With SYNC_QUIET set, nothing that names an issue, a status or a sprint is printed; the
+run ends with one line, "updated issues: N". sweep_all.py runs this script that way
+from the public dolev2/.github, whose logs anyone can read (claude-config #46).
+Without SYNC_QUIET the output is unchanged.
+
 One copy for every repo
 -----------------------
 This file lives in dolev2/claude-config, skills/dev-setup/actions/project-sync, and
@@ -69,6 +76,7 @@ PROJECT_OWNER = os.environ.get("PROJECT_OWNER") or REPO.split("/", 1)[0]
 # the stale board then wins over the labels (check_environment stops the run instead).
 SYNC_MARKER = os.environ.get("SYNC_MARKER", "").strip()
 MARKER_RE = re.compile(r"<!--\s*" + re.escape(SYNC_MARKER) + r":(.*?)-->", re.S)
+QUIET = bool(os.environ.get("SYNC_QUIET", "").strip())
 
 # label suffix  ->  the option name as it appears in the Project's single-select field
 OWNER_OPTIONS = {"claude": "Claude", "dolev": "Dolev"}
@@ -114,6 +122,12 @@ def gh(*args: str) -> str:
             "gh {} failed: {}".format(" ".join(args[:3]), p.stderr.strip())
         )
     return p.stdout
+
+
+def report(line: str) -> None:
+    """Print a line that names an issue, a status or a sprint; silent in quiet mode."""
+    if not QUIET:
+        print(line)
 
 
 def graphql(query: str, **variables: str | int) -> dict:
@@ -255,7 +269,7 @@ def set_field(project_id: str, item_id: str, field: dict, option_name: str) -> N
         (o for o in field.get("options", []) if o["name"] == option_name), None
     )
     if option is None:
-        print(f"  ! field {field['name']!r} has no option {option_name!r} - skipped")
+        report(f"  ! field {field['name']!r} has no option {option_name!r} - skipped")
         return
     graphql(
         SET_SELECT,
@@ -305,7 +319,7 @@ def sync_sprint_view(views: list[dict]) -> None:
     change = sprint_view_change(views, current_sprint(milestones))
     if change:
         graphql(UPDATE_VIEW_FILTER, view=change[0], filter=change[1])
-        print(f"sprint view -> {change[1]}")
+        report(f"sprint view -> {change[1]}")
 
 
 # ---------------------------------------------------------------------------- issues
@@ -431,7 +445,7 @@ def main() -> None:
     try:
         sync_sprint_view(views)
     except RuntimeError as e:
-        print(f"! sprint view not updated: {e}")
+        report(f"! sprint view not updated: {e}")
 
     issues = json.loads(
         gh(
@@ -450,6 +464,7 @@ def main() -> None:
     if only:
         issues = [i for i in issues if i["number"] == int(only)]
 
+    updated = 0
     for issue in issues:
         num = issue["number"]
         labels = [label["name"] for label in issue["labels"]]
@@ -459,23 +474,25 @@ def main() -> None:
             continue  # closed as not-planned - it does not belong on the board
         doubled = doubled_dimensions(labels)
         if doubled:
-            print(f"! #{num} has more than one {'/'.join(doubled)} label - skipped")
+            report(f"! #{num} has more than one {'/'.join(doubled)} label - skipped")
             continue
 
         item = project_items.get(num)
-        if item is None:
+        is_new = item is None
+        if is_new:
             res = graphql(ADD_ITEM, project=project_id, content=issue["id"])
             item = {
                 "id": res["data"]["addProjectV2ItemById"]["item"]["id"],
                 "values": {},
             }
-            print(f"#{num} added to the project")
+            report(f"#{num} added to the project")
 
         marker = read_marker(issue["body"])
         from_labels = labels_state(labels)
         from_project = project_state(item["values"])
 
         winner, source = choose_winner(marker, from_labels, from_project)
+        updated += is_new or source is not None
         if source is None:
             continue  # already in agreement
 
@@ -495,7 +512,7 @@ def main() -> None:
                     args += ["--remove-label", label]
             if args:
                 gh("issue", "edit", str(num), "--repo", REPO, *args)
-                print(f"#{num} labels <- project: {winner}")
+                report(f"#{num} labels <- project: {winner}")
         else:
             for key, field_name, options in DIMENSIONS:
                 suffix = winner.get(key)
@@ -503,14 +520,16 @@ def main() -> None:
                     continue
                 field = fields.get(field_name)
                 if field is None:
-                    print(f"  ! the project has no field {field_name!r} - skipped")
+                    report(f"  ! the project has no field {field_name!r} - skipped")
                     continue
                 set_field(project_id, item["id"], field, options[suffix])
-            print(f"#{num} project <- labels: {winner}")
+            report(f"#{num} project <- labels: {winner}")
 
         new_body = write_marker(issue["body"], winner)
         if new_body != (issue["body"] or ""):
             edit_body(num, new_body)
+    if QUIET:
+        print(f"updated issues: {updated}")
 
 
 if __name__ == "__main__":

@@ -271,3 +271,57 @@ def test_a_failed_view_update_does_not_stop_the_issue_sync(monkeypatch, capsys):
     monkeypatch.setattr(sync, "gh", gh)
     sync.main()
     assert "sprint view not updated" in capsys.readouterr().out
+
+
+# Quiet mode, for the central sweep whose log is public (claude-config #46).
+
+
+def run_one_label_change(monkeypatch, quiet):
+    """main() over one issue whose labels moved; returns what it printed."""
+    monkeypatch.setenv("GH_TOKEN", "x")
+    monkeypatch.setenv("PROJECT_NUMBER", "1")
+    monkeypatch.setenv("SYNC_MARKER", "x-sync")
+    if quiet:
+        monkeypatch.setenv("SYNC_QUIET", "1")
+    else:
+        monkeypatch.delenv("SYNC_QUIET", raising=False)
+    sync = load_sync()
+    fields = {"Status": field("Status", "Done", "Explore (Claude)")}
+    item = {"id": "I5", "values": {"Status": "Explore (Claude)"}}
+    monkeypatch.setattr(
+        sync,
+        "load_project",
+        lambda n: ("P", fields, {5: item}, [sprint_view('milestone:"M1"')]),
+    )
+    monkeypatch.setattr(sync, "graphql", lambda query, **kw: {})
+    issue = {
+        "number": 5,
+        "id": "X5",
+        "state": "OPEN",
+        "body": "<!-- x-sync: status=explore -->",
+        "labels": [{"name": "status:done"}, {"name": "owner:dolev"}],
+    }
+
+    def gh(*args):
+        if args[0] == "api":
+            return '[{"number": 2, "title": "M2", "open_issues": 1}]'
+        if args[:2] == ("issue", "list"):
+            return sync.json.dumps([issue])
+        return ""
+
+    monkeypatch.setattr(sync, "gh", gh)
+    sync.main()
+
+
+def test_quiet_mode_prints_only_the_count(monkeypatch, capsys):
+    run_one_label_change(monkeypatch, quiet=True)
+    out = capsys.readouterr().out
+    assert out == "updated issues: 1\n"
+
+
+def test_without_quiet_mode_the_output_is_unchanged(monkeypatch, capsys):
+    run_one_label_change(monkeypatch, quiet=False)
+    out = capsys.readouterr().out
+    assert "#5 project <- labels" in out
+    assert 'sprint view -> milestone:"M2"' in out
+    assert "updated issues" not in out
