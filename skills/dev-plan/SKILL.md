@@ -129,6 +129,8 @@ keeps them: edit it in the headings it already has.
 6. Set `area:*` if it is missing and the exploration made it obvious (only labels that exist).
    Likewise add `process` when the issue turns out to be work-management, rules or
    claude-config alignment work (reference doc, vocabulary table). Leave its milestone as it is.
+   Add `costs-money` when the plan needs an expense (a paid cloud service, a paid API, a
+   subscription) and say so in "בקצרה": the issue then waits on hold until Dolev approves.
 
 7. Hand off, exactly one of two paths:
 
