@@ -51,3 +51,6 @@ python -m pytest skills/dev-setup/scripts
 ההגדרות ב-`ruff.toml` שבשורש: עותק של `skills/dev-setup/templates/ruff.toml`, כמו בכל ריפו. שינוי בכללים נכנס לתבנית, ואז לעותק.
 
 ב-CI: `.github/workflows/tests.yml` מריץ את אותן פקודות על כל PR ועל כל push ל-`main`.
+
+## הרמה לסקירה
+אין אפליקציה.

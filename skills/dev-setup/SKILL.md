@@ -263,6 +263,11 @@ Add a short section to the repo's `CLAUDE.md` (create the file only if Dolev agr
 `dev-ship` (ב-`~/.claude/skills/`), והמסמך `dev-setup/reference/pipeline.md`.
 ```
 
+Then the "הרמה לסקירה" section, in the format of the reference doc's "הרמה לסקירה": ask Dolev
+for the command, the ports with the variable that moves each one, and the URL, or write
+`אין אפליקציה.` when the repo has nothing to run. `dev-code` uses it to hand a PR over for
+review with a link to the running app.
+
 Keep `CLAUDE.md` to what is specific to this repo: where its layers and shared components
 live, where its design tokens come from, its glossary, its commands. The code rules in
 `~/.claude/rules/` load in every session, so a rule already written there is not repeated

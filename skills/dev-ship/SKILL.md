@@ -175,6 +175,9 @@ When this ran inside a worktree the session owns, leave that worktree instead of
 `<default>` in it, as the reference doc's "עותק העבודה" says; delete the branch after the
 worktree is removed (git refuses to delete a branch checked out in a worktree).
 
+If the branch has a review app (`review-app.json` names it), stop it before removing its
+worktree, as the reference doc's "הרמה לסקירה" says.
+
 ## Reporting back
 
 One short summary in Hebrew: the PR link and title, the merge method, which issue moved to `status:done` (or that
