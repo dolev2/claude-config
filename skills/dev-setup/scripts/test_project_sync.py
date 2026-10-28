@@ -313,10 +313,71 @@ def run_one_label_change(monkeypatch, quiet):
     sync.main()
 
 
-def test_quiet_mode_prints_only_the_count(monkeypatch, capsys):
+def test_quiet_mode_prints_only_the_counts(monkeypatch, capsys):
     run_one_label_change(monkeypatch, quiet=True)
     out = capsys.readouterr().out
-    assert out == "updated issues: 1\n"
+    assert out == "updated issues: 1\nactive without a sprint: 0\n"
+
+
+@pytest.mark.parametrize(
+    "labels, state, on_board, expected",
+    [
+        (["status:explore"], "OPEN", False, True),
+        ([], "OPEN", True, True),  # opened from the board (WayOut #98, #55)
+        ([], "OPEN", False, False),  # not a pipeline issue
+        (["owner:dolev"], "CLOSED", True, False),  # closed as not-planned
+        ([], "CLOSED", True, False),
+        (["status:done"], "CLOSED", True, True),
+    ],
+)
+def test_which_issues_are_synced(labels, state, on_board, expected):
+    assert load_sync().should_sync(labels, state, on_board) is expected
+
+
+@pytest.mark.parametrize(
+    "status, state, milestone, expected",
+    [
+        ("status:plan-questions", "OPEN", None, True),  # WayOut #42, #117
+        ("status:explore", "OPEN", None, True),
+        ("status:plan-questions", "OPEN", {"title": "Sprint 5"}, False),
+        ("status:backlog", "OPEN", None, False),  # a backlog idea, on purpose
+        ("status:done", "OPEN", None, False),
+        ("status:explore", "CLOSED", None, False),
+        (None, "OPEN", None, False),
+    ],
+)
+def test_active_without_sprint(status, state, milestone, expected):
+    issue = {"state": state, "milestone": milestone}
+    labels = ["task"] + ([status] if status else [])
+    assert load_sync().is_active_without_sprint(issue, labels) is expected
+
+
+def test_an_issue_opened_from_the_board_takes_its_labels(monkeypatch, capsys):
+    monkeypatch.setenv("GH_TOKEN", "x")
+    monkeypatch.setenv("PROJECT_NUMBER", "1")
+    monkeypatch.setenv("SYNC_MARKER", "x-sync")
+    monkeypatch.delenv("SYNC_QUIET", raising=False)
+    sync = load_sync()
+    fields = {"Status": field("Status", "Backlog")}
+    item = {"id": "I9", "values": {"Status": "Backlog"}}
+    monkeypatch.setattr(sync, "load_project", lambda n: ("P", fields, {9: item}, []))
+    issue = {"number": 9, "id": "X9", "state": "OPEN", "body": "", "labels": []}
+    edits = []
+
+    def gh(*args):
+        if args[0] == "api":
+            return "[]"  # no milestones, so the sprint view stays
+        if args[:2] == ("issue", "list"):
+            return sync.json.dumps([issue])
+        if args[:2] == ("issue", "edit"):
+            edits.append(args)
+        return ""
+
+    monkeypatch.setattr(sync, "gh", gh)
+    monkeypatch.setattr(sync, "edit_body", lambda num, body: None)
+    sync.main()
+    assert any("status:backlog" in args for args in edits)
+    assert "#9 labels <- project" in capsys.readouterr().out
 
 
 def test_without_quiet_mode_the_output_is_unchanged(monkeypatch, capsys):

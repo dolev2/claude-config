@@ -204,3 +204,21 @@ def test_closed_milestones_are_not_the_sprint():
     closed = node(1, milestone=(1, "W0"))
     closed["milestone"]["state"] = "CLOSED"
     assert rank_issues.current_sprint([closed, node(2, milestone=(2, "W1"))]) == "W1"
+
+
+def test_active_issues_without_a_sprint_are_listed_apart():
+    nodes = [
+        node(42, status="plan-questions", owner="dolev", milestone=None),
+        node(7, status="explore", milestone=None),
+        node(8, status="backlog", owner="dolev", milestone=None),  # on purpose
+        node(9, status="done", owner="dolev", milestone=None),
+        node(3, status="explore"),  # in a sprint
+    ]
+    assert numbers(rank_issues.active_without_sprint(nodes)) == [7, 42]
+
+
+def test_the_text_output_names_them_last(capsys):
+    no_sprint = issues(node(42, status="plan-questions", owner="dolev", milestone=None))
+    rank_issues.print_ranking("W1", [], [], no_sprint)
+    last = capsys.readouterr().out.splitlines()[-1]
+    assert last == "Active, no sprint: #42 issue 42 (plan-questions, dolev)"

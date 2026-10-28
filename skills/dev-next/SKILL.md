@@ -37,7 +37,9 @@ Its sub-section "בדיקת הסדר" holds what the audit below finds, and the 
    `BLOCKED by #…` if it has an open blocker. The first line names the sprint. Issues
    labelled `costs-money` are on hold until Dolev approves the expense: they are not ranked,
    and the last line lists them (`On hold, costs-money: …`). Never pick one, and never
-   remove the label; only Dolev lifts the hold.
+   remove the label; only Dolev lifts the hold. A line `Active, no sprint: …` lists open
+   issues in the pipeline (past backlog, short of done) that have no milestone at all: no
+   scan reaches them, so step 6 reports them.
 
    Then check the links behind that ranking:
    ```bash
@@ -89,6 +91,12 @@ Its sub-section "בדיקת הסדר" holds what the audit below finds, and the 
 5. If the ranking shows an `owner:claude` issue in `status:needs-repair` that you did not
    pick, mention it: a repair is work Dolev already reviewed, and `dev-code` on its own would
    take it first.
+
+6. If the ranking ends with `Active, no sprint: …`, report each of those issues in the same
+   message: a link with its title, and what it waits for (the table in step 3). They fell out
+   of every sprint, often on the way into the pipeline (WayOut #42 and #117 came from Trello
+   like that, claude-config #55). Which sprint they belong to is Dolev's call: never assign
+   one, and never pick one of them as the next issue.
 
 ## Review of the sprint order
 

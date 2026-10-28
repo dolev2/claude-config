@@ -48,9 +48,11 @@ printed and the issue sync goes on.
 Quiet mode
 ----------
 With SYNC_QUIET set, nothing that names an issue, a status or a sprint is printed; the
-run ends with one line, "updated issues: N". sweep_all.py runs this script that way
-from the public dolev2/.github, whose logs anyone can read (claude-config #46).
-Without SYNC_QUIET the output is unchanged.
+run ends with two lines, "updated issues: N" and "active without a sprint: N" (an open
+issue in the pipeline, past backlog and short of done, with no milestone; claude-config
+#55). sweep_all.py runs this script that way from the public dolev2/.github, whose logs
+anyone can read (claude-config #46). Without SYNC_QUIET each such issue is named
+instead.
 
 One copy for every repo
 -----------------------
@@ -394,6 +396,34 @@ def choose_winner(
     return None, None
 
 
+def should_sync(labels: list[str], state: str, on_board: bool) -> bool:
+    """Whether the issue takes part in the sync at all.
+
+    An issue with no owner:/status: label is still synced when it is on the board: it
+    was opened from the board, past the issue form, and its column is the only state it
+    has (WayOut #98 sat a month like that, claude-config #55).
+    """
+    if not on_board and not any(
+        label.startswith(("owner:", "status:")) for label in labels
+    ):
+        return False  # not a pipeline issue - leave it alone
+    # Closed as not-planned: it does not belong on the board.
+    return state.upper() != "CLOSED" or "status:done" in labels
+
+
+def is_active_without_sprint(issue: dict, labels: list[str]) -> bool:
+    """An open issue in the pipeline (not backlog, not done) that has no milestone.
+
+    Only a warning: an issue Dolev names may be planned outside every sprint.
+    """
+    status = next((label for label in labels if label.startswith("status:")), None)
+    return (
+        issue["state"].upper() == "OPEN"
+        and status not in (None, "status:backlog", "status:done")
+        and not issue.get("milestone")
+    )
+
+
 def edit_body(number: int, new_body: str) -> None:
     """Replace the issue's body, through a file so line endings survive."""
     f = tempfile.NamedTemporaryFile(
@@ -459,20 +489,21 @@ def main() -> None:
             "--limit",
             "500",
             "--json",
-            "number,body,labels,id,state",
+            "number,body,labels,id,state,milestone",
         )
     )
     if only:
         issues = [i for i in issues if i["number"] == int(only)]
 
-    updated = 0
+    updated = without_sprint = 0
     for issue in issues:
         num = issue["number"]
         labels = [label["name"] for label in issue["labels"]]
-        if not any(label.startswith(("owner:", "status:")) for label in labels):
-            continue  # not a pipeline issue - leave it alone
-        if issue["state"].upper() == "CLOSED" and "status:done" not in labels:
-            continue  # closed as not-planned - it does not belong on the board
+        if is_active_without_sprint(issue, labels):
+            without_sprint += 1
+            report(f"! #{num} is active but has no sprint")
+        if not should_sync(labels, issue["state"], num in project_items):
+            continue
         doubled = doubled_dimensions(labels)
         if doubled:
             report(f"! #{num} has more than one {'/'.join(doubled)} label - skipped")
@@ -531,6 +562,7 @@ def main() -> None:
             edit_body(num, new_body)
     if QUIET:
         print(f"updated issues: {updated}")
+        print(f"active without a sprint: {without_sprint}")
 
 
 if __name__ == "__main__":

@@ -21,6 +21,10 @@ because planning ignores blockers; Execute skips them itself.
 Issues labelled `costs-money` are on hold until Dolev approves the expense: they leave
 the ranking and are listed apart, unless --include-costs-money is given. They still add
 weight to what they wait on.
+
+Open issues in the pipeline (past backlog, short of done) that have no milestone are
+listed last, apart from the sprint: no scan reaches them, so nothing else would show
+them (claude-config #55). They are listed, never ranked.
 """
 
 import argparse
@@ -31,6 +35,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 FIRST_KINDS = ["process", "bug"]
+NOT_ACTIVE = (None, "backlog", "done")
 ON_HOLD_LABEL = "costs-money"
 
 QUERY = """
@@ -157,6 +162,15 @@ def split_on_hold(ranked: list[Issue]) -> tuple[list[Issue], list[Issue]]:
     )
 
 
+def active_without_sprint(nodes: list[dict]) -> list[Issue]:
+    """Open pipeline issues (not backlog, not done) with no milestone, by number."""
+    issues = [parse_issue(n) for n in nodes if not n["milestone"]]
+    return sorted(
+        (issue for issue in issues if issue.status not in NOT_ACTIVE),
+        key=lambda issue: issue.number,
+    )
+
+
 def current_repo() -> str:
     """owner/name of the repo `gh` resolves from the current directory."""
     result = subprocess.run(
@@ -238,6 +252,7 @@ def main(argv: list[str] | None = None) -> None:
     on_hold: list[Issue] = []
     if not args.include_costs_money:
         ranked, on_hold = split_on_hold(ranked)
+    no_sprint = active_without_sprint(nodes)
 
     if args.json:
         rows = [
@@ -257,10 +272,17 @@ def main(argv: list[str] | None = None) -> None:
             "sprint": sprint,
             "issues": rows,
             "on_hold": [i.number for i in on_hold],
+            "no_sprint": [i.number for i in no_sprint],
         }
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
+    print_ranking(sprint, ranked, on_hold, no_sprint)
 
+
+def print_ranking(
+    sprint: str, ranked: list[Issue], on_hold: list[Issue], no_sprint: list[Issue]
+) -> None:
+    """The ranking as text: the sprint, one row per issue, then the lists apart."""
     print(f"Sprint: {sprint}")
     if not ranked:
         print("(no matching issues)")
@@ -278,6 +300,11 @@ def main(argv: list[str] | None = None) -> None:
     if on_hold:
         held = ", ".join(f"#{i.number} {i.title}" for i in on_hold)
         print(f"On hold, {ON_HOLD_LABEL}: {held}")
+    if no_sprint:
+        listed = ", ".join(
+            f"#{i.number} {i.title} ({i.status}, {i.owner or '-'})" for i in no_sprint
+        )
+        print(f"Active, no sprint: {listed}")
 
 
 if __name__ == "__main__":
