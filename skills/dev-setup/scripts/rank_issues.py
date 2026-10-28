@@ -174,7 +174,8 @@ def current_repo() -> str:
     return result.stdout.strip()
 
 
-def fetch_nodes(repo: str) -> list[dict]:
+def fetch_nodes(repo: str, query: str = QUERY) -> list[dict]:
+    """Every open issue of the repo, as GraphQL nodes of `query`."""
     owner, name = repo.split("/", 1)
     nodes: list[dict] = []
     after = None
@@ -184,7 +185,7 @@ def fetch_nodes(repo: str) -> list[dict]:
             "api",
             "graphql",
             "-f",
-            f"query={QUERY}",
+            f"query={query}",
             "-F",
             f"owner={owner}",
             "-F",

@@ -1,6 +1,6 @@
 ---
 name: dev-next
-description: Picks the next issue to work on in the current repo — the open issue in the current sprint (milestone) that the most other sprint issues wait on through "Blocked by" links — and routes it to dev-plan or dev-code by its status, or says plainly when it is waiting for Dolev. Use in any of Dolev's repos whenever he says "let's work on the next task", "בוא נעבוד על המשימה הבאה", "מה הבא", "what's next", or asks what is blocking the sprint. Works in any repo that has the pipeline labels; if the repo has its own repo-specific next-issue skill, use that instead.
+description: Picks the next issue to work on in the current repo — the open issue in the current sprint (milestone) that the most other sprint issues wait on through "Blocked by" links — and routes it to dev-plan or dev-code by its status, or says plainly when it is waiting for Dolev. Use in any of Dolev's repos whenever he says "let's work on the next task", "בוא נעבוד על המשימה הבאה", "מה הבא", "what's next", or asks what is blocking the sprint. Also use it when he asks to review or fix the order of the sprint ("תבדוק את סדר הספרינט", "review the sprint order"): a full review of the sprint's "Blocked by" links that proposes links to add or remove and issues to merge. Works in any repo that has the pipeline labels; if the repo has its own repo-specific next-issue skill, use that instead.
 ---
 
 # The next issue
@@ -24,6 +24,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 **`$HOME/.claude/skills/dev-setup/reference/pipeline.md`**, section "סדר בתוך הספרינט": the
 ranking rule and why this skill ranks without status tiers, while the phases put the status
 tier first. In both, `process` and `bug` issues come before the rest, then weight decides.
+Its sub-section "בדיקת הסדר" holds what the audit below finds, and the rule for merging.
 
 ## Steps
 
@@ -37,6 +38,15 @@ tier first. In both, `process` and `bug` issues come before the rest, then weigh
    labelled `costs-money` are on hold until Dolev approves the expense: they are not ranked,
    and the last line lists them (`On hold, costs-money: …`). Never pick one, and never
    remove the label; only Dolev lifts the hold.
+
+   Then check the links behind that ranking:
+   ```bash
+   python "$HOME/.claude/skills/dev-setup/scripts/audit_sprint.py"
+   ```
+   Mention each finding to Dolev in one line, before routing. A finding about the issue you
+   pick (a `MENTION` of something it may need, an `OUTSIDE` blocker) comes first: it can mean
+   the issue is not really next. Fix nothing here; findings are signals, and the fixes are the
+   full review below, on his request. `(no findings)`: say nothing.
 
 2. Pick the first row, top down, that:
    - has no `BLOCKED by`. A blocked issue is never the next one; what blocks it ranks above
@@ -80,9 +90,35 @@ tier first. In both, `process` and `bug` issues come before the rest, then weigh
    pick, mention it: a repair is work Dolev already reviewed, and `dev-code` on its own would
    take it first.
 
+## Review of the sprint order
+
+On Dolev's request only, instead of the steps above. It picks no issue.
+
+1. Read the sprint in one pass:
+   ```bash
+   python "$HOME/.claude/skills/dev-setup/scripts/audit_sprint.py" --json
+   ```
+   Each issue's goal, the files its Plan lists, its open blockers, whether it has a PR, and
+   the findings. Open the full body of an issue only where the goal is not enough to judge.
+2. Judge every pair that could depend on each other, not only the findings: does one need
+   something the other delivers before it can start? Judge each finding too:
+   - `MENTION`: a dependency, or only a reference?
+   - `OVERLAP`: a collision risk, never a link by itself. When it says `merge-candidate`,
+     check whether both together are still one PR that can be reviewed on its own; if so,
+     propose merging them.
+   - `LINE-MISMATCH`, `OUTSIDE`, `CYCLE`: which link is wrong.
+3. Show the proposals as one table: the change (add a link, remove a link, merge), the
+   issues with their titles, and why, in one line each. Ask with the questions tool which to
+   apply (multiple choice, the ones you recommend first).
+4. Apply only what he chose: a link and the `תלוי ב:` line together (reference doc,
+   "תלויות"); a merge through `dev-issue`'s rules, the surviving issue's body taking the
+   other's goal and its Plan sent back to `status:explore`. Then run `rank_issues.py` again
+   and show what moved.
+
 ## Golden rules
 
 - One issue per run of this skill, handed to one phase.
 - Never pick a blocked issue, an issue outside the current sprint, or one without a milestone.
 - Never take Dolev's step for him because it is the bottleneck. Report it.
 - The ranking lives in `rank_issues.py`. Do not re-derive it by hand.
+- A link, a removed link or a merge from the review is applied only after Dolev chose it.

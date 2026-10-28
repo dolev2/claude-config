@@ -166,8 +166,10 @@ keeps them: edit it in the headings it already has.
 - A comment is for questions only (the question path). A change Dolev asks for is an edit to
   the plan with a line in its log, and content for another issue is an edit to that issue.
 - At most three issues per run.
-- Split for size, link for dependency. An issue merges into another only when it has no PR of
-  its own.
+- Split for size, link for dependency. An issue merges into another, on Dolev's OK, only when
+  it has no PR of its own, or when two small issues overlap in files, neither has a PR yet,
+  and together they are still one PR that can be reviewed on its own (reference doc,
+  "תלויות").
 - A scan never reaches outside the current milestone; an issue Dolev named may. Never assign
   a milestone yourself.
 - Never resolve an open question by picking the option that is easiest to implement. Ask,
