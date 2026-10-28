@@ -195,7 +195,7 @@ nothing else lists the areas.
 `gh auth refresh -s project`, and wait.
 
 **Status is the built-in field**, so it is not created but rewritten. Its options must match
-`STATUS_OPTIONS` in `dev-setup/actions/project-sync/sync_project.py` exactly. Find its id, then replace its options:
+`STATUS_OPTIONS` in `dev-setup/actions/project-sync/sync_rules.py` exactly. Find its id, then replace its options:
 
 ```bash
 gh api graphql -f query='query($o:String!,$n:Int!){user(login:$o){projectV2(number:$n){field(name:"Status"){... on ProjectV2SingleSelectField{id}}}}}' \

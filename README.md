@@ -55,6 +55,13 @@
 | `scripts/test_*.py` | הבדיקות של הסקריפטים ושל שני ה-actions | רצות ב-CI |
 | `actions/open-questions-gate/` | שער השאלות הפתוחות, action שכל ריפו קורא לו | עותק אחד לכל הריפואים |
 | `actions/project-sync/` | הסנכרון בין התוויות ללוח, action שכל ריפו עם לוח קורא לו | עותק אחד לכל הריפואים |
+| `actions/project-sync/sync_project.py` | נקודת הכניסה של הסנכרון: ההגדרות מהסביבה, הלולאה על ה-issues, ומה מודפס | `action.yml` ו-`sweep_all.py` מריצים אותו בשם הזה |
+| `actions/project-sync/sync_rules.py` | הכללים: איזה issue מסונכרן, מי מנצח, ושמות האופציות בלוח (`STATUS_OPTIONS`) | בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד (#57) |
+| `actions/project-sync/board.py` | קריאה וכתיבה של הלוח, מצד ה-issue | `projectV2.items` מחזיר רשימה ריקה (המוקש ב-`pipeline.md`) |
+| `actions/project-sync/marker.py` | הסמן המוסתר בגוף ה-issue: קריאה וכתיבה | המצב האחרון שסונכרן, שלפיו מכריעים |
+| `actions/project-sync/sprint_view.py` | מזיז את הסינון של התצוגה "ספרינט נוכחי" לספרינט הנוכחי | ל-GitHub אין `milestone:@current` (#17) |
+| `actions/project-sync/gh_api.py` | הקריאות ל-`gh` ול-GraphQL | מקום אחד שהבדיקות מחליפות |
+| `scripts/conftest.py` | מוסיף את `actions/project-sync/` לנתיב של הבדיקות | כדי שהבדיקות ייבאו את המודולים בשמם, כמו שהסקריפט עושה |
 | `actions/project-sync/sweep_all.py` | הבדיקה המתוזמנת של כל הלוחות בבת אחת, ומדפיס רק מספרים. נכשל כשמספר הלוחות שונה מ-`EXPECTED_BOARDS` (#49) | רץ מהריפו הציבורי `dolev2/.github`, כי שם דקות ה-Actions בחינם (#46) |
 | `templates/.github/workflows/` | שני ה-workflows הקצרים שקוראים ל-actions, ושלד של `tests.yml` עם צעדי lint | מועתקים לכל ריפו בהתקנה |
 | `templates/ruff.toml` | הגדרות ruff ל-Python, לפי נהלי הקוד | כל ריפו עם Python מקבל עותק |
