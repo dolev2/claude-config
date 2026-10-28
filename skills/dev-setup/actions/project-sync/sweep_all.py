@@ -22,6 +22,18 @@ and the run exits non-zero after every other repo has synced. To see what failed
 this script locally with --verbose, which also prints each repo's name and output:
 
     GH_TOKEN=<token> python sweep_all.py --owner dolev2 --verbose
+
+How many boards
+---------------
+A token that sees too few repos also sees too few boards, and the run would still be
+green: on 2026-10-27 a wrong SYNC_BOARDS value saw 3 boards of 6, and three boards
+stopped syncing unnoticed (claude-config #49). So the count is not derived through that
+token. The EXPECTED_BOARDS Actions variable of dolev2/.github holds it, and a run that
+finds any other number fails: fewer means boards went unsynced, more means the number
+is out of date and would hide the next loss. In Actions the variable is required.
+dev-setup sets it from a count made with Dolev's own token, which sees every repo:
+
+    python sweep_all.py --owner dolev2 --count-boards
 """
 
 import argparse
@@ -107,39 +119,74 @@ def sync_one(repo: str, verbose: bool) -> int | None:
     return int(found.group(1))
 
 
-def main(argv: list[str] | None = None) -> int:
-    """Sync every board of the owner; print counts only, exit 1 if any repo failed."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
-    parser.add_argument("--owner", default=os.environ.get("GITHUB_REPOSITORY_OWNER"))
-    parser.add_argument("--verbose", action="store_true")
-    args = parser.parse_args(argv)
-    if not args.owner:
-        parser.error("--owner is required outside GitHub Actions")
-
-    try:
-        repos = list_repos(args.owner)
-    except RuntimeError as e:
-        print("could not list the repos" + (f": {e}" if args.verbose else ""))
-        return 1
-
+def sweep(repos: list[str], verbose: bool) -> tuple[int, int, int]:
+    """Sync each repo; return (boards found, issues updated, repos failed)."""
     boards = updated = failed = 0
     for index, repo in enumerate(repos, 1):
         try:
-            count = sync_one(repo, args.verbose)
+            count = sync_one(repo, verbose)
         except RuntimeError as e:
             failed += 1
             print(f"repo {index} of {len(repos)} failed")
-            if args.verbose:
+            if verbose:
                 print(f"    {repo}: {e}")
             continue
         if count is not None:
             boards += 1
             updated += count
+    # A failed repo may have a board; counting it keeps a failure from also reading as
+    # a missing board.
+    return boards + failed, updated, failed
 
+
+def expected_boards() -> int | None:
+    """EXPECTED_BOARDS as a number; None when unset outside Actions; raise otherwise."""
+    value = os.environ.get("EXPECTED_BOARDS", "").strip()
+    if value.isdigit():
+        return int(value)
+    if value or os.environ.get("GITHUB_ACTIONS") == "true":
+        raise ValueError("EXPECTED_BOARDS is not set")
+    return None
+
+
+def count_boards(repos: list[str]) -> int:
+    """How many of repos have a PROJECT_NUMBER variable, without syncing any."""
+    return sum(
+        1 for repo in repos if repo_variables(repo).get("PROJECT_NUMBER", "").strip()
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Sync every board of the owner; print counts only, exit 1 on any failure."""
+    parser = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
+    parser.add_argument("--owner", default=os.environ.get("GITHUB_REPOSITORY_OWNER"))
+    parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--count-boards", action="store_true")
+    args = parser.parse_args(argv)
+    if not args.owner:
+        parser.error("--owner is required outside GitHub Actions")
+
+    try:
+        expected = None if args.count_boards else expected_boards()
+        repos = list_repos(args.owner)
+        if args.count_boards:
+            print(count_boards(repos))
+            return 0
+    except ValueError as e:
+        print(e)
+        return 1
+    except RuntimeError as e:
+        print("could not read the repos" + (f": {e}" if args.verbose else ""))
+        return 1
+
+    found, updated, failed = sweep(repos, args.verbose)
     print(
-        f"repos: {len(repos)}, with a board: {boards + failed}, "
+        f"repos: {len(repos)}, with a board: {found}, "
         f"issues updated: {updated}, failed: {failed}"
     )
+    if expected is not None and found != expected:
+        print(f"expected boards: {expected}, found: {found}")
+        return 1
     return 1 if failed else 0
 
 

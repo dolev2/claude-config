@@ -8,6 +8,8 @@ import importlib.util
 import subprocess
 from pathlib import Path
 
+import pytest
+
 ACTION = Path(__file__).resolve().parents[1] / "actions" / "project-sync"
 REPOS = ["dolev2/secret-crm", "dolev2/no-board", "dolev2/hidden-plan"]
 BOARDS = {
@@ -15,6 +17,13 @@ BOARDS = {
     "dolev2/no-board": {},
     "dolev2/hidden-plan": {"PROJECT_NUMBER": "4", "SYNC_MARKER": "plan-sync"},
 }
+
+
+@pytest.fixture(autouse=True)
+def outside_actions(monkeypatch):
+    """Every test starts as a local run; CI itself sets GITHUB_ACTIONS."""
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("EXPECTED_BOARDS", raising=False)
 
 
 def load_sweep():
@@ -131,3 +140,51 @@ def test_each_repo_runs_a_quiet_full_sweep(monkeypatch):
     assert env["PROJECT_NUMBER"] == "1" and env["SYNC_MARKER"] == "crm-sync"
     assert env["SYNC_QUIET"] == "1"
     assert "ISSUE_NUMBER" not in env
+
+
+BOTH_SYNCED = {
+    "dolev2/secret-crm": done(0, "updated issues: 2"),
+    "dolev2/hidden-plan": done(0, "updated issues: 1"),
+}
+
+
+def test_fewer_boards_than_expected_fails_and_names_nothing(monkeypatch, capsys):
+    # The 2026-10-27 case: a token that sees too few repos, so too few boards (#49).
+    sweep, _ = fake(monkeypatch, BOTH_SYNCED)
+    monkeypatch.setenv("EXPECTED_BOARDS", "3")
+    assert sweep.main(["--owner", "dolev2"]) == 1
+    out = capsys.readouterr().out
+    assert "expected boards: 3, found: 2" in out
+    assert not any(repo.split("/")[1] in out for repo in REPOS)
+
+
+def test_more_boards_than_expected_fails(monkeypatch, capsys):
+    sweep, _ = fake(monkeypatch, BOTH_SYNCED)
+    monkeypatch.setenv("EXPECTED_BOARDS", "1")
+    assert sweep.main(["--owner", "dolev2"]) == 1
+    assert "expected boards: 1, found: 2" in capsys.readouterr().out
+
+
+def test_the_expected_number_of_boards_passes_quietly(monkeypatch, capsys):
+    sweep, _ = fake(monkeypatch, BOTH_SYNCED)
+    monkeypatch.setenv("EXPECTED_BOARDS", "2")
+    assert sweep.main(["--owner", "dolev2"]) == 0
+    assert "expected" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("value", [None, "", "six"])
+def test_in_actions_the_expected_number_is_required(monkeypatch, capsys, value):
+    sweep, ran = fake(monkeypatch, BOTH_SYNCED)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    if value is not None:
+        monkeypatch.setenv("EXPECTED_BOARDS", value)
+    assert sweep.main(["--owner", "dolev2"]) == 1
+    assert "EXPECTED_BOARDS is not set" in capsys.readouterr().out
+    assert ran == []
+
+
+def test_count_boards_counts_without_syncing(monkeypatch, capsys):
+    sweep, ran = fake(monkeypatch, BOTH_SYNCED)
+    assert sweep.main(["--owner", "dolev2", "--count-boards"]) == 0
+    assert capsys.readouterr().out.strip() == "2"
+    assert ran == []

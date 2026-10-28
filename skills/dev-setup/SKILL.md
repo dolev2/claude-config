@@ -66,7 +66,9 @@ poll every 15 minutes, and that poll runs once for every repo from the public do
 (`sync-boards.yml`, which runs `actions/project-sync/sweep_all.py`), where Actions minutes are
 free. Run in each private repo, it used up the account's 2,000 minutes (October 2026, #46).
 So `sync-project.yml` here has issue events only, never a `schedule`; the central run finds a
-new repo by its `PROJECT_NUMBER` variable, so installing needs nothing more.
+new repo by its `PROJECT_NUMBER` variable. It also checks the number of boards it found against
+the `EXPECTED_BOARDS` variable of dolev2/.github, and fails on any other number (#49), so step 4
+updates that number. So does archiving a repo that has a board: the run stays red until then.
 
 ## Step 2: Labels
 
@@ -174,6 +176,15 @@ gh project field-create <number> --owner "$OWNER" --name Owner --data-type SINGL
 gh project field-create <number> --owner "$OWNER" --name Area --data-type SINGLE_SELECT \
   --single-select-options "Backend,Frontend,Both,Infra"   # the agreed areas' option texts
 gh variable set PROJECT_NUMBER --body <number>
+```
+
+Then update the number of boards the central run expects. Count them, never add 1: a second
+run on the same repo would count it twice. The count uses Dolev's own `gh`, which sees every
+repo; a token that sees too few is exactly what the number guards against.
+
+```bash
+N=$(python "$HOME/.claude/skills/dev-setup/actions/project-sync/sweep_all.py" --owner "$OWNER" --count-boards)
+gh variable set EXPECTED_BOARDS --repo "$OWNER/.github" --body "$N"
 ```
 
 The Area option texts follow one rule: the label suffix, capitalised; an acronym stays
