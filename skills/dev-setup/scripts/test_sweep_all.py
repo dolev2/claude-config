@@ -188,3 +188,27 @@ def test_count_boards_counts_without_syncing(monkeypatch, capsys):
     assert sweep.main(["--owner", "dolev2", "--count-boards"]) == 0
     assert capsys.readouterr().out.strip() == "2"
     assert ran == []
+
+
+def test_active_issues_without_a_sprint_are_summed_and_never_fail(monkeypatch, capsys):
+    sweep, _ = fake(
+        monkeypatch,
+        {
+            "dolev2/secret-crm": done(
+                0, "updated issues: 0\nactive without a sprint: 2\n"
+            ),
+            "dolev2/hidden-plan": done(
+                0, "updated issues: 1\nactive without a sprint: 1\n"
+            ),
+        },
+    )
+    assert sweep.main(["--owner", "dolev2"]) == 0
+    out = capsys.readouterr().out
+    assert "active issues without a sprint: 3" in out
+    assert not any(repo.split("/")[1] in out for repo in REPOS)
+
+
+def test_a_sync_without_the_sprint_count_reads_as_zero(monkeypatch, capsys):
+    sweep, _ = fake(monkeypatch, BOTH_SYNCED)
+    assert sweep.main(["--owner", "dolev2"]) == 0
+    assert "active issues without a sprint: 0" in capsys.readouterr().out

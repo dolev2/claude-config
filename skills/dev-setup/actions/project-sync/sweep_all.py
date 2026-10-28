@@ -34,6 +34,13 @@ is out of date and would hide the next loss. In Actions the variable is required
 dev-setup sets it from a count made with Dolev's own token, which sees every repo:
 
     python sweep_all.py --owner dolev2 --count-boards
+
+Active issues without a sprint
+------------------------------
+The run also prints how many open issues are in the pipeline (past backlog, short of
+done) but have no milestone. dev-next scans only the current sprint, so nothing else
+shows them (WayOut #42 and #117, claude-config #55). It is a count, never a failure: an
+issue Dolev names may be planned outside every sprint. rank_issues.py names them.
 """
 
 import argparse
@@ -46,6 +53,7 @@ from pathlib import Path
 
 SYNC_SCRIPT = Path(__file__).with_name("sync_project.py")
 UPDATED_LINE = re.compile(r"^updated issues: (\d+)$", re.M)
+WITHOUT_SPRINT_LINE = re.compile(r"^active without a sprint: (\d+)$", re.M)
 
 
 def gh(*args: str) -> str:
@@ -105,8 +113,9 @@ def run_sync(repo: str, variables: dict[str, str]) -> subprocess.CompletedProces
     )
 
 
-def sync_one(repo: str, verbose: bool) -> int | None:
-    """Issues updated in repo, or None when it has no board; raise when it fails."""
+def sync_one(repo: str, verbose: bool) -> tuple[int, int] | None:
+    """(issues updated, active issues without a sprint) in repo, or None when it has no
+    board; raise when it fails."""
     variables = repo_variables(repo)
     if not variables.get("PROJECT_NUMBER", "").strip():
         return None
@@ -116,12 +125,15 @@ def sync_one(repo: str, verbose: bool) -> int | None:
     found = UPDATED_LINE.search(result.stdout)
     if result.returncode != 0 or not found:
         raise RuntimeError(f"sync exited with {result.returncode}")
-    return int(found.group(1))
+    # Optional: the count is a warning, so a sync without it has not failed.
+    without_sprint = WITHOUT_SPRINT_LINE.search(result.stdout)
+    return int(found.group(1)), int(without_sprint.group(1)) if without_sprint else 0
 
 
-def sweep(repos: list[str], verbose: bool) -> tuple[int, int, int]:
-    """Sync each repo; return (boards found, issues updated, repos failed)."""
-    boards = updated = failed = 0
+def sweep(repos: list[str], verbose: bool) -> tuple[int, int, int, int]:
+    """Sync each repo; return (boards found, issues updated, active issues without a
+    sprint, repos failed)."""
+    boards = updated = without_sprint = failed = 0
     for index, repo in enumerate(repos, 1):
         try:
             count = sync_one(repo, verbose)
@@ -133,10 +145,11 @@ def sweep(repos: list[str], verbose: bool) -> tuple[int, int, int]:
             continue
         if count is not None:
             boards += 1
-            updated += count
+            updated += count[0]
+            without_sprint += count[1]
     # A failed repo may have a board; counting it keeps a failure from also reading as
     # a missing board.
-    return boards + failed, updated, failed
+    return boards + failed, updated, without_sprint, failed
 
 
 def expected_boards() -> int | None:
@@ -179,11 +192,13 @@ def main(argv: list[str] | None = None) -> int:
         print("could not read the repos" + (f": {e}" if args.verbose else ""))
         return 1
 
-    found, updated, failed = sweep(repos, args.verbose)
+    found, updated, without_sprint, failed = sweep(repos, args.verbose)
     print(
         f"repos: {len(repos)}, with a board: {found}, "
         f"issues updated: {updated}, failed: {failed}"
     )
+    # A count, never a failure (see "Active issues without a sprint" above).
+    print(f"active issues without a sprint: {without_sprint}")
     if expected is not None and found != expected:
         print(f"expected boards: {expected}, found: {found}")
         return 1
