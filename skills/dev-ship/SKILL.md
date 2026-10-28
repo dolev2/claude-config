@@ -178,8 +178,17 @@ worktree is removed (git refuses to delete a branch checked out in a worktree).
 If the branch has a review app (`review-app.json` names it), stop it before removing its
 worktree, as the reference doc's "הרמה לסקירה" says.
 
+## Step 8: Offer a session for the next issue (pipeline repos only)
+
+Only after the merge and the cleanup both succeeded. Follow the reference doc's "אחרי מיזוג:
+הצעה לסשן של המשימה הבאה": pick the next issue the way `dev-next` does, without routing it,
+and offer it as a session card whose opening prompt is `תחקור את #<N>` or `תקודד את #<N>`.
+The decision that matters is fresh session versus fork; the doc holds the rule. Never start
+that issue in this session.
+
 ## Reporting back
 
 One short summary in Hebrew: the PR link and title, the merge method, which issue moved to `status:done` (or that
 the PR closed none, or that the repo has no pipeline), and whether both branches are gone. If
-you stopped early, say exactly which step and why.
+you stopped early, say exactly which step and why. End with the next-issue offer from step 8:
+which issue, fresh or fork and why in one line, or what the sprint waits for.

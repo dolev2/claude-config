@@ -153,6 +153,10 @@ Only on Dolev's explicit request for that specific issue.
    [ -n "$MERGED" ] && [ "$(git rev-parse <branch>)" = "$MERGED" ] && git branch -D <branch>
    ```
    Tips differ: leave the branch and say so in the summary.
+8. Offer a session for the next issue, as the reference doc's "אחרי מיזוג: הצעה לסשן של
+   המשימה הבאה" says: the next issue by `dev-next`'s rule, an opening prompt of `תחקור את
+   #<N>` or `תקודד את #<N>`, and a fresh session unless all three conditions for a fork hold.
+   Never start that issue in this session.
 
 ## Golden rules
 
