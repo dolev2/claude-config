@@ -53,7 +53,7 @@
 | `scripts/test_*.py` | הבדיקות של הסקריפטים ושל שני ה-actions | רצות ב-CI |
 | `actions/open-questions-gate/` | שער השאלות הפתוחות, action שכל ריפו קורא לו | עותק אחד לכל הריפואים |
 | `actions/project-sync/` | הסנכרון בין התוויות ללוח, action שכל ריפו עם לוח קורא לו | עותק אחד לכל הריפואים |
-| `actions/project-sync/sweep_all.py` | הבדיקה המתוזמנת של כל הלוחות בבת אחת, ומדפיס רק מספרים | רץ מהריפו הציבורי `dolev2/.github`, כי שם דקות ה-Actions בחינם (#46) |
+| `actions/project-sync/sweep_all.py` | הבדיקה המתוזמנת של כל הלוחות בבת אחת, ומדפיס רק מספרים. נכשל כשמספר הלוחות שונה מ-`EXPECTED_BOARDS` (#49) | רץ מהריפו הציבורי `dolev2/.github`, כי שם דקות ה-Actions בחינם (#46) |
 | `templates/.github/workflows/` | שני ה-workflows הקצרים שקוראים ל-actions, ושלד של `tests.yml` עם צעדי lint | מועתקים לכל ריפו בהתקנה |
 | `templates/ruff.toml` | הגדרות ruff ל-Python, לפי נהלי הקוד | כל ריפו עם Python מקבל עותק |
 | `templates/eslint.config.js` | הגדרות eslint ל-React ב-JavaScript, לפי נהלי הקוד | כל ריפו עם React מקבל עותק |
