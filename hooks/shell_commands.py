@@ -7,6 +7,7 @@ first on sys.path, so a plain `import shell_commands` finds it.
 
 import json
 import os
+import re
 import shlex
 from pathlib import Path, PurePath
 
@@ -16,6 +17,10 @@ SEPARATOR_CHARS = ";&|\n"
 WRAPPERS = {"command", "builtin", "nohup", "nice", "time", "stdbuf", "sudo"}
 # git options before the subcommand whose value is the next argument.
 GIT_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
+# `<<EOF`, `<<-'EOF'`, `<< "EOF"`; not the `<<<` here-string, which has no body.
+HEREDOC_START = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)(\w+)\2")
+# Git Bash writes C:\Users as /c/Users.
+MSYS_DRIVE = re.compile(r"^/([a-zA-Z])(?=/|$)")
 
 
 def read_event(raw: str) -> dict | None:
@@ -47,12 +52,42 @@ def edit_target(event: dict) -> Path | None:
     return path.resolve()
 
 
+def native_path(text: str, is_windows: bool = os.name == "nt") -> str:
+    """The path as the OS reads it: on Windows, Git Bash's `/c/Users` is `C:/Users`.
+
+    Without this, Python reads `/c/Users` as `C:\\c\\Users`, which does not exist.
+    """
+    if not is_windows:
+        return text
+    return MSYS_DRIVE.sub(lambda match: f"{match.group(1).upper()}:", text)
+
+
+def strip_heredocs(command: str) -> str:
+    """The command without heredoc bodies, which are text and not commands."""
+    lines = command.split("\n")
+    kept: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        kept.append(line)
+        index += 1
+        for strip_tabs, _quote, delimiter in HEREDOC_START.findall(line):
+            while index < len(lines):
+                body_line = lines[index].lstrip("\t") if strip_tabs else lines[index]
+                index += 1
+                if body_line.rstrip("\r") == delimiter:
+                    break
+    return "\n".join(kept)
+
+
 def split_subcommands(command: str) -> list[list[str]]:
     """The command's words, one list per subcommand between `&&`, `;`, `|` or a newline.
 
-    Quotes are respected, so `git commit -m "a; git push -f"` stays one subcommand.
-    Text shlex cannot parse (an open quote) falls back to splitting on whitespace.
+    Quotes are respected, so `git commit -m "a; git push -f"` stays one subcommand, and
+    heredoc bodies are skipped. Text shlex cannot parse (an open quote) falls back to
+    splitting on whitespace.
     """
+    command = strip_heredocs(command)
     lexer = shlex.shlex(command, posix=True, punctuation_chars=SEPARATOR_CHARS)
     lexer.whitespace = " \t\r"
     lexer.whitespace_split = True
