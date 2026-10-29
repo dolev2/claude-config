@@ -10,6 +10,8 @@
 !/.github/
 !/skills/
 !/rules/
+!/settings.json
+!/hooks/
 
 # Only the repo's own instructions; Claude Code also keeps worktrees and local settings here.
 !/.claude/

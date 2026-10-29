@@ -14,6 +14,9 @@
 - **rebase ולא merge.** ההיסטוריה לינארית, וה-PRים נסגרים ב-squash.
 - **branch שכבר נדחף מתעדכן ב-`git push --force-with-lease`**, לעולם לא `--force`.
   `--force` דורס בשקט commits שמישהו אחר דחף בינתיים.
+  hook ב-`~/.claude/hooks/block_force_push.py` חוסם את `--force`, `-f` ו-refspec עם `+`.
+- **merge של PR רק באישור מפורש של דולב.** כלל `ask` ב-`~/.claude/settings.json` מקפיץ חלון אישור לפני כל `gh pr merge`.
+  דולב דחה את החלון: עוצרים ומדווחים, ולא ממזגים בדרך אחרת (למשל `gh api`).
 - **התנגשות היא עצירה ושאלה, לא משימה.** `git rebase --abort`, ודיווח על הקבצים שמתנגשים.
   לא פותרים אותה בלקיחת צד אחד בשלמותו.
 
