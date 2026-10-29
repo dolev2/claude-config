@@ -80,6 +80,7 @@ def test_force_push_is_blocked(monkeypatch, command):
         "echo git push --force",
         "git log --format=%H | grep push",
         "ls -f",
+        "cat > notes.md <<'EOF'\ngit push --force\nEOF",
     ],
 )
 def test_other_commands_pass(monkeypatch, command):

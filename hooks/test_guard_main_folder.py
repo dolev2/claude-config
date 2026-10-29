@@ -17,6 +17,7 @@ SCRIPT = Path(__file__).resolve().parent / "guard_main_folder.py"
 spec = importlib.util.spec_from_file_location("guard_main_folder", SCRIPT)
 guard_main_folder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(guard_main_folder)
+shell_commands = sys.modules["shell_commands"]
 
 GITIGNORE = """/*
 !/.gitignore
@@ -162,6 +163,53 @@ def test_cd_into_main_folder_is_followed(monkeypatch, root, tmp_path):
 def test_dash_c_into_main_folder_is_blocked(monkeypatch, root, tmp_path):
     command = f'git -C "{root}" switch feature'
     assert run_hook(monkeypatch, shell(command, tmp_path, "PowerShell"))[0] == 2
+
+
+def msys(path: Path) -> str:
+    """The path as Git Bash writes it: C:\\Users\\x becomes /c/Users/x."""
+    return f"/{path.drive[0].lower()}{path.as_posix()[2:]}"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Git Bash paths exist on Windows")
+@pytest.mark.parametrize(
+    "template", ["cd {path}; git switch main", "git -C {path} checkout main"]
+)
+def test_git_bash_path_into_main_folder_is_blocked(
+    monkeypatch, root, tmp_path, template
+):
+    command = template.format(path=msys(root))
+    assert run_hook(monkeypatch, shell(command, tmp_path))[0] == 2
+
+
+@pytest.mark.parametrize(
+    ("text", "is_windows", "expected"),
+    [
+        ("/c/Users/x", True, "C:/Users/x"),
+        ("/d", True, "D:"),
+        ("/c/Users/x", False, "/c/Users/x"),
+        ("/cc/x", True, "/cc/x"),
+        ("skills/x", True, "skills/x"),
+    ],
+)
+def test_native_path(text, is_windows, expected):
+    assert shell_commands.native_path(text, is_windows) == expected
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cat > notes.md <<'EOF'\ngit switch main\nEOF",
+        'cat > notes.md << "EOF"\ngit checkout main\nEOF\necho done',
+        "cat > notes.md <<-EOF\n\tgit switch main\n\tEOF",
+    ],
+)
+def test_heredoc_body_is_not_a_command(monkeypatch, root, command):
+    assert run_hook(monkeypatch, shell(command, root)) == (0, "")
+
+
+def test_command_after_heredoc_is_checked(monkeypatch, root):
+    command = "cat > notes.md <<'EOF'\ntext\nEOF\ngit switch main"
+    assert run_hook(monkeypatch, shell(command, root))[0] == 2
 
 
 @pytest.mark.parametrize(

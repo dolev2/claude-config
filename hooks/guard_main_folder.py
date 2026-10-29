@@ -22,6 +22,7 @@ from pathlib import Path
 from shell_commands import (
     edit_target,
     git_subcommand,
+    native_path,
     read_event,
     shell_command,
     split_subcommands,
@@ -106,12 +107,17 @@ def blocks_edit(path: Path, root: Path) -> bool:
     return not is_ignored(root, path)
 
 
+def expand(path_text: str) -> str:
+    """A path from a shell command with `~`, `$VAR` and Git Bash drives resolved."""
+    return native_path(os.path.expandvars(os.path.expanduser(path_text)))
+
+
 def change_folder(current: Path, arguments: list[str]) -> Path:
     """Where `cd <arguments>` lands, starting from current."""
     targets = [argument for argument in arguments if not argument.startswith("-")]
     if not targets:
         return Path.home()
-    return (current / os.path.expandvars(os.path.expanduser(targets[0]))).resolve()
+    return (current / expand(targets[0])).resolve()
 
 
 def git_folder(current: Path, options: list[str]) -> Path:
@@ -119,8 +125,7 @@ def git_folder(current: Path, options: list[str]) -> Path:
     folder = current
     for index, option in enumerate(options[:-1]):
         if option == "-C":
-            value = os.path.expandvars(os.path.expanduser(options[index + 1]))
-            folder = (folder / value).resolve()
+            folder = (folder / expand(options[index + 1])).resolve()
     return folder
 
 
