@@ -1,12 +1,14 @@
-"""Shared by the hooks: reading the tool call from stdin and splitting shell commands.
+"""Shared by the hooks: reading the tool call from stdin, the file an edit writes, and
+splitting shell commands.
 
 Imported by hooks that sit next to it in hooks/; Python puts the script's own folder
 first on sys.path, so a plain `import shell_commands` finds it.
 """
 
 import json
+import os
 import shlex
-from pathlib import PurePath
+from pathlib import Path, PurePath
 
 SHELL_TOOLS = ("Bash", "PowerShell")
 SEPARATOR_CHARS = ";&|\n"
@@ -31,6 +33,18 @@ def shell_command(event: dict) -> str | None:
         return None
     command = (event.get("tool_input") or {}).get("command")
     return command if isinstance(command, str) else None
+
+
+def edit_target(event: dict) -> Path | None:
+    """The file an edit tool call writes, made absolute against the session folder."""
+    tool_input = event.get("tool_input") or {}
+    target = tool_input.get("file_path") or tool_input.get("notebook_path")
+    if not isinstance(target, str) or not target:
+        return None
+    path = Path(os.path.expanduser(target))
+    if not path.is_absolute():
+        path = Path(event.get("cwd") or os.getcwd()) / path
+    return path.resolve()
 
 
 def split_subcommands(command: str) -> list[list[str]]:

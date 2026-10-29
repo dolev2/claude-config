@@ -19,7 +19,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from shell_commands import git_subcommand, read_event, shell_command, split_subcommands
+from shell_commands import (
+    edit_target,
+    git_subcommand,
+    read_event,
+    shell_command,
+    split_subcommands,
+)
 
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 BRANCH_SWITCHES = ("checkout", "switch")
@@ -98,18 +104,6 @@ def blocks_edit(path: Path, root: Path) -> bool:
     if same_folder(path.parent, root) and path.name.lower() in ALLOWED_TRACKED:
         return False
     return not is_ignored(root, path)
-
-
-def edit_target(event: dict) -> Path | None:
-    """The file an edit tool call writes, made absolute against the session folder."""
-    tool_input = event.get("tool_input") or {}
-    target = tool_input.get("file_path") or tool_input.get("notebook_path")
-    if not isinstance(target, str) or not target:
-        return None
-    path = Path(os.path.expanduser(target))
-    if not path.is_absolute():
-        path = Path(event.get("cwd") or os.getcwd()) / path
-    return path.resolve()
 
 
 def change_folder(current: Path, arguments: list[str]) -> Path:

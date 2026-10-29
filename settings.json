@@ -1,4 +1,7 @@
 {
+  "env": {
+    "PYTHONIOENCODING": "utf-8"
+  },
   "modelSettings": {
     "claude-opus-5-5": {
       "autoCompactWindow": 400000
@@ -35,6 +38,18 @@
           {
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_main_folder.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/ps1_bom.py\"",
             "timeout": 10
           }
         ]
