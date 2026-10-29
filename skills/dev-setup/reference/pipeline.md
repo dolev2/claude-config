@@ -33,6 +33,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 | תוויות `area:*` | התוויות שקיימות ב-repo | |
 | נהלי הקוד, git והסביבה | `~/.claude/rules/` (כללי, Python, React, git, Windows), לכל ה-repos | גודל קובץ, שכבות, rebase לפני בדיקות |
 | הגדרות ה-lint | עותק בכל repo של `dev-setup/templates/ruff.toml` ו-`eslint.config.js`; `pipeline_info.py` מדווח תחת `lint` על חסר או שונה | `missing ruff.toml` |
+| כלל הדילוג של Netlify | `netlify.toml` של ה-repo, לפי `dev-setup/templates/netlify.toml`; `pipeline_info.py` מדווח תחת `netlify` כשאין בו `build.ignore` (ראו "Netlify" למטה) | `no build.ignore in netlify.toml` |
 | מה כל קובץ ולמה הוא קיים | סעיף "מדריך קבצים" ב-`README.md` של ה-repo | `dev-setup` יוצר אותו, וכל שינוי שמוסיף קובץ מעדכן אותו |
 | סוגי issues נוספים | תוויות שקיימות ב-repo, למשל `decision` | |
 
@@ -725,6 +726,20 @@ gh pr checks <N> --watch --fail-fast
   סטטי): הבדיקה הידנית היא הבדיקה. מריצים אותה ומתעדים מה נבדק, ולא מוסיפים חבילה.
 - בכל מקרה אחר: טסט לכל endpoint, פרמטר או תיקון באג, ו-repo בלי חבילה מקבל את הראשונה.
 - **כישלון בהרצת הבדיקות אינו היתר לדלג עליהן.** תלויות חסרות מתקינים.
+
+## Netlify: deploy רק כשהאתר משתנה
+
+כל deploy ב-Netlify עולה 15 קרדיטים, ולצוות יש 300 בחודש.
+
+ב-repo עם הצינור רוב המיזוגים נוגעים רק ב-workflows, במסמכים ובהגדרות של Claude. בלי כלל דילוג, כל אחד מהם הוא deploy.
+
+ב-10.2026 גל המיזוגים של הצינור שרף 75% מהקרדיטים בשישה ימים (claude-config #50).
+
+לכן `netlify.toml` של כל repo מחזיק `build.ignore`: פקודת `git diff --quiet` על קבצי האתר בלבד. יציאה 0 מדלגת על ה-deploy.
+
+לכלל יש שתי צורות, לפי איפה שהאתר יושב, ושתיהן בתבנית `dev-setup/templates/netlify.toml`. התבנית לא מועתקת בשלמותה: לכל אתר `publish` ו-headers משלו.
+
+`pipeline_info.py` מדווח תחת `netlify` על repo שיש בו `netlify.toml` בלי הכלל. כך גם repo שהותקן לפני הכלל מתגלה, בתחילת כל ריצה של `dev-*`.
 
 ## lint: עותק בכל repo, לא הגדרה מרכזית
 

@@ -24,6 +24,8 @@ same skills work in every repo that carries the pipeline:
                                  heading; without one, missing_files names it
 - the lint setup               - lint_check.py: settings missing or differing from the
                                  dev-setup templates, by the languages in the repo
+- the Netlify deploy rule      - a netlify.toml without build.ignore deploys, and pays
+                                 credits, on every merge (claude-config#50)
 
 `ready` is true when every pipeline label exists. When it is false, run dev-setup.
 """
@@ -33,6 +35,7 @@ import json
 import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 from lint_check import lint_gaps, tracked_files
@@ -61,6 +64,7 @@ PIPELINE_FILES = [
     ".github/workflows/open-questions-gate.yml",
 ]
 
+NETLIFY_CONFIG = "netlify.toml"
 FILE_GUIDE = "README.md"
 FILE_GUIDE_HEADINGS = ("מדריך קבצים", "file guide")
 
@@ -129,6 +133,25 @@ def has_file_guide(root: Path) -> bool:
     return any(
         name in heading.lower() for heading in headings for name in FILE_GUIDE_HEADINGS
     )
+
+
+def netlify_gaps(root: Path) -> list[str]:
+    """What the repo's netlify.toml lacks of the deploy-skip rule; empty without one.
+
+    Without build.ignore Netlify deploys on every merge, workflows and docs included,
+    and each deploy costs credits (claude-config#50). The rule is in
+    templates/netlify.toml.
+    """
+    config = root / NETLIFY_CONFIG
+    if not config.exists():
+        return []
+    try:
+        settings = tomllib.loads(config.read_text(encoding="utf-8"))
+    except (tomllib.TOMLDecodeError, UnicodeDecodeError):
+        return [f"{NETLIFY_CONFIG} does not parse as TOML"]
+    if not settings.get("build", {}).get("ignore"):
+        return [f"no build.ignore in {NETLIFY_CONFIG}"]
+    return []
 
 
 def current_sprint(repo: str) -> str | None:
@@ -208,6 +231,7 @@ def main(argv: list[str] | None = None) -> None:
         "issue_forms": forms,
         "missing_files": missing_files if root or not forms else None,
         "lint": lint_gaps(root, tracked_files(root)) if root else None,
+        "netlify": netlify_gaps(root) if root else None,
         "claude_md": bool(root and (root / "CLAUDE.md").exists()),
         "repo_skills": sorted(
             p.parent.name for p in (root / ".claude/skills").glob("*/SKILL.md")

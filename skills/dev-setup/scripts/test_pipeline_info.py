@@ -125,3 +125,36 @@ def test_present_file_guide_is_not_reported(monkeypatch, capsys, tmp_path):
     fake_gh(monkeypatch, root=tmp_path)
     info = run_main(monkeypatch, capsys)
     assert not any("file guide" in f for f in info["missing_files"])
+
+
+def write_netlify(root, text):
+    (root / "netlify.toml").write_text(text, encoding="utf-8")
+
+
+def test_no_netlify_config_has_no_gap(tmp_path):
+    assert pipeline_info.netlify_gaps(tmp_path) == []
+
+
+def test_netlify_config_with_ignore_has_no_gap(tmp_path):
+    write_netlify(tmp_path, '[build]\n  publish = "site"\n  ignore = "git diff"\n')
+    assert pipeline_info.netlify_gaps(tmp_path) == []
+
+
+def test_netlify_config_without_ignore_is_reported(monkeypatch, capsys, tmp_path):
+    write_netlify(tmp_path, '[build]\n  publish = "."\n  command = ""\n')
+    fake_gh(monkeypatch, root=tmp_path)
+    info = run_main(monkeypatch, capsys)
+    assert info["netlify"] == ["no build.ignore in netlify.toml"]
+
+
+def test_netlify_config_that_does_not_parse_is_reported(tmp_path):
+    write_netlify(tmp_path, "[build\n")
+    assert pipeline_info.netlify_gaps(tmp_path) == [
+        "netlify.toml does not parse as TOML"
+    ]
+
+
+def test_netlify_template_has_the_ignore_rule():
+    template = SCRIPT.parent.parent / "templates" / "netlify.toml"
+    settings = pipeline_info.tomllib.loads(template.read_text(encoding="utf-8"))
+    assert "git diff --quiet" in settings["build"]["ignore"]
