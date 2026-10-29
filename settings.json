@@ -21,6 +21,21 @@
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/block_force_push.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_main_folder.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_main_folder.py\"",
+            "timeout": 10
           }
         ]
       }

@@ -12,17 +12,10 @@ A deny rule cannot do this: it matches text, so `*--force*` would also block
 mistakes, not a security boundary: `sh -c 'git push -f'` is not caught.
 """
 
-import json
-import shlex
 import sys
-from pathlib import PurePath
 
-SHELL_TOOLS = ("Bash", "PowerShell")
-SEPARATOR_CHARS = ";&|\n"
-# Run their argument as the command; `timeout` also takes a duration first.
-WRAPPERS = {"command", "builtin", "nohup", "nice", "time", "stdbuf", "sudo"}
-# git options before the subcommand whose value is the next argument.
-GIT_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
+from shell_commands import git_subcommand, read_event, shell_command, split_subcommands
+
 REASON = (
     "דחיפה בכוח חסומה: `--force`, `-f` או refspec עם `+` דורסים בשקט commits"
     " שמישהו אחר דחף בינתיים.\n"
@@ -32,63 +25,16 @@ REASON = (
 
 def read_command(raw: str) -> str | None:
     """The shell command of a Bash or PowerShell tool call; None for anything else."""
-    try:
-        event = json.loads(raw)
-    except ValueError:
-        return None
-    if not isinstance(event, dict) or event.get("tool_name") not in SHELL_TOOLS:
-        return None
-    command = (event.get("tool_input") or {}).get("command")
-    return command if isinstance(command, str) else None
-
-
-def split_subcommands(command: str) -> list[list[str]]:
-    """The command's words, one list per subcommand between `&&`, `;`, `|` or a newline.
-
-    Quotes are respected, so `git commit -m "a; git push -f"` stays one subcommand.
-    Text shlex cannot parse (an open quote) falls back to splitting on whitespace.
-    """
-    lexer = shlex.shlex(command, posix=True, punctuation_chars=SEPARATOR_CHARS)
-    lexer.whitespace = " \t\r"
-    lexer.whitespace_split = True
-    try:
-        tokens = list(lexer)
-    except ValueError:
-        tokens = command.split()
-    subcommands: list[list[str]] = [[]]
-    for token in tokens:
-        if token and all(char in SEPARATOR_CHARS for char in token):
-            subcommands.append([])
-        else:
-            subcommands[-1].append(token)
-    return [words for words in subcommands if words]
-
-
-def strip_prefixes(words: list[str]) -> list[str]:
-    """The words without leading `VAR=value` assignments and wrappers (`timeout 30`)."""
-    index = 0
-    while index < len(words):
-        word = words[index]
-        if word in WRAPPERS or ("=" in word and word.split("=")[0].isidentifier()):
-            index += 1
-        elif word == "timeout":
-            index += 2
-        else:
-            break
-    return words[index:]
+    event = read_event(raw)
+    return shell_command(event) if event is not None else None
 
 
 def push_arguments(words: list[str]) -> list[str] | None:
     """The arguments after `git ... push`; None when the subcommand is not a push."""
-    words = strip_prefixes(words)
-    if not words or PurePath(words[0]).name.lower() not in ("git", "git.exe"):
+    parts = git_subcommand(words)
+    if parts is None or parts[1] != "push":
         return None
-    index = 1
-    while index < len(words) and words[index].startswith("-"):
-        index += 2 if words[index] in GIT_OPTIONS_WITH_VALUE else 1
-    if index >= len(words) or words[index] != "push":
-        return None
-    return words[index + 1 :]
+    return parts[2]
 
 
 def is_force_push(arguments: list[str]) -> bool:
