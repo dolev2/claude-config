@@ -117,6 +117,9 @@ again): back to step 2, then the tests and CI again. Then:
 gh pr merge <N> --squash --delete-branch
 ```
 
+This pops an approval window for Dolev (an `ask` rule in `~/.claude/settings.json`). That is
+expected. If he declines it, stop and report; never merge another way (such as `gh api`).
+
 If the merge is blocked (required reviews, protection, conflicts), stop and report the exact
 reason `gh` gives. Do not retry blindly and do not force anything. `--delete-branch` may fail
 where the harness blocks destructive git operations; that is expected. Never fall back to

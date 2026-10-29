@@ -141,7 +141,9 @@ Only on Dolev's explicit request for that specific issue.
    --fail-fast`). Anything other than all green: stop, report the failing job with a link, do
    not merge. No checks reported at all: say so, and rely on step 3.
 5. Squash-merge the PR. The issue closes through `Closes #<N>`. Check its open-questions
-   section first; an unticked box is Dolev's call, not yours.
+   section first; an unticked box is Dolev's call, not yours. `gh pr merge` pops an approval
+   window for Dolev (an `ask` rule in `~/.claude/settings.json`): if he declines it, stop and
+   report; never merge another way (such as `gh api`).
 6. **Do not delete the remote branch.** The harness may block it; the repo's "Automatically
    delete head branches" setting handles it.
 7. **Do delete the local branch**, which GitHub never touches. Stop its review app first, if

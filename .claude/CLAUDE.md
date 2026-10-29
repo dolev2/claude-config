@@ -15,6 +15,9 @@
   נוהל קוד חדש נכנס לשם, ולא ל-`CLAUDE.md` של ריפו.
   נהלי git (branch, rebase, התנגשות, worktree): `git.md` (נטען תמיד).
   נהלי הסביבה של המחשב (Windows, קידוד עברית, כלים זמינים, ניידות): `env-windows.md` (נטען תמיד).
+- `settings.json`: ההגדרות של Claude Code לכל הפרויקטים: כללי ההרשאות, ה-hooks ומשתני הסביבה.
+- `hooks/`: הסקריפטים של ה-hooks, קובץ Python אחד לכל hook והבדיקות לצידו. כל hook מחובר ב-`settings.json` באותה צורה: `"$(command -v python3 || command -v python)" "$HOME/.claude/hooks/<name>.py"`.
+  החוזה: JSON ב-stdin, יציאה 0 בלי פלט כשאין החלטה, יציאה 2 עם הסיבה ב-stderr כדי לחסום.
 - `skills/`: הסקילים. הגנריים של צינור העבודה: `dev-issue`, `dev-next`, `dev-plan`, `dev-code`, `dev-ship` ו-`dev-setup`.
 - `.claude/CLAUDE.md`: הקובץ הזה. נטען רק כשעובדים בתוך הריפו.
 
@@ -45,7 +48,7 @@
 ```
 ruff check .
 ruff format --check .
-python -m pytest skills/dev-setup/scripts
+python -m pytest skills/dev-setup/scripts hooks
 ```
 בסביבה נקייה: קודם `pip install pytest ruff==0.17.2`.
 ההגדרות ב-`ruff.toml` שבשורש: עותק של `skills/dev-setup/templates/ruff.toml`, כמו בכל ריפו. שינוי בכללים נכנס לתבנית, ואז לעותק.

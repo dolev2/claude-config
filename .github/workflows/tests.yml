@@ -34,4 +34,4 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
 
-      - run: python -m pytest skills/dev-setup/scripts
+      - run: python -m pytest skills/dev-setup/scripts hooks

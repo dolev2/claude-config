@@ -19,6 +19,8 @@
 | `.gitignore` | חוסם הכל ומתיר רק רשימה | ב-`~/.claude` יש גם פרטי התחברות, תמלולים וזיכרון. קובץ חדש נכנס לריפו רק אחרי שמוסיפים אותו לרשימה |
 | `.gitattributes` | סיומות שורה LF בכל checkout | התבניות מועתקות לריפואים אחרים כמו שהן |
 | `ruff.toml` | הגדרות ruff לסקריפטים של הריפו: עותק של `skills/dev-setup/templates/ruff.toml` | הריפו שמגדיר את ה-lint לכל הריפואים עומד בו בעצמו |
+| `settings.json` | ההגדרות של Claude Code לכל הפרויקטים: כללי הרשאות (חלון אישור לפני `gh pr merge`), hooks ומשתני סביבה | גיבוי והיסטוריה. Claude Code עצמו כותב לקובץ (למשל `/config`), ושינוי כזה נכנס לריפו ב-PR |
+| `hooks/` | הסקריפטים של ה-hooks והבדיקות שלהם. `block_force_push.py` חוסם `git push --force` (#61) | אכיפה של כללים כתובים. אם Python חסר, ה-hook לא חוסם (נכשל בלי לעצור), בכוונה |
 | `.claude/CLAUDE.md` | ההנחיות לעבודה על הריפו הזה | נטען רק בסשן שעובד בתוך הריפו |
 | `.github/workflows/tests.yml` | CI: lint והבדיקות על כל PR ועל כל push ל-`main` | אותן פקודות כמו בסעיף "בדיקות" ב-`.claude/CLAUDE.md` |
 | `.github/workflows/open-questions-gate.yml`, `sync-project.yml` | הצינור של הריפו הזה עצמו | המשימות של הריפו מנוהלות באותו צינור כמו כל פרויקט |
@@ -86,8 +88,10 @@ git checkout -- .
 
 `git reset` מעדכן רק את ה-index, ו-`git checkout -- .` כותב את הקבצים. קבצים שכבר קיימים ב-`~/.claude` ולא בריפו לא נפגעים.
 
+`settings.json` כן בריפו, ולכן `git checkout -- .` דורס את הקובץ שהיה במחשב. הגדרות שרק המחשב הזה צריך נכנסות ל-`settings.local.json`, שנשאר מחוץ לריפו.
+
 ## בדיקות
 
 ```bash
-python -m pytest skills/dev-setup/scripts
+python -m pytest skills/dev-setup/scripts hooks
 ```
