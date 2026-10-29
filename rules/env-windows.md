@@ -6,10 +6,12 @@
 ## עברית בפלט
 - **`PYTHONIOENCODING=utf-8` חובה כשמריצים Python שמדפיס עברית.**
   בלי זה ה-console של Windows נופל ב-`UnicodeEncodeError` או מדפיס סימני שאלה.
+  בסשן של Claude Code הוא כבר מוגדר (`env` ב-`settings.json`). מגדירים אותו ידנית רק מחוץ לסשן, למשל בטרמינל או ב-Task Scheduler.
 
 ## סקריפטי PowerShell
 - **קובץ `.ps1` עם עברית נשמר כ-UTF-8 עם BOM.**
   Windows PowerShell 5.1 קורא קובץ בלי BOM בקידוד המקומי, והעברית משתבשת.
+  hook מוסיף את ה-BOM אחרי Write או Edit (`hooks/ps1_bom.py`). קובץ שנכתב דרך פקודת shell לא עובר דרכו, ושם הכלל עדיין חל.
 - מריצים אותו עם `powershell -ExecutionPolicy Bypass -File <script>.ps1`, כי מדיניות ברירת המחדל חוסמת סקריפטים.
 
 ## מסמכים
