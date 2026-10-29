@@ -51,6 +51,11 @@
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/ps1_bom.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/ruff_on_edit.py\"",
+            "timeout": 60
           }
         ]
       }
