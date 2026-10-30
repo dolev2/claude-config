@@ -66,7 +66,9 @@ for one that was already on the remote. Never a plain `--force`.
 
 As the reference doc's "בדיקות" says: the commands in the repo's `CLAUDE.md`, plus any
 conditional suite whose area the diff touches (`git diff --name-only origin/<default>...HEAD`),
-or the manual check a suite-less repo defines there. No commands in CLAUDE.md? Use what the CI
+or the manual check a suite-less repo defines there. The lint runs first, then the suites of
+different areas at the same time, in one Bash command ("מתי רץ מה" there). A retry after a fix
+reruns the lint and the full suite of the area the fix touched. No commands in CLAUDE.md? Use what the CI
 workflow runs. Neither? Ask Dolev which command proves the change, rather than shipping
 untested.
 

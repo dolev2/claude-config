@@ -68,6 +68,10 @@ working rules and its test commands.
    tests as the reference doc's "בדיקות" says: a test for every new parameter, endpoint, or bug
    fix, unless the repo's CLAUDE.md defines a manual check instead of a suite.
 
+   **While writing, run only the test files of what changed**, never a full suite; a failing
+   test reruns alone (reference doc, "בדיקות", "מתי רץ מה"). The full run comes once, in
+   step 7.
+
    **When the Plan has "עבודה במקביל", write the parts in parallel** (reference doc, "סעיף
    ה-Plan"; no such sub-heading: write it all here, in sequence):
    1. **Shared files first.** Write the shared files the contract depends on and commit them on
@@ -107,7 +111,10 @@ working rules and its test commands.
 7. Run the repo's checks, as "בדיקות" in the reference doc says: the commands from CLAUDE.md,
    plus any conditional suite whose area the diff touches
    (`git diff --name-only origin/<default>...HEAD`), or the manual check a suite-less repo
-   defines.
+   defines. This is the full run, once: the lint, then the suites of different areas at the
+   same time, in one Bash command with a log and an exit code per suite (reference doc,
+   "בדיקות", "מתי רץ מה"). After a fix for a failure here, only the lint and the full suite
+   of the area the fix touched run again.
 
    **A failure to run the tests is not permission to skip them.** If the install or the run
    fails, stop: leave the issue on `owner:claude`, comment with the exact error, open no PR.
@@ -141,16 +148,17 @@ working rules and its test commands.
     **When the agent returns**, check that `git status --porcelain` in the worktree is still
     empty (the agent wrote nothing), then decide each finding: right and inside the Plan: fix
     it. Wrong: note it with the reason. Right but outside the Plan: do not fix it; propose it
-    as a task in the hand-off. Fixes are committed, the checks of step 7 run again, and the
+    as a task in the hand-off. Fixes are committed, the lint and the full suite of each area
+    a fix touched run again (a file outside every area: all of step 7), and the
     push is followed by a new `gh pr checks <N> --watch --fail-fast`: the first watch may have
     finished on the old head. **One review round only**: a fix is not reviewed again. The app
     runs from the worktree, so it picks the fix up; if its server does not reload on its own,
     restart it (reference doc, "עצירה", then "הסדר").
 
     **Red CI:** fix it in this run if the cause is clear, otherwise stay on `owner:claude` and
-    report the failing job with a link. A red PR is never handed to Dolev for review. The same
-    holds when the checks of step 7 fail after a fix: stay on `owner:claude`, and comment on
-    the PR with the exact error.
+    report the failing job with a link. A fix reruns the lint and the touched area's suite, as
+    above. A red PR is never handed to Dolev for review. The same holds when the checks fail
+    after a fix: stay on `owner:claude`, and comment on the PR with the exact error.
 
     **No hand-off**, for any reason: stop the app and delete the registry file (reference doc,
     "עצירה"): there is nothing to review.
@@ -189,7 +197,8 @@ Only on Dolev's explicit request for that specific issue.
    ```
    Anything other than `MERGEABLE`: rebase onto `origin/<default>` in a worktree, push with
    `--force-with-lease`, re-run the checks. If the rebase itself conflicts, stop and report.
-3. Run the checks (step 7 of Part A). If they fail, stop and do not merge.
+3. Run the checks (step 7 of Part A: the full run, suites at the same time). If they fail,
+   stop and do not merge.
 4. Check CI on the PR, waiting for a new run after a push (`gh pr checks <N> --watch
    --fail-fast`). Anything other than all green: stop, report the failing job with a link, do
    not merge. No checks reported at all: say so, and rely on step 3.
