@@ -113,7 +113,8 @@ working rules and its test commands.
    (`git diff --name-only origin/<default>...HEAD`), or the manual check a suite-less repo
    defines. This is the full run, once: the lint, then the suites of different areas at the
    same time, in one Bash command with a log and an exit code per suite (reference doc,
-   "בדיקות", "מתי רץ מה").
+   "בדיקות", "מתי רץ מה"). After a fix for a failure here, only the lint and the full suite
+   of the area the fix touched run again.
 
    **A failure to run the tests is not permission to skip them.** If the install or the run
    fails, stop: leave the issue on `owner:claude`, comment with the exact error, open no PR.
@@ -155,9 +156,9 @@ working rules and its test commands.
     restart it (reference doc, "עצירה", then "הסדר").
 
     **Red CI:** fix it in this run if the cause is clear, otherwise stay on `owner:claude` and
-    report the failing job with a link. A red PR is never handed to Dolev for review. The same
-    holds when the checks of step 7 fail after a fix: stay on `owner:claude`, and comment on
-    the PR with the exact error.
+    report the failing job with a link. A fix reruns the lint and the touched area's suite, as
+    above. A red PR is never handed to Dolev for review. The same holds when the checks fail
+    after a fix: stay on `owner:claude`, and comment on the PR with the exact error.
 
     **No hand-off**, for any reason: stop the app and delete the registry file (reference doc,
     "עצירה"): there is nothing to review.
