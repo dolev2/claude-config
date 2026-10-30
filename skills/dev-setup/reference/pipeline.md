@@ -96,9 +96,10 @@ flowchart TD
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
       RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>opens a PR that closes the issue"]:::routine
+      CODE --> WCI["CI checks run<br/>ובאותו זמן<br/>סוכן קורא סוקר את השינויים<br/>אפליקציית הסקירה עולה"]:::routine
     end
 
-    CODE --> REV["status:in-review<br/>owner:human"]:::human
+    WCI --> REV["status:in-review<br/>owner:human"]:::human
     REV --> RC(["Dolev reviews the PR"]):::human
     RC -- "נדרש תיקון" --> REP["status:needs-repair<br/>owner:claude"]:::routine
     REP --> EXEC
@@ -613,6 +614,9 @@ gh issue list --state open --label "status:in-review" --json number --jq length
 
 כש-`dev-code` מוסר PR לסקירה, האפליקציה כבר רצה מה-worktree של ה-PR, ובמסירה יש קישור שדולב
 פותח בכרום.
+
+האפליקציה עולה מיד אחרי פתיחת ה-PR, יחד עם CI ועם סוכן הסקירה, ולא אחרי ש-CI ירוק
+(claude-config #73). אם בסוף אין מסירה, עוצרים אותה (למטה, "עצירה").
 
 ### הסעיף ב-`CLAUDE.md` של ה-repo
 
