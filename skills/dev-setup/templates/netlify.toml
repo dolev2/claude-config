@@ -1,0 +1,19 @@
+# The deploy-skip rule for a repo whose site Netlify publishes (claude-config#50).
+# Every deploy costs 15 credits, and most merges in a repo with the pipeline touch only
+# workflows, docs or Claude settings. Netlify runs `ignore` before each build:
+# exit 0 skips the deploy, exit 1 builds.
+#
+# Not copied whole: each site has its own `publish` and headers. Copy the [build] keys
+# that fit the site into the repo's netlify.toml, keep exactly one `ignore`, and try it
+# on past commits first (`git diff --quiet <a> <b> -- ...`, then `echo $?`).
+
+[build]
+  publish = "site"
+  command = ""
+
+  # The site lives in a folder of its own: deploy only when that folder changes.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- site/"
+
+  # The site is the repo root (publish = "."): deploy on any change except the files
+  # that are not the site. Use this line instead of the one above.
+  # ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':!.github' ':!.claude' ':!docs' ':!*.md' ':!.gitignore'"

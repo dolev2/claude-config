@@ -24,6 +24,7 @@ This skill folder is also the shared home of the pipeline:
 - `templates/ruff.toml`, `templates/eslint.config.js` (+ `test_lint_templates.py`): the lint
   settings, following `~/.claude/rules/code-*.md`. Each repo keeps a copy; see step 3.
 - `templates/README.md`: the skeleton of a repo's file guide (step 6).
+- `templates/netlify.toml`: the deploy-skip rule for a repo that Netlify deploys (step 3).
 
 The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
 serves them to every repo of the account that has no `.github/ISSUE_TEMPLATE` of its own.
@@ -36,7 +37,7 @@ Read `reference/pipeline.md` before step 1, so you know what each piece is for.
 python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ```
 
-`ready: True`, `missing_files: []` and `lint: []` means it is installed. Say so and stop.
+`ready: True`, `missing_files: []`, `lint: []` and `netlify: []` means it is installed. Say so and stop.
 Otherwise note what is missing; only that gets added. A repo that has the pipeline but a
 non-empty `lint` goes through the lint parts of steps 1, 3 and 6 only. Never overwrite an existing workflow, script or
 issue form: show the diff against the template and ask.
@@ -160,6 +161,13 @@ settings from a URL, and one shared change would turn every repo red at once (re
   the template, and replace it only on his yes. Never edit the template to match a copy.
 - `missing .github/workflows/tests.yml`, or `no ... step in` it: add the template's lint
   steps to the existing jobs, before the tests. An existing workflow: show the diff first.
+
+**Netlify.** Each Netlify deploy costs credits, so a repo's `netlify.toml` deploys only when
+a site file changes (reference doc, "Netlify"). When `netlify` from step 0 says
+`no build.ignore in netlify.toml`, show Dolev the `ignore` line from `templates/netlify.toml`
+that fits the repo's `publish` (a folder of its own, or the root), and add it only on his yes.
+Before the PR, run the rule on a pipeline merge and on a site change from the repo's history:
+the first must exit 0 (skip), the second 1 (deploy). A repo without `netlify.toml` gets none.
 
 In a repo with code, lint fails on what is already there. Fixing it belongs to the repo's
 lint task (like charging-crm#66), not to a setup run; if the repo has none, open one with
