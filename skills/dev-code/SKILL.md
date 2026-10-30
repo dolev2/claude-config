@@ -119,22 +119,46 @@ working rules and its test commands.
    from a previous round, push to it with `git push --force-with-lease` (step 6 rewrote the
    commits), never a plain `--force`. **Do not merge here.**
 
-10. **Wait for CI before handing off**, if the repo has checks:
-    ```bash
-    gh pr checks <N> --watch --fail-fast
-    ```
-    Red: fix it in this run if the cause is clear, otherwise stay on `owner:claude` and report
-    the failing job with a link. A red PR is never handed to Dolev for review. No checks
-    reported: say so.
+10. **While CI runs: review the diff and start the app.** Right after the push, note the
+    pushed head as `<sha>` (`git rev-parse HEAD`): the review reads that commit, so a fix you
+    make meanwhile does not move it. Then, in one message, so all three run at the same time:
+    - **CI**, if the repo has checks: `gh pr checks <N> --watch --fail-fast`, in the background
+      (`run_in_background`). No checks reported: say so.
+    - **A review agent**: the `Agent` tool, no `isolation` (it reads this worktree) and no
+      cheaper `model`. Its brief holds the full Plan, `<sha>`, the diff command
+      `git diff origin/<default>...<sha>`, and pointers to the repo's `CLAUDE.md` and the rules
+      in `~/.claude/rules/`. Its rules: read only; never edit a file or run a command that
+      writes (commit, push, install, `gh issue edit`, `gh pr comment`); return a list of
+      findings, each with file and line, a kind (bug / departs from the Plan / cleanup), and
+      one sentence on why. On a repair round it reviews the whole diff of the PR.
+    - **The app for review**, from the worktree, as the reference doc's "הרמה לסקירה" says:
+      the command, ports and URL come from the repo's `CLAUDE.md`. Its outcome is one of: a
+      link to the PR's app (started now, or already running from this branch), a link with a
+      warning that names who holds the port, or a line saying why there is no link (the repo
+      has no app, the session is not on Dolev's machine, the app failed to start). A failure
+      here does not block the hand-off: say so in it.
 
-11. **Start the app for review**, from the worktree, as the reference doc's "הרמה לסקירה"
-    says: the command, ports and URL come from the repo's `CLAUDE.md`. Its outcome is one of:
-    a link to the PR's app (started now, or already running from this branch), a link with a
-    warning that names who holds the port, or a line saying why there is no link (the repo has
-    no app, the session is not on Dolev's machine, the app failed to start). A failure here
-    does not block the hand-off: say so in it.
+    **When the agent returns**, check that `git status --porcelain` in the worktree is still
+    empty (the agent wrote nothing), then decide each finding: right and inside the Plan: fix
+    it. Wrong: note it with the reason. Right but outside the Plan: do not fix it; propose it
+    as a task in the hand-off. Fixes are committed, the checks of step 7 run again, and the
+    push is followed by a new `gh pr checks <N> --watch --fail-fast`: the first watch may have
+    finished on the old head. **One review round only**: a fix is not reviewed again. The app
+    runs from the worktree, so it picks the fix up; if its server does not reload on its own,
+    restart it (reference doc, "עצירה", then "הסדר").
 
-12. Hand off:
+    **Red CI:** fix it in this run if the cause is clear, otherwise stay on `owner:claude` and
+    report the failing job with a link. A red PR is never handed to Dolev for review. The same
+    holds when the checks of step 7 fail after a fix: stay on `owner:claude`, and comment on
+    the PR with the exact error.
+
+    **No hand-off**, for any reason: stop the app and delete the registry file (reference doc,
+    "עצירה"): there is nothing to review.
+
+    Go on to step 11 only when the agent has returned and CI is green on the last push (no
+    checks reported: the agent alone).
+
+11. Hand off:
     ```bash
     gh issue edit <N> --add-label "status:in-review" --add-label "owner:<human>" \
                       --remove-label "status:ready-to-execute" --remove-label "owner:claude"
@@ -142,10 +166,11 @@ working rules and its test commands.
     ```
     Then comment on the issue, in Hebrew, with what changed, what you tested, and anything Dolev
     should look at. On a repair round, say which of his points each change addresses. The
-    outcome of step 11 goes into that comment and into the chat message, with one line on what
-    to open in it.
+    comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
+    why. The app's outcome from step 10 goes into that comment and into the chat message, with
+    one line on what to open in it.
 
-13. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
+12. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
     `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.
 
 ## Gate: not a Claude action
@@ -205,3 +230,4 @@ Only on Dolev's explicit request for that specific issue.
 - Never attempt to delete branches. The one exception: the temporary local branches of the
   agents in step 5, once their commits are on the issue branch.
 - An agent never pushes, and never writes outside the path prefixes the Plan gave its part.
+  The review agent of step 10 writes nothing at all.
