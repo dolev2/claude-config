@@ -39,6 +39,11 @@
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_main_folder.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_parallel_parts.py\"",
+            "timeout": 10
           }
         ]
       }
