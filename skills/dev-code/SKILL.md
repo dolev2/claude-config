@@ -68,6 +68,34 @@ working rules and its test commands.
    tests as the reference doc's "בדיקות" says: a test for every new parameter, endpoint, or bug
    fix, unless the repo's CLAUDE.md defines a manual check instead of a suite.
 
+   **When the Plan has "עבודה במקביל", write the parts in parallel** (reference doc, "סעיף
+   ה-Plan"; no such sub-heading: write it all here, in sequence):
+   1. **Shared files first.** Write the shared files the contract depends on and commit them on
+      the issue branch. Note that commit as `<start>`: every agent starts from it.
+   2. **One agent per part, all in one message** so they run at the same time: the `Agent` tool
+      with `isolation: "worktree"`, no cheaper `model` (quality stays the same). Each brief
+      holds the full Plan, the contract, the part's path prefixes, `<start>`, and these rules:
+      - first make sure the worktree sits on `<start>` (`git rev-parse HEAD`); if not,
+        `git reset --hard <start>` (the worktree is new, so nothing is lost, and the commits
+        stay on the agent's own branch);
+      - install the part's dependencies, as the repo's `CLAUDE.md` says (a new worktree has
+        none);
+      - write only under the part's prefixes, and run only the part's tests;
+      - a file outside the prefixes, or a change to the contract: stop and report, do not edit;
+      - finish with one or more commits in the worktree, never a push; report the worktree
+        path, the branch, and the files changed.
+   3. **Check each part's files** against its prefixes:
+      `git -C <agent worktree> diff --name-only <start>..HEAD`. A file outside them: look at it
+      yourself before going on.
+   4. **Join:** `git cherry-pick <start>..<agent branch>`, one part after the other. The parts
+      share no file, so a conflict means something is wrong: `git cherry-pick --abort`, stop
+      and report.
+   5. **Check against the contract:** read both sides together, fix any mismatch, and finish
+      what an agent stopped on. A change to the contract itself is a change to the plan
+      (step 8).
+   6. **Clean up:** `git worktree remove <agent worktree>` and `git branch -D <agent branch>`
+      for each agent, only after its commits are on the issue branch. Then go on to step 6.
+
 6. **Rebase onto the default branch before running the tests:**
    ```bash
    git fetch origin <default>
@@ -174,4 +202,6 @@ Only on Dolev's explicit request for that specific issue.
   milestone yourself.
 - Never open a PR from a branch that has not just been rebased onto `origin/<default>`, or
   whose tests ran before that rebase; never hand off a red PR.
-- Never attempt to delete branches.
+- Never attempt to delete branches. The one exception: the temporary local branches of the
+  agents in step 5, once their commits are on the issue branch.
+- An agent never pushes, and never writes outside the path prefixes the Plan gave its part.
