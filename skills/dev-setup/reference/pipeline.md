@@ -132,11 +132,14 @@ https://claude.ai/artifact/FcDGAbuAhUSpyYT34zHg1A) מראה את אותו צינ
 **אחרי המיזוג, PR שנגע ב-`issue-lifecycle.html` מפורסם מחדש לאותו קישור.** מי שמיזג (`dev-ship`
 או `dev-code` Part B) עושה את זה אחרי הניקוי. כלי Artifact לא זמין (ענן, CI): מדווחים לדולב
 שהפרסום מחכה. הצעדים:
-1. `git show origin/<default>:skills/dev-setup/reference/issue-lifecycle.html` לקובץ בתיקיית
-   ה-scratchpad. כך מתפרסמת בדיוק הגרסה שמוזגה, גם כשה-worktree כבר נמחק.
+1. `git fetch origin <default>`, ואז
+   `git show origin/<default>:skills/dev-setup/reference/issue-lifecycle.html` לקובץ בתיקיית
+   ה-scratchpad. `gh pr merge` לא מעדכן את `origin/<default>` המקומי, ובלי ה-fetch מתפרסמת
+   הגרסה שלפני המיזוג. כך מתפרסמת בדיוק הגרסה שמוזגה, גם כשה-worktree כבר נמחק.
 2. כלי Artifact, `action: "read"` על הקישור. בלי קריאה באותה שיחה, הפרסום נדחה.
-3. הגרסה החיה שונה ממה שהיה בריפו לפני השינוי (מישהו ערך אותה בינתיים): עוצרים ומדווחים, לא
-   דורסים.
+3. משווים את הגרסה החיה, אחרי שמקצצים ממנה את השלד, לגרסה שלפני ה-PR:
+   `git show <merge commit>^:skills/dev-setup/reference/issue-lifecycle.html`. שונות (מישהו ערך
+   את העמוד בינתיים): עוצרים ומדווחים, לא דורסים. הקובץ חדש ב-PR: אין מה להשוות.
 4. `publish` עם `url` = הקישור ו-`file_path` = הקובץ מצעד 1. בלי `icon` ובלי `force`.
 
 הקובץ בריפו הוא העמוד בלי השלד שהשירות מוסיף בפרסום: הוא מתחיל ב-`<title>`, לא ב-`<!doctype`.
