@@ -632,8 +632,10 @@ gh issue list --state open --label "status:in-review" --json number --jq length
 
 1. **בודקים כל פורט** (עובד בכל מערכת; יציאה 0 פירושה תפוס):
    ```bash
-   python -c "import socket,sys; sys.exit(socket.socket().connect_ex(('127.0.0.1', int(sys.argv[1]))) != 0)" <port>
+   python "$HOME/.claude/skills/dev-setup/scripts/port_check.py" busy <port>
    ```
+   פורט תפוס כשמשהו עונה ב-`127.0.0.1` **או** ב-`::1`. Vite על Node 17 ומעלה מאזין ל-`localhost`
+   רק ב-`::1`, ובדיקה של `127.0.0.1` לבד ראתה אותו כפנוי (CRM #84, claude-config #52).
 2. **הכל פנוי:** מריצים את הפקודה ברקע מתוך ה-worktree, מחכים עד דקה שכל הפורטים יענו, ורושמים
    את קובץ הרישום עם ה-PID של מי שמאזין לכל פורט. לא עלתה: שורת השגיאה האחרונה נכנסת למסירה.
 3. **תפוס, ובקובץ הרישום ה-branch הזה:** לא מרימים שוב. מצרפים את הקישור מהקובץ.
@@ -641,8 +643,8 @@ gh issue list --state open --label "status:in-review" --json number --jq length
    מוחקים את הקובץ, וממשיכים כמו בשלב 2. המסירה האחרונה מנצחת; את ה-PR הקודם אפשר להרים שוב
    לפי בקשה.
 5. **תפוס, ואין רישום** (למשל דולב מריץ את `master`): **לא נוגעים בה.**
-   - לכל הפורטים יש משתנה: בוחרים פורטים פנויים
-     (`python -c "import socket; s=socket.socket(); s.bind(('127.0.0.1', 0)); print(s.getsockname()[1])"`),
+   - לכל הפורטים יש משתנה: בוחרים פורטים פנויים בשתי הכתובות
+     (`python "$HOME/.claude/skills/dev-setup/scripts/port_check.py" free`, פעם לכל פורט),
      מריצים עם המשתנים, ורושמים.
    - אחרת: מצרפים את הקישור עם אזהרה שהוא מציג קוד אחר, ומי תופס את הפורט (למטה). מציעים להרים
      את ה-PR כשהפורט יתפנה.
