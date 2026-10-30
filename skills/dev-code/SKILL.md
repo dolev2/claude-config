@@ -142,16 +142,21 @@ working rules and its test commands.
     empty (the agent wrote nothing), then decide each finding: right and inside the Plan: fix
     it. Wrong: note it with the reason. Right but outside the Plan: do not fix it; propose it
     as a task in the hand-off. Fixes are committed, the checks of step 7 run again, and the
-    push starts a new CI run to wait for. **One review round only**: a fix is not reviewed
-    again. The app runs from the worktree, so it picks the fix up; if its server does not
-    reload on its own, restart it (reference doc, "עצירה", then "הסדר").
+    push is followed by a new `gh pr checks <N> --watch --fail-fast`: the first watch may have
+    finished on the old head. **One review round only**: a fix is not reviewed again. The app
+    runs from the worktree, so it picks the fix up; if its server does not reload on its own,
+    restart it (reference doc, "עצירה", then "הסדר").
 
     **Red CI:** fix it in this run if the cause is clear, otherwise stay on `owner:claude` and
-    report the failing job with a link. A red PR is never handed to Dolev for review. If there
-    is no hand-off, stop the app and delete the registry file (reference doc, "עצירה"): there
-    is nothing to review.
+    report the failing job with a link. A red PR is never handed to Dolev for review. The same
+    holds when the checks of step 7 fail after a fix: stay on `owner:claude`, and comment on
+    the PR with the exact error.
 
-    Go on to step 11 only when CI is green on the last push and the agent has returned.
+    **No hand-off**, for any reason: stop the app and delete the registry file (reference doc,
+    "עצירה"): there is nothing to review.
+
+    Go on to step 11 only when the agent has returned and CI is green on the last push (no
+    checks reported: the agent alone).
 
 11. Hand off:
     ```bash
@@ -225,3 +230,4 @@ Only on Dolev's explicit request for that specific issue.
 - Never attempt to delete branches. The one exception: the temporary local branches of the
   agents in step 5, once their commits are on the issue branch.
 - An agent never pushes, and never writes outside the path prefixes the Plan gave its part.
+  The review agent of step 10 writes nothing at all.

@@ -96,7 +96,7 @@ flowchart TD
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
       RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>opens a PR that closes the issue"]:::routine
-      CODE --> WCI["CI checks run<br/>ובאותו זמן<br/>סוכן קורא סוקר את השינויים<br/>אפליקציית הסקירה עולה"]:::routine
+      CODE --> WCI["CI checks run<br/>ובאותו זמן<br/>סוכן לקריאה בלבד סוקר את השינויים<br/>אפליקציית הסקירה עולה"]:::routine
     end
 
     WCI --> REV["status:in-review<br/>owner:human"]:::human
