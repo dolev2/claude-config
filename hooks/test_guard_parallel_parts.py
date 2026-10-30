@@ -243,3 +243,33 @@ def test_missing_git_does_not_block(monkeypatch, repo):
 
     monkeypatch.setattr(guard_parallel_parts.subprocess, "run", no_git)
     assert run_hook(monkeypatch, edit(worktree(repo) / "settings.json")) == (0, "")
+
+
+@pytest.mark.parametrize("encoding", ["utf-8-sig", "utf-16"])
+def test_registration_with_bom_is_read(monkeypatch, repo, encoding):
+    registration(repo).write_text("hook\n", encoding=encoding)
+    assert run_hook(monkeypatch, edit(worktree(repo) / "hooks/guard.py")) == (0, "")
+    code, _reason = run_hook(monkeypatch, edit(worktree(repo) / "settings.json"))
+    assert code == 2
+
+
+def test_parts_file_with_bom_is_read(monkeypatch, repo):
+    parts_file(repo).write_text(json.dumps(PARTS), encoding="utf-8-sig")
+    code, _reason = run_hook(monkeypatch, edit(worktree(repo) / "settings.json"))
+    assert code == 2
+
+
+def test_relative_gitdir_pointer_finds_the_worktree(monkeypatch, repo):
+    pointer = repo / ".git" / "worktrees" / f"agent-{AGENT}" / "gitdir"
+    pointer.write_text("../../../.claude/worktrees/agent-a1/.git\n")
+    assert run_hook(monkeypatch, edit(worktree(repo) / "hooks/guard.py")) == (0, "")
+
+
+def test_missing_gitdir_pointer_does_not_block(monkeypatch, repo):
+    (repo / ".git" / "worktrees" / f"agent-{AGENT}" / "gitdir").unlink()
+    assert run_hook(monkeypatch, edit(worktree(repo) / "settings.json")) == (0, "")
+
+
+def test_tool_input_that_is_not_an_object_does_not_block(monkeypatch, repo):
+    event = {"tool_name": "Edit", "tool_input": "x", "agent_id": AGENT}
+    assert run_hook(monkeypatch, event) == (0, "")

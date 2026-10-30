@@ -89,7 +89,7 @@ working rules and its test commands.
       - first make sure the worktree sits on `<start>` (`git rev-parse HEAD`); if not,
         `git reset --hard <start>` (the worktree is new, so nothing is lost, and the commits
         stay on the agent's own branch). In the same step, register the part:
-        `echo <part> > "$(git rev-parse --git-dir)/parallel-part"`;
+        `echo <part> > "$(git rev-parse --git-dir)/parallel-part"`, in the Bash tool;
       - install the part's dependencies, as the repo's `CLAUDE.md` says (a new worktree has
         none);
       - write only under the part's prefixes, and run only the part's tests;

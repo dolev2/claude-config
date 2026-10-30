@@ -16,6 +16,7 @@ the call through. Writes from shell commands (`sed -i`, `>`) are not caught: thi
 guards against mistakes, not a security boundary.
 """
 
+import codecs
 import json
 import os
 import subprocess
@@ -87,11 +88,30 @@ def git_common_dir(folder: Path) -> Path | None:
     return (folder / output).resolve()
 
 
+def read_text(path: Path) -> str | None:
+    """The file's text without surrounding whitespace; None when it cannot be read.
+
+    Windows PowerShell's `echo x > file` writes UTF-16 with a BOM, and `Out-File`
+    UTF-8 with one, so both BOMs are read rather than taken as part of the text.
+    """
+    try:
+        data = path.read_bytes()
+        encoding = (
+            "utf-16"
+            if data[:2] in (codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)
+            else "utf-8-sig"
+        )
+        return data.decode(encoding).strip()
+    except (OSError, ValueError):
+        return None
+
+
 def load_parts(common: Path) -> dict[str, list[str]] | None:
     """Each part's path prefixes from the parts file; None when missing or malformed."""
+    text = read_text(common / PARTS_FILE)
     try:
-        data = json.loads((common / PARTS_FILE).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        data = json.loads(text) if text else None
+    except ValueError:
         return None
     parts = data.get("parts") if isinstance(data, dict) else None
     if not isinstance(parts, dict):
@@ -104,20 +124,15 @@ def load_parts(common: Path) -> dict[str, list[str]] | None:
     return parts
 
 
-def read_text(path: Path) -> str | None:
-    """The file's text without surrounding whitespace; None when it cannot be read."""
-    try:
-        return path.read_text(encoding="utf-8").strip()
-    except (OSError, ValueError):
-        return None
-
-
 def agent_worktree(agent_git_dir: Path) -> Path | None:
-    """The agent's worktree folder, from the `gitdir` file that points at its .git."""
+    """The agent's worktree folder, from the `gitdir` file that points at its .git.
+
+    The pointer is relative to the git dir when `worktree.useRelativePaths` is on.
+    """
     pointer = read_text(agent_git_dir / "gitdir")
     if not pointer:
         return None
-    return Path(pointer).resolve().parent
+    return (agent_git_dir / pointer).resolve().parent
 
 
 def matches_part(relative: str, prefixes: list[str]) -> bool:
@@ -131,11 +146,11 @@ def matches_part(relative: str, prefixes: list[str]) -> bool:
 
 
 def judge_path(
-    path: Path, worktree: Path | None, part: str, prefixes: list[str]
+    path: Path, worktree: Path, part: str, prefixes: list[str]
 ) -> str | None:
     """The reason to block an edit of path by the agent of part; None to allow it."""
     shown = ", ".join(f"`{prefix}`" for prefix in prefixes) or "(אין)"
-    if worktree is not None and is_inside(path, worktree):
+    if is_inside(path, worktree):
         relative = Path(os.path.relpath(path, worktree)).as_posix()
         if matches_part(relative, prefixes):
             return None
@@ -147,6 +162,8 @@ def decide(event: dict) -> str | None:
     """The reason to block this tool call; None to let it through."""
     agent_id = event.get("agent_id")
     if event.get("tool_name") not in EDIT_TOOLS or not isinstance(agent_id, str):
+        return None
+    if not isinstance(event.get("tool_input"), dict):
         return None
     path = edit_target(event)
     if path is None or not agent_id:
@@ -164,7 +181,10 @@ def decide(event: dict) -> str | None:
     if part not in parts:
         names = ", ".join(f"`{name}`" for name in parts) or "(אין)"
         return UNKNOWN_PART_REASON.format(part=part, parts=names)
-    return judge_path(path, agent_worktree(agent_git_dir), part, parts[part])
+    worktree = agent_worktree(agent_git_dir)
+    if worktree is None:
+        return None
+    return judge_path(path, worktree, part, parts[part])
 
 
 def main() -> int:
