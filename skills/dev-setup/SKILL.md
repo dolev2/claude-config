@@ -12,6 +12,8 @@ This skill folder is also the shared home of the pipeline:
 - `scripts/rank_issues.py` (+ `test_rank_issues.py`): the sprint ranking.
 - `scripts/lint_check.py` (+ `test_lint_check.py`): which lint settings a repo lacks, or holds
   in a copy that strays from its template. `pipeline_info.py` shows its list under `lint`.
+- `scripts/port_check.py` (+ `test_port_check.py`): whether a port is busy on 127.0.0.1 or ::1,
+  and a port free on both, for the review app (reference doc, "הרמה לסקירה").
 - `scripts/board_views.py` (+ `test_board_views.py`): the board's two views, "ספרינט נוכחי" and "הכל".
 - `scripts/test_open_questions_gate.py`, `scripts/test_project_sync.py`: tests for the two shared
   actions. Run them all with pytest after any change here.
