@@ -97,6 +97,12 @@ keeps them: edit it in the headings it already has.
    issue is a line in "בקצרה", not a section of its own (reference doc, "סעיף ה-Plan").
    An issue coming back for a revision whose plan predates this format gets it in the same edit.
 
+   **Can it be written in parallel?** When the work touches more than one layer (a backend and
+   a frontend, say), check whether it splits into 2 to 3 parts with no file in common. If it
+   does, write the "עבודה במקביל" sub-heading: the parts with their path prefixes, the shared
+   files, and the contract between the parts (reference doc, "סעיף ה-Plan"). `dev-code` then
+   writes the parts at the same time. If every file touches both sides, leave it out.
+
    **Check the scope before writing the plan.** Three questions, every issue:
    - **Too big?** If the issue holds more than one PR that can be reviewed on its own, propose a
      split in chat: each sub-issue's title, one line of scope, and the blockers between them.

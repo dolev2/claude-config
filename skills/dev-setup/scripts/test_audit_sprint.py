@@ -108,6 +108,17 @@ def test_only_the_files_section_counts():
     assert issue.files == {"a.py"}
 
 
+def test_parallel_work_prefixes_are_not_files():
+    parallel = (
+        "##### עבודה במקביל\n- **שרת:** `backend/`\n- **מסכים:** `frontend/src/`\n\n"
+    )
+    text = body(files=["backend/api.py"]).replace(
+        "##### קבצים", parallel + "##### קבצים"
+    )
+    issue = audit_sprint.sprint_issue(node(1, text))
+    assert issue.files == {"backend/api.py"}
+
+
 def test_a_clean_sprint_has_no_findings():
     assert lines(node(1), node(2, blocked_by=[(1, "OPEN")])) == []
 
