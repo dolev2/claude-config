@@ -117,3 +117,48 @@ def test_eslint_lives_next_to_the_nearest_package_json(tmp_path):
 def test_jsx_without_a_package_json_looks_at_the_root(tmp_path):
     files = make_repo(tmp_path, {"src/App.jsx": "", WORKFLOW: LINT_STEPS})
     assert lint_check.lint_gaps(tmp_path, files) == ["missing eslint.config.js"]
+
+
+GUIDE_STEP = "      - run: python .github/file_guide_check.py\n"
+
+
+def test_file_guide_check_missing_everywhere(tmp_path):
+    assert lint_check.file_guide_gaps(tmp_path) == [
+        f"missing {lint_check.FILE_GUIDE_CHECK}",
+        f"missing {WORKFLOW}",
+    ]
+
+
+def test_file_guide_check_with_its_own_exceptions_and_step(tmp_path):
+    make_repo(tmp_path, {WORKFLOW: GUIDE_STEP})
+    copy_template(tmp_path, "file_guide_check.py", lint_check.FILE_GUIDE_CHECK)
+    copy = tmp_path / lint_check.FILE_GUIDE_CHECK
+    text = copy.read_text(encoding="utf-8")
+    copy.write_text(
+        text.replace(
+            "COVERED_BY_PATTERN: list[str] = []", 'COVERED_BY_PATTERN = ["*"]'
+        ),
+        encoding="utf-8",
+    )
+    assert lint_check.file_guide_gaps(tmp_path) == []
+
+
+def test_file_guide_check_that_strays_and_has_no_step(tmp_path):
+    make_repo(tmp_path, {WORKFLOW: LINT_STEPS})
+    copy_template(tmp_path, "file_guide_check.py", lint_check.FILE_GUIDE_CHECK)
+    copy = tmp_path / lint_check.FILE_GUIDE_CHECK
+    copy.write_text("x = 1\n" + copy.read_text(encoding="utf-8"), encoding="utf-8")
+    assert lint_check.file_guide_gaps(tmp_path) == [
+        f"differs {lint_check.FILE_GUIDE_CHECK}",
+        f"no file guide step in {WORKFLOW}",
+    ]
+
+
+def test_all_gaps_names_a_missing_workflow_once(tmp_path):
+    files = make_repo(tmp_path, {"app/main.py": ""}) + [
+        copy_template(tmp_path, "ruff.toml", "ruff.toml")
+    ]
+    assert lint_check.all_gaps(tmp_path, files) == [
+        f"missing {WORKFLOW}",
+        f"missing {lint_check.FILE_GUIDE_CHECK}",
+    ]

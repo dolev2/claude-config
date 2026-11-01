@@ -49,10 +49,12 @@
 ```
 ruff check .
 ruff format --check .
+python .github/file_guide_check.py
 python -m pytest skills/dev-setup/scripts hooks
 ```
 בסביבה נקייה: קודם `pip install pytest ruff==0.17.2`.
 ההגדרות ב-`ruff.toml` שבשורש: עותק של `skills/dev-setup/templates/ruff.toml`, כמו בכל ריפו. שינוי בכללים נכנס לתבנית, ואז לעותק.
+אותו דבר ב-`.github/file_guide_check.py`, עותק של `templates/file_guide_check.py`. החריגים של הריפו מתחת לשורת `--- local ---`.
 
 ב-CI: `.github/workflows/tests.yml` מריץ את אותן פקודות על כל PR ועל כל push ל-`main`.
 

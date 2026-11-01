@@ -14,6 +14,9 @@ own.
 What is checked, by the files git tracks:
 - a .py file        -> ruff.toml at the root, and `ruff check` in the tests workflow
 - a .jsx file       -> eslint.config.js next to the nearest package.json, and `run lint`
+
+file_guide_gaps checks every repo, code or not, the same way: the copy of
+file_guide_check.py in .github/, and a step in the tests workflow that runs it (#89).
 """
 
 import subprocess
@@ -24,6 +27,7 @@ TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
 # The whole line, so a comment that mentions the marker does not count as one.
 LOCAL_MARKERS = ("# --- local ---", "// --- local ---")
 WORKFLOW = ".github/workflows/tests.yml"
+FILE_GUIDE_CHECK = ".github/file_guide_check.py"
 
 
 def shared_part(text: str) -> str | None:
@@ -90,6 +94,24 @@ def lint_gaps(root: Path, files: list[str]) -> list[str]:
     return [gap for gap in gaps if gap]
 
 
+def file_guide_gaps(root: Path) -> list[str]:
+    """What the repo lacks of the file guide check: the copy, or its step in CI."""
+    gaps = [config_gap(root, FILE_GUIDE_CHECK, "file_guide_check.py")]
+    workflow = root / WORKFLOW
+    if not workflow.exists():
+        gaps.append(f"missing {WORKFLOW}")
+    elif "file_guide_check.py" not in workflow.read_text(
+        encoding="utf-8", errors="replace"
+    ):
+        gaps.append(f"no file guide step in {WORKFLOW}")
+    return [gap for gap in gaps if gap]
+
+
+def all_gaps(root: Path, files: list[str]) -> list[str]:
+    """The lint gaps and the file guide gaps together, each line once."""
+    return list(dict.fromkeys(lint_gaps(root, files) + file_guide_gaps(root)))
+
+
 def tracked_files(root: Path) -> list[str]:
     """The paths git tracks under root, with forward slashes."""
     result = subprocess.run(
@@ -114,5 +136,5 @@ if __name__ == "__main__":
     if top.returncode != 0:
         sys.exit("Not inside a git repo.")
     repo = Path(top.stdout.strip())
-    for line in lint_gaps(repo, tracked_files(repo)) or ["lint setup complete"]:
+    for line in all_gaps(repo, tracked_files(repo)) or ["lint setup complete"]:
         print(line)
