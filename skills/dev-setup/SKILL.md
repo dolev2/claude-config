@@ -337,7 +337,8 @@ how). To install it:
 2. Run `python .github/file_guide_check.py` and complete the guide until it passes. A file you
    cannot place: read it, or ask Dolev, as above.
 3. Add the command to the tests section of `CLAUDE.md`, and the template's `files` job to
-   `tests.yml`. The copy gets a row in the file guide.
+   `tests.yml`. The copy gets a row in the file guide. A repo with no other Python (a static
+   site) gets the `files` job only, without ruff: `lint` does not count the copy as Python.
 
 `differs .github/file_guide_check.py` is handled like a lint copy that differs: the diff above
 the line, replaced only on Dolev's yes.
