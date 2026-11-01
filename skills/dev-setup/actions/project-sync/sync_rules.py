@@ -147,6 +147,28 @@ def should_sync(labels: list[str], state: str, on_board: bool) -> bool:
     return state.upper() != "CLOSED" or "status:done" in labels
 
 
+def needs_done_label(labels: list[str], state: str, state_reason: str | None) -> bool:
+    """Whether a closed pipeline issue was completed but keeps an earlier status.
+
+    A PR merged with `Closes #N` closes the issue as COMPLETED and leaves its
+    status:in-review label, so should_sync would take it for not-planned and the card
+    would never reach Done (claude-config #97: 11 issues in three repos).
+    """
+    return (
+        state.upper() == "CLOSED"
+        and (state_reason or "").upper() == "COMPLETED"
+        and "status:done" not in labels
+        and any(label.startswith(("owner:", "status:")) for label in labels)
+    )
+
+
+def done_labels(labels: list[str]) -> list[str]:
+    """The labels with every status:* label replaced by status:done."""
+    return [label for label in labels if not label.startswith("status:")] + [
+        "status:done"
+    ]
+
+
 def is_active_without_sprint(issue: dict, labels: list[str]) -> bool:
     """An open issue in the pipeline (not backlog, not done) that has no milestone.
 
