@@ -11,7 +11,7 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 The repo is the one `gh repo view` sees from the current directory, unless --repo is
 given.
 
-The rule is in ../reference/pipeline.md, section "סדר בתוך הספרינט". In short:
+The rule is in ../reference/dependencies.md. In short:
 an issue's weight is the number of open issues in the sprint that wait on it through
 "Blocked by" links, directly or through other issues. Order: the order of --status (the
 tier), then `process` and `bug` issues before the rest, then weight, highest first,

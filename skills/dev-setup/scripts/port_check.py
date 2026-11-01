@@ -1,4 +1,4 @@
-"""Checks local ports for the review app (reference doc, "הרמה לסקירה").
+"""Checks local ports for the review app (reference/review-app.md).
 
 Run with any Python 3 (stdlib only), on Windows, Linux or macOS:
 

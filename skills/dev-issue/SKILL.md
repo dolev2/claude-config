@@ -22,8 +22,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 ## Read first
 
-- **`$HOME/.claude/skills/dev-setup/reference/pipeline.md`**: the label vocabulary,
-  milestones, and the "תלויות" section on "Blocked by" links.
+- **In `$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary, milestones),
+  `issue-body.md` (editing a body, the hidden marker) and `dependencies.md` ("Blocked by" links).
 - **The repo's `CLAUDE.md`**: its sources of truth, and its rules about business data. Do
   not invent prices, values or business rules. What is missing goes into "שאלות פתוחות" as an
   unticked box, not into the text.
@@ -87,13 +87,11 @@ The area is a label only (`area:*`, below), not a section of the body. Older iss
 carry an `אזור` section; leave it as it is.
 
 **Do not write the hidden sync marker (`<!-- <sync_marker>: ... -->`) yourself, and never
-edit an existing one.** `sync_project.py` owns it: it records the last synced state, and a
-side that differs from it is treated as the side that changed. A hand-written marker that
-matches the new labels makes the stale board look like the newer edit, and the sync then
-reverts the labels. To change an issue's state, change its labels and leave the marker alone.
+edit an existing one**: a hand-written marker makes the sync revert the labels. To change an
+issue's state, change its labels only (`reference/issue-body.md` says why).
 
 Write the body to a file with LF line endings and pass `--body-file`, never an inline string
-with `\n` (reference doc, "סעיף ה-Plan").
+with `\n` (`reference/issue-body.md`).
 
 A business detail a person still owes (a price, a client's answer) is an unticked open
 question in the body, not a "Blocked by" link to some other issue.
@@ -109,7 +107,7 @@ question in the body, not a "Blocked by" link to some other issue.
 | umbrella (parent split into sub-issues) | keeps `task`, `area:*`; becomes `owner:<human>`, `status:backlog` | unchanged |
 | decision (only if the repo has a `decision` label) | `decision`, `owner:<human>`, no `status:*` | the sprint that waits on it |
 
-Add `process` to any task that is about how the work is managed rather than the project itself: the pipeline, compliance with the rules in `~/.claude/rules/`, or aligning the repo with claude-config (a lint drift, a missing file guide). The definition is in the reference doc's vocabulary table. Not in claude-config itself, where every issue is one.
+Add `process` to any task that is about how the work is managed rather than the project itself: the pipeline, compliance with the rules in `~/.claude/rules/`, or aligning the repo with claude-config (a lint drift, a missing file guide). The definition is in the vocabulary table of `reference/pipeline.md`. Not in claude-config itself, where every issue is one.
 
 Use only `area:*` labels that exist in the repo (`area_labels`). A decision issue's body has
 only the goal and context sections: it is closed by Dolev's decision in a comment, not by a PR.
@@ -135,8 +133,8 @@ parent's numbering (`13א.`, `13ב.`), so the board reads in order.
    CID=$(gh api repos/{owner}/{repo}/issues/<child> --jq .id)
    gh api -X POST repos/{owner}/{repo}/issues/<parent>/sub_issues -F sub_issue_id=$CID
    ```
-2. **Blocked by**: one link per `#B` on the `תלוי ב:` line, with the commands in the
-   "תלויות" section of the reference doc. The line and the links must list the same issues.
+2. **Blocked by**: one link per `#B` on the `תלוי ב:` line, with the commands in
+   `reference/dependencies.md`. The line and the links must list the same issues.
    Link a sub-issue to its own blockers, not only through the parent: Execute checks the
    issue it is about to start.
 3. **The parent's body**: when splitting, rewrite the parent's "מה רוצים" as an umbrella: a

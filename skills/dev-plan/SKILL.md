@@ -22,9 +22,10 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 ## Read first
 
-**`$HOME/.claude/skills/dev-setup/reference/pipeline.md`**: the label vocabulary, how to read
-the full context of an issue, the Plan format, body editing, and the section "עותק העבודה".
-Everything mechanical lives there. Read it before step 1, every run.
+In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary, the sprint), `issue-body.md` (how
+to read the full context of an issue, the Plan format, body editing), `dependencies.md` and
+`git-flow.md` (the working copy). Everything mechanical lives there. Read them before step 1,
+every run.
 
 Then the repo's **`CLAUDE.md`**: where its requirements and decisions live, its working rules,
 and its issue wording (headings, dependency line, Plan sub-headings) if it differs from the
@@ -66,7 +67,7 @@ keeps them: edit it in the headings it already has.
      decision next to each). Never delete them. A question he did not address stays unticked.
 
 3. Explore the relevant code against an up-to-date default branch, **without switching branches
-   in the working copy** (reference doc, "עותק העבודה"):
+   in the working copy** (`reference/git-flow.md`):
    ```bash
    git fetch origin <default>
    git show origin/<default>:path/to/file
@@ -85,7 +86,7 @@ keeps them: edit it in the headings it already has.
    ```
    Then `/rename claude/issue-<N>-<slug>` so the session is findable later.
 
-5. Fill in the Plan section of the issue body, in the format from the reference doc and the
+5. Fill in the Plan section of the issue body, in the format from `reference/issue-body.md` and the
    heading level the repo's issues use. **Read the body fresh right before the edit**, keep the
    human-written sections byte-identical, write the file with LF line endings, preserve the
    hidden sync marker unchanged, then `gh issue edit <N> --body-file <file>` and verify.
@@ -94,13 +95,13 @@ keeps them: edit it in the headings it already has.
    problem, what will change for the users, what is left out and which issue has it, and what
    waits for him. Business language only, no file or function names, at most 8 lines. Then
    "פירוט טכני" for the execution. No sections outside the format; a boundary with another
-   issue is a line in "בקצרה", not a section of its own (reference doc, "סעיף ה-Plan").
+   issue is a line in "בקצרה", not a section of its own (`reference/issue-body.md`).
    An issue coming back for a revision whose plan predates this format gets it in the same edit.
 
    **Can it be written in parallel?** When the work touches more than one layer (a backend and
    a frontend, say), check whether it splits into 2 to 3 parts with no file in common. If it
    does, write the "עבודה במקביל" sub-heading: the parts with their path prefixes, the shared
-   files, and the contract between the parts (reference doc, "סעיף ה-Plan"). `dev-code` then
+   files, and the contract between the parts (`reference/issue-body.md`). `dev-code` then
    writes the parts at the same time. If every file touches both sides, leave it out.
 
    **Check the scope before writing the plan.** Three questions, every issue:
@@ -134,7 +135,7 @@ keeps them: edit it in the headings it already has.
 
 6. Set `area:*` if it is missing and the exploration made it obvious (only labels that exist).
    Likewise add `process` when the issue turns out to be work-management, rules or
-   claude-config alignment work (reference doc, vocabulary table). Leave its milestone as it is.
+   claude-config alignment work (the vocabulary table in `reference/pipeline.md`). Leave its milestone as it is.
    Add `costs-money` when the plan needs an expense (a paid cloud service, a paid API, a
    subscription) and say so in "בקצרה": the issue then waits on hold until Dolev approves.
 
@@ -174,8 +175,7 @@ keeps them: edit it in the headings it already has.
 - At most three issues per run.
 - Split for size, link for dependency. An issue merges into another, on Dolev's OK, only when
   it has no PR of its own, or when two small issues overlap in files, neither has a PR yet,
-  and together they are still one PR that can be reviewed on its own (reference doc,
-  "תלויות").
+  and together they are still one PR that can be reviewed on its own (`reference/dependencies.md`).
 - A scan never reaches outside the current milestone; an issue Dolev named may. Never assign
   a milestone yourself.
 - Never resolve an open question by picking the option that is easiest to implement. Ask,

@@ -1,19 +1,20 @@
 ---
 name: dev-setup
-description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the owner:/status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label↔board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference doc and scripts the other dev-* skills use.
+description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the owner:/status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label↔board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference files and scripts the other dev-* skills use.
 ---
 
 # Set up the pipeline in a repo
 
 This skill folder is also the shared home of the pipeline:
 
-- `reference/pipeline.md`: the mechanism every dev-* skill follows (labels, phases, gates).
+- `reference/`: the mechanism every dev-* skill follows. `pipeline.md` is the core, and lists
+  the other files and what each holds.
 - `scripts/pipeline_info.py`: reads everything repo-specific from the repo itself.
 - `scripts/rank_issues.py` (+ `test_rank_issues.py`): the sprint ranking.
 - `scripts/lint_check.py` (+ `test_lint_check.py`): which lint settings a repo lacks, or holds
   in a copy that strays from its template. `pipeline_info.py` shows its list under `lint`.
 - `scripts/port_check.py` (+ `test_port_check.py`): whether a port is busy on 127.0.0.1 or ::1,
-  and a port free on both, for the review app (reference doc, "הרמה לסקירה").
+  and a port free on both, for the review app (`reference/review-app.md`).
 - `scripts/board_views.py` (+ `test_board_views.py`): the board's two views, "ספרינט נוכחי" and "הכל".
 - `scripts/test_open_questions_gate.py`, `scripts/test_project_sync.py`: tests for the two shared
   actions. Run them all with pytest after any change here.
@@ -33,7 +34,9 @@ This skill folder is also the shared home of the pipeline:
 The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
 serves them to every repo of the account that has no `.github/ISSUE_TEMPLATE` of its own.
 
-Read `reference/pipeline.md` before step 1, so you know what each piece is for.
+Read `reference/pipeline.md`, `reference/setup.md`, `reference/review-app.md` and
+`reference/tests.md` (how the test commands in `CLAUDE.md` are read) before step 1,
+so you know what each piece is for.
 
 ## Step 0: What is already there
 
@@ -152,8 +155,7 @@ commands in place of each `# <...>` line, and only the jobs of the sides the rep
 on the stack actually in the repo; do not invent commands.
 
 **Lint.** Each repo keeps its own copy of the settings, never a shared one: ruff cannot read
-settings from a URL, and one shared change would turn every repo red at once (reference doc,
-"lint"). What `lint` from step 0 lists:
+settings from a URL, and one shared change would turn every repo red at once (`reference/setup.md`). What `lint` from step 0 lists:
 
 - `missing ruff.toml`: copy `templates/ruff.toml` to the root. Under its `# --- local ---`
   line add only what is this repo's own, as dotted keys (`target-version`, `extend-exclude`
@@ -171,7 +173,7 @@ settings from a URL, and one shared change would turn every repo red at once (re
   file guide check" in step 6.
 
 **Netlify.** Each Netlify deploy costs credits, so a repo's `netlify.toml` deploys only when
-a site file changes (reference doc, "Netlify"). When `netlify` from step 0 says
+a site file changes (`reference/setup.md`). When `netlify` from step 0 says
 `no build.ignore in netlify.toml`, show Dolev the `ignore` line from `templates/netlify.toml`
 that fits the repo's `publish` (a folder of its own, or the root), and add it only on his yes.
 Before the PR, run the rule on a pipeline merge and on a site change from the repo's history:
@@ -282,7 +284,7 @@ It turns the board's empty "View 1" into "ספרינט נוכחי" (Status colum
 current sprint) and adds "הכל" (a table). It deletes nothing and skips a view that already
 exists. If it reports that the sprint view has no columns, ask Dolev to choose "Column by:
 Status" in the board; the API cannot set it. From then on the board sync moves the filter
-to each next sprint by itself (reference doc, "ספרינטים").
+to each next sprint by itself (`reference/setup.md`).
 
 ## Step 6: CLAUDE.md
 
@@ -295,7 +297,7 @@ Add a short section to the repo's `CLAUDE.md` (create the file only if Dolev agr
 `dev-ship` (ב-`~/.claude/skills/`), והמסמך `dev-setup/reference/pipeline.md`.
 ```
 
-Then the "הרמה לסקירה" section, in the format of the reference doc's "הרמה לסקירה": ask Dolev
+Then the "הרמה לסקירה" section, in the format of `reference/review-app.md`: ask Dolev
 for the command, the ports with the variable that moves each one, and the URL, or write
 `אין אפליקציה.` when the repo has nothing to run. `dev-code` uses it to hand a PR over for
 review with a link to the running app.
@@ -328,7 +330,7 @@ Also make sure it has a tests section with the exact commands, the lint commands
 
 **The file guide check.** Every repo, code or not, keeps a copy of
 `templates/file_guide_check.py` at `.github/file_guide_check.py`, for the same reasons as the
-lint settings (reference doc, "lint"). It fails when a file is missing from the guide, or the
+lint settings (`reference/setup.md`). It fails when a file is missing from the guide, or the
 guide names one that is gone; it reads only the guide's tables (the template's docstring says
 how). To install it:
 
