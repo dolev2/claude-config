@@ -133,6 +133,7 @@ if __name__ == "__main__":
         ["git", "rev-parse", "--show-toplevel"],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False,
     )
     if top.returncode != 0:
