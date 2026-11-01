@@ -22,7 +22,7 @@ How the guide is read, so that prose never counts as a row:
 import re
 import subprocess
 import sys
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from pathlib import Path, PurePosixPath
 
 GUIDE_HEADINGS = ("מדריך קבצים", "file guide")
@@ -30,9 +30,21 @@ HEADING = re.compile(r"^(#+)\s+(.*)$")
 CODE = re.compile(r"`([^`]+)`")
 
 
+def outside_fences(text: str) -> list[str]:
+    """The text's lines, without code blocks: a "# comment" in one is no heading."""
+    lines = []
+    in_fence = False
+    for line in text.replace("\r\n", "\n").split("\n"):
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+        elif not in_fence:
+            lines.append(line)
+    return lines
+
+
 def guide_lines(readme: str) -> list[str] | None:
     """The guide section's lines, up to the next heading of its level, or None."""
-    lines = readme.replace("\r\n", "\n").split("\n")
+    lines = outside_fences(readme)
     for index, line in enumerate(lines):
         heading = HEADING.match(line)
         if heading and any(h in heading[2].lower() for h in GUIDE_HEADINGS):
@@ -52,7 +64,7 @@ def first_cell_paths(cell: str, prefix: str) -> list[str]:
     paths = []
     folder = prefix
     for name in CODE.findall(cell):
-        path = (prefix if "/" in name.rstrip("/") else folder) + name
+        path = (prefix if "/" in name else folder) + name
         paths.append(path)
         folder = path if path.endswith("/") else f"{PurePosixPath(path).parent}/"
         folder = "" if folder == "./" else folder
@@ -76,26 +88,28 @@ def guide_rows(lines: list[str]) -> list[tuple[list[str], list[str]]]:
 
 
 def is_folder(path: str, files: list[str]) -> bool:
-    """True for a path that ends with "/", or that some file sits under."""
+    """True when some file sits under the path."""
     folder = path.rstrip("/") + "/"
-    return path.endswith("/") or any(file.startswith(folder) for file in files)
+    return any(file.startswith(folder) for file in files)
 
 
 def covers(path: str, names: list[str], file: str, files: list[str]) -> bool:
     """True when a first-column path, or a folder row's names, cover the file."""
-    if file == path or ("*" in path and fnmatch(file, path)):
+    if file == path or ("*" in path and fnmatchcase(file, path)):
         return True
     folder = path.rstrip("/") + "/"
     if not is_folder(path, files) or not file.startswith(folder):
         return False
-    inner = PurePosixPath(file)
-    return bool({file[len(folder) :], inner.name, inner.stem} & set(names))
+    inner = file[len(folder) :]
+    if "/" in inner:
+        return inner in names
+    return bool({inner, PurePosixPath(inner).stem} & set(names))
 
 
 def exists(path: str, files: list[str]) -> bool:
     """True for a file, a folder with files in it, or a pattern that matches one."""
     if "*" in path:
-        return any(fnmatch(file, path) for file in files)
+        return any(fnmatchcase(file, path) for file in files)
     return path in files or is_folder(path, files)
 
 
@@ -110,7 +124,7 @@ def check(
     missing = [
         file
         for file in files
-        if not any(fnmatch(file, pattern) for pattern in covered_by_pattern)
+        if not any(fnmatchcase(file, pattern) for pattern in covered_by_pattern)
         and not any(
             covers(path, names, file, files) for paths, names in rows for path in paths
         )
@@ -121,15 +135,17 @@ def check(
 
 def repo_files(root: Path) -> list[str]:
     """Every file git tracks or would track (new files too), relative to the root."""
+    # -z: without it git quotes a non-ASCII path ("\327\247..."), which then misses.
     listed = subprocess.run(
-        ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
         cwd=root,
         capture_output=True,
         text=True,
         encoding="utf-8",
         check=True,
     )
-    return [path for path in listed.stdout.splitlines() if (root / path).is_file()]
+    paths = [path for path in listed.stdout.split("\0") if path]
+    return [path for path in paths if (root / path).is_file()]
 
 
 def main(covered_by_pattern: list[str]) -> int:

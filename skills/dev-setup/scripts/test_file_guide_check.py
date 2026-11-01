@@ -117,3 +117,41 @@ def test_repo_files_sees_new_files_and_skips_ignored_ones(tmp_path):
     (tmp_path / "new.py").write_text("", encoding="utf-8")
     (tmp_path / "run.log").write_text("", encoding="utf-8")
     assert sorted(file_guide_check.repo_files(tmp_path)) == [".gitignore", "new.py"]
+
+
+def test_a_deleted_folder_with_a_slash_is_gone():
+    readme = guide("### השורש\n" + TABLE + "| `app.py` | x | y |\n| `old/` | x | y |")
+    assert check(readme, ["app.py"]) == ([], ["old/"])
+
+
+def test_two_sibling_folders_in_one_cell():
+    readme = guide(
+        "### השורש\n" + TABLE + "| `rules/`, `hooks/` | `a.md` ו-`b.py` | y |"
+    )
+    assert check(readme, ["rules/a.md", "hooks/b.py"]) == ([], [])
+
+
+def test_a_code_block_inside_the_guide_is_no_heading():
+    readme = guide(
+        "### `app/`\n"
+        + TABLE
+        + "| `a.py` | x | y |\n\n```bash\n# install\n```\n\n| `b.py` | x | y |"
+    )
+    assert check(readme, ["app/a.py", "app/b.py"]) == ([], [])
+
+
+def test_a_folder_row_name_covers_only_files_directly_in_it():
+    readme = guide("### השורש\n" + TABLE + "| `src/` | `index` ו-`sub/App.jsx` | y |")
+    files = ["src/index.js", "src/sub/App.jsx", "src/other/index.js"]
+    assert check(readme, files) == (["src/other/index.js"], [])
+
+
+def test_patterns_match_case_sensitively_everywhere():
+    readme = guide("### השורש\n" + TABLE + "| `*.PY` | x | y |")
+    assert check(readme, ["Readme.MD", "a.PY"], ["readme.md"]) == (["Readme.MD"], [])
+
+
+def test_repo_files_keeps_hebrew_names(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / "קובץ.md").write_text("", encoding="utf-8")
+    assert file_guide_check.repo_files(tmp_path) == ["קובץ.md"]
