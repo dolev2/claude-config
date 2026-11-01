@@ -152,10 +152,12 @@ def main(covered_by_pattern: list[str]) -> int:
     """Print what the guide misses and what it names in vain; 1 if anything, else 0."""
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+    # encoding: without it Windows decodes a non-ASCII path with the locale codepage.
     top = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=True,
     )
     root = Path(top.stdout.strip())
