@@ -119,7 +119,8 @@ again): back to step 2, then the tests and CI again. Then:
 gh pr merge <N> --squash --delete-branch
 ```
 
-No `--subject`: GitHub titles the commit with the PR title plus `(#N)`. If the PR title looks
+No `--subject` (a hook blocks it): GitHub titles the commit with the PR title plus `(#N)`,
+once the repo's squash title setting is `PR_TITLE` (`dev-setup`, step 5). If the PR title looks
 wrong, fix it first (`gh pr edit <N> --title "<title>"`) and tell Dolev. Never write the
 subject by hand, and never add a task number (like `15ב.`) that the issue or PR title does not
 already carry: a commit title on `<default>` cannot be fixed without rewriting history.

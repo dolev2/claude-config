@@ -59,6 +59,7 @@ Show Dolev, in chat, one list, and wait for his yes:
 | CI tests workflow | only if the repo has none | which commands |
 | lint | ruff for Python, eslint for React (JavaScript), by the files in the repo | — |
 | "Automatically delete head branches" | on | — |
+| squash merge commit title | the PR title (`PR_TITLE`) | — |
 | file guide in `README.md` | only if `missing_files` names it | the description line of a new `README.md` |
 
 Without a board the pipeline still works: labels are the source of truth. Then skip step 4
@@ -244,7 +245,12 @@ The views come after the milestones, at the end of step 5: the sprint view filte
 ```bash
 gh api repos/{owner}/{repo}/milestones -f title="<name>" -f description="<נושא בעברית>"
 gh repo edit --delete-branch-on-merge
+gh api -X PATCH repos/{owner}/{repo} -f squash_merge_commit_title=PR_TITLE   -f squash_merge_commit_message=COMMIT_MESSAGES
 ```
+
+The default title setting (`COMMIT_OR_PR_TITLE`) gives a one-commit PR its commit's title, not
+the PR title; `PR_TITLE` makes `gh pr merge --squash` without `--subject` always use the PR
+title (#87).
 
 Create milestones in sprint order: the lowest number is the current sprint.
 
