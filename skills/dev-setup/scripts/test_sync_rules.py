@@ -128,6 +128,29 @@ def test_which_issues_are_synced(labels, state, on_board, expected):
 
 
 @pytest.mark.parametrize(
+    "labels, state, reason, expected",
+    [
+        (["owner:dolev", "status:in-review"], "CLOSED", "COMPLETED", True),  # #97
+        (["status:backlog"], "CLOSED", "COMPLETED", True),
+        (["status:backlog"], "CLOSED", "NOT_PLANNED", False),
+        (["status:done"], "CLOSED", "COMPLETED", False),
+        (["status:in-review"], "OPEN", None, False),
+        (["task"], "CLOSED", "COMPLETED", False),  # not a pipeline issue
+    ],
+)
+def test_which_closed_issues_need_status_done(labels, state, reason, expected):
+    assert sync_rules.needs_done_label(labels, state, reason) is expected
+
+
+def test_done_labels_replace_the_status_and_keep_the_rest():
+    assert sync_rules.done_labels(["task", "owner:dolev", "status:in-review"]) == [
+        "task",
+        "owner:dolev",
+        "status:done",
+    ]
+
+
+@pytest.mark.parametrize(
     "status, state, milestone, expected",
     [
         ("status:plan-questions", "OPEN", None, True),  # WayOut #42, #117

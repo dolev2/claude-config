@@ -138,7 +138,7 @@ def load_issues(settings: Settings) -> list[dict]:
             "--limit",
             "500",
             "--json",
-            "number,body,labels,id,state,milestone",
+            "number,body,labels,id,state,stateReason,milestone",
         )
     )
     if settings.only_issue:
@@ -218,6 +218,25 @@ def sync_issue(settings: Settings, project: Board, issue: dict) -> bool:
     return True
 
 
+def close_out(settings: Settings, issue: dict) -> bool:
+    """Move a closed-as-completed issue's labels to status:done; True when it did.
+
+    The issue's labels are updated in place, so the sync that follows sees status:done
+    and moves the card to Done.
+    """
+    labels = [label["name"] for label in issue["labels"]]
+    if not sync_rules.needs_done_label(
+        labels, issue["state"], issue.get("stateReason")
+    ):
+        return False
+    new_labels = sync_rules.done_labels(labels)
+    args = sync_rules.label_edit_args(labels, sync_rules.labels_state(new_labels))
+    gh_api.gh("issue", "edit", str(issue["number"]), "--repo", settings.repo, *args)
+    issue["labels"] = [{"name": name} for name in new_labels]
+    report(settings, f"#{issue['number']} closed as completed -> status:done")
+    return True
+
+
 def takes_part(settings: Settings, project: Board, issue: dict) -> bool:
     """Whether the loop syncs this issue; reports one with doubled labels."""
     labels = [label["name"] for label in issue["labels"]]
@@ -256,8 +275,9 @@ def main() -> None:
         if sync_rules.is_active_without_sprint(issue, labels):
             without_sprint += 1
             report(settings, f"! #{issue['number']} is active but has no sprint")
+        closed_out = close_out(settings, issue)
         if takes_part(settings, project, issue):
-            updated += sync_issue(settings, project, issue)
+            updated += sync_issue(settings, project, issue) or closed_out
     if settings.quiet:
         print(f"updated issues: {updated}")
         print(f"active without a sprint: {without_sprint}")

@@ -158,7 +158,7 @@ https://claude.ai/artifact/FcDGAbuAhUSpyYT34zHg1A) מראה את אותו צינ
 | **dev-plan** | כשדולב מבקש | קולט `status:explore` וגם `status:plan-questions` שחזרו עם `owner:claude`; עד 3 בריצה | `gh` המקומי |
 | **dev-code** | כשדולב מבקש | קולט `status:needs-repair` ואז `status:ready-to-execute`, בספרינט הנוכחי; issue אחד בריצה | `gh` המקומי |
 | **dev-ship** | כשדולב מבקש לשחרר | rebase, בדיקות, PR, CI, squash-merge, `status:done`, ניקוי | `gh` המקומי |
-| `sync-project.yml` | אירוע issue, ועוד סקר כל 15 דקות | מסנכרן תוויות ושדות הלוח, דו-כיוונית | `PROJECT_TOKEN` (PAT) |
+| `sync-project.yml` | אירוע issue, ועוד סקר כל 15 דקות | מסנכרן תוויות ושדות הלוח, דו-כיוונית. issue שנסגר כהושלם (`COMPLETED`) מקבל `status:done` | `PROJECT_TOKEN` (PAT) |
 | `open-questions-gate.yml` | כל נגיעה ב-`status:done`, וגם עריכת גוף | קורא ל-action המשותף ב-`claude-config`; מתריע על שאלה פתוחה, ומסיר את התווית לבד כשכולן מסומנות | `GITHUB_TOKEN` |
 
 **אין תזמון.** שלב התכנון משאיר תוכניות ב-`status:waiting-approval`, ושלב הקוד לוקח רק מה
