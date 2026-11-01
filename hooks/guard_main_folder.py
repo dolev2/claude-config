@@ -71,6 +71,8 @@ def run_git(folder: Path, *arguments: str) -> subprocess.CompletedProcess | None
             ["git", "-C", str(folder), *arguments],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=GIT_TIMEOUT_SECONDS,
             check=False,
         )

@@ -273,3 +273,25 @@ def test_missing_gitdir_pointer_does_not_block(monkeypatch, repo):
 def test_tool_input_that_is_not_an_object_does_not_block(monkeypatch, repo):
     event = {"tool_name": "Edit", "tool_input": "x", "agent_id": AGENT}
     assert run_hook(monkeypatch, event) == (0, "")
+
+
+def test_common_dir_of_a_worktree_under_a_hebrew_folder(tmp_path, monkeypatch):
+    """git prints the path as UTF-8; Windows would decode it with its codepage."""
+    main = (tmp_path / "שולחן העבודה").resolve()
+    main.mkdir()
+    git(main, "init", "-q", "-b", "main")
+    git(main, "commit", "-q", "--allow-empty", "-m", "init")
+    worktree = main / ".claude" / "worktrees" / "task"
+    git(main, "worktree", "add", "-q", str(worktree))
+    real_run = subprocess.run
+
+    def windows_run(*args, **kwargs):
+        if kwargs.get("text") and "encoding" not in kwargs:
+            kwargs["text"] = False
+            result = real_run(*args, **kwargs)
+            result.stdout = result.stdout.decode("cp1252", errors="replace")
+            return result
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(guard_parallel_parts.subprocess, "run", windows_run)
+    assert guard_parallel_parts.git_common_dir(worktree) == main / ".git"
