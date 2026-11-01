@@ -119,6 +119,12 @@ again): back to step 2, then the tests and CI again. Then:
 gh pr merge <N> --squash --delete-branch
 ```
 
+No `--subject` (a hook blocks it): GitHub titles the commit with the PR title plus `(#N)`,
+once the repo's squash title setting is `PR_TITLE` (`dev-setup`, step 5). If the PR title looks
+wrong, fix it first (`gh pr edit <N> --title "<title>"`) and tell Dolev. Never write the
+subject by hand, and never add a task number (like `15ב.`) that the issue or PR title does not
+already carry: a commit title on `<default>` cannot be fixed without rewriting history.
+
 This pops an approval window for Dolev (an `ask` rule in `~/.claude/settings.json`). That is
 expected. If he declines it, stop and report; never merge another way (such as `gh api`).
 

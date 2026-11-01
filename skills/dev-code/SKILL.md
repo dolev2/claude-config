@@ -227,6 +227,15 @@ Only on Dolev's explicit request for that specific issue.
    section first; an unticked box is Dolev's call, not yours. `gh pr merge` pops an approval
    window for Dolev (an `ask` rule in `~/.claude/settings.json`): if he declines it, stop and
    report; never merge another way (such as `gh api`).
+   ```bash
+   gh pr merge <N> --squash
+   ```
+   No `--subject` (a hook blocks it): GitHub titles the commit with the PR title plus `(#N)`,
+   once the repo's squash title setting is `PR_TITLE` (`dev-setup`, step 5). If the PR title
+   looks wrong, fix it first (`gh pr edit <N> --title "<title>"`) and tell Dolev. Never write
+   the subject by hand, and never add a task number (like `15ב.`) that the issue or PR title
+   does not already carry: a commit title on `<default>` cannot be fixed without rewriting
+   history.
 6. **Do not delete the remote branch.** The harness may block it; the repo's "Automatically
    delete head branches" setting handles it.
 7. **Do delete the local branch**, which GitHub never touches. Stop its review app first, if
@@ -246,6 +255,7 @@ Only on Dolev's explicit request for that specific issue.
 ## Golden rules
 
 - Never merge without Dolev's explicit go-ahead on that specific issue, whatever the label says.
+- A merge commit's title is the PR title: never pass `--subject`, never invent a task number.
 - Never switch branches in the shared working copy; code is written in a worktree.
 - Never start an issue without reading its sub-issues.
 - If an issue lacks context, do not guess: comment with the question and flag it in the summary.
