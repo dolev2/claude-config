@@ -2,7 +2,7 @@
 
 הכללים האלה חלים על כל ריפו, גם כשאף סקיל `dev-*` לא רץ.
 `<default>` הוא ה-branch הראשי של הריפו (`main` או `master`).
-הפקודות המלאות של שלבי הצינור (יצירת branch ב-remote בתכנון, worktree בביצוע) כתובות ב-`skills/dev-setup/reference/pipeline.md`.
+הפקודות המלאות של שלבי הצינור (יצירת branch ב-remote בתכנון, worktree בביצוע) כתובות ב-`skills/dev-setup/reference/git-flow.md`.
 
 ## מאיפה מתחילים
 - **branch נחתך מ-`origin/<default>` אחרי `git fetch`**, לא מה-branch המקומי.

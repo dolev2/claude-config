@@ -21,7 +21,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 ## Read first
 
-**`$HOME/.claude/skills/dev-setup/reference/pipeline.md`**, section "סדר בתוך הספרינט": the
+In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the labels, the sprint) and `dependencies.md`: the
 ranking rule and why this skill ranks without status tiers, while the phases put the status
 tier first. In both, `process` and `bug` issues come before the rest, then weight decides.
 Its sub-section "בדיקת הסדר" holds what the audit below finds, and the rule for merging.
@@ -118,8 +118,7 @@ On Dolev's request only, instead of the steps above. It picks no issue.
 3. Show the proposals as one table: the change (add a link, remove a link, merge), the
    issues with their titles, and why, in one line each. Ask with the questions tool which to
    apply (multiple choice, the ones you recommend first).
-4. Apply only what he chose: a link and the `תלוי ב:` line together (reference doc,
-   "תלויות"); a merge through `dev-issue`'s rules, the surviving issue's body taking the
+4. Apply only what he chose: a link and the `תלוי ב:` line together (`reference/dependencies.md`); a merge through `dev-issue`'s rules, the surviving issue's body taking the
    other's goal and its Plan sent back to `status:explore`. Then run `rank_issues.py` again
    and show what moved.
 

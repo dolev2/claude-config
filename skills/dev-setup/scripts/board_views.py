@@ -16,7 +16,7 @@ A view that already carries one of the two names is left as it is, so a second r
 changes nothing. The board's untouched default view ("View 1", a table with no filter)
 becomes the sprint view, so it stays the first tab. Nothing is deleted, and views with
 other names are not touched. Moving the filter to the next sprint is the board sync's
-job (reference doc, "ספרינטים").
+job (reference/setup.md).
 """
 
 import argparse

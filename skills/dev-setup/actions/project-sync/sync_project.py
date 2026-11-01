@@ -2,7 +2,7 @@
 
 Why this exists
 ---------------
-Claude reads and writes issue labels only (see reference/pipeline.md in the dev-setup
+Claude reads and writes issue labels only (see reference/setup.md in the dev-setup
 skill); the Project board is the human view. This script keeps the two in agreement.
 
 Why it is a poll and not a webhook

@@ -21,7 +21,7 @@
 - `skills/`: הסקילים. הגנריים של צינור העבודה: `dev-issue`, `dev-next`, `dev-plan`, `dev-code`, `dev-ship` ו-`dev-setup`.
 - `.claude/CLAUDE.md`: הקובץ הזה. נטען רק כשעובדים בתוך הריפו.
 
-`skills/dev-setup/` הוא גם הבית המשותף של הצינור: המסמך `reference/pipeline.md`, הסקריפטים `scripts/`, ה-actions המשותפים `actions/`, וה-workflows ב-`templates/.github/` שמועתקים לכל ריפו.
+`skills/dev-setup/` הוא גם הבית המשותף של הצינור: מסמכי הצינור ב-`reference/` (הליבה: `pipeline.md`), הסקריפטים `scripts/`, ה-actions המשותפים `actions/`, וה-workflows ב-`templates/.github/` שמועתקים לכל ריפו.
 
 טפסי ה-issues לא כאן. הם גרים בריפו הציבורי [dolev2/.github](https://github.com/dolev2/.github), ומשם מגיעים לכל הריפואים.
 
@@ -31,7 +31,7 @@
   hook ב-`hooks/guard_main_folder.py` אוכף את זה: עריכה של קובץ מהריפו בתיקייה הראשית נחסמת. מה ש-`.gitignore` מחריג (זיכרון, תוכניות) ו-`settings.json` עוברים.
 - הכלל חל על כל `~/.claude`: גם שינוי ב-`CLAUDE.md` הגלובלי ובכללים עובר PR, בשביל הגיבוי וההיסטוריה.
 - שינוי בתבנית ב-`skills/dev-setup/templates/` משפיע על כל ריפו חדש. ריפואים שכבר הותקנו לא מתעדכנים לבד: מציינים את זה ב-PR.
-- שינוי בטופס ב-`dolev2/.github` מגיע לכל הריפואים מיד. שינוי בכותרת מחייב עדכון של `pipeline.md` ושל הסקילים באותו זמן.
+- שינוי בטופס ב-`dolev2/.github` מגיע לכל הריפואים מיד. שינוי בכותרת מחייב עדכון של מסמכי הצינור ושל הסקילים באותו זמן.
 - סיומות שורה LF (`.gitattributes`).
 
 ## צינור העבודה
@@ -43,6 +43,28 @@
 - `area:skills`: הטקסט של הסקילים (`SKILL.md`), מסמך הצינור, וההנחיות הגלובליות.
 - `area:scripts`: הסקריפטים ב-`skills/dev-setup/scripts/` והבדיקות שלהם.
 - `area:actions`: ה-workflows, התבניות וה-actions המשותפים.
+
+## תרשים הצינור והעמוד "חייו של issue"
+התרשים ב-`skills/dev-setup/reference/diagram.md` והעמוד `skills/dev-setup/reference/issue-lifecycle.html` (מפורסם ב-https://claude.ai/artifact/FcDGAbuAhUSpyYT34zHg1A) מראים את הצינור לבני אדם. הסקילים לא קוראים אותם.
+
+**התרשים והעמוד הם חלק מהמנגנון, לא איור נלווה.** כל שינוי בשלבים, בתוויות, בשערים,
+באוטומציות או בצעדי git מתעדכן בשניהם, באותו PR שמשנה את ההתנהגות.
+
+**אחרי המיזוג, PR שנגע ב-`issue-lifecycle.html` מפורסם מחדש לאותו קישור.** מי שמיזג (`dev-ship`
+או `dev-code` Part B) עושה את זה אחרי הניקוי. כלי Artifact לא זמין (ענן, CI): מדווחים לדולב
+שהפרסום מחכה. הצעדים:
+1. `git fetch origin <default>`, ואז
+   `git show origin/<default>:skills/dev-setup/reference/issue-lifecycle.html` לקובץ בתיקיית
+   ה-scratchpad. `gh pr merge` לא מעדכן את `origin/<default>` המקומי, ובלי ה-fetch מתפרסמת
+   הגרסה שלפני המיזוג. כך מתפרסמת בדיוק הגרסה שמוזגה, גם כשה-worktree כבר נמחק.
+2. כלי Artifact, `action: "read"` על הקישור. בלי קריאה באותה שיחה, הפרסום נדחה.
+3. משווים את הגרסה החיה, אחרי שמקצצים ממנה את השלד, לגרסה שלפני ה-PR:
+   `git show <merge commit>^:skills/dev-setup/reference/issue-lifecycle.html`. שונות (מישהו ערך
+   את העמוד בינתיים): עוצרים ומדווחים, לא דורסים. הקובץ חדש ב-PR: אין מה להשוות.
+4. `publish` עם `url` = הקישור ו-`file_path` = הקובץ מצעד 1. בלי `icon` ובלי `force`.
+
+הקובץ בריפו הוא העמוד בלי השלד שהשירות מוסיף בפרסום: הוא מתחיל ב-`<title>`, לא ב-`<!doctype`.
+עותק שנלקח מ-`read` של העמוד מקוצץ לפני שהוא נשמר, אחרת השלד מוכפל בכל פרסום.
 
 ## בדיקות
 מהשורש של הריפו (או של ה-worktree). חייבות לעבור לפני PR:

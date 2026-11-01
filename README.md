@@ -48,8 +48,16 @@
 ### `skills/dev-setup/`: הבית המשותף של הצינור
 | קובץ | מה הוא | למה הוא קיים |
 |---|---|---|
-| `reference/pipeline.md` | המנגנון: תוויות, שלבים, שערים, מוקשים | המקור היחיד שכל סקילי `dev-*` מפנים אליו |
-| `reference/issue-lifecycle.html` | העמוד "חייו של issue": מפת התוויות, ציר git, טבלת שלבים וכללי git, לבני אדם. מפורסם כ-Artifact | הסקילים קוראים את `pipeline.md`. העמוד הוא התצוגה, ומתעדכן באותו PR |
+| `reference/pipeline.md` | הליבה של המנגנון: מה משתנה בין ריפואים, אוצר המילים, הספרינטים, הכללים שלא משתנים, ורשימת שאר הקבצים כאן | כל סקיל `dev-*` קורא אותו, ובנוסף רק את הקבצים שה-"Read first" שלו מונה |
+| `reference/issue-body.md` | קריאת כל ההקשר של issue, פורמט ה-Plan, עריכת הגוף והסמן המוסתר, סעיף השאלות הפתוחות | `dev-issue`, `dev-plan`, `dev-code` |
+| `reference/dependencies.md` | קישורי Blocked by, פיצול ואיחוד, הדירוג בספרינט, הקודים של `audit_sprint.py` | `dev-issue`, `dev-next`, `dev-plan` |
+| `reference/git-flow.md` | issue אחד בריצה ושער ה-WIP, עותק העבודה בכל שלב, branch ו-PR, rebase ו-CI לפני merge | `dev-plan`, `dev-code`, `dev-ship` |
+| `reference/tests.md` | אילו בדיקות רצות, ומתי: ממוקד בפיתוח, מלא פעם אחת אחרי ה-rebase | `dev-code`, `dev-ship` |
+| `reference/review-app.md` | הרמת האפליקציה של ה-PR לסקירה, קובץ הרישום, ועצירה | `dev-code`, `dev-ship`, `dev-setup` |
+| `reference/after-merge.md` | ההצעה לסשן של המשימה הבאה אחרי מיזוג | `dev-code` Part B, `dev-ship` |
+| `reference/setup.md` | מה ש-`dev-setup` מתקין ולמה: הסנכרון עם הלוח, הטפסים, השער, Netlify, lint | `dev-setup` בלבד, כדי ששאר הסקילים לא יקראו אותו |
+| `reference/diagram.md` | תרשים ה-Mermaid של הצינור, וכלל העריכה שלו | לבני אדם; אף סקיל לא קורא אותו בזמן ריצה |
+| `reference/issue-lifecycle.html` | העמוד "חייו של issue": מפת התוויות, ציר git, טבלת שלבים וכללי git, לבני אדם. מפורסם כ-Artifact | הסקילים קוראים את `reference/*.md`. העמוד הוא התצוגה, ומתעדכן באותו PR (`.claude/CLAUDE.md`) |
 | `scripts/pipeline_info.py` | קורא מהריפו כל מה שמשתנה בין ריפואים | כל סקיל מתחיל בו, כדי ששום דבר לא יוגדר ידנית |
 | `scripts/rank_issues.py` | מדרג את ה-issues בספרינט לפי כמה עבודה מחכה להם | הסדר של `dev-next`, `dev-plan` ו-`dev-code` |
 | `scripts/audit_sprint.py` | בודק את קישורי ה-Blocked by של כל הספרינט יחד: קישור חסר, חוסם מחוץ לספרינט, מעגל, חפיפת קבצים (#54) | הדירוג טוב רק כמו הקישורים; `dev-next` מריץ אותו בכל ריצה |
@@ -62,7 +70,7 @@
 | `actions/project-sync/` | הסנכרון בין התוויות ללוח, action שכל ריפו עם לוח קורא לו. `action.yml` מריץ את `sync_project.py` | עותק אחד לכל הריפואים |
 | `actions/project-sync/sync_project.py` | נקודת הכניסה של הסנכרון: ההגדרות מהסביבה, הלולאה על ה-issues, ומה מודפס | `action.yml` ו-`sweep_all.py` מריצים אותו בשם הזה |
 | `actions/project-sync/sync_rules.py` | הכללים: איזה issue מסונכרן, מי מנצח, ושמות האופציות בלוח (`STATUS_OPTIONS`) | בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד (#57) |
-| `actions/project-sync/board.py` | קריאה וכתיבה של הלוח, מצד ה-issue | `projectV2.items` מחזיר רשימה ריקה (המוקש ב-`pipeline.md`) |
+| `actions/project-sync/board.py` | קריאה וכתיבה של הלוח, מצד ה-issue | `projectV2.items` מחזיר רשימה ריקה (המוקש ב-`reference/setup.md`) |
 | `actions/project-sync/marker.py` | הסמן המוסתר בגוף ה-issue: קריאה וכתיבה | המצב האחרון שסונכרן, שלפיו מכריעים |
 | `actions/project-sync/sprint_view.py` | מזיז את הסינון של התצוגה "ספרינט נוכחי" לספרינט הנוכחי | ל-GitHub אין `milestone:@current` (#17) |
 | `actions/project-sync/gh_api.py` | הקריאות ל-`gh` ול-GraphQL | מקום אחד שהבדיקות מחליפות |

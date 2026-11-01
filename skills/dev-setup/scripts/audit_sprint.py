@@ -7,7 +7,7 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
     python "$S/audit_sprint.py"                    # one line per finding
     python "$S/audit_sprint.py" --json             # the digest, for a full review
 
-The rule is in ../reference/pipeline.md, section "בדיקת הסדר". The ranking of
+The rule is in ../reference/dependencies.md. The ranking of
 rank_issues.py is only as good as the links behind it; these are the findings a script
 can see without judging the work itself:
 

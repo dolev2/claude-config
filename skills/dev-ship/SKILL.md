@@ -20,8 +20,9 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 - `ready` tells whether step 6 applies. Without the pipeline labels, this is a plain ship
   and step 6 is skipped. Do not offer `dev-setup` here; shipping does not need it.
 
-If the pipeline is installed, the label vocabulary and the exclusivity rule are in
-`$HOME/.claude/skills/dev-setup/reference/pipeline.md`. Step 6 depends on them.
+Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md` and `git-flow.md`, and `review-app.md` when the
+branch has a review app. If the pipeline is installed, also `pipeline.md` (the label vocabulary
+and the exclusivity rule; step 6 depends on them) and `after-merge.md` (step 8).
 
 ## Relationship to dev-code
 
@@ -64,7 +65,7 @@ for one that was already on the remote. Never a plain `--force`.
 
 ## Step 3: Run the tests
 
-As the reference doc's "בדיקות" says: the commands in the repo's `CLAUDE.md`, plus any
+As `reference/tests.md` says: the commands in the repo's `CLAUDE.md`, plus any
 conditional suite whose area the diff touches (`git diff --name-only origin/<default>...HEAD`),
 or the manual check a suite-less repo defines there. The lint runs first, then the suites of
 different areas at the same time, in one Bash command ("מתי רץ מה" there). A retry after a fix
@@ -183,16 +184,15 @@ If the tips differ, the local branch has commits that were never merged: leave i
 refs, so without this step the local branch stays forever.
 
 When this ran inside a worktree the session owns, leave that worktree instead of checking out
-`<default>` in it, as the reference doc's "עותק העבודה" says; delete the branch after the
+`<default>` in it, as `reference/git-flow.md` says; delete the branch after the
 worktree is removed (git refuses to delete a branch checked out in a worktree).
 
 If the branch has a review app (`review-app.json` names it), stop it before removing its
-worktree, as the reference doc's "הרמה לסקירה" says.
+worktree, as `reference/review-app.md` says.
 
 ## Step 8: Offer a session for the next issue (pipeline repos only)
 
-Only after the merge and the cleanup both succeeded. Follow the reference doc's "אחרי מיזוג:
-הצעה לסשן של המשימה הבאה": pick the next issue the way `dev-next` does, without routing it,
+Only after the merge and the cleanup both succeeded. Follow `reference/after-merge.md`: pick the next issue the way `dev-next` does, without routing it,
 and offer it as a session card whose opening prompt is `תחקור את #<N>` or `תקודד את #<N>`.
 The decision that matters is fresh session versus fork; the doc holds the rule. Never start
 that issue in this session.

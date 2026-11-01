@@ -21,9 +21,10 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 ## Read first
 
-**`$HOME/.claude/skills/dev-setup/reference/pipeline.md`**: the label vocabulary, how to read
-the full context of an issue, the Plan format, the sections "עותק העבודה" and "בדיקות", and the
-branch/PR convention. Read it before step 1, every run. Then the repo's **`CLAUDE.md`**: its
+In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary and the rules every phase shares),
+`issue-body.md` (how to read the full context of an issue, the Plan format), `git-flow.md` (one
+issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`
+and `review-app.md`. Read them before step 1, every run; Part B also reads `after-merge.md`. Then the repo's **`CLAUDE.md`**: its
 working rules and its test commands.
 
 ## Part A: Execute
@@ -59,21 +60,21 @@ working rules and its test commands.
    does not exist on the remote, create it there first
    (`git push origin origin/<default>:refs/heads/claude/issue-<N>-<slug>`). Then:
    - the session already runs in its own worktree: check out the branch there;
-   - otherwise use the `EnterWorktree` tool if it is available, or `git worktree add` as in the
-     reference doc, and run every later command inside that folder.
+   - otherwise use the `EnterWorktree` tool if it is available, or `git worktree add` as in
+     `reference/git-flow.md`, and run every later command inside that folder.
 
    Then `/rename claude/issue-<N>-<slug>`.
 
 5. Implement, following the Plan and the repair comments, and the repo's `CLAUDE.md`. Add
-   tests as the reference doc's "בדיקות" says: a test for every new parameter, endpoint, or bug
+   tests as `reference/tests.md` says: a test for every new parameter, endpoint, or bug
    fix, unless the repo's CLAUDE.md defines a manual check instead of a suite.
 
    **While writing, run only the test files of what changed**, never a full suite; a failing
-   test reruns alone (reference doc, "בדיקות", "מתי רץ מה"). The full run comes once, in
+   test reruns alone (`reference/tests.md`). The full run comes once, in
    step 7.
 
-   **When the Plan has "עבודה במקביל", write the parts in parallel** (reference doc, "סעיף
-   ה-Plan"; no such sub-heading: write it all here, in sequence):
+   **When the Plan has "עבודה במקביל", write the parts in parallel** (`reference/issue-body.md`;
+   no such sub-heading: write it all here, in sequence):
    1. **Shared files first.** Write the shared files the contract depends on and commit them on
       the issue branch. Note that commit as `<start>`: every agent starts from it.
       Then write the parts file `$(git rev-parse --git-common-dir)/parallel-parts.json` from the
@@ -129,12 +130,11 @@ working rules and its test commands.
    Rebase, never merge. **If the rebase reports a conflict, stop:** `git rebase --abort`,
    leave the issue on `owner:claude`, comment with the conflicting files, open no PR.
 
-7. Run the repo's checks, as "בדיקות" in the reference doc says: the commands from CLAUDE.md,
+7. Run the repo's checks, as `reference/tests.md` says: the commands from CLAUDE.md,
    plus any conditional suite whose area the diff touches
    (`git diff --name-only origin/<default>...HEAD`), or the manual check a suite-less repo
    defines. This is the full run, once: the lint, then the suites of different areas at the
-   same time, in one Bash command with a log and an exit code per suite (reference doc,
-   "בדיקות", "מתי רץ מה"). After a fix for a failure here, only the lint and the full suite
+   same time, in one Bash command with a log and an exit code per suite (`reference/tests.md`). After a fix for a failure here, only the lint and the full suite
    of the area the fix touched run again.
 
    **A failure to run the tests is not permission to skip them.** If the install or the run
@@ -159,7 +159,7 @@ working rules and its test commands.
       writes (commit, push, install, `gh issue edit`, `gh pr comment`); return a list of
       findings, each with file and line, a kind (bug / departs from the Plan / cleanup), and
       one sentence on why. On a repair round it reviews the whole diff of the PR.
-    - **The app for review**, from the worktree, as the reference doc's "הרמה לסקירה" says:
+    - **The app for review**, from the worktree, as `reference/review-app.md` says:
       the command, ports and URL come from the repo's `CLAUDE.md`. Its outcome is one of: a
       link to the PR's app (started now, or already running from this branch), a link with a
       warning that names who holds the port, or a line saying why there is no link (the repo
@@ -174,15 +174,14 @@ working rules and its test commands.
     push is followed by a new `gh pr checks <N> --watch --fail-fast`: the first watch may have
     finished on the old head. **One review round only**: a fix is not reviewed again. The app
     runs from the worktree, so it picks the fix up; if its server does not reload on its own,
-    restart it (reference doc, "עצירה", then "הסדר").
+    restart it (`reference/review-app.md`: stop it, then start it again).
 
     **Red CI:** fix it in this run if the cause is clear, otherwise stay on `owner:claude` and
     report the failing job with a link. A fix reruns the lint and the touched area's suite, as
     above. A red PR is never handed to Dolev for review. The same holds when the checks fail
     after a fix: stay on `owner:claude`, and comment on the PR with the exact error.
 
-    **No hand-off**, for any reason: stop the app and delete the registry file (reference doc,
-    "עצירה"): there is nothing to review.
+    **No hand-off**, for any reason: stop the app and delete the registry file (`reference/review-app.md`): there is nothing to review.
 
     Go on to step 11 only when the agent has returned and CI is green on the last push (no
     checks reported: the agent alone).
@@ -239,7 +238,7 @@ Only on Dolev's explicit request for that specific issue.
 6. **Do not delete the remote branch.** The harness may block it; the repo's "Automatically
    delete head branches" setting handles it.
 7. **Do delete the local branch**, which GitHub never touches. Stop its review app first, if
-   one runs (reference doc, "הרמה לסקירה"), then remove its worktree, then
+   one runs (`reference/review-app.md`), then remove its worktree, then
    delete it only if its tip is exactly the merged PR head (`git branch -d` always refuses after
    a squash merge, so this check replaces it):
    ```bash
@@ -247,8 +246,7 @@ Only on Dolev's explicit request for that specific issue.
    [ -n "$MERGED" ] && [ "$(git rev-parse <branch>)" = "$MERGED" ] && git branch -D <branch>
    ```
    Tips differ: leave the branch and say so in the summary.
-8. Offer a session for the next issue, as the reference doc's "אחרי מיזוג: הצעה לסשן של
-   המשימה הבאה" says: the next issue by `dev-next`'s rule, an opening prompt of `תחקור את
+8. Offer a session for the next issue, as `reference/after-merge.md` says: the next issue by `dev-next`'s rule, an opening prompt of `תחקור את
    #<N>` or `תקודד את #<N>`, and a fresh session unless all three conditions for a fork hold.
    Never start that issue in this session.
 
