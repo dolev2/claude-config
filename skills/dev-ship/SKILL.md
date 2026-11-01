@@ -20,9 +20,10 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 - `ready` tells whether step 6 applies. Without the pipeline labels, this is a plain ship
   and step 6 is skipped. Do not offer `dev-setup` here; shipping does not need it.
 
-Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md` and `git-flow.md`, and `review-app.md` when the
-branch has a review app. If the pipeline is installed, also `pipeline.md` (the label vocabulary
-and the exclusivity rule; step 6 depends on them) and `after-merge.md` (step 8).
+Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md`, `git-flow.md` and `review-app.md`
+(step 7 stops the branch's review app, if one runs). If the pipeline is installed, also
+`pipeline.md` (the label vocabulary and the exclusivity rule) and `issue-body.md` (the
+open-questions section), which step 6 depends on, and `after-merge.md` (step 8).
 
 ## Relationship to dev-code
 

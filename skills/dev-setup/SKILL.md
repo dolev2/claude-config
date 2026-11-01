@@ -34,7 +34,8 @@ This skill folder is also the shared home of the pipeline:
 The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
 serves them to every repo of the account that has no `.github/ISSUE_TEMPLATE` of its own.
 
-Read `reference/pipeline.md`, `reference/setup.md` and `reference/review-app.md` before step 1,
+Read `reference/pipeline.md`, `reference/setup.md`, `reference/review-app.md` and
+`reference/tests.md` (how the test commands in `CLAUDE.md` are read) before step 1,
 so you know what each piece is for.
 
 ## Step 0: What is already there

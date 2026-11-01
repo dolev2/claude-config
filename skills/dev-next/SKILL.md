@@ -25,6 +25,7 @@ In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the labels, t
 ranking rule and why this skill ranks without status tiers, while the phases put the status
 tier first. In both, `process` and `bug` issues come before the rest, then weight decides.
 Its sub-section "בדיקת הסדר" holds what the audit below finds, and the rule for merging.
+The review of the sprint order edits issue bodies, so it also reads `issue-body.md` there.
 
 ## Steps
 
