@@ -40,6 +40,28 @@ def test_python_without_settings(tmp_path):
     ]
 
 
+def test_file_guide_copy_alone_needs_no_ruff(tmp_path):
+    files = make_repo(
+        tmp_path,
+        {
+            "index.html": "<p></p>",
+            WORKFLOW: "      - run: python .github/file_guide_check.py\n",
+        },
+    ) + [copy_template(tmp_path, "file_guide_check.py", lint_check.FILE_GUIDE_CHECK)]
+    assert lint_check.lint_gaps(tmp_path, files) == []
+    assert lint_check.all_gaps(tmp_path, files) == []
+
+
+def test_file_guide_copy_with_other_python_needs_ruff(tmp_path):
+    files = make_repo(tmp_path, {"app/main.py": "", WORKFLOW: "jobs: {}\n"}) + [
+        copy_template(tmp_path, "file_guide_check.py", lint_check.FILE_GUIDE_CHECK)
+    ]
+    assert lint_check.lint_gaps(tmp_path, files) == [
+        "missing ruff.toml",
+        f"no ruff step in {WORKFLOW}",
+    ]
+
+
 def test_python_without_a_workflow(tmp_path):
     files = make_repo(tmp_path, {"app/main.py": ""}) + [
         copy_template(tmp_path, "ruff.toml", "ruff.toml")

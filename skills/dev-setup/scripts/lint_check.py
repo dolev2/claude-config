@@ -12,7 +12,8 @@ line, and that is what is compared here; below the line each repo writes what is
 own.
 
 What is checked, by the files git tracks:
-- a .py file        -> ruff.toml at the root, and `ruff check` in the tests workflow
+- a .py file        -> ruff.toml at the root, and `ruff check` in the tests workflow;
+                       the copy of file_guide_check.py does not count (#91)
 - a .jsx file       -> eslint.config.js next to the nearest package.json, and `run lint`
 
 file_guide_gaps checks every repo, code or not, the same way: the copy of
@@ -83,7 +84,8 @@ def workflow_gaps(root: Path, has_python: bool, has_react: bool) -> list[str]:
 
 def lint_gaps(root: Path, files: list[str]) -> list[str]:
     """Every gap in the repo's lint setup, given the files git tracks; empty if none."""
-    has_python = any(f.endswith(".py") for f in files)
+    # The copy is linted at its source, the template: alone it is not the repo's Python.
+    has_python = any(f.endswith(".py") and f != FILE_GUIDE_CHECK for f in files)
     folders = react_folders(files)
     gaps = [config_gap(root, "ruff.toml", "ruff.toml")] if has_python else []
     for folder in folders:
