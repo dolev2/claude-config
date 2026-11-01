@@ -155,3 +155,13 @@ def test_repo_files_keeps_hebrew_names(tmp_path):
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     (tmp_path / "קובץ.md").write_text("", encoding="utf-8")
     assert file_guide_check.repo_files(tmp_path) == ["קובץ.md"]
+
+
+def test_main_runs_in_a_repo_with_a_hebrew_path(tmp_path, monkeypatch):
+    root = tmp_path / "שולחן העבודה"
+    root.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    readme = guide("### השורש\n" + TABLE + "| `README.md` | x | y |")
+    (root / "README.md").write_text(readme, encoding="utf-8")
+    monkeypatch.chdir(root)
+    assert file_guide_check.main([]) == 0
