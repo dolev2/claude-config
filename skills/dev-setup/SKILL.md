@@ -22,10 +22,12 @@ This skill folder is also the shared home of the pipeline:
 - `actions/project-sync/`: the label ↔ board sync, a composite action every repo with a board calls.
   It reads the marker name from `SYNC_MARKER` and the Area options from the board itself.
 - `templates/.github/`: the two short workflows that call the actions, and the skeleton of
-  `tests.yml` with its lint steps.
+  `tests.yml` with its lint steps and the `files` job that runs the file guide check.
 - `templates/ruff.toml`, `templates/eslint.config.js` (+ `test_lint_templates.py`): the lint
   settings, following `~/.claude/rules/code-*.md`. Each repo keeps a copy; see step 3.
 - `templates/README.md`: the skeleton of a repo's file guide (step 6).
+- `templates/file_guide_check.py` (+ `scripts/test_file_guide_check.py`): the check that the
+  file guide names every file, and only files that exist. Each repo keeps a copy; see step 6.
 - `templates/netlify.toml`: the deploy-skip rule for a repo that Netlify deploys (step 3).
 
 The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
@@ -164,6 +166,9 @@ settings from a URL, and one shared change would turn every repo red at once (re
   the template, and replace it only on his yes. Never edit the template to match a copy.
 - `missing .github/workflows/tests.yml`, or `no ... step in` it: add the template's lint
   steps to the existing jobs, before the tests. An existing workflow: show the diff first.
+  A repo without code (a static site) gets a `tests.yml` with the `files` job only.
+- `missing .github/file_guide_check.py`, or `no file guide step in` the workflow: see "The
+  file guide check" in step 6.
 
 **Netlify.** Each Netlify deploy costs credits, so a repo's `netlify.toml` deploys only when
 a site file changes (reference doc, "Netlify"). When `netlify` from step 0 says
@@ -309,7 +314,8 @@ section in `README.md` that says, per folder, what each file is and why it exist
   leave the rest of the file untouched.
 
 Fill the tables from the files actually in the repo (`git ls-files`), one table per top-level
-folder; a folder of many similar files gets one row. Never leave the skeleton empty, and never
+folder; a folder of many similar files (tests, migrations, icons) gets one row, and its pattern
+goes into the check's local exceptions (below). Never leave the skeleton empty, and never
 guess a file's purpose: read the file, or ask Dolev. Then add one line to `CLAUDE.md`:
 
 ```markdown
@@ -319,6 +325,22 @@ guess a file's purpose: read the file, or ask Dolev. Then add one line to `CLAUD
 Also make sure it has a tests section with the exact commands, the lint commands among them
 (`ruff check .`, `ruff format --check .`, `npm --prefix <folder> run lint`); `dev-code` and
 `dev-ship` run whatever it says. The lint settings files get a row in the file guide. If there is none, ask Dolev for them rather than guessing.
+
+**The file guide check.** Every repo, code or not, keeps a copy of
+`templates/file_guide_check.py` at `.github/file_guide_check.py`, for the same reasons as the
+lint settings (reference doc, "lint"). It fails when a file is missing from the guide, or the
+guide names one that is gone; it reads only the guide's tables (the template's docstring says
+how). To install it:
+
+1. Copy the template. Below its `# --- local ---` line, fill `COVERED_BY_PATTERN` with the
+   groups the guide covers by a sentence (`backend/tests/test_*.py`, `public/*`).
+2. Run `python .github/file_guide_check.py` and complete the guide until it passes. A file you
+   cannot place: read it, or ask Dolev, as above.
+3. Add the command to the tests section of `CLAUDE.md`, and the template's `files` job to
+   `tests.yml`. The copy gets a row in the file guide.
+
+`differs .github/file_guide_check.py` is handled like a lint copy that differs: the diff above
+the line, replaced only on Dolev's yes.
 
 ## Step 7: Verify and hand over
 

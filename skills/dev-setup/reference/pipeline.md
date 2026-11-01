@@ -34,7 +34,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 | נהלי הקוד, git והסביבה | `~/.claude/rules/` (כללי, Python, React, git, Windows), לכל ה-repos | גודל קובץ, שכבות, rebase לפני בדיקות |
 | הגדרות ה-lint | עותק בכל repo של `dev-setup/templates/ruff.toml` ו-`eslint.config.js`; `pipeline_info.py` מדווח תחת `lint` על חסר או שונה | `missing ruff.toml` |
 | כלל הדילוג של Netlify | `netlify.toml` של ה-repo, לפי `dev-setup/templates/netlify.toml`; `pipeline_info.py` מדווח תחת `netlify` כשאין בו `build.ignore` (ראו "Netlify" למטה) | `no build.ignore in netlify.toml` |
-| מה כל קובץ ולמה הוא קיים | סעיף "מדריך קבצים" ב-`README.md` של ה-repo | `dev-setup` יוצר אותו, וכל שינוי שמוסיף קובץ מעדכן אותו |
+| מה כל קובץ ולמה הוא קיים | סעיף "מדריך קבצים" ב-`README.md` של ה-repo. העותק `.github/file_guide_check.py` בודק ב-CI שהוא שלם; `pipeline_info.py` מדווח תחת `lint` כשהעותק חסר או שונה | `dev-setup` יוצר אותו, וכל שינוי שמוסיף קובץ מעדכן אותו |
 | סוגי issues נוספים | תוויות שקיימות ב-repo, למשל `decision` | |
 
 **`CLAUDE.md` של repo מכיל רק את מה שספציפי לו.** נהלי הקוד, git והסביבה נטענים בכל סשן מ-`~/.claude/rules/`, ולכן לא חוזרים עליהם שם: ה-repo כותב רק איפה הדברים אצלו (השכבות, מקור ה-tokens, המילון).
@@ -841,6 +841,8 @@ ruff ו-eslint אוכפים את נהלי הקוד ב-`~/.claude/rules/` במה 
 - שינוי מרכזי היה צובע את ה-CI של כל ה-repos באדום בבת אחת. עם עותק, כל repo מתעדכן במשימה משלו.
 
 **שורת הסימון.** בכל עותק, מעל השורה `# --- local ---` (או `// --- local ---`) הקובץ זהה לתבנית, ומתחתיה רק מה שספציפי ל-repo. `lint_check.py` משווה רק את החלק העליון, ומדווח `differs` כשהוא שונה. ב-`ruff.toml` כל המפתחות מנוקדים (`lint.select = ...`), בלי כותרות `[table]`, כדי שמפתח מקומי בסוף הקובץ לא ייפול לתוך טבלה שנפתחה מעליו.
+
+**בדיקת מדריך הקבצים** עובדת באותה שיטה (claude-config #89): עותק של `dev-setup/templates/file_guide_check.py` בכל repo, ומתחת לשורת הסימון החריגים שלו. `lint_check.py` משווה את החלק העליון.
 
 **repo קיים** מקבל את ה-lint במשימה משלו (למשל CRM #66), כי רוב העבודה היא תיקון הקוד שכבר כתוב בו.
 

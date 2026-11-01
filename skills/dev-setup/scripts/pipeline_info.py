@@ -23,7 +23,8 @@ same skills work in every repo that carries the pipeline:
 - the file guide               - a README.md with a "מדריך קבצים" / "File guide"
                                  heading; without one, missing_files names it
 - the lint setup               - lint_check.py: settings missing or differing from the
-                                 dev-setup templates, by the languages in the repo
+                                 dev-setup templates, by the languages in the repo,
+                                 and the file guide check every repo copies (#89)
 - the Netlify deploy rule      - a netlify.toml without build.ignore deploys, and pays
                                  credits, on every merge (claude-config#50)
 
@@ -38,7 +39,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from lint_check import lint_gaps, tracked_files
+from lint_check import all_gaps, tracked_files
 
 REQUIRED_LABELS = [
     "owner:claude",
@@ -230,7 +231,7 @@ def main(argv: list[str] | None = None) -> None:
         "root": str(root) if root else None,
         "issue_forms": forms,
         "missing_files": missing_files if root or not forms else None,
-        "lint": lint_gaps(root, tracked_files(root)) if root else None,
+        "lint": all_gaps(root, tracked_files(root)) if root else None,
         "netlify": netlify_gaps(root) if root else None,
         "claude_md": bool(root and (root / "CLAUDE.md").exists()),
         "repo_skills": sorted(

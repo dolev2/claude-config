@@ -4,7 +4,8 @@ name: Tests
 # lists under its tests section, on every PR and on every push to the default branch.
 #
 # Fill in before committing: the default branch, the folders, and each `# <...>` line.
-# Delete the job of a side the repo does not have.
+# Delete the job of a side the repo does not have. The `files` job stays in every repo,
+# a static site too: it checks that the file guide in README.md is complete (#89).
 #
 # Lint runs before the tests in the same job: it is fast and fails first, and the job's
 # install step already serves both.
@@ -25,6 +26,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - run: python .github/file_guide_check.py
+
   backend:
     runs-on: ubuntu-latest
     steps:
