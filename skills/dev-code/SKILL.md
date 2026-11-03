@@ -23,9 +23,10 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary and the rules every phase shares),
 `issue-body.md` (how to read the full context of an issue, the Plan format), `git-flow.md` (one
-issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`
-and `review-app.md`. Read them before step 1, every run; Part B also reads `after-merge.md`. Then the repo's **`CLAUDE.md`**: its
-working rules and its test commands.
+issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`,
+`review-app.md` and `ux.md` (the user-experience check). Read them before step 1, every run;
+Part B also reads `after-merge.md`. Then the repo's **`CLAUDE.md`**: its working rules and its
+test commands.
 
 ## Part A: Execute
 
@@ -157,14 +158,21 @@ working rules and its test commands.
       `git diff origin/<default>...<sha>`, and pointers to the repo's `CLAUDE.md` and the rules
       in `~/.claude/rules/`. Its rules: read only; never edit a file or run a command that
       writes (commit, push, install, `gh issue edit`, `gh pr comment`); return a list of
-      findings, each with file and line, a kind (bug / departs from the Plan / cleanup), and
-      one sentence on why. On a repair round it reviews the whole diff of the PR.
+      findings, each with file and line, a kind (bug / departs from the Plan / departs from the
+      user experience / cleanup), and one sentence on why. On a repair round it reviews the
+      whole diff of the PR.
     - **The app for review**, from the worktree, as `reference/review-app.md` says:
       the command, ports and URL come from the repo's `CLAUDE.md`. Its outcome is one of: a
       link to the PR's app (started now, or already running from this branch), a link with a
       warning that names who holds the port, or a line saying why there is no link (the repo
       has no app, the session is not on Dolev's machine, the app failed to start). A failure
       here does not block the hand-off: say so in it.
+
+    **Once the app is up, check the user experience yourself**, as `reference/ux.md` says: walk
+    the Plan's "חוויית משתמש" section in the built-in browser, at desktop and phone width. A gap
+    inside the Plan is fixed like a review finding; one outside it is proposed as a task. No app
+    (or not on Dolev's machine): check what you can (output, messages) and say what was not
+    checked. A plan with "אין ממשק" skips this.
 
     **When the agent returns**, check that `git status --porcelain` in the worktree is still
     empty (the agent wrote nothing), then decide each finding: right and inside the Plan: fix
@@ -183,8 +191,8 @@ working rules and its test commands.
 
     **No hand-off**, for any reason: stop the app and delete the registry file (`reference/review-app.md`): there is nothing to review.
 
-    Go on to step 11 only when the agent has returned and CI is green on the last push (no
-    checks reported: the agent alone).
+    Go on to step 11 only when the agent has returned, the user-experience check is done, and CI
+    is green on the last push (no checks reported: the agent alone).
 
 11. Hand off:
     ```bash
@@ -195,8 +203,9 @@ working rules and its test commands.
     Then comment on the issue, in Hebrew, with what changed, what you tested, and anything Dolev
     should look at. On a repair round, say which of his points each change addresses. The
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
-    why. The app's outcome from step 10 goes into that comment and into the chat message, with
-    one line on what to open in it.
+    why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
+    was not checked and why. The app's outcome from step 10 goes into that comment and into the
+    chat message, with one line on what to open in it.
 
 12. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
     `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.

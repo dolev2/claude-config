@@ -54,6 +54,7 @@
 | `reference/git-flow.md` | issue אחד בריצה ושער ה-WIP, עותק העבודה בכל שלב, branch ו-PR, rebase ו-CI לפני merge | `dev-plan`, `dev-code`, `dev-ship` |
 | `reference/tests.md` | אילו בדיקות רצות, ומתי: ממוקד בפיתוח, מלא פעם אחת אחרי ה-rebase | `dev-code`, `dev-ship`, `dev-setup` |
 | `reference/review-app.md` | הרמת האפליקציה של ה-PR לסקירה, קובץ הרישום, ועצירה | `dev-code`, `dev-ship`, `dev-setup` |
+| `reference/ux.md` | רשימת הבדיקה של חוויית משתמש: הסעיף בתוכנית, והמעבר על הפיצ'ר בדפדפן לפני המסירה | `dev-plan`, `dev-code` |
 | `reference/after-merge.md` | ההצעה לסשן של המשימה הבאה אחרי מיזוג | `dev-code` Part B, `dev-ship` |
 | `reference/setup.md` | מה ש-`dev-setup` מתקין ולמה: הסנכרון עם הלוח, הטפסים, השער, Netlify, lint | `dev-setup` בלבד, כדי ששאר הסקילים לא יקראו אותו |
 | `reference/diagram.md` | תרשים ה-Mermaid של הצינור, וכלל העריכה שלו | לבני אדם; אף סקיל לא קורא אותו בזמן ריצה |
