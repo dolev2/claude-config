@@ -23,8 +23,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ## Read first
 
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary, the sprint), `issue-body.md` (how
-to read the full context of an issue, the Plan format, body editing), `dependencies.md` and
-`git-flow.md` (the working copy). Everything mechanical lives there. Read them before step 1,
+to read the full context of an issue, the Plan format, body editing), `dependencies.md`,
+`git-flow.md` (the working copy) and `ux.md` (the user-experience section). Everything mechanical lives there. Read them before step 1,
 every run.
 
 Then the repo's **`CLAUDE.md`**: where its requirements and decisions live, its working rules,
@@ -94,7 +94,9 @@ keeps them: edit it in the headings it already has.
    **Two levels, always.** The plan opens with "בקצרה", written for Dolev's decision: the
    problem, what will change for the users, what is left out and which issue has it, and what
    waits for him. Business language only, no file or function names, at most 8 lines. Then
-   "פירוט טכני" for the execution. No sections outside the format; a boundary with another
+   "חוויית משתמש", also for Dolev: the user, the flow, and what they see in each state, from
+   the checklist in `reference/ux.md`. Every plan has it; work with nothing a user sees or
+   touches gets one line saying so and why. Then "פירוט טכני" for the execution. No sections outside the format; a boundary with another
    issue is a line in "בקצרה", not a section of its own (`reference/issue-body.md`).
    An issue coming back for a revision whose plan predates this format gets it in the same edit.
 

@@ -14,7 +14,7 @@ flowchart TD
 
     subgraph PG["שלב התכנון — סשן מקומי"]
       PLAN["dev-plan<br/>עד 3 פריטים בכל ריצה<br/>לפי כמה משימות מחכות להם"]:::routine
-      PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
+      PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>כולל סעיף חוויית משתמש<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
     end
 
@@ -42,7 +42,7 @@ flowchart TD
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
       RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>opens a PR that closes the issue"]:::routine
-      CODE --> WCI["CI checks run<br/>ובאותו זמן<br/>סוכן לקריאה בלבד סוקר את השינויים<br/>אפליקציית הסקירה עולה"]:::routine
+      CODE --> WCI["CI checks run<br/>ובאותו זמן<br/>סוכן לקריאה בלבד סוקר את השינויים<br/>אפליקציית הסקירה עולה<br/>בדיקת חוויית משתמש בדפדפן"]:::routine
     end
 
     WCI --> REV["status:in-review<br/>owner:human"]:::human
