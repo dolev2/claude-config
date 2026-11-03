@@ -1,0 +1,527 @@
+<title>Life of an Issue</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: a ticket's ledger. State map on top, git timeline under it, then one row per stage with three lanes (labels / skill / git). */
+:root {
+  --bg: #f4f6f9; --surface: #ffffff; --ink: #1c2230; --muted: #5a6475; --line: #d7dde6; --code-bg: #eef1f6;
+  --human: #9a6700; --human-fill: #fff3d4;
+  --claude: #1f6feb; --claude-fill: #e3eeff;
+  --auto: #1a7f37; --auto-fill: #dcf5e3;
+  --gate: #cf222e; --gate-fill: #ffe6e6;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1218; --surface: #161b23; --ink: #e5e9f0; --muted: #9ba4b3; --line: #2a323e; --code-bg: #1e252f;
+  --human: #e3b341; --human-fill: #3a2d10; --claude: #6cb0ff; --claude-fill: #13253f;
+  --auto: #4cc764; --auto-fill: #12301c; --gate: #ff8178; --gate-fill: #3f1818; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1218; --surface: #161b23; --ink: #e5e9f0; --muted: #9ba4b3; --line: #2a323e; --code-bg: #1e252f;
+  --human: #e3b341; --human-fill: #3a2d10; --claude: #6cb0ff; --claude-fill: #13253f;
+  --auto: #4cc764; --auto-fill: #12301c; --gate: #ff8178; --gate-fill: #3f1818; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.6; }
+.page { max-width: 1180px; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.25; }
+h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 700; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 17px; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+
+header { display: grid; gap: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+.dot.human { background: var(--human-fill); border-color: var(--human); }
+.dot.claude { background: var(--claude-fill); border-color: var(--claude); }
+.dot.auto { background: var(--auto-fill); border-color: var(--auto); }
+.dot.gate { background: var(--gate-fill); border-color: var(--gate); }
+
+section { display: grid; gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto; }
+.panel svg { display: block; min-width: 900px; width: 100%; height: auto; }
+
+/* SVG styling through tokens */
+svg text { font-family: var(--font-body); fill: var(--ink); }
+svg .m { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+svg .s { font-size: 12px; fill: var(--muted); }
+svg .lane { font-family: var(--font-mono); font-size: 12px; fill: var(--muted); }
+.n-human { fill: var(--human-fill); stroke: var(--human); stroke-width: 1.5; }
+.n-claude { fill: var(--claude-fill); stroke: var(--claude); stroke-width: 1.5; }
+.n-auto { fill: var(--auto-fill); stroke: var(--auto); stroke-width: 1.5; }
+.n-gate { fill: var(--gate-fill); stroke: var(--gate); stroke-width: 1.5; }
+.edge { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+.edge-gate { stroke: var(--gate); stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+.bracket { stroke: var(--line); stroke-width: 2; fill: none; }
+.arrowhead { fill: var(--muted); }
+.main-line { stroke: var(--ink); stroke-width: 3; fill: none; }
+.branch-line { stroke: var(--claude); stroke-width: 3; fill: none; }
+.faded { stroke: var(--claude); stroke-width: 2; fill: none; stroke-dasharray: 4 5; opacity: 0.6; }
+.c-main { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
+.c-branch { fill: var(--surface); stroke: var(--claude); stroke-width: 2.5; }
+.c-merge { fill: var(--auto); stroke: var(--auto); stroke-width: 2.5; }
+.wt-box { fill: var(--claude-fill); stroke: var(--claude); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.55; }
+.badge { fill: var(--ink); }
+.badge-t { fill: var(--surface); font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.zone { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
+svg .zone-t { font-size: 13px; font-weight: 700; fill: var(--muted); }
+svg .mono-s { font-family: var(--font-mono); font-size: 12px; font-weight: 600; fill: var(--ink); }
+.arrowhead-ink { fill: var(--ink); }
+.io { stroke: var(--ink); stroke-width: 1.8; fill: none; }
+.io-force { stroke: var(--gate); stroke-width: 2.2; fill: none; }
+.agent-line { stroke: var(--claude); stroke-width: 2; fill: none; opacity: 0.75; }
+.c-agent { fill: var(--surface); stroke: var(--claude); stroke-width: 2; }
+svg .branch-t { font-family: var(--font-mono); font-size: 11px; fill: var(--claude); }
+.keys { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.keys li { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.keys svg { flex: none; }
+.keys b { color: var(--ink); font-weight: 500; }
+
+/* git steps under the graph */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.steps li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; min-width: 0; }
+.steps .num { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--surface);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600; display: grid; place-items: center; }
+.steps b { display: block; }
+.steps code { word-break: break-all; }
+
+/* Stage ledger */
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; display: grid; grid-template-columns: 210px 1fr; overflow: hidden; }
+.stage-head { padding: 16px; border-right: 1px solid var(--line); display: grid; align-content: start; gap: 8px; }
+.stage-head .idx { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.who { justify-self: start; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 999px; border: 1.5px solid; }
+.who.human { background: var(--human-fill); border-color: var(--human); }
+.who.claude { background: var(--claude-fill); border-color: var(--claude); }
+.who.auto { background: var(--auto-fill); border-color: var(--auto); }
+.lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lane-cell { padding: 14px 16px; display: grid; align-content: start; gap: 8px; min-width: 0; }
+.lane-cell + .lane-cell { border-left: 1px solid var(--line); }
+.lane-cell ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.lane-cell ul code { word-break: break-word; }
+.gate-row { grid-column: 1 / -1; border-top: 1px solid var(--line); background: var(--gate-fill); padding: 10px 16px; font-size: 14px; }
+.gate-row strong { color: var(--gate); }
+.label { display: inline-block; font-family: var(--font-mono); font-size: 12px; padding: 1px 8px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--code-bg); white-space: nowrap; }
+.label.c { border-color: var(--claude); background: var(--claude-fill); }
+.label.h { border-color: var(--human); background: var(--human-fill); }
+.arrow { color: var(--muted); padding: 0 4px; }
+.flowline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+.rules { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.rule { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.rule .enf { font-size: 12px; color: var(--muted); }
+.rule .enf.hook { color: var(--gate); }
+
+@media (max-width: 860px) {
+  .stage { grid-template-columns: 1fr; }
+  .stage-head { border-right: none; border-bottom: 1px solid var(--line); }
+  .lanes { grid-template-columns: 1fr; }
+  .lane-cell + .lane-cell { border-left: none; border-top: 1px solid var(--line); }
+}
+@media (max-width: 400px) { .rules { grid-template-columns: 1fr; } }
+a { color: var(--claude); }
+a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
+</style>
+
+<div class="page">
+
+<header>
+  <span class="eyebrow">claude-config · the pipeline</span>
+  <h1>Life of an issue</h1>
+  <p>From the form to the squash merge: who moves the issue at each stage, which skill runs, and what happens in git.</p>
+  <p>Labels are the source of truth. The board only mirrors them.</p>
+  <div class="legend">
+    <span><i class="dot human"></i>Dolev</span>
+    <span><i class="dot claude"></i>Claude, inside a skill</span>
+    <span><i class="dot auto"></i>GitHub automation</span>
+    <span><i class="dot gate"></i>Gate that stops or warns</span>
+  </div>
+</header>
+
+<section aria-labelledby="map-h">
+  <h2 id="map-h">State map</h2>
+  <p>Each box is a <code>status:*</code> label. The color shows whose turn it is now (<code>owner:*</code>).</p>
+  <div class="panel">
+    <svg viewBox="0 0 1180 300" role="img" aria-label="Transitions between an issue's status labels">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" class="arrowhead"/>
+        </marker>
+      </defs>
+
+      <rect x="24" y="28" width="76" height="28" rx="14" class="n-auto"/>
+      <text x="62" y="47" text-anchor="middle" class="m">task</text>
+      <line x1="62" y1="58" x2="62" y2="116" class="edge" marker-end="url(#ah)"/>
+      <rect x="482" y="28" width="76" height="28" rx="14" class="n-auto"/>
+      <text x="520" y="47" text-anchor="middle" class="m">bug</text>
+      <line x1="520" y1="58" x2="520" y2="116" class="edge" marker-end="url(#ah)"/>
+      <text x="568" y="47" text-anchor="start" class="s">A bug skips planning</text>
+
+      <rect x="130" y="14" width="170" height="62" rx="8" class="n-human"/>
+      <text x="215" y="40" text-anchor="middle" class="m">plan-questions</text>
+      <text x="215" y="60" text-anchor="middle" class="s">Open question, owner answers</text>
+      <line x1="140" y1="118" x2="150" y2="80" class="edge" marker-end="url(#ah)"/>
+      <line x1="275" y1="80" x2="285" y2="116" class="edge" marker-start="url(#ah)" marker-end="url(#ah)"/>
+      <text x="300" y="102" text-anchor="start" class="s">Objection ↔ updated plan</text>
+
+      <rect x="20" y="120" width="160" height="62" rx="8" class="n-claude"/>
+      <text x="100" y="146" text-anchor="middle" class="m">explore</text>
+      <text x="100" y="166" text-anchor="middle" class="s">Waiting for a plan</text>
+
+      <line x1="182" y1="151" x2="226" y2="151" class="edge" marker-end="url(#ah)"/>
+      <rect x="230" y="120" width="160" height="62" rx="8" class="n-human"/>
+      <text x="310" y="146" text-anchor="middle" class="m">waiting-approval</text>
+      <text x="310" y="166" text-anchor="middle" class="s">Dolev reads and approves</text>
+
+      <line x1="392" y1="151" x2="436" y2="151" class="edge" marker-end="url(#ah)"/>
+      <rect x="440" y="120" width="160" height="62" rx="8" class="n-claude"/>
+      <text x="520" y="146" text-anchor="middle" class="m">ready-to-execute</text>
+      <text x="520" y="166" text-anchor="middle" class="s">Approved to build</text>
+
+      <line x1="602" y1="151" x2="646" y2="151" class="edge" marker-end="url(#ah)"/>
+      <rect x="650" y="120" width="160" height="62" rx="8" class="n-human"/>
+      <text x="730" y="146" text-anchor="middle" class="m">in-review</text>
+      <text x="730" y="166" text-anchor="middle" class="s">Dolev reviews the change</text>
+
+      <line x1="812" y1="151" x2="856" y2="151" class="edge" marker-end="url(#ah)"/>
+      <rect x="860" y="120" width="160" height="62" rx="8" class="n-claude"/>
+      <text x="940" y="146" text-anchor="middle" class="m">done</text>
+      <text x="940" y="166" text-anchor="middle" class="s">Ready, waits for merge ask</text>
+
+      <line x1="1022" y1="151" x2="1066" y2="151" class="edge" marker-end="url(#ah)"/>
+      <rect x="1070" y="120" width="100" height="62" rx="8" class="n-auto"/>
+      <text x="1120" y="146" text-anchor="middle" class="m">closed</text>
+      <text x="1120" y="166" text-anchor="middle" class="s">Closes #N</text>
+
+      <rect x="650" y="230" width="160" height="62" rx="8" class="n-claude"/>
+      <text x="730" y="256" text-anchor="middle" class="m">needs-repair</text>
+      <text x="730" y="276" text-anchor="middle" class="s">Sent back for a fix</text>
+      <line x1="750" y1="184" x2="750" y2="226" class="edge" marker-end="url(#ah)"/>
+      <line x1="710" y1="228" x2="710" y2="186" class="edge" marker-end="url(#ah)"/>
+      <text x="758" y="212" text-anchor="start" class="s">Fix needed</text>
+      <text x="702" y="212" text-anchor="end" class="s">Fixed</text>
+
+      <line x1="940" y1="184" x2="940" y2="226" class="edge-gate" marker-end="url(#ah)"/>
+      <rect x="850" y="230" width="180" height="62" rx="8" class="n-gate"/>
+      <text x="940" y="256" text-anchor="middle" class="m">open-questions-gate</text>
+      <text x="940" y="276" text-anchor="middle" class="s">Unchecked box? It warns</text>
+
+      <path d="M20 196 V204 H390 V196" class="bracket"/>
+      <text x="205" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-plan</text>
+      <path d="M440 196 V204 H600 V196" class="bracket"/>
+      <text x="520" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-code</text>
+      <path d="M1070 196 V204 H1170 V196" class="bracket"/>
+      <text x="1120" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-ship</text>
+    </svg>
+  </div>
+</section>
+
+<section aria-labelledby="git-h">
+  <h2 id="git-h">What happens in git</h2>
+  <p>The branch is born on the remote during planning, written in a separate worktree, updated with rebase, and lands in main as a squash.</p>
+  <p>The main folder never switches branches.</p>
+  <ul class="keys">
+    <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="main-line"/></svg><span><b>main</b>: the repo's main line</span></li>
+    <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="branch-line"/><circle cx="20" cy="7" r="4" class="c-branch"/></svg><span><b>branch</b>: a chain of commits. Each circle is a commit</span></li>
+    <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="faded"/></svg><span><b>dashed branch</b>: empty, or commits replaced by a rebase</span></li>
+    <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><rect x="2" y="1" width="36" height="12" rx="3" class="wt-box"/><line x1="6" y1="7" x2="34" y2="7" class="branch-line"/></svg><span><b>dashed frame</b>: a worktree, meaning a folder on your computer. The line inside is the branch open in it</span></li>
+    <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="34" y2="7" class="io" marker-end="url(#ah3)"/></svg><span><b>black arrow</b>: commits move, between GitHub and your computer or between branches</span></li>
+    <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="34" y2="7" class="io-force" marker-end="url(#ah3)"/></svg><span><b>red arrow</b>: a forced push</span></li>
+  </ul>
+  <div class="panel">
+    <svg viewBox="0 0 1100 474" role="img" aria-label="Timeline of an issue's branch, on GitHub and on your computer">
+      <defs>
+        <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" class="arrowhead"/>
+        </marker>
+        <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" class="arrowhead-ink"/>
+        </marker>
+      </defs>
+
+      <rect x="4" y="6" width="1092" height="166" rx="10" class="zone"/>
+      <text x="18" y="26" class="zone-t">GitHub</text>
+      <rect x="4" y="186" width="1092" height="282" rx="10" class="zone"/>
+      <text x="18" y="206" class="zone-t">On your computer</text>
+      <rect x="30" y="232" width="960" height="40" rx="6" class="wt-box"/>
+
+      <text x="40" y="50" class="lane">origin/main</text>
+      <text x="40" y="134" class="lane">claude/issue-42-slug</text>
+      <text x="40" y="248" class="lane">claude/issue-42-slug</text>
+      <text x="40" y="264" class="mono-s">worktree</text>
+      <text x="104" y="264" class="s">of the main session</text>
+      <text x="290" y="306" text-anchor="end" class="s">Agent A</text>
+      <text x="290" y="322" text-anchor="end" class="mono-s">worktree A</text>
+      <text x="290" y="356" text-anchor="end" class="s">Agent B</text>
+      <text x="290" y="372" text-anchor="end" class="mono-s">worktree B</text>
+
+      <line x1="40" y1="60" x2="1080" y2="60" class="main-line"/>
+      <circle cx="70" cy="60" r="8" class="c-main"/>
+      <circle cx="140" cy="60" r="8" class="c-main"/>
+      <circle cx="420" cy="60" r="8" class="c-main"/>
+      <circle cx="560" cy="60" r="8" class="c-main"/>
+      <text x="420" y="44" text-anchor="middle" class="s">Another session merged</text>
+      <text x="560" y="44" text-anchor="middle" class="s">One more merge</text>
+
+      <path d="M140 68 C 170 130, 180 130, 200 130" class="faded"/>
+      <line x1="200" y1="130" x2="740" y2="130" class="faded"/>
+      <circle cx="200" cy="130" r="7" class="c-branch" style="stroke-dasharray:3 3"/>
+      <text x="470" y="122" text-anchor="middle" class="s">Empty until the first push</text>
+      <line x1="740" y1="130" x2="910" y2="130" class="branch-line"/>
+      <circle cx="745" cy="130" r="7" class="c-branch"/>
+      <circle cx="775" cy="130" r="7" class="c-branch"/>
+      <text x="790" y="114" text-anchor="start" class="mono-s">PR</text>
+      <circle cx="885" cy="130" r="7" class="c-branch"/>
+      <text x="950" y="136" class="m" style="fill:var(--gate)">✕</text>
+      <text x="966" y="140" class="s">Deleted</text>
+
+      <path d="M910 130 C 950 130, 965 75, 978 66" class="branch-line" marker-end="url(#ah2)"/>
+      <circle cx="990" cy="60" r="10" class="c-merge"/>
+      <text x="990" y="40" text-anchor="middle" class="m">squash merge</text>
+
+      <line x1="260" y1="138" x2="260" y2="240" class="io" marker-end="url(#ah3)"/>
+      <text x="270" y="210" class="mono-s">fetch +</text>
+      <text x="270" y="226" class="mono-s">worktree add</text>
+
+      <line x1="260" y1="250" x2="870" y2="250" class="branch-line"/>
+      <line x1="870" y1="250" x2="990" y2="250" class="faded"/>
+      <text x="1000" y="256" class="m" style="fill:var(--gate)">✕</text>
+      <text x="1006" y="280" text-anchor="middle" class="mono-s">worktree remove</text>
+
+      <rect x="332" y="292" width="110" height="46" rx="6" class="wt-box"/>
+      <rect x="332" y="342" width="110" height="46" rx="6" class="wt-box"/>
+      <text x="387" y="332" text-anchor="middle" class="branch-t">issue-42-slug-A</text>
+      <text x="387" y="382" text-anchor="middle" class="branch-t">issue-42-slug-B</text>
+      <path d="M300 250 C 320 310, 330 310, 340 310" class="agent-line"/>
+      <line x1="340" y1="310" x2="430" y2="310" class="agent-line"/>
+      <circle cx="360" cy="310" r="6" class="c-agent"/>
+      <circle cx="410" cy="310" r="6" class="c-agent"/>
+      <path d="M300 250 C 320 360, 330 360, 340 360" class="agent-line"/>
+      <line x1="340" y1="360" x2="430" y2="360" class="agent-line"/>
+      <circle cx="365" cy="360" r="6" class="c-agent"/>
+      <circle cx="415" cy="360" r="6" class="c-agent"/>
+      <text x="320" y="406" text-anchor="end" class="s">Never pushed anywhere</text>
+      <line x1="432" y1="310" x2="486" y2="258" class="io" marker-end="url(#ah3)"/>
+      <line x1="432" y1="360" x2="516" y2="260" class="io" marker-end="url(#ah3)"/>
+      <text x="458" y="402" class="mono-s">cherry-pick</text>
+
+      <circle cx="495" cy="250" r="7" class="c-branch" style="opacity:.45"/>
+      <circle cx="525" cy="250" r="7" class="c-branch" style="opacity:.45"/>
+      <line x1="560" y1="68" x2="626" y2="240" class="io" stroke-dasharray="5 4" marker-end="url(#ah3)"/>
+      <text x="600" y="200" text-anchor="end" class="mono-s">fetch + rebase</text>
+      <circle cx="645" cy="250" r="7" class="c-branch"/>
+      <circle cx="670" cy="250" r="7" class="c-branch"/>
+      <circle cx="695" cy="250" r="7" class="c-branch"/>
+      <text x="610" y="284" text-anchor="middle" class="s">Same changes,</text>
+      <text x="610" y="300" text-anchor="middle" class="s">new IDs</text>
+
+      <line x1="720" y1="242" x2="720" y2="140" class="io" marker-end="url(#ah3)"/>
+      <text x="728" y="176" class="mono-s">push</text>
+
+      <circle cx="820" cy="250" r="7" class="c-branch"/>
+      <text x="820" y="284" text-anchor="middle" class="s">Fix round</text>
+      <line x1="860" y1="242" x2="860" y2="140" class="io-force" marker-end="url(#ah3)"/>
+      <text x="868" y="216" class="mono-s" style="fill:var(--gate)">push --force-with-lease</text>
+
+      <line x1="387" y1="388" x2="387" y2="424" class="io-force" stroke-dasharray="4 3"/>
+      <text x="387" y="436" text-anchor="middle" class="m" style="fill:var(--gate)">✕</text>
+      <text x="374" y="430" text-anchor="end" class="mono-s">README.md</text>
+      <text x="374" y="446" text-anchor="end" class="s">Outside its part: blocked</text>
+      <path d="M398 452 H555 V262" class="io" stroke-dasharray="5 4" marker-end="url(#ah3)"/>
+      <text x="476" y="446" text-anchor="middle" class="s">Request in report</text>
+      <circle cx="555" cy="250" r="7" class="c-branch" style="opacity:.45"/>
+      <text x="565" y="330" class="s">Main session</text>
+      <text x="565" y="346" class="s">applies the request</text>
+
+      <g>
+        <circle cx="224" cy="98" r="11" class="badge"/><text x="224" y="102" text-anchor="middle" class="badge-t">1</text>
+        <circle cx="242" cy="160" r="11" class="badge"/><text x="242" y="164" text-anchor="middle" class="badge-t">2</text>
+        <circle cx="300" cy="284" r="11" class="badge"/><text x="300" y="288" text-anchor="middle" class="badge-t">3</text>
+        <circle cx="574" cy="150" r="11" class="badge"/><text x="574" y="154" text-anchor="middle" class="badge-t">6</text>
+        <circle cx="704" cy="196" r="11" class="badge"/><text x="704" y="200" text-anchor="middle" class="badge-t">7</text>
+        <circle cx="844" cy="196" r="11" class="badge"/><text x="844" y="200" text-anchor="middle" class="badge-t">8</text>
+        <circle cx="1040" cy="92" r="11" class="badge"/><text x="1040" y="96" text-anchor="middle" class="badge-t">9</text>
+        <circle cx="1060" cy="250" r="11" class="badge"/><text x="1060" y="254" text-anchor="middle" class="badge-t">10</text>
+        <circle cx="466" cy="294" r="11" class="badge"/><text x="466" y="298" text-anchor="middle" class="badge-t">5</text>
+        <circle cx="412" cy="426" r="11" class="badge"/><text x="412" y="430" text-anchor="middle" class="badge-t">4</text>
+      </g>
+    </svg>
+  </div>
+  <ol class="steps">
+    <li><span class="num">1</span><div><b>dev-plan creates the branch on GitHub</b>No checkout: the branch exists only on GitHub, and the folder on your computer stays on main.<br>It is empty: it points at the same commit as main.<br><code>git push origin origin/main:refs/heads/claude/issue-42-slug</code></div></li>
+    <li><span class="num">2</span><div><b>dev-code pulls it into a worktree</b>A separate folder on your computer, just for this issue.<br>First, fetch the issue's branch from GitHub:<br><code>git fetch origin claude/issue-42-slug</code><br>Then create a local branch and a folder from it, in one command:<br><code>git worktree add ../worktrees/&lt;repo&gt;-issue-42 -B claude/issue-42-slug origin/claude/issue-42-slug</code></div></li>
+    <li><span class="num">3</span><div><b>Parallel agents, only when the plan splits the work</b>Each agent works in its own folder (a temporary worktree), with its own temporary branch. Commit only, no push.<br>All worktrees share one commit store, so the agent's commits reach the main session without GitHub.</div></li>
+    <li><span class="num">4</span><div><b>A file outside the agent's part</b>An agent that wants to change a file outside its part, such as <code>README.md</code>, is blocked and writes the change as a request in its report (enforced on edit: <code>guard_parallel_parts.py</code>, #82).<br>The main session applies the request in step 5, after combining.<br>No split: no agents. The main session writes alone, directly in the worktree, and skips to step 6.</div></li>
+    <li><span class="num">5</span><div><b>Combine: the main session gathers the work</b>For each agent: <code>git diff --name-only</code>, and a check that it touched only its own prefixes from the plan.<br>Then <code>git cherry-pick</code> from the agent's branch into the issue's local branch. Agent A first, then agent B.<br>Conflict: <code>git cherry-pick --abort</code>, and stop.<br>After combining: the main session applies the requests from the reports, then deletes the temporary worktrees and branches.</div></li>
+    <li><span class="num">6</span><div><b>Update against main, before the tests</b>This time fetch main, not the issue's branch:<br><code>git fetch origin main</code><br><code>git rebase origin/main</code><br>The commits are rebuilt on top of the latest main, with new IDs.<br>Conflict: <code>git rebase --abort</code>, a comment on the issue, and no PR.</div></li>
+    <li><span class="num">7</span><div><b>Full test run, first push and PR</b>Lint, then every package, once, in parallel.<br>A plain push is enough: GitHub has no commits yet to overwrite.<br><code>gh pr create</code> with <code>Closes #42</code>, then CI, a review agent and the review app.<br><code>Closes #42</code> only links the PR to the issue. The issue closes on its own only when the PR is merged, in step 9.</div></li>
+    <li><span class="num">8</span><div><b>Fix round, if needed</b>In the same worktree, and rebase again.<br>The rebase rebuilt commits that are already on GitHub, so a forced push is needed:<br><code>git push --force-with-lease</code><br>It refuses if someone else pushed in the meantime, for example an edit in the GitHub UI.</div></li>
+    <li><span class="num">9</span><div><b>Squash merge, only on an explicit request</b><code>gh pr checks --watch --fail-fast</code><br><code>gh pr merge --squash</code><br>An approval prompt pops up before every merge.<br>The branch on GitHub deletes itself, through the repo's Automatically delete head branches setting.</div></li>
+    <li><span class="num">10</span><div><b>Cleanup on your computer</b>Stop the review app, then <code>git worktree remove</code>.<br>Delete the local branch, and run <code>git pull --ff-only</code> on main.</div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="stages-h">
+  <h2 id="stages-h">Stage by stage</h2>
+  <p>Each stage has three lanes: what happens to the labels, what the skill does, and what happens in git.</p>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">Stage 1</span><h3>Open</h3><span class="who human">Dolev, or Claude when asked</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">Labels</span>
+        <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
+        <div class="flowline"><span class="label">bug</span><span class="arrow">→</span><span class="label c">status:ready-to-execute</span></div>
+        <div class="flowline"><span class="label c">owner:claude</span><span class="label">area:*</span></div>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Skill</span>
+        <p><b class="mono">dev-issue</b>, or the <code>task.yml</code> / <code>bug.yml</code> form from <code>dolev2/.github</code>.</p>
+        <ul><li>The milestone is the sprint.</li><li>Bugs and <code>process</code> tasks always go into the current sprint.</li><li>Dependencies are recorded as Blocked by links.</li></ul>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Git</span>
+        <p>No branch yet.</p>
+        <p><code>sync-project.yml</code> syncs the labels to the board.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">Stage 2</span><h3>Pick</h3><span class="who claude">Claude</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">Labels</span>
+        <p>Unchanged.</p>
+        <p>The skill only reads them to route the issue.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Skill</span>
+        <p><b class="mono">dev-next</b>: "What's next?"</p>
+        <ul><li><code>process</code> and <code>bug</code> first.</li><li>Then whatever the most tasks wait on (<code>rank_issues.py</code>).</li><li>Routes to dev-plan or dev-code, or says it is waiting for Dolev.</li></ul>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Git</span>
+        <p>No action.</p>
+        <p><code>audit_sprint.py</code> checks for missing links and cycles.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">Stage 3</span><h3>Plan</h3><span class="who claude">Claude</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">Labels</span>
+        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
+        <p>Or, when a blocking question remains:</p>
+        <div class="flowline"><span class="label h">plan-questions</span><span class="label h">owner:dolev</span></div>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Skill</span>
+        <p><b class="mono">dev-plan</b>: up to 3 issues per run.</p>
+        <ul><li>Writes a Plan in the issue body: a short summary for the decision, technical detail for the build.</li><li>Questions are written as checkboxes.</li><li>Appends to a change log and never deletes it.</li></ul>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Git</span>
+        <p>Creates the branch on the remote, with no checkout.</p>
+        <p>Reads code straight from <code>origin/main</code>: <code>git show</code>, <code>git grep</code>.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">Stage 4</span><h3>Questions and approval</h3><span class="who human">Dolev</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">Labels</span>
+        <p>Answers a question:</p>
+        <div class="flowline"><span class="label c">plan-questions</span><span class="label c">owner:claude</span></div>
+        <p>Approves:</p>
+        <div class="flowline"><span class="label c">ready-to-execute</span><span class="label c">owner:claude</span></div>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Skill</span>
+        <p>No skill: it is Dolev's turn.</p>
+        <p>An answer or an objection sends it back to dev-plan.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Git</span>
+        <p>No action.</p>
+        <p>The branch waits on the remote, empty.</p>
+      </div>
+    </div>
+    <div class="gate-row"><strong>Gate:</strong> no code is written on a plan Dolev has not approved.</div>
+  </article>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">Stage 5</span><h3>Code</h3><span class="who claude">Claude</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">Labels</span>
+        <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
+        <div class="flowline"><span class="label h">owner:dolev</span></div>
+        <p>A fix (<code>needs-repair</code>) is taken before a new task.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Skill</span>
+        <p><b class="mono">dev-code</b>: exactly one issue per run.</p>
+        <ul><li>Implements the plan and adds a test for every change.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Hands over a PR with a link to the review app.</li></ul>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Git</span>
+        <p>Worktree, commits, then <code>fetch</code> + <code>rebase origin/main</code>.</p>
+        <p>Only after the rebase: lint and all tests, push and PR.</p>
+      </div>
+    </div>
+    <div class="gate-row"><strong>Gates:</strong> 3 or more PRs waiting for review, an issue blocked by a Blocked by link, or a rebase conflict: stop and report.</div>
+  </article>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">Stage 6</span><h3>Review</h3><span class="who human">Dolev</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">Labels</span>
+        <p>Fix needed:</p>
+        <div class="flowline"><span class="label c">needs-repair</span><span class="label c">owner:claude</span></div>
+        <p>All good:</p>
+        <div class="flowline"><span class="label c">done</span></div>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Skill</span>
+        <p>Dolev checks the PR and the app running from the worktree.</p>
+        <p>A fix goes back to dev-code, and is exempt from the 3-PR gate.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Git</span>
+        <p>The fix is written in the same worktree.</p>
+        <p>Rebase, then <code>git push --force-with-lease</code>.</p>
+      </div>
+    </div>
+    <div class="gate-row"><strong>Gate:</strong> <code>open-questions-gate.yml</code> runs on <code>status:done</code>. An unchecked question triggers a comment, the <code>has-open-questions</code> label, and an email.</div>
+  </article>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">Stage 7</span><h3>Merge and close</h3><span class="who claude">Claude, on explicit request</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">Labels</span>
+        <p>The issue closes on its own, through <code>Closes #N</code>.</p>
+        <p>The card lands in Done on the board.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Skill</span>
+        <p><b class="mono">dev-ship</b>, or <b class="mono">dev-code</b> Part B.</p>
+        <ul><li>The <code>done</code> label alone is not approval.</li><li>At the end: an offer to start a new session with the next task.</li></ul>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Git</span>
+        <p>Not MERGEABLE: rebase, push, rerun the tests.</p>
+        <p>Wait for CI, then squash merge.</p>
+        <p>Cleanup: the app, the worktree, the branch.</p>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section aria-labelledby="rules-h">
+  <h2 id="rules-h">Git rules that always apply</h2>
+  <p>From <code>rules/git.md</code>. They apply in every repo, even when no skill is running.</p>
+  <div class="rules">
+    <div class="rule"><h3>Branch from origin</h3><p>A branch is cut from <code>origin/main</code> after <code>git fetch</code>.</p><p>The local main can be several merges behind.</p><span class="enf">Convention</span></div>
+    <div class="rule"><h3>Rebase before testing</h3><p>Rebase first, then run the tests.</p><p>This catches a hidden conflict: two valid changes that break together.</p><span class="enf">Convention</span></div>
+    <div class="rule"><h3>Rebase, not merge</h3><p>History stays linear.</p><p>Every PR closes as a squash.</p><span class="enf">Convention</span></div>
+    <div class="rule"><h3>Only force-with-lease</h3><p><code>--force</code> silently overwrites other people's commits.</p><span class="enf hook">Enforced: block_force_push.py</span></div>
+    <div class="rule"><h3>Merge only with approval</h3><p>An approval prompt pops up before every <code>gh pr merge</code>.</p><p>If Dolev declines: stop, and don't work around it.</p><span class="enf hook">Enforced: ask rule in settings.json</span></div>
+    <div class="rule"><h3>A conflict means stop</h3><p><code>git rebase --abort</code>, and report the files.</p><p>Never resolve by taking one side wholesale.</p><span class="enf">Convention</span></div>
+    <div class="rule"><h3>Never switch branches in the main folder</h3><p>Another session or Dolev may be working there.</p><p>Work in a worktree.</p><span class="enf hook">Enforced in ~/.claude: guard_main_folder.py</span></div>
+  </div>
+</section>
+
+</div>
