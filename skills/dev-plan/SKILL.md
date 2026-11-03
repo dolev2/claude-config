@@ -91,13 +91,14 @@ keeps them: edit it in the headings it already has.
    human-written sections byte-identical, write the file with LF line endings, preserve the
    hidden sync marker unchanged, then `gh issue edit <N> --body-file <file>` and verify.
 
-   **Two levels, always.** The plan opens with "בקצרה", written for Dolev's decision: the
-   problem, what will change for the users, what is left out and which issue has it, and what
-   waits for him. Business language only, no file or function names, at most 8 lines. Then
-   "חוויית משתמש", also for Dolev: the user, the flow, and what they see in each state, from
-   the checklist in `reference/ux.md`. Every plan has it; work with nothing a user sees or
-   touches gets one line saying so and why. Then "פירוט טכני" for the execution. No sections outside the format; a boundary with another
-   issue is a line in "בקצרה", not a section of its own (`reference/issue-body.md`).
+   **Two levels, always: the decision, then the execution.** The plan opens with "בקצרה",
+   written for Dolev's decision: the problem, what will change for the users, what is left out
+   and which issue has it, and what waits for him. Business language only, no file or function
+   names, at most 8 lines. Then "חוויית משתמש", also for the decision: the user, the flow, and
+   what they see in each state, from the checklist in `reference/ux.md`. Every plan has it;
+   work with nothing a user sees or touches gets one line saying so and why. Then "פירוט טכני"
+   for the execution. No sections outside the format; a boundary with another issue is a line
+   in "בקצרה", not a section of its own (`reference/issue-body.md`).
    An issue coming back for a revision whose plan predates this format gets it in the same edit.
 
    **Can it be written in parallel?** When the work touches more than one layer (a backend and

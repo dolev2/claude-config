@@ -24,8 +24,9 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary and the rules every phase shares),
 `issue-body.md` (how to read the full context of an issue, the Plan format), `git-flow.md` (one
 issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`,
-`review-app.md` and `ux.md` (the user-experience check). Read them before step 1, every run; Part B also reads `after-merge.md`. Then the repo's **`CLAUDE.md`**: its
-working rules and its test commands.
+`review-app.md` and `ux.md` (the user-experience check). Read them before step 1, every run;
+Part B also reads `after-merge.md`. Then the repo's **`CLAUDE.md`**: its working rules and its
+test commands.
 
 ## Part A: Execute
 
@@ -158,7 +159,8 @@ working rules and its test commands.
       in `~/.claude/rules/`. Its rules: read only; never edit a file or run a command that
       writes (commit, push, install, `gh issue edit`, `gh pr comment`); return a list of
       findings, each with file and line, a kind (bug / departs from the Plan / departs from the
-      user experience / cleanup), and one sentence on why. On a repair round it reviews the whole diff of the PR.
+      user experience / cleanup), and one sentence on why. On a repair round it reviews the
+      whole diff of the PR.
     - **The app for review**, from the worktree, as `reference/review-app.md` says:
       the command, ports and URL come from the repo's `CLAUDE.md`. Its outcome is one of: a
       link to the PR's app (started now, or already running from this branch), a link with a
@@ -202,8 +204,8 @@ working rules and its test commands.
     should look at. On a repair round, say which of his points each change addresses. The
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
-    was not checked and why. The app's outcome from step 10 goes into that comment and into the chat message, with
-    one line on what to open in it.
+    was not checked and why. The app's outcome from step 10 goes into that comment and into the
+    chat message, with one line on what to open in it.
 
 12. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
     `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.
