@@ -45,14 +45,20 @@
 - `area:actions`: ה-workflows, התבניות וה-actions המשותפים.
 
 ## תרשים הצינור והעמוד "חייו של issue"
-התרשים ב-`skills/dev-setup/reference/diagram.md` והעמוד `skills/dev-setup/reference/issue-lifecycle.html` (מפורסם ב-https://claude.ai/artifact/FcDGAbuAhUSpyYT34zHg1A) מראים את הצינור לבני אדם. הסקילים לא קוראים אותם.
+התרשים ב-`skills/dev-setup/reference/diagram.md` והעמוד "חייו של issue" מראים את הצינור לבני אדם. הסקילים לא קוראים אותם.
+לעמוד שתי גרסאות, וכל אחת מפורסמת לקישור משלה:
+1. בעברית: `skills/dev-setup/reference/issue-lifecycle.html`, ב-https://claude.ai/artifact/FcDGAbuAhUSpyYT34zHg1A.
+2. באנגלית: `skills/dev-setup/reference/issue-lifecycle-en.html`, ב-https://claude.ai/artifact/AB2j5PLwLQvXuoUfGyVyYX.
 
 **התרשים והעמוד הם חלק מהמנגנון, לא איור נלווה.** כל שינוי בשלבים, בתוויות, בשערים,
-באוטומציות או בצעדי git מתעדכן בשניהם, באותו PR שמשנה את ההתנהגות.
+באוטומציות או בצעדי git מתעדכן בתרשים ובשתי הגרסאות של העמוד, באותו PR שמשנה את ההתנהגות.
 
-**אחרי המיזוג, PR שנגע ב-`issue-lifecycle.html` מפורסם מחדש לאותו קישור.** מי שמיזג (`dev-ship`
+**שתי הגרסאות מתארות אותו תהליך.** שינוי באחת מתורגם לשנייה באותו PR, גם כשהבקשה הייתה רק על אחת מהן.
+הגרסה האנגלית באנגלית בלבד. שינוי שאי אפשר לשקף אחד לאחד (למשל תווית בתרשים שלא נכנסת): מציינים ב-PR.
+
+**אחרי המיזוג, כל גרסה שה-PR נגע בה מפורסמת מחדש לקישור שלה.** מי שמיזג (`dev-ship`
 או `dev-code` Part B) עושה את זה אחרי הניקוי. כלי Artifact לא זמין (ענן, CI): מדווחים לדולב
-שהפרסום מחכה. הצעדים:
+שהפרסום מחכה. הצעדים, לכל גרסה בנפרד, עם הנתיב והקישור שלה (הדוגמה בעברית):
 1. `git fetch origin <default>`, ואז
    `git show origin/<default>:skills/dev-setup/reference/issue-lifecycle.html` לקובץ בתיקיית
    ה-scratchpad. `gh pr merge` לא מעדכן את `origin/<default>` המקומי, ובלי ה-fetch מתפרסמת
