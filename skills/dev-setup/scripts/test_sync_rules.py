@@ -117,10 +117,7 @@ def test_two_labels_of_one_kind_are_reported():
     assert sync_rules.doubled_dimensions(
         ["status:explore", "status:done", "area:infra"]
     ) == ["status"]
-    assert (
-        sync_rules.doubled_dimensions(["status:explore", "task", "area:infra"])
-        == []
-    )
+    assert sync_rules.doubled_dimensions(["status:explore", "task", "area:infra"]) == []
 
 
 @pytest.mark.parametrize(

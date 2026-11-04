@@ -10,8 +10,9 @@ step. A board item with no Status/Area at all always takes the labels, even when
 they match the marker. The winner is then written to the other side and the marker is
 rewritten.
 
-There is no owner dimension: the status alone says whose turn it is (claude-config #110).
-A marker written before that still carries `owner=`; choose_winner ignores it.
+There is no owner dimension: the status alone says whose turn it is
+(claude-config #110). A marker written before that still carries `owner=`;
+choose_winner ignores it.
 
 Nothing here talks to GitHub: every function takes and returns plain values.
 """
@@ -103,8 +104,9 @@ def choose_winner(
     written (e.g. an issue created with the marker already in its body). Without the
     second check such an item would stay blank on the board forever.
 
-    Keys outside DIMENSIONS (an old `owner=`) are dropped from the marker first, or every
-    issue would look changed on both sides and the board would win over a fresh label.
+    Keys outside DIMENSIONS (an old `owner=`) are dropped from the marker first, or
+    every issue would look changed on both sides and the board would win over a fresh
+    label.
     """
     marker = {k: v for k, v in marker.items() if k in {key for key, _, _ in DIMENSIONS}}
     if from_project and from_project != marker:

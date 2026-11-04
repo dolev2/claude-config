@@ -290,9 +290,7 @@ def print_ranking(
         held = ", ".join(f"#{i.number} {i.title}" for i in on_hold)
         print(f"On hold, {ON_HOLD_LABEL}: {held}")
     if no_sprint:
-        listed = ", ".join(
-            f"#{i.number} {i.title} ({i.status})" for i in no_sprint
-        )
+        listed = ", ".join(f"#{i.number} {i.title} ({i.status})" for i in no_sprint)
         print(f"Active, no sprint: {listed}")
 
 
