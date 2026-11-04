@@ -263,7 +263,9 @@ Only on Dolev's explicit request for that specific issue.
 - A merge commit's title is the PR title: never pass `--subject`, never invent a task number.
 - Never switch branches in the shared working copy; code is written in a worktree.
 - Never start an issue without reading its sub-issues.
-- If an issue lacks context, do not guess: comment with the question and flag it in the summary.
+- If an issue lacks context, do not guess: comment with the question, move it to
+  `status:plan-questions` (Dolev's turn; his answer sends it back to `status:explore` for a
+  plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
   `needs-repair`), except a merge Dolev asked for.
 - One issue per run, and never a new one while three or more sit in `status:in-review` unless

@@ -126,6 +126,7 @@ def test_two_labels_of_one_kind_are_reported():
         (["status:explore"], "OPEN", False, True),
         ([], "OPEN", True, True),  # opened from the board (WayOut #98, #55)
         ([], "OPEN", False, False),  # not a pipeline issue
+        (["decision"], "OPEN", False, True),  # no status, still pipeline
         (["status:backlog"], "CLOSED", True, False),  # closed as not-planned
         ([], "CLOSED", True, False),
         (["status:done"], "CLOSED", True, True),
@@ -144,6 +145,7 @@ def test_which_issues_are_synced(labels, state, on_board, expected):
         (["status:done"], "CLOSED", "COMPLETED", False),
         (["status:in-review"], "OPEN", None, False),
         (["task"], "CLOSED", "COMPLETED", False),  # not a pipeline issue
+        (["decision"], "CLOSED", "COMPLETED", True),
     ],
 )
 def test_which_closed_issues_need_status_done(labels, state, reason, expected):

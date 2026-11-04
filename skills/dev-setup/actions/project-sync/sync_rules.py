@@ -137,6 +137,14 @@ def label_edit_args(labels: list[str], winner: dict[str, str]) -> list[str]:
     return args
 
 
+def is_pipeline_issue(labels: list[str]) -> bool:
+    """Whether the labels mark a pipeline issue: a status:* label, or a decision.
+
+    A decision issue carries no status; until #110 its owner: label made it one.
+    """
+    return "decision" in labels or any(label.startswith("status:") for label in labels)
+
+
 def should_sync(labels: list[str], state: str, on_board: bool) -> bool:
     """Whether the issue takes part in the sync at all.
 
@@ -144,7 +152,7 @@ def should_sync(labels: list[str], state: str, on_board: bool) -> bool:
     was opened from the board, past the issue form, and its column is the only state it
     has (WayOut #98 sat a month like that, claude-config #55).
     """
-    if not on_board and not any(label.startswith("status:") for label in labels):
+    if not on_board and not is_pipeline_issue(labels):
         return False  # not a pipeline issue - leave it alone
     # Closed as not-planned: it does not belong on the board.
     return state.upper() != "CLOSED" or "status:done" in labels
@@ -161,7 +169,7 @@ def needs_done_label(labels: list[str], state: str, state_reason: str | None) ->
         state.upper() == "CLOSED"
         and (state_reason or "").upper() == "COMPLETED"
         and "status:done" not in labels
-        and any(label.startswith("status:") for label in labels)
+        and is_pipeline_issue(labels)
     )
 
 

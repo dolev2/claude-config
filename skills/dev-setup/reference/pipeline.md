@@ -70,7 +70,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 | `status:ready-to-execute` | מאושר לביצוע | Claude | Claude (Execute) |
 | `status:needs-repair` | חזר לתיקון אחרי בדיקה | Claude | Claude (Execute) |
 | `status:in-review` | Claude סיים, PR פתוח | דולב | דולב |
-| `status:done` | אושר, מוכן ל-merge | Claude, רק בבקשה מפורשת | Claude (Merge) |
+| `status:done` | אושר, מוכן ל-merge | דולב: בקשת מיזוג מפורשת | Claude (Merge, רק בבקשה) |
 | `status:backlog` | רעיון, לא בצינור | דולב | דולב |
 | `area:*` | אזור, לפי מה שקיים ב-repo | — | Claude ממלא אם חסר |
 | `bug` / `task` | סוג | — | — |
