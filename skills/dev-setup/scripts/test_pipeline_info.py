@@ -22,7 +22,7 @@ def fake_gh(monkeypatch, *, defaults=True, root=None):
                 {"nameWithOwner": "acme/widgets", "defaultBranchRef": {"name": "main"}}
             )
         if args[:3] == ("gh", "label", "list"):
-            return 0, "\n".join(pipeline_info.REQUIRED_LABELS + ["owner:dana"])
+            return 0, "\n".join(pipeline_info.REQUIRED_LABELS)
         if args[:2] == ("gh", "api") and "/contents/" in args[2]:
             asked.append(args[2])
             return (0, ".github/ISSUE_TEMPLATE/task.yml") if defaults else (1, "")

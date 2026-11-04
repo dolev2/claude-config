@@ -24,28 +24,39 @@ def field(name, *options):
 
 
 def test_marker_reads_and_writes_only_its_own_name():
-    body = "text\n\n<!-- crm-sync: owner=claude status=explore -->\n"
+    body = "text\n\n<!-- crm-sync: area=infra status=explore -->\n"
     assert marker.read_marker(body, "crm-sync") == {
-        "owner": "claude",
+        "area": "infra",
         "status": "explore",
     }
     assert marker.write_marker(body, {"status": "done"}, "crm-sync").endswith(
         "<!-- crm-sync: status=done -->\n"
     )
-    assert marker.read_marker("<!-- wayout-sync: owner=claude -->", "crm-sync") == {}
+    assert marker.read_marker("<!-- wayout-sync: status=done -->", "crm-sync") == {}
 
 
 def test_a_missing_marker_is_added_at_the_end():
-    assert marker.write_marker("text\n\n", {"owner": "dolev"}, "x-sync") == (
-        "text\n\n<!-- x-sync: owner=dolev -->\n"
+    assert marker.write_marker("text\n\n", {"status": "backlog"}, "x-sync") == (
+        "text\n\n<!-- x-sync: status=backlog -->\n"
     )
 
 
 def test_blank_board_takes_the_labels_even_when_the_marker_matches():
-    state = {"owner": "claude", "status": "explore"}
+    state = {"area": "infra", "status": "explore"}
     assert sync_rules.choose_winner(state, state, {}) == (state, "labels")
     assert sync_rules.choose_winner(state, state, state) == (None, None)
     assert sync_rules.choose_winner({}, {}, {}) == (None, None)
+
+
+def test_an_old_owner_in_the_marker_is_ignored():
+    # Markers written before #110 carry owner=; it must not make the board win.
+    old = {"owner": "claude", "status": "explore"}
+    on_board = {"status": "explore"}
+    assert sync_rules.choose_winner(old, on_board, on_board) == (None, None)
+    assert sync_rules.choose_winner(old, {"status": "done"}, on_board) == (
+        {"status": "done"},
+        "labels",
+    )
 
 
 def test_board_edit_wins_over_labels():
@@ -58,15 +69,15 @@ def test_board_edit_wins_over_labels():
 
 
 def test_label_edit_keeps_labels_outside_the_dimensions():
-    labels = ["task", "status:explore", "owner:claude"]
-    winner = {"status": "done", "owner": "claude"}
+    labels = ["task", "status:explore", "area:infra"]
+    winner = {"status": "done", "area": "infra"}
     assert sync_rules.label_edit_args(labels, winner) == [
         "--add-label",
         "status:done",
         "--remove-label",
         "status:explore",
     ]
-    unchanged = {"status": "explore", "owner": "claude"}
+    unchanged = {"status": "explore", "area": "infra"}
     assert sync_rules.label_edit_args(labels, unchanged) == []
 
 
@@ -86,8 +97,8 @@ def test_areas_are_read_from_the_board(options, label, shown):
 
 def test_an_area_the_board_lacks_is_left_out():
     sync_rules.resolve_options({"Area": field("Area", "Design", "Infra")})
-    assert sync_rules.labels_state(["area:backend", "owner:claude"]) == {
-        "owner": "claude"
+    assert sync_rules.labels_state(["area:backend", "status:explore"]) == {
+        "status": "explore"
     }
 
 
@@ -104,10 +115,10 @@ def test_plan_questions_matches_either_board_name(board_name):
 
 def test_two_labels_of_one_kind_are_reported():
     assert sync_rules.doubled_dimensions(
-        ["status:explore", "status:done", "owner:claude"]
+        ["status:explore", "status:done", "area:infra"]
     ) == ["status"]
     assert (
-        sync_rules.doubled_dimensions(["status:explore", "owner:claude", "area:infra"])
+        sync_rules.doubled_dimensions(["status:explore", "task", "area:infra"])
         == []
     )
 
@@ -118,7 +129,7 @@ def test_two_labels_of_one_kind_are_reported():
         (["status:explore"], "OPEN", False, True),
         ([], "OPEN", True, True),  # opened from the board (WayOut #98, #55)
         ([], "OPEN", False, False),  # not a pipeline issue
-        (["owner:dolev"], "CLOSED", True, False),  # closed as not-planned
+        (["status:backlog"], "CLOSED", True, False),  # closed as not-planned
         ([], "CLOSED", True, False),
         (["status:done"], "CLOSED", True, True),
     ],
@@ -130,7 +141,7 @@ def test_which_issues_are_synced(labels, state, on_board, expected):
 @pytest.mark.parametrize(
     "labels, state, reason, expected",
     [
-        (["owner:dolev", "status:in-review"], "CLOSED", "COMPLETED", True),  # #97
+        (["task", "status:in-review"], "CLOSED", "COMPLETED", True),  # #97
         (["status:backlog"], "CLOSED", "COMPLETED", True),
         (["status:backlog"], "CLOSED", "NOT_PLANNED", False),
         (["status:done"], "CLOSED", "COMPLETED", False),
@@ -143,9 +154,9 @@ def test_which_closed_issues_need_status_done(labels, state, reason, expected):
 
 
 def test_done_labels_replace_the_status_and_keep_the_rest():
-    assert sync_rules.done_labels(["task", "owner:dolev", "status:in-review"]) == [
+    assert sync_rules.done_labels(["task", "area:infra", "status:in-review"]) == [
         "task",
-        "owner:dolev",
+        "area:infra",
         "status:done",
     ]
 

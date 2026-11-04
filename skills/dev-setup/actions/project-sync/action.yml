@@ -1,6 +1,6 @@
 name: Project board sync
 description: >
-  Two-way sync between issue labels (owner:*, status:*, area:*) and the fields of the repo's
+  Two-way sync between issue labels (status:*, area:*) and the fields of the repo's
   Project v2 board. The rules are in sync_project.py next to this file.
 
 # One copy for every repo with the pipeline: each repo's sync-project.yml calls

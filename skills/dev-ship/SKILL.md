@@ -159,7 +159,7 @@ gh issue edit <I> --add-label "status:done" $CUR
 Before setting the label, check the issue's "שאלות פתוחות" section. If a box is still
 unticked, say so and ask Dolev whether to go ahead. Do not tick boxes on his behalf.
 
-Leave `owner:*` alone. If the issue already carries `status:done` (the `dev-code` path), the
+If the issue already carries `status:done` (the `dev-code` path), the
 command is a no-op and that is correct; verify rather than assume.
 
 ## Step 7: Clean up locally

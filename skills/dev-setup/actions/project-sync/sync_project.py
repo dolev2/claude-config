@@ -162,7 +162,7 @@ def edit_body(repo: str, number: int, new_body: str) -> None:
 def apply_to_labels(
     settings: Settings, num: int, labels: list[str], winner: dict[str, str]
 ) -> None:
-    """Rewrite the issue's owner/status/area labels to the board's state."""
+    """Rewrite the issue's status/area labels to the board's state."""
     args = sync_rules.label_edit_args(labels, winner)
     if args:
         gh_api.gh("issue", "edit", str(num), "--repo", settings.repo, *args)
@@ -172,7 +172,7 @@ def apply_to_labels(
 def apply_to_board(
     settings: Settings, project: Board, num: int, item: dict, winner: dict[str, str]
 ) -> None:
-    """Set the board item's Owner/Status/Area fields to the labels' state."""
+    """Set the board item's Status/Area fields to the labels' state."""
     for key, field_name, options in sync_rules.DIMENSIONS:
         suffix = winner.get(key)
         if not suffix or item["values"].get(field_name) == options[suffix]:

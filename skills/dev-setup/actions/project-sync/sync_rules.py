@@ -6,19 +6,19 @@ On each run three states are compared: the issue body's marker (marker.py), its 
 and its board item. Whichever of labels or project differs from the marker is the side
 that changed and therefore wins; if both changed, the project wins, because that edit
 was a deliberate human drag while a label may have been set by an earlier automated
-step. A board item with no Owner/Status/Area at all always takes the labels, even when
+step. A board item with no Status/Area at all always takes the labels, even when
 they match the marker. The winner is then written to the other side and the marker is
 rewritten.
+
+There is no owner dimension: the status alone says whose turn it is (claude-config #110).
+A marker written before that still carries `owner=`; choose_winner ignores it.
 
 Nothing here talks to GitHub: every function takes and returns plain values.
 """
 
 # label suffix  ->  the option name as it appears in the Project's single-select field
-OWNER_OPTIONS = {"claude": "Claude", "dolev": "Dolev"}
 STATUS_OPTIONS = {
     "explore": "Explore (Claude)",
-    # No owner in the name: an open question can sit with either side, and the Owner
-    # column already says whose turn it is.
     "plan-questions": "Plan questions",  # or a name from STATUS_ALIASES, per board
     "waiting-approval": "Waiting for Dolev approval",
     "ready-to-execute": "Ready to execute (Claude)",
@@ -37,7 +37,6 @@ STATUS_ALIASES = {"plan-questions": ("Plan questions", "Plan questions (Dolev)")
 AREA_OPTIONS: dict[str, str] = {}
 
 DIMENSIONS = [
-    ("owner", "Owner", OWNER_OPTIONS),
     ("status", "Status", STATUS_OPTIONS),
     ("area", "Area", AREA_OPTIONS),
 ]
@@ -67,7 +66,7 @@ def doubled_dimensions(labels: list[str]) -> list[str]:
 
 
 def labels_state(labels: list[str]) -> dict[str, str]:
-    """The owner/status/area state the labels express."""
+    """The status/area state the labels express."""
     state = {}
     for key, _field, options in DIMENSIONS:
         for name in labels:
@@ -80,7 +79,7 @@ def labels_state(labels: list[str]) -> dict[str, str]:
 
 
 def project_state(values: dict[str, str]) -> dict[str, str]:
-    """The owner/status/area state the board item's field values express."""
+    """The status/area state the board item's field values express."""
     state = {}
     for key, field_name, options in DIMENSIONS:
         shown = values.get(field_name)
@@ -103,7 +102,11 @@ def choose_winner(
     A blank board with a marker that matches the labels means the fields were never
     written (e.g. an issue created with the marker already in its body). Without the
     second check such an item would stay blank on the board forever.
+
+    Keys outside DIMENSIONS (an old `owner=`) are dropped from the marker first, or every
+    issue would look changed on both sides and the board would win over a fresh label.
     """
+    marker = {k: v for k, v in marker.items() if k in {key for key, _, _ in DIMENSIONS}}
     if from_project and from_project != marker:
         return from_project, "project"
     if from_labels != marker or (from_labels and not from_project):
@@ -114,7 +117,7 @@ def choose_winner(
 def label_edit_args(labels: list[str], winner: dict[str, str]) -> list[str]:
     """The `gh issue edit` flags that turn labels into the winner's state.
 
-    Labels outside the three dimensions (task, bug, process, ...) are kept.
+    Labels outside the dimensions (task, bug, process, ...) are kept.
     """
     keep = [
         label
@@ -135,13 +138,11 @@ def label_edit_args(labels: list[str], winner: dict[str, str]) -> list[str]:
 def should_sync(labels: list[str], state: str, on_board: bool) -> bool:
     """Whether the issue takes part in the sync at all.
 
-    An issue with no owner:/status: label is still synced when it is on the board: it
+    An issue with no status: label is still synced when it is on the board: it
     was opened from the board, past the issue form, and its column is the only state it
     has (WayOut #98 sat a month like that, claude-config #55).
     """
-    if not on_board and not any(
-        label.startswith(("owner:", "status:")) for label in labels
-    ):
+    if not on_board and not any(label.startswith("status:") for label in labels):
         return False  # not a pipeline issue - leave it alone
     # Closed as not-planned: it does not belong on the board.
     return state.upper() != "CLOSED" or "status:done" in labels
@@ -158,7 +159,7 @@ def needs_done_label(labels: list[str], state: str, state_reason: str | None) ->
         state.upper() == "CLOSED"
         and (state_reason or "").upper() == "COMPLETED"
         and "status:done" not in labels
-        and any(label.startswith(("owner:", "status:")) for label in labels)
+        and any(label.startswith("status:") for label in labels)
     )
 
 

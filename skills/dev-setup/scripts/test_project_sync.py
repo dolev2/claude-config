@@ -209,7 +209,7 @@ def run_one_label_change(monkeypatch, quiet):
         "id": "X5",
         "state": "OPEN",
         "body": "<!-- x-sync: status=explore -->",
-        "labels": [{"name": "status:done"}, {"name": "owner:dolev"}],
+        "labels": [{"name": "status:done"}, {"name": "task"}],
     }
 
     def gh(*args):

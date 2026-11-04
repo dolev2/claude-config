@@ -1,6 +1,6 @@
 ---
 name: dev-code
-description: Runs the Execute and Merge phases of Dolev's Claude-assisted GitHub pipeline in the current repo — implements issues labelled owner:claude + status:ready-to-execute or status:needs-repair, opens PRs, and merges approved work on request. Use in any of Dolev's repos whenever he asks to run/process Execute or Merge, or to implement a specific issue ("תממש את #12", "תריץ את שלב הקוד"). Works in any repo that has the pipeline labels; if the repo has its own repo-specific code skill, use that instead. Pairs with dev-plan, which handles planning.
+description: Runs the Execute and Merge phases of Dolev's Claude-assisted GitHub pipeline in the current repo — implements issues labelled status:ready-to-execute or status:needs-repair, opens PRs, and merges approved work on request. Use in any of Dolev's repos whenever he asks to run/process Execute or Merge, or to implement a specific issue ("תממש את #12", "תריץ את שלב הקוד"). Works in any repo that has the pipeline labels; if the repo has its own repo-specific code skill, use that instead. Pairs with dev-plan, which handles planning.
 ---
 
 # Execute & Merge phases
@@ -16,8 +16,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 - `repo_skills` lists a repo-specific code skill? Use it instead.
 - `ready` is `False`? Offer `dev-setup` and stop.
-- Note `default_branch` (written `<default>` below), `human` (`owner:<human>`), and
-  `current_sprint`.
+- Note `default_branch` (written `<default>` below) and `current_sprint`.
 
 ## Read first
 
@@ -41,7 +40,7 @@ test commands.
    sprint (say so; never assign it a milestone). Otherwise, **inside the current sprint
    only**, repair first, then by weight:
    ```bash
-   python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --owner claude --status needs-repair --status ready-to-execute
+   python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --status needs-repair --status ready-to-execute
    ```
    An empty list means the sprint is clear. Say so and stop; never reach outside the milestone.
 
@@ -129,7 +128,7 @@ test commands.
    git rebase origin/<default>
    ```
    Rebase, never merge. **If the rebase reports a conflict, stop:** `git rebase --abort`,
-   leave the issue on `owner:claude`, comment with the conflicting files, open no PR.
+   leave the issue's status as it is, comment with the conflicting files, open no PR.
 
 7. Run the repo's checks, as `reference/tests.md` says: the commands from CLAUDE.md,
    plus any conditional suite whose area the diff touches
@@ -139,7 +138,7 @@ test commands.
    of the area the fix touched run again.
 
    **A failure to run the tests is not permission to skip them.** If the install or the run
-   fails, stop: leave the issue on `owner:claude`, comment with the exact error, open no PR.
+   fails, stop: leave the issue's status as it is, comment with the exact error, open no PR.
 
 8. If the plan turns out to be wrong mid-implementation, do not silently deviate. Update the
    Plan in the issue body (read it fresh first) and add a line to the plan log.
@@ -184,10 +183,10 @@ test commands.
     runs from the worktree, so it picks the fix up; if its server does not reload on its own,
     restart it (`reference/review-app.md`: stop it, then start it again).
 
-    **Red CI:** fix it in this run if the cause is clear, otherwise stay on `owner:claude` and
+    **Red CI:** fix it in this run if the cause is clear, otherwise leave the status as it is and
     report the failing job with a link. A fix reruns the lint and the touched area's suite, as
     above. A red PR is never handed to Dolev for review. The same holds when the checks fail
-    after a fix: stay on `owner:claude`, and comment on the PR with the exact error.
+    after a fix: leave the status as it is, and comment on the PR with the exact error.
 
     **No hand-off**, for any reason: stop the app and delete the registry file (`reference/review-app.md`): there is nothing to review.
 
@@ -196,8 +195,7 @@ test commands.
 
 11. Hand off:
     ```bash
-    gh issue edit <N> --add-label "status:in-review" --add-label "owner:<human>" \
-                      --remove-label "status:ready-to-execute" --remove-label "owner:claude"
+    gh issue edit <N> --add-label "status:in-review" --remove-label "status:ready-to-execute"
     # (or --remove-label "status:needs-repair" on a repair round)
     ```
     Then comment on the issue, in Hebrew, with what changed, what you tested, and anything Dolev
@@ -266,7 +264,8 @@ Only on Dolev's explicit request for that specific issue.
 - Never switch branches in the shared working copy; code is written in a worktree.
 - Never start an issue without reading its sub-issues.
 - If an issue lacks context, do not guess: comment with the question and flag it in the summary.
-- Never touch an issue that does not carry `owner:claude`.
+- Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
+  `needs-repair`), except a merge Dolev asked for.
 - One issue per run, and never a new one while three or more sit in `status:in-review` unless
   Dolev said yes to that.
 - Never start an issue that has an open "Blocked by" link.

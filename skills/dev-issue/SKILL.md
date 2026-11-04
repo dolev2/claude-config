@@ -18,7 +18,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 - `repo_skills` lists a repo-specific skill for opening issues? Use it
   instead and stop here.
 - `ready` is `False`? The pipeline is not installed in this repo. Offer `dev-setup` and stop.
-- Note `human` (the `owner:<human>` label), `area_labels`, `current_sprint`, and `issue_forms`.
+- Note `area_labels`, `current_sprint`, and `issue_forms`.
 
 ## Read first
 
@@ -100,12 +100,12 @@ question in the body, not a "Blocked by" link to some other issue.
 
 | kind | labels | milestone |
 |---|---|---|
-| task | `task`, `area:*`, `owner:claude`, `status:explore` | the sprint it belongs to |
-| bug | `bug`, `area:*`, `owner:claude`, `status:ready-to-execute` | always `current_sprint` |
+| task | `task`, `area:*`, `status:explore` | the sprint it belongs to |
+| bug | `bug`, `area:*`, `status:ready-to-execute` | always `current_sprint` |
 | process (work management, rules, aligning with claude-config) | `process` added to the task's labels | always `current_sprint` |
-| backlog idea | `task`, `area:*`, `owner:<human>`, `status:backlog` | none |
-| umbrella (parent split into sub-issues) | keeps `task`, `area:*`; becomes `owner:<human>`, `status:backlog` | unchanged |
-| decision (only if the repo has a `decision` label) | `decision`, `owner:<human>`, no `status:*` | the sprint that waits on it |
+| backlog idea | `task`, `area:*`, `status:backlog` | none |
+| umbrella (parent split into sub-issues) | keeps `task`, `area:*`; becomes `status:backlog` | unchanged |
+| decision (only if the repo has a `decision` label) | `decision`, no `status:*` (Dolev's turn by its kind) | the sprint that waits on it |
 
 Add `process` to any task that is about how the work is managed rather than the project itself: the pipeline, compliance with the rules in `~/.claude/rules/`, or aligning the repo with claude-config (a lint drift, a missing file guide). The definition is in the vocabulary table of `reference/pipeline.md`. Not in claude-config itself, where every issue is one.
 
@@ -116,7 +116,7 @@ doc), do that too.
 
 ```bash
 gh issue create --title "<title>" --body-file <file> \
-  --label task --label area:frontend --label owner:claude --label status:explore \
+  --label task --label area:frontend --label status:explore \
   --milestone "<milestone>"
 ```
 

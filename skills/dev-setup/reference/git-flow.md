@@ -62,7 +62,7 @@
 ה-branch יום או יותר לפני הקוד. לכן כל שלב שמגיע ל-PR עושה `git fetch origin <default>` ו-
 `git rebase origin/<default>` לפני הבדיקות.
 
-- **התנגשות בשלב Code:** `git rebase --abort`, השארת `owner:claude`, תגובה ב-issue עם רשימת
+- **התנגשות בשלב Code:** `git rebase --abort`, הסטטוס נשאר כמו שהוא, תגובה ב-issue עם רשימת
   הקבצים, ואין PR.
 - **בשלב ה-Merge:** `gh pr view <N> --json mergeable,mergeStateStatus`. כל תשובה שאינה `MERGEABLE`:
   rebase, דחיפה, בדיקות מחדש, ורק אז merge.

@@ -25,8 +25,8 @@
   כל התיקייה.
 - Claude **לא** קורא ולא כותב לשדות הפרויקט. ניסיון שנכשל בהרשאות הוא צפוי, לא באג.
 
-**שמות האופציות של Status ו-Owner הם חוזה עם הסקריפט.** שינוי שם של אופציה בלוח מחייב עדכון
-של `STATUS_OPTIONS` / `OWNER_OPTIONS` ב-`sync_rules.py` באותו זמן. בלי זה הסנכרון מדלג בשקט
+**שמות האופציות של Status הם חוזה עם הסקריפט.** שינוי שם של אופציה בלוח מחייב עדכון
+של `STATUS_OPTIONS` ב-`sync_rules.py` באותו זמן. בלי זה הסנכרון מדלג בשקט
 (`field has no option`). לאופציה `Plan questions` יש שם ישן שמתקבל גם הוא, `Plan questions (Dolev)`.
 
 **אופציות ה-Area נקראות מהלוח.** התווית `area:seo` מתאימה לאופציה `SEO` לפי השם, בלי תלות
@@ -81,7 +81,7 @@ gh api graphql -f query='mutation($id:ID!,$f:String!){updateProjectV2View(input:
 **הריפו חייב להישאר ציבורי.** מריפו `.github` פרטי GitHub לא מגיש ברירות מחדל.
 
 **כל תווית שטופס מוסיף חייבת להיות קיימת גם ב-`dolev2/.github`**, ולא רק בריפו שבו נפתח ה-issue
-(התיעוד של GitHub). כרגע: `task`, `bug`, `owner:claude`, `status:explore`, `status:ready-to-execute`.
+(התיעוד של GitHub). כרגע: `task`, `bug`, `status:explore`, `status:ready-to-execute`.
 תווית חדשה בטופס נוצרת שם באותו שינוי: `gh label create <name> -R dolev2/.github`.
 
 בטפסים אין שדה אזור: טופס אחד משרת את כל הריפואים, והאזור הוא תווית `area:*` בלבד. issues ישנים

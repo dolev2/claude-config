@@ -5,7 +5,7 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 
     S="$HOME/.claude/skills/dev-setup/scripts"
     python "$S/rank_issues.py"                     # the whole sprint
-    python "$S/rank_issues.py" --owner claude --status explore
+    python "$S/rank_issues.py" --status explore
     python "$S/rank_issues.py" --repo owner/name --json
 
 The repo is the one `gh repo view` sees from the current directory, unless --repo is
@@ -62,7 +62,6 @@ class Issue:
     number: int
     title: str
     status: str | None
-    owner: str | None
     milestone: str | None
     kind: str | None
     costs_money: bool
@@ -89,7 +88,6 @@ def parse_issue(node: dict) -> Issue:
         number=node["number"],
         title=node["title"],
         status=label_value(labels, "status:"),
-        owner=label_value(labels, "owner:"),
         milestone=milestone["title"] if milestone else None,
         kind=next((kind for kind in FIRST_KINDS if kind in labels), None),
         costs_money=ON_HOLD_LABEL in labels,
@@ -132,20 +130,13 @@ def with_waiting(issues: list[Issue]) -> list[Issue]:
     return issues
 
 
-def rank(
-    issues: list[Issue], statuses: list[str] | None = None, owner: str | None = None
-) -> list[Issue]:
-    """Filters to the given owner and statuses.
+def rank(issues: list[Issue], statuses: list[str] | None = None) -> list[Issue]:
+    """Filters to the given statuses.
 
     Orders by tier, then kind (process/bug first), then weight, then number.
     """
     with_waiting(issues)
-    picked = [
-        issue
-        for issue in issues
-        if (owner is None or issue.owner == owner)
-        and (not statuses or issue.status in statuses)
-    ]
+    picked = [issue for issue in issues if not statuses or issue.status in statuses]
 
     def key(issue: Issue) -> tuple[int, int, int, int]:
         tier = statuses.index(issue.status) if statuses else 0
@@ -226,7 +217,6 @@ def main(argv: list[str] | None = None) -> None:
         action="append",
         help="status label without the prefix; repeat, in tier order",
     )
-    parser.add_argument("--owner", help="owner label without the prefix, e.g. claude")
     parser.add_argument("--milestone", help="defaults to the current sprint")
     parser.add_argument(
         "--repo", help="owner/name; defaults to the repo of the current directory"
@@ -248,7 +238,7 @@ def main(argv: list[str] | None = None) -> None:
         for n in nodes
         if n["milestone"] and n["milestone"]["title"] == sprint
     ]
-    ranked = rank(issues, args.status, args.owner)
+    ranked = rank(issues, args.status)
     on_hold: list[Issue] = []
     if not args.include_costs_money:
         ranked, on_hold = split_on_hold(ranked)
@@ -260,7 +250,6 @@ def main(argv: list[str] | None = None) -> None:
                 "number": i.number,
                 "title": i.title,
                 "status": i.status,
-                "owner": i.owner,
                 "kind": i.kind,
                 "costs_money": i.costs_money,
                 "waiting": i.waiting,
@@ -294,7 +283,7 @@ def print_ranking(
         )
         print(
             f"#{i.number:<4} {len(i.waiting):>2} waiting  "
-            f"{i.status or '-':<18} {i.owner or '-':<7} {i.kind or '-':<7} "
+            f"{i.status or '-':<24} {i.kind or '-':<7} "
             f"{i.title}{blocked}"
         )
     if on_hold:
@@ -302,7 +291,7 @@ def print_ranking(
         print(f"On hold, {ON_HOLD_LABEL}: {held}")
     if no_sprint:
         listed = ", ".join(
-            f"#{i.number} {i.title} ({i.status}, {i.owner or '-'})" for i in no_sprint
+            f"#{i.number} {i.title} ({i.status})" for i in no_sprint
         )
         print(f"Active, no sprint: {listed}")
 
