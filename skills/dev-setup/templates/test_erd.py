@@ -47,18 +47,28 @@ def page_fields(data: dict) -> set[tuple[str, str, bool, bool]]:
     }
 
 
-def model_links() -> set[tuple[str, str, str]]:
-    """(table, field, target table) for every foreign key."""
+def model_links() -> set[tuple[str, str, str, str]]:
+    """(table, field, target table, target field) for every foreign key."""
     return {
-        (table.name, fk.parent.name, fk.column.table.name)
+        (table.name, fk.parent.name, fk.column.table.name, fk.column.name)
         for table in Base.metadata.tables.values()
         for fk in table.foreign_keys
     }
 
 
-def page_links(data: dict) -> set[tuple[str, str, str]]:
-    """The same tuples as model_links, read from the page."""
-    return {(table, field, target) for table, field, target, *_ in data["links"]}
+def page_links(data: dict) -> set[tuple[str, str, str, str]]:
+    """The same tuples as model_links, read from the page. A link always ends at id."""
+    return {(table, field, target, "id") for table, field, target, *_ in data["links"]}
+
+
+def page_marks(data: dict, mark: str) -> set[tuple[str, str]]:
+    """(table, field) for every row the page marks with the given key."""
+    return {
+        (table, field)
+        for table, spec in data["tables"].items()
+        for field, _type, key, _required in spec["rows"]
+        if key == mark
+    }
 
 
 def assert_same(name: str, on_page: set, in_models: set) -> None:
@@ -75,8 +85,10 @@ def assert_same(name: str, on_page: set, in_models: set) -> None:
 def test_erd_shows_every_table():
     data = page_data()
     assert_same("tables", set(data["tables"]), set(Base.metadata.tables))
-    placed = {name for names in data["order"].values() for name in names}
-    assert_same("tables placed in a column", placed, set(Base.metadata.tables))
+    placed = [name for names in data["order"].values() for name in names]
+    assert_same("tables placed in a column", set(placed), set(Base.metadata.tables))
+    twice = sorted({name for name in placed if placed.count(name) > 1})
+    assert not twice, f"placed in more than one spot in order: {twice}"
 
 
 def test_erd_shows_every_field():
@@ -85,3 +97,10 @@ def test_erd_shows_every_field():
 
 def test_erd_draws_every_foreign_key():
     assert_same("links", page_links(page_data()), model_links())
+
+
+def test_erd_marks_fk_on_every_linked_field():
+    data = page_data()
+    # a field that is part of the primary key keeps its PK mark
+    linked = {(table, field) for table, field, *_ in data["links"]}
+    assert_same("FK marks", page_marks(data, "FK"), linked - page_marks(data, "PK"))

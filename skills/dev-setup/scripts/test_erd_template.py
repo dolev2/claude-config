@@ -31,9 +31,15 @@ def problems(data: dict) -> list[str]:
     for name in sorted(set(tables) | set(placed)):
         if placed.count(name) != 1:
             found.append(f"{name} is placed {placed.count(name)} times in order")
+    targets = {target for _table, _field, target, *_ in data["links"]}
+    colors = [spec["color"] for spec in tables.values() if "color" in spec]
     for name, spec in tables.items():
         if spec.get("color", "c1") not in COLORS:
             found.append(f"{name} has color {spec['color']}, not one of c1..c6")
+        if "color" in spec and name not in targets:
+            found.append(f"{name} has a color but no link points to it")
+    for color in sorted({c for c in colors if colors.count(c) > 1}):
+        found.append(f"{color} is used by more than one table")
     columns = len(data["order"])
     for table, field, target, gutter, _meaning in data["links"]:
         fields = {row[0] for row in tables.get(table, {}).get("rows", [])}
@@ -66,8 +72,24 @@ def test_broken_block_names_each_problem():
     assert problems(data) == [
         "orders is placed 2 times in order",
         "orders has color red, not one of c1..c6",
+        "orders has a color but no link points to it",
         "link from orders.missing, which is not on the page",
         "orders.missing uses gutter 9, beyond the columns",
+    ]
+
+
+def test_link_to_a_missing_table_is_named():
+    data = copy.deepcopy(template_data())
+    data["links"].append(["orders", "customer_id", "missing", 1, ""])
+    assert problems(data) == ["link to missing.id, which is not on the page"]
+
+
+def test_color_off_target_and_shared_color_are_named():
+    data = copy.deepcopy(template_data())
+    data["tables"]["orders"]["color"] = "c1"
+    assert problems(data) == [
+        "orders has a color but no link points to it",
+        "c1 is used by more than one table",
     ]
 
 

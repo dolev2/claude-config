@@ -1,6 +1,7 @@
 <!doctype html>
 <!-- The ERD template (~/.claude/rules/erd.md). Copy to docs/erd.html, replace the title, the
-     subtitle and the #erd-data block, then publish it as an artifact. tests/test_erd.py fails
+     subtitle and the #erd-data block, then publish it as an artifact. test_erd.py (copied next to
+     the repo's other tests) fails
      while the block and the models disagree. The drawing code below knows no table by name:
      every change is a change to the block. -->
 <html lang="he">
@@ -132,11 +133,13 @@ table.rel td.m { direction: ltr; text-align: right; font-family: var(--mono); fo
   </section>
 </div>
 
-<!-- tables: {name: {he, color?, rows: [[field, type, key, required]]}}. key: "PK", "FK", "UK" or "".
+<!-- The created_at note above names HIDDEN_FIELDS from test_erd.py: change both together.
+     tables: {name: {he, color?, rows: [[field, type, key, required]]}}. key: "PK", "FK", "UK" or "".
      color: "c1".."c6", only on a table that links point to.
      links: [[from table, from field, to table, gutter, Hebrew meaning]]. gutter 0 = left of
      column 1, k = between column k and column k+1.
-     order: {column: [table names, top to bottom]}. -->
+     order: {column: [table names, top to bottom]}, columns numbered 1..N from left to right.
+     A link always ends at the target's id; test_erd.py fails on a foreign key to any other field. -->
 <script type="application/json" id="erd-data">
 {
   "tables": {
@@ -158,12 +161,12 @@ table.rel td.m { direction: ltr; text-align: right; font-family: var(--mono); fo
 }
 </script>
 <script>
-// Everything shown comes from #erd-data, so tests/test_erd.py can compare it with the models.
+// Everything shown comes from #erd-data, so test_erd.py can compare it with the models.
 const DATA = JSON.parse(document.getElementById('erd-data').textContent);
 const TABLES = DATA.tables, LINKS = DATA.links, ORDER = DATA.order;
 const COLUMNS = Object.keys(ORDER).sort((a, b) => a - b);
 const colOf = {};
-COLUMNS.forEach(c => ORDER[c].forEach(name => { colOf[name] = +c; }));
+COLUMNS.forEach((c, k) => ORDER[c].forEach(name => { colOf[name] = k + 1; }));
 const COLOR = {};
 for (const [name, t] of Object.entries(TABLES)) if (t.color) COLOR[name] = 'var(--' + t.color + ')';
 const target = {};
