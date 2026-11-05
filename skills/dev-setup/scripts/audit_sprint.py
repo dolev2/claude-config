@@ -84,7 +84,6 @@ class SprintIssue:
     number: int
     title: str
     status: str | None
-    owner: str | None
     goal: str
     context: str
     line: list[int] | None
@@ -103,7 +102,6 @@ def sprint_issue(node: dict) -> SprintIssue:
         number=issue.number,
         title=issue.title,
         status=issue.status,
-        owner=issue.owner,
         goal=section(parts, GOAL_HEADINGS).strip(),
         context=context,
         line=dependency_line(context),
@@ -226,7 +224,6 @@ def digest(sprint: str, issues: list[SprintIssue], findings: list[Finding]) -> d
                 "number": i.number,
                 "title": i.title,
                 "status": i.status,
-                "owner": i.owner,
                 "goal": i.goal,
                 "files": sorted(i.files),
                 "blocked_by": i.open_blockers,

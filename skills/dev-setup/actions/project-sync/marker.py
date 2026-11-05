@@ -1,6 +1,6 @@
 """The hidden marker in each issue body: the state at the end of the last sync.
 
-    <!-- <SYNC_MARKER>: owner=claude status=explore area=backend -->
+    <!-- <SYNC_MARKER>: area=backend status=explore -->
 
 The marker name differs per repo (crm-sync, wayout-sync, ...) and comes from
 SYNC_MARKER; sync_project.check_environment stops the run when it is empty. Never

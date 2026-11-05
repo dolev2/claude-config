@@ -1,6 +1,6 @@
 name: Sync labels ↔ project board
 
-# Keeps issue labels (owner:*, status:*, area:*) and the Project v2 fields in agreement.
+# Keeps issue labels (status:*, area:*) and the Project v2 fields in agreement.
 # The sync itself is shared: dolev2/claude-config, skills/dev-setup/actions/project-sync, where
 # sync_project.py documents the conflict rule. It needs claude-config's Actions access set
 # to "user".

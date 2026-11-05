@@ -1,6 +1,6 @@
 ---
 name: dev-plan
-description: Runs the Plan phase of Dolev's Claude-assisted GitHub pipeline in the current repo — reads issues labelled owner:claude + status:explore (and plan-questions handed back), researches feasibility, and writes a plan into the issue body. Use in any of Dolev's repos whenever he asks to run/process the Plan phase, to plan a specific issue ("תתכנן את #12"), or to check what is waiting for Claude to plan. Works in any repo that has the pipeline labels; if the repo has its own repo-specific plan skill, use that instead. Pairs with dev-code, which handles Execute and Merge.
+description: Runs the Plan phase of Dolev's Claude-assisted GitHub pipeline in the current repo — reads issues labelled status:explore (new ones, and plans Dolev answered or sent back), researches feasibility, and writes a plan into the issue body. Use in any of Dolev's repos whenever he asks to run/process the Plan phase, to plan a specific issue ("תתכנן את #12"), or to check what is waiting for Claude to plan. Works in any repo that has the pipeline labels; if the repo has its own repo-specific plan skill, use that instead. Pairs with dev-code, which handles Execute and Merge.
 ---
 
 # Plan phase
@@ -17,8 +17,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 - `repo_skills` lists a repo-specific plan skill? Use it instead.
 - `ready` is `False`? Offer `dev-setup` and stop.
-- Note `default_branch` (written `<default>` below), `human` (`owner:<human>`),
-  `sync_marker`, and `current_sprint`.
+- Note `default_branch` (written `<default>` below), `sync_marker`, and `current_sprint`.
 
 ## Read first
 
@@ -37,9 +36,9 @@ keeps them: edit it in the headings it already has.
 
 1. Find the work. If Dolev named a specific issue, plan that one, even outside the current
    sprint (say so in the summary; never assign it a milestone). Otherwise, **inside the current
-   sprint only**, answered questions first, then by how much work waits on each issue:
+   sprint only**, by how much work waits on each issue:
    ```bash
-   python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --owner claude --status plan-questions --status explore
+   python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --status explore
    ```
    The first line names the sprint. An empty list means the sprint has nothing left to plan.
    Say so and stop; never reach outside the milestone. `BLOCKED by` does not skip a row here.
@@ -47,20 +46,21 @@ keeps them: edit it in the headings it already has.
    **Up to three issues per run**: the top three rows. The fourth would be planned in a
    compacted context. The WIP gate applies to Execute, not here.
 
-   **Do not drop `--status plan-questions`.** `status:plan-questions` + `owner:claude` is the
-   state an issue lands in the moment Dolev answers, and this is the only phase that claims it.
+   `status:plan-questions` is Dolev's turn, never scanned here. When he answers, or sends a
+   plan back, he moves the issue to `status:explore`, and this scan finds it like any other.
+   When he answers in the chat with you, move it to `status:explore` yourself and go on.
 
 2. For each issue, **read the whole thread first**: body, every comment, sub-issues, linked
    PR, and its "Blocked by" links. Read the blockers too, at least their goal and Plan: the
    plan you write builds on what they deliver. An open blocker does **not** stop planning. Two
    situations look alike but are not:
    - **a fresh issue**: no Plan content yet. Plan it from scratch.
-   - **an issue coming back from `status:plan-questions`**: the plan exists; revise it in place
+   - **an issue with a Plan already**: Dolev answered or sent it back; revise the plan in place
      and add a line to the plan log saying what changed and why, citing where it came from: the
      comment, or Dolev's words in chat (quoted, with the date). An objection that arrived in chat
      is cited from chat; never post a comment just to have something to cite. The newest
      comment, or the chat, says which of two things arrived:
-     - **Dolev answered your questions** and flipped `owner` back to Claude.
+     - **Dolev answered your questions** (it came from `status:plan-questions`).
      - **Dolev read a plan at `status:waiting-approval` and sent it back** with an objection.
        Treat no part of the plan as settled. Address the objection itself.
      **Tick the questions he answered** in the open-questions section (`- [x]`, with the
@@ -124,8 +124,8 @@ keeps them: edit it in the headings it already has.
    - **Part of it belongs elsewhere?** Work an existing issue already owns is a line in "מה לא
      כלול, ואיפה כן", not part of this plan.
 
-   A change to an issue that does not carry `owner:claude` is a step of this plan, made in
-   Execute once Dolev approves.
+   A change to an issue whose status is not Claude's turn (`reference/pipeline.md`) is a step
+   of this plan, made in Execute once Dolev approves.
 
    **Keep the dependencies true.** If exploration shows the issue needs something another issue
    delivers and no link says so, add the "Blocked by" link and the `#B` on the dependency line
@@ -136,7 +136,7 @@ keeps them: edit it in the headings it already has.
    **Content that belongs to another issue goes into that issue's body, never a comment.** A
    decision another task relies on is a line in its Plan section, for whoever plans it to build
    on; a question it must answer is an unticked box in its open-questions section. The
-   human-written sections stay byte-identical. If that issue does not carry `owner:claude`, the
+   human-written sections stay byte-identical. If that issue's status is not Claude's turn, the
    edit is a step of this plan, made in Execute once Dolev approves.
 
 6. Set `area:*` if it is missing and the exploration made it obvious (only labels that exist).
@@ -149,10 +149,8 @@ keeps them: edit it in the headings it already has.
 
    **Normal path**: the plan stands on its own:
    ```bash
-   gh issue edit <N> --add-label "status:waiting-approval" --add-label "owner:<human>" \
-                     --remove-label "status:explore" --remove-label "owner:claude"
+   gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:explore"
    ```
-   (From `plan-questions`, remove `status:plan-questions` instead.)
 
    **Question path**: you would otherwise be guessing. Post the questions as a comment in
    Hebrew (numbered, each with the options you see and your recommendation, so Dolev can answer
@@ -162,8 +160,7 @@ keeps them: edit it in the headings it already has.
    questions there too; his answer in chat counts like an answer in the issue.
    ```bash
    gh issue comment <N> --body-file <file>
-   gh issue edit <N> --add-label "status:plan-questions" --add-label "owner:<human>" \
-                     --remove-label "status:explore" --remove-label "owner:claude"
+   gh issue edit <N> --add-label "status:plan-questions" --remove-label "status:explore"
    ```
 
 8. End the run with a summary in Hebrew: which issues moved to `status:waiting-approval` with
@@ -175,7 +172,7 @@ keeps them: edit it in the headings it already has.
 - Never write feature code in this phase, and never `git checkout` in the shared working copy.
 - A dependency the plan relies on is a "Blocked by" link, not only a sentence in the plan.
 - Never guess on an unclear issue; take the question path.
-- Never touch an issue that does not carry `owner:claude`.
+- Never touch an issue whose status is not Claude's turn, unless Dolev named it.
 - A comment is for questions only (the question path). A change Dolev asks for is an edit to
   the plan with a line in its log, and content for another issue is an edit to that issue.
 - At most three issues per run.

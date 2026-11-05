@@ -12,13 +12,12 @@ spec.loader.exec_module(rank_issues)
 def node(
     number,
     status="explore",
-    owner="claude",
     milestone=(1, "W1"),
     blocked_by=(),
     blocking=(),
     labels=("task",),
 ):
-    names = [f"status:{status}", f"owner:{owner}", *labels]
+    names = [f"status:{status}", *labels]
     return {
         "number": number,
         "title": f"issue {number}",
@@ -88,16 +87,15 @@ def test_status_order_is_the_tier_before_weight():
     assert numbers(ranked) == [4, 1, 2, 3]
 
 
-def test_owner_and_status_filter_but_others_still_add_weight():
+def test_status_filters_but_others_still_add_weight():
     # 2 is Dolev's backlog: not a candidate, but it still waits on 1.
     ranked = rank_issues.rank(
         issues(
             node(1, blocking=[2]),
-            node(2, status="backlog", owner="dolev"),
+            node(2, status="backlog"),
             node(3, status="in-review"),
         ),
         statuses=["explore"],
-        owner="claude",
     )
     assert numbers(ranked) == [1]
     assert ranked[0].waiting == [2]
@@ -208,17 +206,17 @@ def test_closed_milestones_are_not_the_sprint():
 
 def test_active_issues_without_a_sprint_are_listed_apart():
     nodes = [
-        node(42, status="plan-questions", owner="dolev", milestone=None),
+        node(42, status="plan-questions", milestone=None),
         node(7, status="explore", milestone=None),
-        node(8, status="backlog", owner="dolev", milestone=None),  # on purpose
-        node(9, status="done", owner="dolev", milestone=None),
+        node(8, status="backlog", milestone=None),  # on purpose
+        node(9, status="done", milestone=None),
         node(3, status="explore"),  # in a sprint
     ]
     assert numbers(rank_issues.active_without_sprint(nodes)) == [7, 42]
 
 
 def test_the_text_output_names_them_last(capsys):
-    no_sprint = issues(node(42, status="plan-questions", owner="dolev", milestone=None))
+    no_sprint = issues(node(42, status="plan-questions", milestone=None))
     rank_issues.print_ranking("W1", [], [], no_sprint)
     last = capsys.readouterr().out.splitlines()[-1]
-    assert last == "Active, no sprint: #42 issue 42 (plan-questions, dolev)"
+    assert last == "Active, no sprint: #42 issue 42 (plan-questions)"

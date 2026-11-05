@@ -8,7 +8,7 @@ config:
 ---
 flowchart TD
     START(["דולב פותח משימה חדשה<br/>task.yml / bug.yml / dev-issue"]):::human
-    START --> L0["התבנית מדביקה תוויות אוטומטית<br/>task → status:explore<br/>bug → status:ready-to-execute<br/>owner:claude"]:::auto
+    START --> L0["התבנית מדביקה תוויות אוטומטית<br/>task → status:explore<br/>bug → status:ready-to-execute"]:::auto
 
     L0 --> PLAN
 
@@ -18,15 +18,15 @@ flowchart TD
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
     end
 
-    PQ -- "לא" --> WAIT["status:waiting-approval<br/>owner:human"]:::human
-    PQ -- "כן" --> QQ["status:plan-questions<br/>owner:human<br/>השאלות נרשמות כתיבות סימון"]:::human
+    PQ -- "לא" --> WAIT["status:waiting-approval<br/>התור של דולב"]:::human
+    PQ -- "כן" --> QQ["status:plan-questions<br/>התור של דולב<br/>השאלות נרשמות כתיבות סימון"]:::human
 
-    QQ --> ANS(["דולב עונה בתגובה"]):::human
-    ANS --> BACK["status:plan-questions<br/>owner:claude<br/>שאלה פתוחה משני הכיוונים"]:::routine
+    QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore"]):::human
+    ANS --> BACK["status:explore<br/>התור של Claude<br/>יש כבר תוכנית: Claude מעדכן אותה"]:::routine
     BACK --> PLAN
 
     WAIT --> APP(["דולב קורא את התוכנית"]):::human
-    APP -- "מאשר" --> RDY["status:ready-to-execute<br/>owner:claude"]:::routine
+    APP -- "מאשר" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
     APP -- "יש לי הסתייגות" --> BACK
 
     RDY --> EXEC
@@ -45,9 +45,9 @@ flowchart TD
       CODE --> WCI["CI checks run<br/>ובאותו זמן<br/>סוכן לקריאה בלבד סוקר את השינויים<br/>אפליקציית הסקירה עולה<br/>אחרי שהיא עולה<br/>בדיקת חוויית משתמש בדפדפן"]:::routine
     end
 
-    WCI --> REV["status:in-review<br/>owner:human"]:::human
+    WCI --> REV["status:in-review<br/>התור של דולב"]:::human
     REV --> RC(["Dolev reviews the PR"]):::human
-    RC -- "נדרש תיקון" --> REP["status:needs-repair<br/>owner:claude"]:::routine
+    RC -- "נדרש תיקון" --> REP["status:needs-repair<br/>התור של Claude"]:::routine
     REP --> EXEC
     RC -- "תקין" --> DONE["status:done<br/>approved, ready to merge"]:::human
 

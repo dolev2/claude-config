@@ -10,7 +10,6 @@ Nothing here is configured by hand. Every value is read from the repo itself, so
 same skills work in every repo that carries the pipeline:
 
 - repo and default branch      - from `gh repo view`
-- the human owner label        - the `owner:*` label that is not `owner:claude`
 - the sync marker name         - the SYNC_MARKER variable, when the repo has the sync
                                  workflow
 - the project number           - the PROJECT_NUMBER repository variable
@@ -42,7 +41,6 @@ from pathlib import Path
 from lint_check import all_gaps, tracked_files
 
 REQUIRED_LABELS = [
-    "owner:claude",
     "status:explore",
     "status:plan-questions",
     "status:waiting-approval",
@@ -198,14 +196,7 @@ def main(argv: list[str] | None = None) -> None:
         ".[].name",
     )
     labels = set(labels_raw.splitlines())
-    humans = sorted(
-        name.removeprefix("owner:")
-        for name in labels
-        if name.startswith("owner:") and name != "owner:claude"
-    )
     missing = [name for name in REQUIRED_LABELS if name not in labels]
-    if not humans:
-        missing.append("owner:<human>")
     code, project = run("gh", "variable", "get", "PROJECT_NUMBER", "--repo", repo)
     forms = issue_forms(root, repo)
     missing_files = (
@@ -221,7 +212,6 @@ def main(argv: list[str] | None = None) -> None:
     info = {
         "repo": repo,
         "default_branch": meta["defaultBranchRef"]["name"],
-        "human": humans[0] if len(humans) == 1 else humans or None,
         "ready": not missing,
         "missing_labels": missing,
         "area_labels": sorted(name for name in labels if name.startswith("area:")),

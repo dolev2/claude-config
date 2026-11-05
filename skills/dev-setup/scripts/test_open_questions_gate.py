@@ -33,7 +33,7 @@ def test_gate_reads_checkboxes():
 def test_gate_checkboxes_ignore_the_sync_marker():
     body = (
         "### שאלות פתוחות\n- [ ] a?\n- [x] b — הוחלט\n\n"
-        "<!-- crm-sync: owner=dolev -->\n"
+        "<!-- crm-sync: status=explore -->\n"
     )
     assert load_gate().open_questions(body) == ["a?"]
 
@@ -60,7 +60,7 @@ def test_gate_section_runs_past_lower_headings():
 
 def test_gate_legacy_section_skips_the_sync_marker():
     gate = load_gate()
-    body = "### שאלות פתוחות\nlegacy question\n\n<!-- crm-sync: owner=dolev -->\n"
+    body = "### שאלות פתוחות\nlegacy question\n\n<!-- crm-sync: status=explore -->\n"
     assert gate.open_questions(body) == ["legacy question"]
 
 
@@ -69,7 +69,7 @@ def test_gate_section_with_only_a_placeholder_and_the_marker_is_clear():
     gate = load_gate()
     body = (
         "### Plan\n\nplan text\n\n### שאלות פתוחות\n\n_אין שאלות פתוחות._\n\n"
-        "<!-- crm-sync: owner=dolev status=done -->\n"
+        "<!-- crm-sync: status=done -->\n"
     )
     assert gate.open_questions(body) == []
 

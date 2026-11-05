@@ -35,7 +35,7 @@
 - סיומות שורה LF (`.gitattributes`).
 
 ## צינור העבודה
-משימות מנוהלות כ-issues ב-[dolev2/claude-config](https://github.com/dolev2/claude-config), עם תוויות `status:*` / `owner:*`, ולוח [Project מס' 9](https://github.com/users/dolev2/projects/9).
+משימות מנוהלות כ-issues ב-[dolev2/claude-config](https://github.com/dolev2/claude-config), עם תוויות `status:*`, ולוח [Project מס' 9](https://github.com/users/dolev2/projects/9).
 ה-milestones הם הספרינטים. המנגנון: הסקילים `dev-issue`, `dev-next`, `dev-plan`, `dev-code`, `dev-ship`, והמסמך `skills/dev-setup/reference/pipeline.md`.
 משימות על תהליך העבודה, על הסקילים ועל ההנחיות הגלובליות נפתחות כאן, ולא בריפו של פרויקט.
 

@@ -1,6 +1,6 @@
 ---
 name: dev-setup
-description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the owner:/status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label↔board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference files and scripts the other dev-* skills use.
+description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label↔board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference files and scripts the other dev-* skills use.
 ---
 
 # Set up the pipeline in a repo
@@ -95,8 +95,6 @@ description differs from the one below, show both to Dolev and change it only on
 
 ```bash
 L() { gh label create "$1" --color "$2" --description "$3" || echo "FAILED $1"; }
-L "owner:claude"            1f6feb "מחכה ל-Claude"
-L "owner:dolev"             8250df "מחכה לדולב"
 L "status:explore"          c5def5 "Claude חוקר וכותב תוכנית"
 L "status:plan-questions"   f9d0c4 "שאלה פתוחה על התוכנית"
 L "status:waiting-approval" fef2c0 "ממתין לאישור התוכנית מדולב"
@@ -189,8 +187,6 @@ lint task (like charging-crm#66), not to a setup run; if the repo has none, open
 OWNER=$(gh repo view --json owner --jq .owner.login)
 gh project create --owner "$OWNER" --title "<Title>" --format json --jq .number
 gh project link <number> --owner "$OWNER" --repo "$OWNER/<repo>"
-gh project field-create <number> --owner "$OWNER" --name Owner --data-type SINGLE_SELECT \
-  --single-select-options "Claude,Dolev"
 gh project field-create <number> --owner "$OWNER" --name Area --data-type SINGLE_SELECT \
   --single-select-options "Backend,Frontend,Both,Infra"   # the agreed areas' option texts
 gh variable set PROJECT_NUMBER --body <number>
@@ -292,7 +288,7 @@ Add a short section to the repo's `CLAUDE.md` (create the file only if Dolev agr
 
 ```markdown
 ## צינור העבודה
-משימות מנוהלות כ-issues ב-<owner/repo>, עם תוויות `status:*` / `owner:*`<, ולוח Project מס' N>.
+משימות מנוהלות כ-issues ב-<owner/repo>, עם תוויות `status:*`<, ולוח Project מס' N>.
 ה-milestones הם הספרינטים. המנגנון: הסקילים `dev-issue`, `dev-next`, `dev-plan`, `dev-code`,
 `dev-ship` (ב-`~/.claude/skills/`), והמסמך `dev-setup/reference/pipeline.md`.
 ```

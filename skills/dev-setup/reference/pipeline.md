@@ -31,7 +31,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ```
 
 `pipeline_info.py` מדפיס את מה שנקרא מה-repo עצמו: `repo`, `default_branch` (בהמשך: `<default>`),
-`human` (תווית `owner:*` שאינה `owner:claude`; בהמשך: `owner:<human>`), `sync_marker` (מהמשתנה
+`sync_marker` (מהמשתנה
 `SYNC_MARKER`), `project_number`, `current_sprint` (סעיף "ספרינטים" למטה), `area_labels`,
 `issue_forms` (מאיפה נקראים הטפסים), `repo_skills`, ומה שחסר או שונה מהתבניות: `lint` (הגדרות
 ה-lint ובדיקת מדריך הקבצים), `netlify` (כלל הדילוג; `setup.md`).
@@ -62,34 +62,33 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 ## אוצר המילים
 
-| תווית | משמעות | מי מזיז הלאה |
-|---|---|---|
-| `owner:claude` | ממתין ל-Claude | Claude, כשסיים |
-| `owner:<human>` | ממתין לדולב | דולב |
-| `status:explore` | ממתין לתכנון | Claude (Plan) |
-| `status:plan-questions` | יש שאלה פתוחה על התוכנית, של Claude או של דולב | מי ש-`owner` מצביע עליו |
-| `status:waiting-approval` | התוכנית מוכנה, ממתינה לאישור | דולב |
-| `status:ready-to-execute` | מאושר לביצוע | Claude (Execute) |
-| `status:needs-repair` | חזר לתיקון אחרי בדיקה | Claude (Execute) |
-| `status:in-review` | Claude סיים, PR פתוח | דולב |
-| `status:done` | אושר, מוכן ל-merge | Claude (Merge, רק בבקשה מפורשת) |
-| `status:backlog` | רעיון, לא בצינור | דולב |
-| `area:*` | אזור, לפי מה שקיים ב-repo | Claude ממלא אם חסר |
-| `bug` / `task` | סוג | — |
-| `process` | משימה על ניהול העבודה ולא על הפרויקט: הצינור, עמידה בנהלים של `~/.claude/rules/`, יישור קו עם claude-config (lint שסטה, מדריך קבצים חסר). עולה ראשונה בדירוג, ותמיד בספרינט הנוכחי | Claude, בפתיחה (`dev-issue`) או בתכנון (`dev-plan`). לא בריפו claude-config, שכל משימה בו כזו |
-| `costs-money` | המשימה דורשת הוצאה כספית (שירות ענן, API בתשלום, מנוי), ומושהית עד שדולב מאשר את ההוצאה. יוצאת מהדירוג של כל הסריקות, ו-`dev-next` לא מציע אותה. משימה שדולב ביקש בשמה עובדת כרגיל | Claude מוסיף בתכנון (`dev-plan`) או לבקשת דולב. רק דולב מסיר |
-| `has-open-questions` | נכתבת רק ע"י שער השאלות | — |
+| תווית | משמעות | של מי התור | מי מזיז הלאה |
+|---|---|---|---|
+| `status:explore` | ממתין לתכנון, או לעדכון של תוכנית קיימת | Claude | Claude (Plan) |
+| `status:plan-questions` | Claude שאל שאלה על התוכנית, וממתין לתשובה | דולב | דולב |
+| `status:waiting-approval` | התוכנית מוכנה, ממתינה לאישור | דולב | דולב |
+| `status:ready-to-execute` | מאושר לביצוע | Claude | Claude (Execute) |
+| `status:needs-repair` | חזר לתיקון אחרי בדיקה | Claude | Claude (Execute) |
+| `status:in-review` | Claude סיים, PR פתוח | דולב | דולב |
+| `status:done` | אושר, מוכן ל-merge | דולב: בקשת מיזוג מפורשת | Claude (Merge, רק בבקשה) |
+| `status:backlog` | רעיון, לא בצינור | דולב | דולב |
+| `area:*` | אזור, לפי מה שקיים ב-repo | — | Claude ממלא אם חסר |
+| `bug` / `task` | סוג | — | — |
+| `process` | משימה על ניהול העבודה ולא על הפרויקט: הצינור, עמידה בנהלים של `~/.claude/rules/`, יישור קו עם claude-config (lint שסטה, מדריך קבצים חסר). עולה ראשונה בדירוג, ותמיד בספרינט הנוכחי | — | Claude, בפתיחה (`dev-issue`) או בתכנון (`dev-plan`). לא בריפו claude-config, שכל משימה בו כזו |
+| `costs-money` | המשימה דורשת הוצאה כספית (שירות ענן, API בתשלום, מנוי), ומושהית עד שדולב מאשר את ההוצאה. יוצאת מהדירוג של כל הסריקות, ו-`dev-next` לא מציע אותה. משימה שדולב ביקש בשמה עובדת כרגיל | — | Claude מוסיף בתכנון (`dev-plan`) או לבקשת דולב. רק דולב מסיר |
+| `has-open-questions` | נכתבת רק ע"י שער השאלות | — | — |
 
-`status:*` ו-`owner:*` הן קבוצות בלעדיות. תמיד להסיר את הקודמת באותה פקודה שמוסיפה את החדשה:
+**הסטטוס לבדו אומר של מי התור.** אין תווית בעלים: כל מעבר הוא שינוי סטטוס אחד.
+`status:*` היא קבוצה בלעדית. תמיד להסיר את הקודמת באותה פקודה שמוסיפה את החדשה:
 
 ```bash
-gh issue edit <N> --add-label "status:waiting-approval" --add-label "owner:<human>" \
-                  --remove-label "status:explore"  --remove-label "owner:claude"
+gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:explore"
 ```
 
-**`status:plan-questions` משמש בשני הכיוונים, ומה שמבדיל ביניהם הוא `owner`.** עם `owner:<human>`:
-Claude שאל ומחכה לתשובה. עם `owner:claude`: דולב ענה, או החזיר תוכנית מ-`waiting-approval` עם
-הסתייגות בתגובה. המצב הזה שייך לשלב ה-Plan, ולכן `dev-plan` סורק גם אותו ולא רק את `explore`.
+**תשובה של דולב, או תוכנית שהוא מחזיר, מחזירות את ה-issue ל-`status:explore`.** דולב ענה על
+שאלה ב-`plan-questions`, או החזיר תוכנית מ-`waiting-approval` עם הסתייגות בתגובה: הוא מעביר את
+ה-issue ל-`explore`. `dev-plan` רואה שכבר יש Plan בגוף, ולכן מעדכן אותו (מסלול התיקון) ולא כותב
+אותו מאפס.
 
 ## ספרינטים
 
@@ -108,8 +107,8 @@ Claude שאל ומחכה לתשובה. עם `owner:claude`: דולב ענה, א�
 פירושו שהספרינט נקי: לדווח ולעצור.
 
 **issue שדולב נקב בשמו** ("תממש את #50") מטופל גם כשהוא מחוץ לספרינט או בלי milestone. מציינים
-בדיווח שהוא מחוץ לספרינט, ולא משייכים לו milestone. כל שאר השערים (`owner:claude`, Blocked by,
-WIP) חלים עליו כרגיל.
+בדיווח שהוא מחוץ לספרינט, ולא משייכים לו milestone. כל שאר השערים (הסטטוס, Blocked by, WIP) חלים
+עליו כרגיל.
 
 משימה בלי milestone היא backlog מכוון. אין לגעת בה.
 
@@ -120,7 +119,8 @@ WIP) חלים עליו כרגיל.
 
 ## הכללים שלא משתנים
 
-- לא לנחש על issue לא ברור. לשאול בתגובה ולהעביר ל-`owner:<human>`.
+- לא לנחש על issue לא ברור. לשאול בתגובה ולהעביר ל-`status:plan-questions`.
 - לא לבצע merge בלי בקשה מפורשת של דולב על ה-issue הספציפי, גם כשהתווית `status:done`.
-- לא לגעת ב-issue שאין עליו `owner:claude`.
+- לא לגעת ב-issue שהסטטוס שלו לא בתור של Claude (`explore`, `ready-to-execute`, `needs-repair`),
+  אלא אם דולב ביקש במפורש (למשל merge של `status:done`).
 - לא להמציא נתונים עסקיים. מה שחסר הוא שאלה פתוחה, לא טקסט.

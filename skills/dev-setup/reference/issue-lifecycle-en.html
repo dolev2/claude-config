@@ -147,7 +147,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 
 <section aria-labelledby="map-h">
   <h2 id="map-h">State map</h2>
-  <p>Each box is a <code>status:*</code> label. The color shows whose turn it is now (<code>owner:*</code>).</p>
+  <p>Each box is a <code>status:*</code> label. The color shows whose turn it is.</p>
+  <p>There is no owner label: the status alone says whose turn it is.</p>
   <div class="panel">
     <svg viewBox="0 0 1180 300" role="img" aria-label="Transitions between an issue's status labels">
       <defs>
@@ -166,10 +167,10 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 
       <rect x="130" y="14" width="170" height="62" rx="8" class="n-human"/>
       <text x="215" y="40" text-anchor="middle" class="m">plan-questions</text>
-      <text x="215" y="60" text-anchor="middle" class="s">Open question, owner answers</text>
-      <line x1="140" y1="118" x2="150" y2="80" class="edge" marker-end="url(#ah)"/>
-      <line x1="275" y1="80" x2="285" y2="116" class="edge" marker-start="url(#ah)" marker-end="url(#ah)"/>
-      <text x="300" y="102" text-anchor="start" class="s">Objection ↔ updated plan</text>
+      <text x="215" y="60" text-anchor="middle" class="s">Claude asked, Dolev answers</text>
+      <line x1="140" y1="118" x2="150" y2="80" class="edge" marker-start="url(#ah)" marker-end="url(#ah)"/>
+      <path d="M262 118 Q213 90 170 118" class="edge" marker-end="url(#ah)"/>
+      <text x="300" y="102" text-anchor="start" class="s">Answer or objection: back to explore</text>
 
       <rect x="20" y="120" width="160" height="62" rx="8" class="n-claude"/>
       <text x="100" y="146" text-anchor="middle" class="m">explore</text>
@@ -191,7 +192,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="730" y="166" text-anchor="middle" class="s">Dolev reviews the change</text>
 
       <line x1="812" y1="151" x2="856" y2="151" class="edge" marker-end="url(#ah)"/>
-      <rect x="860" y="120" width="160" height="62" rx="8" class="n-claude"/>
+      <rect x="860" y="120" width="160" height="62" rx="8" class="n-human"/>
       <text x="940" y="146" text-anchor="middle" class="m">done</text>
       <text x="940" y="166" text-anchor="middle" class="s">Ready, waits for merge ask</text>
 
@@ -378,7 +379,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
         <div class="flowline"><span class="label">bug</span><span class="arrow">→</span><span class="label c">status:ready-to-execute</span></div>
-        <div class="flowline"><span class="label c">owner:claude</span><span class="label">area:*</span></div>
+        <div class="flowline"><span class="label">area:*</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-issue</b>, or the <code>task.yml</code> / <code>bug.yml</code> form from <code>dolev2/.github</code>.</p>
@@ -415,7 +416,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
         <p>Or, when a blocking question remains:</p>
-        <div class="flowline"><span class="label h">plan-questions</span><span class="label h">owner:dolev</span></div>
+        <div class="flowline"><span class="label h">plan-questions</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-plan</b>: up to 3 issues per run.</p>
@@ -433,9 +434,11 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <p>Answers a question:</p>
-        <div class="flowline"><span class="label c">plan-questions</span><span class="label c">owner:claude</span></div>
+        <div class="flowline"><span class="label h">plan-questions</span><span class="arrow">→</span><span class="label c">explore</span></div>
+        <p>Objects to the plan:</p>
+        <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">explore</span></div>
         <p>Approves:</p>
-        <div class="flowline"><span class="label c">ready-to-execute</span><span class="label c">owner:claude</span></div>
+        <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p>No skill: it is Dolev's turn.</p>
@@ -454,7 +457,6 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
-        <div class="flowline"><span class="label h">owner:dolev</span></div>
         <p>A fix (<code>needs-repair</code>) is taken before a new task.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
@@ -474,7 +476,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <p>Fix needed:</p>
-        <div class="flowline"><span class="label c">needs-repair</span><span class="label c">owner:claude</span></div>
+        <div class="flowline"><span class="label c">needs-repair</span></div>
         <p>All good:</p>
         <div class="flowline"><span class="label c">done</span></div>
       </div>

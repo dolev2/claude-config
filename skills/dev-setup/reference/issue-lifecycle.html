@@ -147,7 +147,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 
 <section aria-labelledby="map-h">
   <h2 id="map-h">מפת המצבים</h2>
-  <p>כל קופסה היא תווית <code>status:*</code>. הצבע אומר אצל מי ה-issue עכשיו (<code>owner:*</code>).</p>
+  <p>כל קופסה היא תווית <code>status:*</code>. הצבע אומר של מי התור.</p>
+  <p>אין תווית בעלים: הסטטוס לבדו אומר של מי התור.</p>
   <div class="panel">
     <svg viewBox="0 0 1180 300" role="img" aria-label="מפת מעברים בין תוויות הסטטוס של issue" style="direction:ltr">
       <defs>
@@ -168,10 +169,10 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <!-- plan-questions (above) -->
       <rect x="130" y="14" width="170" height="62" rx="8" class="n-human"/>
       <text x="215" y="40" text-anchor="middle" class="m">plan-questions</text>
-      <text x="215" y="60" text-anchor="middle" class="s">שאלה פתוחה, אצל האחראי</text>
-      <line x1="140" y1="118" x2="150" y2="80" class="edge" marker-end="url(#ah)"/>
-      <line x1="275" y1="80" x2="285" y2="116" class="edge" marker-start="url(#ah)" marker-end="url(#ah)"/>
-      <text x="300" y="102" text-anchor="start" class="s">הסתייגות ↔ תוכנית מעודכנת</text>
+      <text x="215" y="60" text-anchor="middle" class="s">שאלה לדולב, הוא עונה</text>
+      <line x1="140" y1="118" x2="150" y2="80" class="edge" marker-start="url(#ah)" marker-end="url(#ah)"/>
+      <path d="M262 118 Q213 90 170 118" class="edge" marker-end="url(#ah)"/>
+      <text x="300" y="102" text-anchor="start" class="s">תשובה או הסתייגות: חזרה לתכנון</text>
 
       <!-- main row, left to right -->
       <rect x="20" y="120" width="160" height="62" rx="8" class="n-claude"/>
@@ -194,7 +195,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="730" y="166" text-anchor="middle" class="s">דולב סוקר את השינוי</text>
 
       <line x1="812" y1="151" x2="856" y2="151" class="edge" marker-end="url(#ah)"/>
-      <rect x="860" y="120" width="160" height="62" rx="8" class="n-claude"/>
+      <rect x="860" y="120" width="160" height="62" rx="8" class="n-human"/>
       <text x="940" y="146" text-anchor="middle" class="m">done</text>
       <text x="940" y="166" text-anchor="middle" class="s">מוכן, ממתין לבקשת מיזוג</text>
 
@@ -398,7 +399,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
         <div class="flowline"><span class="label">bug</span><span class="arrow">→</span><span class="label c">status:ready-to-execute</span></div>
-        <div class="flowline"><span class="label c">owner:claude</span><span class="label">area:*</span></div>
+        <div class="flowline"><span class="label">area:*</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-issue</b>, או טופס <code>task.yml</code> / <code>bug.yml</code> מ-<code>dolev2/.github</code>.</p>
@@ -435,7 +436,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
         <p>או, כשנשארה שאלה שחוסמת:</p>
-        <div class="flowline"><span class="label h">plan-questions</span><span class="label h">owner:dolev</span></div>
+        <div class="flowline"><span class="label h">plan-questions</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-plan</b>: עד 3 issues בריצה.</p>
@@ -453,9 +454,11 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <p>עונה על שאלה:</p>
-        <div class="flowline"><span class="label c">plan-questions</span><span class="label c">owner:claude</span></div>
+        <div class="flowline"><span class="label h">plan-questions</span><span class="arrow">→</span><span class="label c">explore</span></div>
+        <p>מסתייג מהתוכנית:</p>
+        <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">explore</span></div>
         <p>מאשר:</p>
-        <div class="flowline"><span class="label c">ready-to-execute</span><span class="label c">owner:claude</span></div>
+        <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p>אין סקיל: זה תור של דולב.</p>
@@ -474,7 +477,6 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
-        <div class="flowline"><span class="label h">owner:dolev</span></div>
         <p>תיקון (<code>needs-repair</code>) נלקח לפני משימה חדשה.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
@@ -494,7 +496,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <p>נדרש תיקון:</p>
-        <div class="flowline"><span class="label c">needs-repair</span><span class="label c">owner:claude</span></div>
+        <div class="flowline"><span class="label c">needs-repair</span></div>
         <p>תקין:</p>
         <div class="flowline"><span class="label c">done</span></div>
       </div>

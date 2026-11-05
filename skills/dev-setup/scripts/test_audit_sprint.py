@@ -26,7 +26,7 @@ def node(number, text="", blocked_by=(), has_pr=False, parent=None, subs=()):
         "number": number,
         "title": f"issue {number}",
         "body": text or body(),
-        "labels": {"nodes": [{"name": "status:explore"}, {"name": "owner:claude"}]},
+        "labels": {"nodes": [{"name": "status:explore"}]},
         "milestone": {"number": 1, "title": "W1", "state": "OPEN"},
         "blockedBy": {"nodes": [{"number": n, "state": s} for n, s in blocked_by]},
         "blocking": {"nodes": []},
