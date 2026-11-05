@@ -6,7 +6,7 @@ description: Ships a finished branch in the current repo end to end — commits 
 # Ship a branch
 
 Runs the whole tail of a change in one go: rebase onto the default branch → tests → PR → CI
-→ squash-merge → issue to `status:done` → cleanup. None of these happen if an earlier one
+→ open questions → squash-merge → issue to `status:done` → cleanup. None of these happen if an earlier one
 fails. Do not skip or reorder the steps, and stop the moment one of them fails.
 
 ## Step 0: Orient
@@ -22,8 +22,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md`, `git-flow.md` and `review-app.md`
 (step 7 stops the branch's review app, if one runs). If the pipeline is installed, also
-`pipeline.md` (the label vocabulary and the exclusivity rule) and `issue-body.md` (the
-open-questions section), which step 6 depends on, and `after-merge.md` (step 8).
+`pipeline.md` (the label vocabulary and the exclusivity rule), which step 6 depends on,
+`issue-body.md` (the open-questions section, step 4c), and `after-merge.md` (step 8).
 
 ## Relationship to dev-code
 
@@ -44,14 +44,10 @@ When Dolev names an issue rather than a branch:
      gh pr view "$P" --json number,state,headRefName --jq 'select(.state=="OPEN")'
    done
    ```
-   None: say so and stop; there is nothing to merge. The issue is normally in
-   `status:in-review`; another status is not a reason to stop, since Dolev asked by name, but
-   say so in the summary.
-2. **Check the issue's "שאלות פתוחות" section now, before anything else** (`issue-body.md`).
-   A box still unticked: list it and ask Dolev whether to merge anyway. Do not tick boxes on
-   his behalf. The open-questions gate already warned when the issue moved to
-   `status:in-review`; this is the last look before the merge.
-3. Work on the PR's branch (`headRefName`) in a worktree, never by switching branches in the
+   None: say so and stop; there is nothing to merge. More than one: list them and ask which.
+   The issue is normally in `status:in-review`; another status is not a reason to stop, since
+   Dolev asked by name, but say so in the summary.
+2. Work on the PR's branch (`headRefName`) in a worktree, never by switching branches in the
    shared working copy. The worktree `dev-code` left for that issue is the one to use: it
    holds the review app (`git worktree list` shows it). Then go on to step 1.
 
@@ -129,6 +125,20 @@ a free plan has no branch protection, so a red PR still has a working merge butt
 is the only thing between a red run and `<default>`. If the repo reports no checks at all,
 say so and continue on the strength of step 3.
 
+## Step 4c: Open questions (pipeline repos only)
+
+Skip this step when `ready` was `False`. It runs on every pipeline merge, whether Dolev named
+the issue or the branch:
+
+```bash
+gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
+```
+
+For each issue, read its "שאלות פתוחות" section (`issue-body.md`). A box still unticked: list
+it and ask Dolev whether to merge anyway; stop until he answers. Do not tick boxes on his
+behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
+this is the last look before the merge.
+
 ## Step 5: Squash-merge
 
 First confirm it still merges cleanly:
@@ -162,9 +172,9 @@ deleting branches by hand.
 
 Skip this step when `ready` was `False`.
 
-Not cosmetic: `sync_project.py` skips any **closed** issue that does not carry `status:done`,
-treating it as "closed as not-planned". An issue merged while still on `status:in-review`
-drops off the board silently.
+Every merged issue comes from `status:in-review`, and `status:done` is what says "merged".
+The sync adds it too once the issue closes as completed, but only on its next run; setting it
+here makes the board right at once.
 
 ```bash
 gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
@@ -179,7 +189,7 @@ CUR=$(gh issue view <I> --json labels \
 gh issue edit <I> --add-label "status:done" $CUR
 ```
 
-The open questions were checked before the merge (step 0b); a box ticked or not, the issue is
+The open questions were checked before the merge (step 4c); a box ticked or not, the issue is
 merged now, and `status:done` says exactly that. If the issue already carries `status:done`
 (the sync got there first, after the issue closed), the command is a no-op and that is
 correct; verify rather than assume.

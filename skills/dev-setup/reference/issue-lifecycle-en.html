@@ -111,7 +111,6 @@ svg .branch-t { font-family: var(--font-mono); font-size: 11px; fill: var(--clau
   border: 1px solid var(--line); background: var(--code-bg); white-space: nowrap; }
 .label.c { border-color: var(--claude); background: var(--claude-fill); }
 .label.h { border-color: var(--human); background: var(--human-fill); }
-.label.a { border-color: var(--auto); background: var(--auto-fill); }
 .arrow { color: var(--muted); padding: 0 4px; }
 .flowline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 
@@ -193,7 +192,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="730" y="166" text-anchor="middle" class="s">Dolev reviews, asks to merge</text>
 
       <line x1="812" y1="151" x2="856" y2="151" class="edge" marker-end="url(#ah)"/>
-      <rect x="860" y="120" width="160" height="62" rx="8" class="n-auto"/>
+      <rect x="860" y="120" width="160" height="62" rx="8" class="n-claude"/>
       <text x="940" y="146" text-anchor="middle" class="m">done</text>
       <text x="940" y="166" text-anchor="middle" class="s">Merged</text>
 
@@ -497,7 +496,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="stage-head"><span class="idx">Stage 7</span><h3>Merge and close</h3><span class="who claude">Claude, when Dolev asks</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
-        <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label a">done</span></div>
+        <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label c">done</span></div>
         <p><code>done</code> only means "merged". The issue closes on its own, through <code>Closes #N</code>, and the card lands in Done.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>

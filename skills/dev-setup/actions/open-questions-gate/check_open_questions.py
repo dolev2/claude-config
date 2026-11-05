@@ -6,8 +6,9 @@ Why this exists
 That is the last stop before the merge, so a question still unanswered must be seen
 there: once the issue is merged it moves to `status:done` and lands in Done, where
 nobody re-reads the thread. claude-config #108 moved the gate here from `status:done`,
-which now means "merged" and comes too late to stop anything. `status:done` is still
-checked, so ticking the last box on a merged issue clears the warning too.
+which now means "merged" and comes too late to stop anything. On `status:done` the gate
+only clears: ticking the last box after the merge removes the warning label, but a merge
+Dolev chose to make with a box open raises no new warning.
 
 What counts as an open question
 -------------------------------
@@ -45,8 +46,9 @@ import tempfile
 
 REPO = os.environ["GITHUB_REPOSITORY"]
 WARN_LABEL = "has-open-questions"
+REVIEW_STATUS = "status:in-review"
 # In-review first: that is where the warning can still stop a merge.
-GATED_STATUSES = ("status:in-review", "status:done")
+GATED_STATUSES = (REVIEW_STATUS, "status:done")
 COMMENT_MARKER = "<!-- open-questions-gate -->"
 
 HEADING_RE = re.compile(r"^\s{0,3}(#{1,6})\s*(.+?)\s*#*\s*$")
@@ -133,11 +135,11 @@ def gated_status(labels: list[str]) -> str | None:
     return next((s for s in GATED_STATUSES if s in labels), None)
 
 
-def warning(heading: str, questions: list[str], status: str) -> str:
+def warning(heading: str, questions: list[str]) -> str:
     """The gate comment. `heading` is the section title as the issue spells it."""
     listed = "\n".join(f"- {q}" for q in questions)
     return (
-        f"## ⚠️ עבר ל-`{status}` עם שאלות פתוחות\n\n"
+        f"## ⚠️ עבר ל-`{REVIEW_STATUS}` עם שאלות פתוחות\n\n"
         f"ב-issue הזה יש {len(questions)} שאלות שעדיין לא נסגרו:\n\n{listed}\n\n"
         f'אם הן נענו — לסמן אותן בסעיף "{heading}" (`- [x]`) ולהוסיף את ההחלטה '
         f"לצד כל אחת. הסטטוס **לא** שונה, והתווית `{WARN_LABEL}` תרד "
@@ -201,7 +203,12 @@ def main() -> int:
             )
         return 0
 
-    upsert_comment(number, warning(find_section(issue["body"])[0], questions, status))
+    if status != REVIEW_STATUS:
+        # Merged already: Dolev chose to merge with the box open, a new mail is noise.
+        print(f"#{number} is merged with {len(questions)} open question(s).")
+        return 0
+
+    upsert_comment(number, warning(find_section(issue["body"])[0], questions))
 
     if WARN_LABEL not in labels:
         gh("issue", "edit", number, "--repo", REPO, "--add-label", WARN_LABEL)

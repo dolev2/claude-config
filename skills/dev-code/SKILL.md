@@ -203,7 +203,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
     was not checked and why. The app's outcome from step 10 goes into that comment and into the
-    chat message, with one line on what to open in it.
+    chat message, with one line on what to open in it. Both end with the next step, in one
+    line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
+    `status:needs-repair` with a comment.
 
 12. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
     `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.
