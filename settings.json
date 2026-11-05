@@ -16,6 +16,17 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/cloud_refresh.py\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash|PowerShell",
