@@ -171,7 +171,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     the Plan's "חוויית משתמש" section in the built-in browser, at desktop and phone width. A gap
     inside the Plan is fixed like a review finding; one outside it is proposed as a task. No app
     (or not on Dolev's machine): check what you can (output, messages) and say what was not
-    checked. A plan with "אין ממשק" skips this.
+    checked. A plan with "אין ממשק", or the short plan of a `size:small` task, skips this.
 
     **When the agent returns**, check that `git status --porcelain` in the worktree is still
     empty (the agent wrote nothing), then decide each finding: right and inside the Plan: fix

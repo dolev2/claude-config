@@ -16,9 +16,12 @@ flowchart TD
       PLAN["dev-plan<br/>עד 3 פריטים בכל ריצה<br/>לפי כמה משימות מחכות להם"]:::routine
       PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>כולל סעיף חוויית משתמש<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
+      PQ -- "לא" --> SZ{"משימה קטנה<br/>עד כ-3 קבצים, בלי שינוי שמשתמש רואה<br/>בלי מחיקה, בלי שינוי חוזה"}:::routine
     end
 
-    PQ -- "לא" --> WAIT["status:waiting-approval<br/>התור של דולב"]:::human
+    SZ -- "כן" --> SMALL["size:small<br/>תוכנית מקוצרת<br/>בלי אישור תוכנית"]:::routine
+    SMALL --> RDY
+    SZ -- "לא" --> WAIT["status:waiting-approval<br/>התור של דולב"]:::human
     PQ -- "כן" --> QQ["status:plan-questions<br/>התור של דולב<br/>השאלות נרשמות כתיבות סימון"]:::human
 
     QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore"]):::human
@@ -28,6 +31,7 @@ flowchart TD
     WAIT --> APP(["דולב קורא את התוכנית"]):::human
     APP -- "מאשר" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
     APP -- "יש לי הסתייגות" --> BACK
+    SMALL -. "דולב עוצר אותה" .-> WAIT
 
     RDY --> EXEC
 
