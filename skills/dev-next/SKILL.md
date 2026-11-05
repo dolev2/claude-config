@@ -74,8 +74,7 @@ The review of the sprint order edits issue bodies, so it also reads `issue-body.
    | none (`decision`) | Dolev | his decision, closed with a comment |
    | `waiting-approval` | Dolev | his approval of the plan |
    | `plan-questions` | Dolev | his answers, in the issue's "שאלות פתוחות"; then it goes back to `status:explore` |
-   | `in-review` | Dolev | his review of the PR |
-   | `done` | Dolev | his explicit request to merge (dev-ship) |
+   | `in-review` | Dolev | his review of the PR, then a fix (`needs-repair`) or his request in the chat to merge it (dev-ship) |
    | `backlog` | Dolev | handing it over: writing it up and moving it to `status:explore` |
 
    Before routing, tell Dolev in Hebrew, in one or two lines, which issue you picked and why: whether it

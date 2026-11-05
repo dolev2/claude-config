@@ -1,7 +1,7 @@
 name: Open questions gate
 description: >
-  Warns when an issue reaches status:done with a question still unanswered in its
-  open-questions section. The rules are in check_open_questions.py next to this file.
+  Warns when an issue reaches status:in-review (or status:done) with a question still
+  unanswered in its open-questions section. The rules are in check_open_questions.py next to this file.
 
 # One copy for every repo with the pipeline: each repo's open-questions-gate.yml calls
 # dolev2/claude-config/skills/dev-setup/actions/open-questions-gate@main, so a fix merged here

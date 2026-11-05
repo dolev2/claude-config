@@ -4,9 +4,12 @@ Every repo with the pipeline runs this one copy, so these tests guard all of the
 """
 
 import importlib.util
+import json
 import os
 import re
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "actions" / "open-questions-gate"
@@ -81,9 +84,62 @@ def test_gate_warning_names_the_section_as_the_issue_spells_it():
     text = gate.warning(heading, gate.open_questions(body))
     assert '"Open questions"' in text
     assert "- which currency?" in text
+    assert "`status:in-review`" in text
     assert '"שאלות פתוחות"' in gate.warning(
         gate.find_section("### שאלות פתוחות\n- [ ] a\n")[0], ["a"]
     )
+
+
+@pytest.mark.parametrize(
+    "labels, expected",
+    [
+        # claude-config #108: the warning comes before the merge, not after it.
+        (["task", "status:in-review"], "status:in-review"),
+        # Ticking the last box after the merge must still clear the warning label.
+        (["status:done", "has-open-questions"], "status:done"),
+        (["status:ready-to-execute"], None),
+        ([], None),
+    ],
+)
+def test_gate_checks_issues_in_review_or_done(labels, expected):
+    assert load_gate().gated_status(labels) == expected
+
+
+OPEN_BODY = "### שאלות פתוחות\n- [ ] which currency?\n"
+CLEAR_BODY = "### שאלות פתוחות\n- [x] which currency? - הוחלט: ILS\n"
+
+
+@pytest.mark.parametrize(
+    "status, body, labels, exit_code, edits",
+    [
+        # Before the merge: comment, warning label, and a failed run (the mail).
+        ("status:in-review", OPEN_BODY, [], 1, ["--add-label"]),
+        # Merged with a box open: Dolev chose that, so no new warning.
+        ("status:done", OPEN_BODY, [], 0, []),
+        # Box ticked after the merge: the old warning label still comes off.
+        ("status:done", CLEAR_BODY, ["has-open-questions"], 0, ["--remove-label"]),
+    ],
+)
+def test_gate_warns_only_before_the_merge(
+    monkeypatch, status, body, labels, exit_code, edits
+):
+    gate = load_gate()
+    calls = []
+    issue = {"body": body, "labels": [{"name": n} for n in [status] + labels]}
+
+    def fake_gh(*args, **kwargs):
+        calls.append(args)
+        if args[:2] == ("issue", "view"):
+            return json.dumps(issue)
+        if args[0] == "api" and args[-1] == "--paginate":
+            return "[]"
+        return ""
+
+    monkeypatch.setattr(gate, "gh", fake_gh)
+    monkeypatch.setenv("ISSUE_NUMBER", "7")
+    assert gate.main() == exit_code
+    label_edits = [a[-2] for a in calls if a[:2] == ("issue", "edit")]
+    assert label_edits == edits
 
 
 def test_action_runs_a_script_that_exists():

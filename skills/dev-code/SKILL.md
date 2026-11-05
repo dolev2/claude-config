@@ -1,12 +1,13 @@
 ---
 name: dev-code
-description: Runs the Execute and Merge phases of Dolev's Claude-assisted GitHub pipeline in the current repo — implements issues labelled status:ready-to-execute or status:needs-repair, opens PRs, and merges approved work on request. Use in any of Dolev's repos whenever he asks to run/process Execute or Merge, or to implement a specific issue ("תממש את #12", "תריץ את שלב הקוד"). Works in any repo that has the pipeline labels; if the repo has its own repo-specific code skill, use that instead. Pairs with dev-plan, which handles planning.
+description: Runs the Execute phase of Dolev's Claude-assisted GitHub pipeline in the current repo — implements issues labelled status:ready-to-execute or status:needs-repair, opens PRs, and hands them to Dolev for review in status:in-review. Use in any of Dolev's repos whenever he asks to run/process Execute, or to implement a specific issue ("תממש את #12", "תריץ את שלב הקוד"). The merge itself is dev-ship's. Works in any repo that has the pipeline labels; if the repo has its own repo-specific code skill, use that instead. Pairs with dev-plan, which handles planning.
 ---
 
-# Execute & Merge phases
+# Execute phase
 
 Part 2 of 2 of Dolev's GitHub × Claude Code pipeline (the other half is `dev-plan`). This
-phase writes actual code, in a worktree, and separately merges approved work.
+phase writes actual code, in a worktree, and hands the PR to Dolev. The merge, on his request,
+is `dev-ship`'s.
 
 ## Step 0: Orient
 
@@ -23,11 +24,10 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary and the rules every phase shares),
 `issue-body.md` (how to read the full context of an issue, the Plan format), `git-flow.md` (one
 issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`,
-`review-app.md` and `ux.md` (the user-experience check). Read them before step 1, every run;
-Part B also reads `after-merge.md`. Then the repo's **`CLAUDE.md`**: its working rules and its
-test commands.
+`review-app.md` and `ux.md` (the user-experience check). Read them before step 1, every run.
+Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
-## Part A: Execute
+## Execute
 
 1. Check the WIP gate before starting a **new** issue (repairs are exempt):
    ```bash
@@ -203,71 +203,34 @@ test commands.
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
     was not checked and why. The app's outcome from step 10 goes into that comment and into the
-    chat message, with one line on what to open in it.
+    chat message, with one line on what to open in it. Both end with the next step, in one
+    line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
+    `status:needs-repair` with a comment.
 
 12. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
     `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.
 
-## Gate: not a Claude action
+## After the hand-off: the merge is dev-ship's
 
-Dolev reviews the PR and, if it is good, sets `status:done` (or drags the card to Done). **That
-alone is not permission to merge.** He asks for the merge explicitly.
+The issue stays in `status:in-review` while Dolev reviews the PR. GitHub does not let him
+Approve a PR opened from his own account, so **the merge signal is his request in the chat**
+("תמזג את #N"), for that specific issue. On that request, run **`dev-ship`** on the issue: it
+finds the issue's open PR, checks the open questions, rebases, tests, waits for CI, merges,
+moves the issue to `status:done` and cleans up. This skill does not merge.
 
-## Part B: Merge
-
-Only on Dolev's explicit request for that specific issue.
-
-1. Find issues labelled `status:done` whose PR is still open.
-2. Check that the PR still merges cleanly:
-   ```bash
-   gh pr view <N> --json mergeable,mergeStateStatus
-   ```
-   Anything other than `MERGEABLE`: rebase onto `origin/<default>` in a worktree, push with
-   `--force-with-lease`, re-run the checks. If the rebase itself conflicts, stop and report.
-3. Run the checks (step 7 of Part A: the full run, suites at the same time). If they fail,
-   stop and do not merge.
-4. Check CI on the PR, waiting for a new run after a push (`gh pr checks <N> --watch
-   --fail-fast`). Anything other than all green: stop, report the failing job with a link, do
-   not merge. No checks reported at all: say so, and rely on step 3.
-5. Squash-merge the PR. The issue closes through `Closes #<N>`. Check its open-questions
-   section first; an unticked box is Dolev's call, not yours. `gh pr merge` pops an approval
-   window for Dolev (an `ask` rule in `~/.claude/settings.json`): if he declines it, stop and
-   report; never merge another way (such as `gh api`).
-   ```bash
-   gh pr merge <N> --squash
-   ```
-   No `--subject` (a hook blocks it): GitHub titles the commit with the PR title plus `(#N)`,
-   once the repo's squash title setting is `PR_TITLE` (`dev-setup`, step 5). If the PR title
-   looks wrong, fix it first (`gh pr edit <N> --title "<title>"`) and tell Dolev. Never write
-   the subject by hand, and never add a task number (like `15ב.`) that the issue or PR title
-   does not already carry: a commit title on `<default>` cannot be fixed without rewriting
-   history.
-6. **Do not delete the remote branch.** The harness may block it; the repo's "Automatically
-   delete head branches" setting handles it.
-7. **Do delete the local branch**, which GitHub never touches. Stop its review app first, if
-   one runs (`reference/review-app.md`), then remove its worktree, then
-   delete it only if its tip is exactly the merged PR head (`git branch -d` always refuses after
-   a squash merge, so this check replaces it):
-   ```bash
-   MERGED=$(gh pr view <N> --json state,headRefOid --jq 'select(.state=="MERGED") | .headRefOid')
-   [ -n "$MERGED" ] && [ "$(git rev-parse <branch>)" = "$MERGED" ] && git branch -D <branch>
-   ```
-   Tips differ: leave the branch and say so in the summary.
-8. Offer a session for the next issue, as `reference/after-merge.md` says: the next issue by `dev-next`'s rule, an opening prompt of `תחקור את
-   #<N>` or `תקודד את #<N>`, and a fresh session unless all three conditions for a fork hold.
-   Never start that issue in this session.
+A fix he asks for instead goes the other way: he moves the issue to `status:needs-repair`, and
+the next run of this skill takes it as a repair round.
 
 ## Golden rules
 
-- Never merge without Dolev's explicit go-ahead on that specific issue, whatever the label says.
-- A merge commit's title is the PR title: never pass `--subject`, never invent a task number.
+- Never merge here; the merge is `dev-ship`'s, on Dolev's explicit request for that issue.
 - Never switch branches in the shared working copy; code is written in a worktree.
 - Never start an issue without reading its sub-issues.
 - If an issue lacks context, do not guess: comment with the question, move it to
   `status:plan-questions` (Dolev's turn; his answer sends it back to `status:explore` for a
   plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
-  `needs-repair`), except a merge Dolev asked for.
+  `needs-repair`).
 - One issue per run, and never a new one while three or more sit in `status:in-review` unless
   Dolev said yes to that.
 - Never start an issue that has an open "Blocked by" link.

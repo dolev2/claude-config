@@ -1,12 +1,12 @@
 ---
 name: dev-ship
-description: Ships a finished branch in the current repo end to end — commits outstanding work, rebases onto the default branch, runs the test suite, opens a PR, waits for CI, squash-merges it, moves the linked issue to status:done so the board lands it in Done, and cleans up the branch. Use in any of Dolev's repos whenever he asks to ship, merge and clean up, finish or close out a branch ("תשחרר", "תמזג ותנקה", "ship it"). Works with or without the pipeline labels (without them it skips the issue step). Prefer this over the generic pr-ship skill; if the repo has its own repo-specific ship skill, use that instead.
+description: Ships a finished branch in the current repo end to end — commits outstanding work, rebases onto the default branch, runs the test suite, opens a PR, waits for CI, squash-merges it, moves the linked issue to status:done so the board lands it in Done, and cleans up the branch. This is the pipeline's only merge path: an issue in status:in-review merges when Dolev asks for it in the chat ("תמזג את #12"). Use in any of Dolev's repos whenever he asks to ship, merge and clean up, finish or close out a branch, or to merge a specific issue ("תשחרר", "תמזג ותנקה", "תמזג את #N", "ship it"). Works with or without the pipeline labels (without them it skips the issue step). Prefer this over the generic pr-ship skill; if the repo has its own repo-specific ship skill, use that instead.
 ---
 
 # Ship a branch
 
 Runs the whole tail of a change in one go: rebase onto the default branch → tests → PR → CI
-→ squash-merge → issue to `status:done` → cleanup. None of these happen if an earlier one
+→ open questions → squash-merge → issue to `status:done` → cleanup. None of these happen if an earlier one
 fails. Do not skip or reorder the steps, and stop the moment one of them fails.
 
 ## Step 0: Orient
@@ -22,15 +22,34 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md`, `git-flow.md` and `review-app.md`
 (step 7 stops the branch's review app, if one runs). If the pipeline is installed, also
-`pipeline.md` (the label vocabulary and the exclusivity rule) and `issue-body.md` (the
-open-questions section), which step 6 depends on, and `after-merge.md` (step 8).
+`pipeline.md` (the label vocabulary and the exclusivity rule), which step 6 depends on,
+`issue-body.md` (the open-questions section, step 4c), and `after-merge.md` (step 8).
 
 ## Relationship to dev-code
 
-`dev-code` Part B is the **review-first** merge path: Dolev already reviewed the PR and set
-`status:done`, and the merge happens on his explicit request for that issue. This skill is the
-**ship-what-is-in-front-of-me** path: asking for it *is* the go-ahead, so no second
-confirmation is needed. Still, never ship an issue Dolev has not asked about.
+This skill is the **only merge path**. `dev-code` opens the PR and leaves the issue in
+`status:in-review`; Dolev reviews it and asks for the merge in the chat ("תמזג את #N"). That
+request *is* the go-ahead (GitHub does not let him Approve a PR opened from his own account),
+so no second confirmation is needed. Still, never ship an issue Dolev has not asked about.
+`status:done` is set here, after the merge, and means "merged", never "approved".
+
+## Step 0b: Entry from an issue (pipeline repos only)
+
+When Dolev names an issue rather than a branch:
+
+1. Find its open PR: the PRs that close it (`Closes #<I>`), of which the open one.
+   ```bash
+   for P in $(gh issue view <I> --json closedByPullRequestsReferences \
+                --jq '.closedByPullRequestsReferences[].number'); do
+     gh pr view "$P" --json number,state,headRefName --jq 'select(.state=="OPEN")'
+   done
+   ```
+   None: say so and stop; there is nothing to merge. More than one: list them and ask which.
+   The issue is normally in `status:in-review`; another status is not a reason to stop, since
+   Dolev asked by name, but say so in the summary.
+2. Work on the PR's branch (`headRefName`) in a worktree, never by switching branches in the
+   shared working copy. The worktree `dev-code` left for that issue is the one to use: it
+   holds the review app (`git worktree list` shows it). Then go on to step 1.
 
 ## Step 1: Sanity checks
 
@@ -106,6 +125,20 @@ a free plan has no branch protection, so a red PR still has a working merge butt
 is the only thing between a red run and `<default>`. If the repo reports no checks at all,
 say so and continue on the strength of step 3.
 
+## Step 4c: Open questions (pipeline repos only)
+
+Skip this step when `ready` was `False`. It runs on every pipeline merge, whether Dolev named
+the issue or the branch:
+
+```bash
+gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
+```
+
+For each issue, read its "שאלות פתוחות" section (`issue-body.md`). A box still unticked: list
+it and ask Dolev whether to merge anyway; stop until he answers. Do not tick boxes on his
+behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
+this is the last look before the merge.
+
 ## Step 5: Squash-merge
 
 First confirm it still merges cleanly:
@@ -139,9 +172,9 @@ deleting branches by hand.
 
 Skip this step when `ready` was `False`.
 
-Not cosmetic: `sync_project.py` skips any **closed** issue that does not carry `status:done`,
-treating it as "closed as not-planned". An issue merged while still on `status:in-review`
-drops off the board silently.
+Every merged issue comes from `status:in-review`, and `status:done` is what says "merged".
+The sync adds it too once the issue closes as completed, but only on its next run; setting it
+here makes the board right at once.
 
 ```bash
 gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
@@ -156,11 +189,10 @@ CUR=$(gh issue view <I> --json labels \
 gh issue edit <I> --add-label "status:done" $CUR
 ```
 
-Before setting the label, check the issue's "שאלות פתוחות" section. If a box is still
-unticked, say so and ask Dolev whether to go ahead. Do not tick boxes on his behalf.
-
-If the issue already carries `status:done` (the `dev-code` path), the
-command is a no-op and that is correct; verify rather than assume.
+The open questions were checked before the merge (step 4c); a box ticked or not, the issue is
+merged now, and `status:done` says exactly that. If the issue already carries `status:done`
+(the sync got there first, after the issue closed), the command is a no-op and that is
+correct; verify rather than assume.
 
 ## Step 7: Clean up locally
 

@@ -192,12 +192,12 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <line x1="602" y1="151" x2="646" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="650" y="120" width="160" height="62" rx="8" class="n-human"/>
       <text x="730" y="146" text-anchor="middle" class="m">in-review</text>
-      <text x="730" y="166" text-anchor="middle" class="s">דולב סוקר את השינוי</text>
+      <text x="730" y="166" text-anchor="middle" class="s">דולב סוקר, ומבקש מיזוג</text>
 
       <line x1="812" y1="151" x2="856" y2="151" class="edge" marker-end="url(#ah)"/>
-      <rect x="860" y="120" width="160" height="62" rx="8" class="n-human"/>
+      <rect x="860" y="120" width="160" height="62" rx="8" class="n-claude"/>
       <text x="940" y="146" text-anchor="middle" class="m">done</text>
-      <text x="940" y="166" text-anchor="middle" class="s">מוכן, ממתין לבקשת מיזוג</text>
+      <text x="940" y="166" text-anchor="middle" class="s">מוזג</text>
 
       <line x1="1022" y1="151" x2="1066" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="1070" y="120" width="100" height="62" rx="8" class="n-auto"/>
@@ -213,8 +213,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="758" y="212" text-anchor="start" class="s">נדרש תיקון</text>
       <text x="702" y="212" text-anchor="end" class="s">תוקן</text>
 
-      <!-- open-questions gate on done -->
-      <line x1="940" y1="184" x2="940" y2="226" class="edge-gate" marker-end="url(#ah)"/>
+      <!-- open-questions gate on in-review -->
+      <line x1="800" y1="184" x2="880" y2="226" class="edge-gate" marker-end="url(#ah)"/>
       <rect x="850" y="230" width="180" height="62" rx="8" class="n-gate"/>
       <text x="940" y="256" text-anchor="middle" class="m">open-questions-gate</text>
       <text x="940" y="276" text-anchor="middle" class="s">תיבה לא מסומנת? מתריע</text>
@@ -224,8 +224,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="205" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-plan</text>
       <path d="M440 196 V204 H600 V196" class="bracket"/>
       <text x="520" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-code</text>
-      <path d="M1070 196 V204 H1170 V196" class="bracket"/>
-      <text x="1120" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-ship</text>
+      <path d="M860 196 V204 H1170 V196" class="bracket"/>
+      <text x="1100" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-ship</text>
     </svg>
   </div>
 </section>
@@ -384,7 +384,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <li><span class="num">6</span><div><b>עדכון מול main, לפני הבדיקות</b>הפעם מורידים את main, לא את ה-branch של ה-issue:<br><code>git fetch origin main</code><br><code>git rebase origin/main</code><br>ה-commits נבנים מחדש על main העדכני, עם מזהה חדש.<br>התנגשות: <code>git rebase --abort</code>, תגובה ב-issue, ואין PR.</div></li>
     <li><span class="num">7</span><div><b>בדיקה מלאה, push ראשון ו-PR</b>lint ואז כל החבילות, פעם אחת, במקביל.<br>push רגיל מספיק: ב-GitHub עוד אין commits לדרוס.<br><code>gh pr create</code> עם <code>Closes #42</code>, ואז CI, סוכן סקירה ואפליקציית סקירה, ובה בדיקת חוויית משתמש.<br><code>Closes #42</code> רק מקשר את ה-PR ל-issue. ה-issue נסגר לבד רק כשה-PR ממוזג, בשלב 9.</div></li>
     <li><span class="num">8</span><div><b>סבב תיקון, אם צריך</b>באותו worktree, ושוב rebase.<br>ה-rebase בנה מחדש commits שכבר ב-GitHub, ולכן צריך כוח:<br><code>git push --force-with-lease</code><br>הוא מסרב אם מישהו אחר דחף בינתיים, למשל עריכה בממשק של GitHub.</div></li>
-    <li><span class="num">9</span><div><b>squash merge, רק בבקשה מפורשת</b><code>gh pr checks --watch --fail-fast</code><br><code>gh pr merge --squash</code><br>חלון אישור קופץ לפני כל merge.<br>ה-branch ב-GitHub נמחק לבד, בהגדרה Automatically delete head branches של הריפו.</div></li>
+    <li><span class="num">9</span><div><b>squash merge, רק כשדולב מבקש בצ'אט</b><code>gh pr checks --watch --fail-fast</code><br><code>gh pr merge --squash</code><br>חלון אישור קופץ לפני כל merge.<br>ה-branch ב-GitHub נמחק לבד, בהגדרה Automatically delete head branches של הריפו.</div></li>
     <li><span class="num">10</span><div><b>ניקוי במחשב</b>עוצרים את אפליקציית הסקירה, ואז <code>git worktree remove</code>.<br>מוחקים את ה-branch המקומי, ו-<code>git pull --ff-only</code> ב-main.</div></li>
   </ol>
 </section>
@@ -497,31 +497,31 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <p>נדרש תיקון:</p>
         <div class="flowline"><span class="label c">needs-repair</span></div>
-        <p>תקין:</p>
-        <div class="flowline"><span class="label c">done</span></div>
+        <p>תקין: נשאר ב-<code>in-review</code>, ודולב מבקש בצ'אט "תמזג את #N".</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p>דולב בודק את ה-PR ואת האפליקציה שרצה מה-worktree.</p>
         <p>תיקון חוזר ל-dev-code, ופטור משער ה-3.</p>
+        <p>אין Approve: GitHub לא מאפשר אותו ל-PR שנפתח מהחשבון של דולב. הבקשה בצ'אט היא האישור.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>תיקון נכתב באותו worktree.</p>
         <p>rebase, ואז <code>git push --force-with-lease</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> <code>open-questions-gate.yml</code> רץ על <code>status:done</code>. שאלה לא מסומנת: תגובה, תווית <code>has-open-questions</code>, ומייל.</div>
+    <div class="gate-row"><strong>שער:</strong> <code>open-questions-gate.yml</code> רץ במעבר ל-<code>status:in-review</code>, לפני המיזוג. שאלה לא מסומנת: תגובה, תווית <code>has-open-questions</code>, ומייל.</div>
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 7</span><h3>מיזוג וסגירה</h3><span class="who claude">Claude, בבקשה מפורשת</span></div>
+    <div class="stage-head"><span class="idx">שלב 7</span><h3>מיזוג וסגירה</h3><span class="who claude">Claude, כשדולב מבקש</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
-        <p>ה-issue נסגר לבד, דרך <code>Closes #N</code>.</p>
-        <p>הכרטיס נוחת ב-Done בלוח.</p>
+        <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label c">done</span></div>
+        <p><code>done</code> אומר רק "מוזג". ה-issue נסגר לבד, דרך <code>Closes #N</code>, והכרטיס נוחת ב-Done.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
-        <p><b class="mono">dev-ship</b>, או <b class="mono">dev-code</b> Part B.</p>
-        <ul><li>התווית <code>done</code> לבדה אינה אישור.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li></ul>
+        <p><b class="mono">dev-ship</b>: הדרך היחידה למיזוג.</p>
+        <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>לא MERGEABLE: rebase, push, בדיקות מחדש.</p>

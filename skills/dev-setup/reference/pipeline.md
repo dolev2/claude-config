@@ -69,8 +69,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 | `status:waiting-approval` | התוכנית מוכנה, ממתינה לאישור | דולב | דולב |
 | `status:ready-to-execute` | מאושר לביצוע | Claude | Claude (Execute) |
 | `status:needs-repair` | חזר לתיקון אחרי בדיקה | Claude | Claude (Execute) |
-| `status:in-review` | Claude סיים, PR פתוח | דולב | דולב |
-| `status:done` | אושר, מוכן ל-merge | דולב: בקשת מיזוג מפורשת | Claude (Merge, רק בבקשה) |
+| `status:in-review` | Claude סיים, PR פתוח. דולב סוקר, ומבקש מיזוג בצ'אט | דולב | דולב: תיקון (`needs-repair`), או בקשת מיזוג שמפעילה את `dev-ship` |
+| `status:done` | מוזג | — | `dev-ship` אחרי המיזוג, או הסנכרון כש-issue נסגר כהושלם |
 | `status:backlog` | רעיון, לא בצינור | דולב | דולב |
 | `area:*` | אזור, לפי מה שקיים ב-repo | — | Claude ממלא אם חסר |
 | `bug` / `task` | סוג | — | — |
@@ -120,7 +120,9 @@ gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:e
 ## הכללים שלא משתנים
 
 - לא לנחש על issue לא ברור. לשאול בתגובה ולהעביר ל-`status:plan-questions`.
-- לא לבצע merge בלי בקשה מפורשת של דולב על ה-issue הספציפי, גם כשהתווית `status:done`.
+- **אות המיזוג הוא בקשה אחת של דולב בצ'אט** ("תמזג את #N"), על ה-issue הספציפי. לא תווית ולא
+  Approve: GitHub לא מאפשר Approve ל-PR שנפתח מהחשבון של דולב, וה-PRים של Claude נפתחים ממנו.
+  הבקשה מפעילה את `dev-ship`. חלון האישור של `gh pr merge` נשאר כרשת ביטחון, לא כאישור שני.
 - לא לגעת ב-issue שהסטטוס שלו לא בתור של Claude (`explore`, `ready-to-execute`, `needs-repair`),
-  אלא אם דולב ביקש במפורש (למשל merge של `status:done`).
+  אלא אם דולב ביקש במפורש (למשל מיזוג של issue ב-`status:in-review`).
 - לא להמציא נתונים עסקיים. מה שחסר הוא שאלה פתוחה, לא טקסט.
