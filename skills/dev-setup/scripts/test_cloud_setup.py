@@ -136,6 +136,13 @@ def test_second_run_updates_to_the_new_main(remote, tmp_path):
     assert claude_md(home) == "CLAUDE.md v2\n"
 
 
+def test_unreachable_repo_warns_and_never_fails(tmp_path):
+    result = run_setup(tmp_path / "missing.git", tmp_path / "home")
+
+    assert result.returncode == 0
+    assert "was not installed" in result.stderr
+
+
 def test_stops_on_uncommitted_changes_and_keeps_them(remote, tmp_path):
     home = tmp_path / "home"
     assert run_setup(remote, home).returncode == 0
@@ -145,7 +152,7 @@ def test_stops_on_uncommitted_changes_and_keeps_them(remote, tmp_path):
 
     result = run_setup(remote, home)
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "uncommitted changes" in result.stderr
     assert edited.read_text(encoding="utf-8") == "edited in a session\n"
     assert claude_md(home) == "CLAUDE.md v1\n"

@@ -31,22 +31,27 @@
 הסקריפט הופך את `~/.claude` של ה-container לעותק של `main`, בדיוק כמו במחשב.
 הקבצים של השירות שכבר שם (`launcher-settings.json`, `plugins/`, `skills/synced/`) נשארים: ה-`.gitignore` מתעלם מהם, ו-`checkout` לא נוגע בהם.
 הנתיבים `$HOME/.claude/...` בסקילים וב-hooks עובדים בלי שינוי, ו-`guard_main_folder.py` שומר על התיקייה גם בענן.
-כשיש ב-`~/.claude` שינויים שלא נשמרו, הוא עוצר ולא נוגע בהם.
+כשיש ב-`~/.claude` שינויים שלא נשמרו, הוא לא נוגע בהם.
+**הסקריפט אף פעם לא נכשל.** סקריפט התקנה שנכשל עוצר את כל הסשן (נבדק ב-5.11.2026), ולכן כשההתקנה לא מצליחה הוא רק כותב אזהרה, והסשן עולה בלי ההגדרות.
 
 <!-- setup-script: test_cloud_setup.py runs this block as is -->
 ```bash
-set -e
 REPO=https://github.com/dolev2/claude-config
-mkdir -p ~/.claude
-cd ~/.claude
-if [ -d .git ] && [ -n "$(git status --porcelain)" ]; then
-  echo "~/.claude has uncommitted changes: not updating it" >&2
-  exit 1
-fi
-git init -q
-git remote add origin "$REPO" 2>/dev/null || git remote set-url origin "$REPO"
-git fetch -q --depth 1 origin main
-git checkout -q -f -B main FETCH_HEAD
+# Never exits non-zero: a failing setup script stops the whole session (#132).
+(
+  set -e
+  export GIT_TERMINAL_PROMPT=0
+  mkdir -p ~/.claude
+  cd ~/.claude
+  if [ -d .git ] && [ -n "$(git status --porcelain)" ]; then
+    echo "~/.claude has uncommitted changes: not updating it" >&2
+    exit 1
+  fi
+  git init -q
+  git remote add origin "$REPO" 2>/dev/null || git remote set-url origin "$REPO"
+  git fetch -q --depth 1 origin main
+  git checkout -q -f -B main FETCH_HEAD
+) || echo "claude-config was not installed in ~/.claude" >&2
 ```
 
 **רק לסביבת ענן.** במחשב `~/.claude` כבר מותקן, ולא מריצים את הסקריפט שם.
@@ -58,9 +63,8 @@ git checkout -q -f -B main FETCH_HEAD
 3. `git push --force` נחסם על ידי `block_force_push.py`.
 
 ### כשההתקנה נכשלת
-הסשן עולה בכל זאת, ושירות הענן מודיע ל-Claude שהסקריפט נכשל ובאיזה קוד יציאה.
-Claude אומר לדולב בשורה אחת מה נכשל, וממשיך בלי הסקילים.
-- **אין גישה לריפו** (`fetch` נכשל): `dolev2/claude-config` חסר ברשימת ה-Repositories של הסביבה, או שהסשן נפתח בסביבה אחרת.
+הסשן עולה בכל זאת, בלי ההגדרות: אין `dev-*` ברשימת הסקילים, והתשובות לא במבנה של `CLAUDE.md`.
+- **אין גישה לריפו** (`could not read Username`): לסשן אין הרשאה ל-`dolev2/claude-config`. נבדק ב-5.11.2026: סשן על ריפו של פרויקט לא מקבל גישה לריפו פרטי אחר, גם כשהוא ברשימת ה-Repositories של הסביבה.
 - **שינויים שלא נשמרו ב-`~/.claude`**: מישהו ערך שם קובץ בסשן קודם באותו container. מסתכלים על `git -C ~/.claude status`, ולא מוחקים בלי לבדוק.
 
 ## מה עוד שונה בסשן ענן
