@@ -157,7 +157,7 @@ def add_item(project_id: str, repo: str, number: int, issue: dict) -> dict:
 
 
 def find_item(repo: str, number: int, issue_number: int) -> dict | None:
-    """The item of one issue on board number, with its values; None when it is not on."""
+    """The item of one issue on board number, with its values; None when not on it."""
     repo_owner, repo_name = repo.split("/", 1)
     data = gh_api.graphql(
         ONE_ISSUE_ITEMS, owner=repo_owner, repo=repo_name, issue=issue_number
