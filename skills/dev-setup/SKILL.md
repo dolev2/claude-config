@@ -319,8 +319,8 @@ Also make sure it has a tests section with the exact commands, the lint commands
 **The file guide check.** Every repo, code or not, keeps a copy of
 `templates/file_guide_check.py` at `.github/file_guide_check.py`, for the same reasons as the
 lint settings (`reference/setup.md`). It fails when a file is missing from the guide, or the
-guide names one that is gone; it reads only the guide's tables (the template's docstring says
-how). To install it:
+guide names one that is gone or names one twice; it reads only the guide's tables (the
+template's docstring says how). To install it:
 
 1. Copy the template. Below its `# --- local ---` line, fill `COVERED_BY_PATTERN` with the
    groups the guide covers by a sentence (`backend/tests/test_*.py`, `public/*`).
@@ -329,6 +329,10 @@ how). To install it:
 3. Add the command to the tests section of `CLAUDE.md`, and the template's `files` job to
    `tests.yml`. The copy gets a row in the file guide. A repo with no other Python (a static
    site) gets the `files` job only, without ruff: `lint` does not count the copy as Python.
+4. Add `README.md merge=union` to `.gitattributes` (claude-config #121). Most PRs add a row
+   to the guide, and two of them racing would stop on a rebase conflict; union keeps both
+   rows. When both sides edited the same row it keeps both versions, and the check's "twice"
+   catches that. Only `README.md`: union on prose would keep two versions silently.
 
 `differs .github/file_guide_check.py` is handled like a lint copy that differs: the diff above
 the line, replaced only on Dolev's yes.
