@@ -34,6 +34,7 @@
 | `code-python.md` | נהלי Python: שלוש שכבות, סגנון, pytest | רק כשעובדים על קבצי Python (`paths`) |
 | `code-react.md` | נהלי React, ובדיקות ב-Testing Library | רק כשעובדים על קבצי React (`paths`) |
 | `git.md` | נהלי git: מאיפה חותכים branch, rebase ואז בדיקות, התנגשות, worktree | תמיד |
+| `erd.md` | נוהל ה-ERD: איפה התרשים גר, בלוק הנתונים, הבדיקה מול המודלים, ומה מוצג בו (#118) | תמיד, כי הוא חל כבר בתכנון של שינוי סכמה |
 | `env-windows.md` | נהלי הסביבה במחשב של דולב: Windows, קידוד עברית, כלים זמינים, ומה חייב לעבוד גם מחוץ ל-Windows | תמיד |
 
 ### `skills/`: הסקילים של צינור העבודה
@@ -83,6 +84,8 @@
 | `templates/eslint.config.js` | הגדרות eslint ל-React ב-JavaScript, לפי נהלי הקוד | כל ריפו עם React מקבל עותק |
 | `templates/README.md` | שלד של מדריך קבצים | `dev-setup` יוצר ממנו מדריך בריפו שאין לו |
 | `templates/file_guide_check.py` | הבדיקה שמדריך הקבצים שלם: קובץ שלא מופיע בו, או שורה על קובץ שלא קיים. קוראת רק את טבלאות המדריך | כל ריפו מקבל עותק ב-`.github/`, עם חריגים משלו, ומריץ אותו ב-CI (#89) |
+| `templates/erd.html` | עמוד ERD כללי: הקוד שמצייר קורא הכל מבלוק `erd-data`, עם דוגמה של שתי טבלאות | ריפו עם מסד מעתיק אותו ל-`docs/erd.html` בשינוי הסכמה הראשון (`rules/erd.md`) |
+| `templates/test_erd.py` | הבדיקה שמשווה את בלוק ה-ERD למודלים של SQLAlchemy, בלי מסד | מועתק לצד העמוד, כדי שהתרשים לא יתיישן בשקט |
 | `templates/netlify.toml` | כלל הדילוג של Netlify, בשתי צורות: אתר בתיקייה משלו ואתר בשורש | כל deploy עולה קרדיטים, ובלי הכלל כל מיזוג של הצינור הוא deploy (#50) |
 
 טפסי ה-issues לא כאן: הם בריפו הציבורי [dolev2/.github](https://github.com/dolev2/.github).
