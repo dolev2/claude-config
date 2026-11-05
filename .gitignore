@@ -9,6 +9,9 @@
 !/CLAUDE.md
 !/.github/
 !/skills/
+# What a cloud session's service puts inside skills/ (claude-config#132).
+/skills/synced/
+/skills/session-start-hook/
 !/rules/
 !/settings.json
 !/hooks/

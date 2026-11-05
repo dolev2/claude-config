@@ -59,6 +59,7 @@
 | `reference/ux.md` | רשימת הבדיקה של חוויית משתמש: הסעיף בתוכנית, והמעבר על הפיצ'ר בדפדפן לפני המסירה | `dev-plan`, `dev-code` |
 | `reference/after-merge.md` | ההצעה לסשן של המשימה הבאה אחרי מיזוג | `dev-ship` |
 | `reference/setup.md` | מה ש-`dev-setup` מתקין ולמה: הסנכרון עם הלוח, הטפסים, השער, Netlify, lint | `dev-setup` בלבד, כדי ששאר הסקילים לא יקראו אותו |
+| `reference/cloud.md` | עבודה מסשן ענן ומהטלפון: Remote Control, הגדרת סביבת הענן וסקריפט ההתקנה שלה, ומה שונה בענן | בסשן ענן `~/.claude` שייך לשירות, ובלי ההתקנה לא נטען שם כלום מהריפו הזה (#132). `test_cloud_setup.py` מריץ את הסקריפט כמו שהוא |
 | `reference/diagram.md` | תרשים ה-Mermaid של הצינור, וכלל העריכה שלו | לבני אדם; אף סקיל לא קורא אותו בזמן ריצה |
 | `reference/issue-lifecycle.html` | העמוד "חייו של issue": מפת התוויות, ציר git, טבלת שלבים וכללי git, לבני אדם. מפורסם כ-Artifact | הסקילים קוראים את `reference/*.md`. העמוד הוא התצוגה, ומתעדכן באותו PR (`.claude/CLAUDE.md`) |
 | `reference/issue-lifecycle-en.html` | אותו עמוד באנגלית ("Life of an Issue"), מפורסם כ-Artifact נפרד | מי שלא קורא עברית. כל שינוי באחת הגרסאות משתקף בשנייה באותו PR (`.claude/CLAUDE.md`) |
