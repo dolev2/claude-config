@@ -1,18 +1,19 @@
-"""The rules of the board sync: which issues take part, and which side wins.
+"""The rules of the board sync: which issues take part, and what is written where.
 
-Conflict resolution
--------------------
-On each run three states are compared: the issue body's marker (marker.py), its labels,
-and its board item. Whichever of labels or project differs from the marker is the side
-that changed and therefore wins; if both changed, the project wins, because that edit
-was a deliberate human drag while a label may have been set by an earlier automated
-step. A board item with no Status/Area at all always takes the labels, even when
-they match the marker. The winner is then written to the other side and the marker is
-rewritten.
+One way, from the labels to the board
+-------------------------------------
+The labels are the source of truth and the board only mirrors them (claude-config
+#106, #111). Every dimension the labels carry is written to the board when the board
+shows something else, so a card dragged by hand goes back on the next sync. A
+dimension with no label is left as the board has it. There is no hidden marker and no
+rule for choosing a side: nothing is compared but the labels and the board.
+
+The one exception: an issue with no status:* label at all, which was opened from the
+board past the issue form, takes its labels from its card once (WayOut #98,
+claude-config #55). From then on its labels rule like any other's.
 
 There is no owner dimension: the status alone says whose turn it is
-(claude-config #110). A marker written before that still carries `owner=`;
-choose_winner ignores it.
+(claude-config #110).
 
 Nothing here talks to GitHub: every function takes and returns plain values.
 """
@@ -57,7 +58,7 @@ def doubled_dimensions(labels: list[str]) -> list[str]:
     """The dimensions an issue carries more than one label of, e.g. two status:* labels.
 
     Which one is meant cannot be told, and either guess would be written to the board
-    and into the marker as if it were the truth (OSEA, 2026-10-24).
+    as if it were the truth (OSEA, 2026-10-24).
     """
     return [
         key
@@ -93,31 +94,37 @@ def project_state(values: dict[str, str]) -> dict[str, str]:
     return state
 
 
-def choose_winner(
-    marker: dict[str, str],
-    from_labels: dict[str, str],
-    from_project: dict[str, str],
-) -> tuple[dict[str, str] | None, str | None]:
-    """(state, source) for the side that changed, or (None, None) if in agreement.
+def board_changes(
+    from_labels: dict[str, str], from_project: dict[str, str]
+) -> dict[str, str]:
+    """The dimensions whose label the board does not show yet, with the label's value.
 
-    A blank board with a marker that matches the labels means the fields were never
-    written (e.g. an issue created with the marker already in its body). Without the
-    second check such an item would stay blank on the board forever.
-
-    Keys outside DIMENSIONS (an old `owner=`) are dropped from the marker first, or
-    every issue would look changed on both sides and the board would win over a fresh
-    label.
+    A dimension with no label is not in the result, so the board keeps its value.
     """
-    marker = {k: v for k, v in marker.items() if k in {key for key, _, _ in DIMENSIONS}}
-    if from_project and from_project != marker:
-        return from_project, "project"
-    if from_labels != marker or (from_labels and not from_project):
-        return from_labels, "labels"
-    return None, None
+    return {
+        key: value
+        for key, value in from_labels.items()
+        if from_project.get(key) != value
+    }
 
 
-def label_edit_args(labels: list[str], winner: dict[str, str]) -> list[str]:
-    """The `gh issue edit` flags that turn labels into the winner's state.
+def labels_from_board(
+    labels: list[str], from_project: dict[str, str]
+) -> dict[str, str]:
+    """The state an issue with no status:* label takes from its card; empty otherwise.
+
+    Only a card that shows a status counts. A label the issue already carries (an
+    area, say) is kept over the card's value.
+    """
+    if any(label.startswith("status:") for label in labels):
+        return {}
+    if "status" not in from_project:
+        return {}
+    return {**from_project, **labels_state(labels)}
+
+
+def label_edit_args(labels: list[str], state: dict[str, str]) -> list[str]:
+    """The `gh issue edit` flags that turn labels into state.
 
     Labels outside the dimensions (task, bug, process, ...) are kept.
     """
@@ -126,7 +133,7 @@ def label_edit_args(labels: list[str], winner: dict[str, str]) -> list[str]:
         for label in labels
         if not any(label.startswith(k + ":") for k, _, _ in DIMENSIONS)
     ]
-    desired = keep + [f"{k}:{v}" for k, v in winner.items()]
+    desired = keep + [f"{k}:{v}" for k, v in state.items()]
     args = []
     for label in desired:
         if label not in labels:

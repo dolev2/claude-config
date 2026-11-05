@@ -30,12 +30,8 @@ query($owner:String!, $number:Int!) {
 }
 """
 
-ISSUE_ITEMS = """
-query($owner:String!, $repo:String!, $after:String) {
-  repository(owner:$owner, name:$repo) {
-    issues(first:100, after:$after, states:[OPEN, CLOSED]) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
+# The board items of one issue and their single-select values, in both queries below.
+ITEM_FIELDS = """
         number
         projectItems(first:10) {
           nodes {
@@ -51,11 +47,38 @@ query($owner:String!, $repo:String!, $after:String) {
             }
           }
         }
-      }
+"""
+
+ISSUE_ITEMS = (
+    """
+query($owner:String!, $repo:String!, $after:String) {
+  repository(owner:$owner, name:$repo) {
+    issues(first:100, after:$after, states:[OPEN, CLOSED]) {
+      pageInfo { hasNextPage endCursor }
+      nodes {"""
+    + ITEM_FIELDS
+    + """      }
     }
   }
 }
 """
+)
+
+ONE_ISSUE_ITEMS = (
+    """
+query($owner:String!, $repo:String!, $issue:Int!) {
+  repository(owner:$owner, name:$repo) {
+    issue(number:$issue) {"""
+    + ITEM_FIELDS
+    + """    }
+  }
+}
+"""
+)
+
+# What GitHub answers when the issue is on the board already (claude-config #101): a
+# parallel run added it, or the read at the start of the run did not show it yet.
+ALREADY_ON_BOARD = "Content already exists in this project"
 
 ADD_ITEM = """
 mutation($project:ID!, $content:ID!) {
@@ -73,6 +96,19 @@ mutation($project:ID!, $item:ID!, $field:ID!, $option:String!) {
 """
 
 
+def board_item(issue: dict, number: int) -> dict | None:
+    """{"id": item id, "values": {field name: option}} of the issue on board number."""
+    for it in issue["projectItems"]["nodes"]:
+        if (it.get("project") or {}).get("number") != number:
+            continue
+        vals = {}
+        for fv in it["fieldValues"]["nodes"]:
+            if fv and fv.get("field"):
+                vals[fv["field"]["name"]] = fv.get("name")
+        return {"id": it["id"], "values": vals}
+    return None
+
+
 def load_items(repo: str, number: int) -> dict[int, dict]:
     """{issue number: {"id": item id, "values": {field name: option}}} on the board."""
     repo_owner, repo_name = repo.split("/", 1)
@@ -84,14 +120,9 @@ def load_items(repo: str, number: int) -> dict[int, dict]:
             kw["after"] = after
         page = gh_api.graphql(ISSUE_ITEMS, **kw)["data"]["repository"]["issues"]
         for issue in page["nodes"]:
-            for it in issue["projectItems"]["nodes"]:
-                if (it.get("project") or {}).get("number") != number:
-                    continue
-                vals = {}
-                for fv in it["fieldValues"]["nodes"]:
-                    if fv and fv.get("field"):
-                        vals[fv["field"]["name"]] = fv.get("name")
-                by_issue[issue["number"]] = {"id": it["id"], "values": vals}
+            item = board_item(issue, number)
+            if item:
+                by_issue[issue["number"]] = item
         if not page["pageInfo"]["hasNextPage"]:
             break
         after = page["pageInfo"]["endCursor"]
@@ -107,10 +138,32 @@ def load_project(owner: str, repo: str, number: int) -> tuple[str, dict, dict, l
     return data["id"], fields, load_items(repo, number), data["views"]["nodes"]
 
 
-def add_item(project_id: str, content_id: str) -> dict:
-    """Add an issue to the board; return its new, empty item."""
-    res = gh_api.graphql(ADD_ITEM, project=project_id, content=content_id)
-    return {"id": res["data"]["addProjectV2ItemById"]["item"]["id"], "values": {}}
+def add_item(project_id: str, repo: str, number: int, issue: dict) -> tuple[dict, bool]:
+    """Put the issue on board number; return (its item, whether it was added now).
+
+    An issue already on the board is not a failure (claude-config #101): its item is
+    read back, with its values, and the sync goes on with it.
+    """
+    try:
+        res = gh_api.graphql(ADD_ITEM, project=project_id, content=issue["id"])
+    except RuntimeError as e:
+        if ALREADY_ON_BOARD not in str(e):
+            raise
+        item = find_item(repo, number, issue["number"])
+        if item is None:
+            raise
+        return item, False
+    item_id = res["data"]["addProjectV2ItemById"]["item"]["id"]
+    return {"id": item_id, "values": {}}, True
+
+
+def find_item(repo: str, number: int, issue_number: int) -> dict | None:
+    """The item of one issue on board number, with its values; None when not on it."""
+    repo_owner, repo_name = repo.split("/", 1)
+    data = gh_api.graphql(
+        ONE_ISSUE_ITEMS, owner=repo_owner, repo=repo_name, issue=issue_number
+    )
+    return board_item(data["data"]["repository"]["issue"], number)
 
 
 def set_field(project_id: str, item_id: str, field: dict, option_name: str) -> bool:

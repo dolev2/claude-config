@@ -8,7 +8,7 @@
 
 | קובץ | מה בו |
 |---|---|
-| `issue-body.md` | קריאת כל ההקשר של issue, פורמט ה-Plan, עריכת הגוף והסמן המוסתר, סעיף השאלות הפתוחות |
+| `issue-body.md` | קריאת כל ההקשר של issue, פורמט ה-Plan, עריכת הגוף, סעיף השאלות הפתוחות |
 | `dependencies.md` | קישורי Blocked by, פיצול ואיחוד, הדירוג בספרינט, בדיקת הסדר |
 | `git-flow.md` | כמה issues בריצה, עותק העבודה בכל שלב, branch ו-PR, rebase ו-CI לפני merge |
 | `tests.md` | אילו בדיקות רצות, ומתי |
@@ -31,8 +31,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ```
 
 `pipeline_info.py` מדפיס את מה שנקרא מה-repo עצמו: `repo`, `default_branch` (בהמשך: `<default>`),
-`sync_marker` (מהמשתנה
-`SYNC_MARKER`), `project_number`, `current_sprint` (סעיף "ספרינטים" למטה), `area_labels`,
+`project_number`, `current_sprint` (סעיף "ספרינטים" למטה), `area_labels`,
 `issue_forms` (מאיפה נקראים הטפסים), `repo_skills`, ומה שחסר או שונה מהתבניות: `lint` (הגדרות
 ה-lint ובדיקת מדריך הקבצים), `netlify` (כלל הדילוג; `setup.md`).
 

@@ -1,23 +1,26 @@
-"""Two-way sync between issue labels and the repo's GitHub Project (v2) fields.
+"""One-way sync from issue labels to the repo's GitHub Project (v2) fields.
 
 Why this exists
 ---------------
 Claude reads and writes issue labels only (see reference/setup.md in the dev-setup
-skill); the Project board is the human view. This script keeps the two in agreement.
+skill); the Project board is the human view. This script writes the labels onto the
+board. Nothing on the board changes a label, with one exception for an issue opened
+from the board (sync_rules.py).
 
-Why it is a poll and not a webhook
-----------------------------------
+Why there is also a poll
+------------------------
 `projects_v2_item` webhooks are only delivered for organization-owned projects. This
-project belongs to a user account, so a field edit made by dragging a card on the board
-produces no event. The scheduled run is what notices it: sweep_all.py, run every 15
-minutes for every repo at once from the public dolev2/.github (claude-config #46).
+project belongs to a user account, so a card dragged on the board produces no event.
+The scheduled run puts it back in the column of its label: sweep_all.py, run every 15
+minutes for every repo at once from the public dolev2/.github (claude-config #46). The
+same run catches up on an issue event whose run failed.
 
 Where each part lives
 ---------------------
 This file is the entry point: settings, the loop over issues, and what is printed.
-The conflict rule (which side wins) is in sync_rules.py, the hidden marker in
-marker.py, the board reads and writes in board.py (and why the board is read from the
-issue side), the sprint view in sprint_view.py, and gh / GraphQL in gh_api.py. They
+The rules (what is written where) are in sync_rules.py, the board reads and writes in
+board.py (and why the board is read from the issue side), the sprint view in
+sprint_view.py, and gh / GraphQL in gh_api.py. They
 are flat modules next to this file, so every copy of it must ship the whole folder:
 action.yml runs it in place, and dolev2/.github's sync-boards.yml downloads every .py
 here (claude-config #57). A failure to move the sprint view is printed and the issue
@@ -36,20 +39,19 @@ One copy for every repo
 -----------------------
 This folder lives in dolev2/claude-config, skills/dev-setup/actions/project-sync, and
 every repo's sync-project.yml calls it (claude-config #3; the per-repo copies had
-drifted). So nothing repo-specific is written here: the marker name comes from
-SYNC_MARKER, the Area options are read from the board, and the one Status option whose
-name differs between boards is resolved against the board too (resolve_options).
+drifted). So nothing repo-specific is written here: the Area options are read from the
+board, and the one Status option whose name differs between boards is resolved against
+the board too (resolve_options). SYNC_MARKER, which repos installed before #111 still
+pass, is ignored.
 """
 
 import json
 import os
 import sys
-import tempfile
 from dataclasses import dataclass
 
 import board
 import gh_api
-import marker
 import sprint_view
 import sync_rules
 
@@ -61,7 +63,6 @@ class Settings:
     repo: str
     project_owner: str
     project_number: int
-    marker_name: str
     quiet: bool
     only_issue: str
 
@@ -77,7 +78,7 @@ class Board:
 
 
 def check_environment() -> None:
-    """Fail loudly on a missing token, project number or marker name.
+    """Fail loudly on a missing token or project number.
 
     `gh secret set` cannot tell an empty paste from a real one, so a secret that was
     never actually pasted still reports success and then arrives here as an empty
@@ -96,14 +97,6 @@ def check_environment() -> None:
             "PROJECT_NUMBER is empty. Set the repository variable:  "
             "gh variable set PROJECT_NUMBER --body 1"
         )
-    # There is no default marker name on purpose - a wrong default makes every issue
-    # look unsynced, and the stale board then wins over the labels.
-    if not os.environ.get("SYNC_MARKER", "").strip():
-        raise SystemExit(
-            "SYNC_MARKER is empty. "
-            "Set it to the marker name the issue bodies already carry\n"
-            "(e.g. crm-sync):  gh variable set SYNC_MARKER --body <name>"
-        )
 
 
 def load_settings() -> Settings:
@@ -113,7 +106,6 @@ def load_settings() -> Settings:
         repo=repo,
         project_owner=os.environ.get("PROJECT_OWNER") or repo.split("/", 1)[0],
         project_number=int(os.environ.get("PROJECT_NUMBER", "0").strip() or 0),
-        marker_name=os.environ.get("SYNC_MARKER", "").strip(),
         quiet=bool(os.environ.get("SYNC_QUIET", "").strip()),
         only_issue=os.environ.get("ISSUE_NUMBER", "").strip(),
     )
@@ -138,7 +130,7 @@ def load_issues(settings: Settings) -> list[dict]:
             "--limit",
             "500",
             "--json",
-            "number,body,labels,id,state,stateReason,milestone",
+            "number,labels,id,state,stateReason,milestone",
         )
     )
     if settings.only_issue:
@@ -146,36 +138,23 @@ def load_issues(settings: Settings) -> list[dict]:
     return issues
 
 
-def edit_body(repo: str, number: int, new_body: str) -> None:
-    """Replace the issue's body, through a file so line endings survive."""
-    f = tempfile.NamedTemporaryFile(
-        "w", suffix=".md", delete=False, encoding="utf-8", newline="\n"
-    )
-    f.write(new_body)
-    f.close()
-    try:
-        gh_api.gh("issue", "edit", str(number), "--repo", repo, "--body-file", f.name)
-    finally:
-        os.unlink(f.name)
-
-
 def apply_to_labels(
-    settings: Settings, num: int, labels: list[str], winner: dict[str, str]
+    settings: Settings, num: int, labels: list[str], state: dict[str, str]
 ) -> None:
-    """Rewrite the issue's status/area labels to the board's state."""
-    args = sync_rules.label_edit_args(labels, winner)
+    """Rewrite the issue's status/area labels to state, taken from its card."""
+    args = sync_rules.label_edit_args(labels, state)
     if args:
         gh_api.gh("issue", "edit", str(num), "--repo", settings.repo, *args)
-        report(settings, f"#{num} labels <- project: {winner}")
+        report(settings, f"#{num} labels <- project: {state}")
 
 
 def apply_to_board(
-    settings: Settings, project: Board, num: int, item: dict, winner: dict[str, str]
+    settings: Settings, project: Board, num: int, item: dict, changes: dict[str, str]
 ) -> None:
-    """Set the board item's Status/Area fields to the labels' state."""
+    """Set the board item's Status/Area fields to the labels' values in changes."""
     for key, field_name, options in sync_rules.DIMENSIONS:
-        suffix = winner.get(key)
-        if not suffix or item["values"].get(field_name) == options[suffix]:
+        suffix = changes.get(key)
+        if not suffix:
             continue
         field = project.fields.get(field_name)
         if field is None:
@@ -187,7 +166,7 @@ def apply_to_board(
                 settings,
                 f"  ! field {field['name']!r} has no option {option_name!r} - skipped",
             )
-    report(settings, f"#{num} project <- labels: {winner}")
+    report(settings, f"#{num} project <- labels: {changes}")
 
 
 def sync_issue(settings: Settings, project: Board, issue: dict) -> bool:
@@ -195,27 +174,24 @@ def sync_issue(settings: Settings, project: Board, issue: dict) -> bool:
     num = issue["number"]
     labels = [label["name"] for label in issue["labels"]]
     item = project.items.get(num)
-    is_new = item is None
-    if is_new:
-        item = board.add_item(project.project_id, issue["id"])
-        report(settings, f"#{num} added to the project")
+    is_new = False
+    if item is None:
+        item, is_new = board.add_item(
+            project.project_id, settings.repo, settings.project_number, issue
+        )
+        if is_new:
+            report(settings, f"#{num} added to the project")
 
-    winner, source = sync_rules.choose_winner(
-        marker.read_marker(issue["body"], settings.marker_name),
-        sync_rules.labels_state(labels),
-        sync_rules.project_state(item["values"]),
-    )
-    if source is None:
-        return is_new  # already in agreement
-    if source == "project":
-        apply_to_labels(settings, num, labels, winner)
-    else:
-        apply_to_board(settings, project, num, item, winner)
-
-    new_body = marker.write_marker(issue["body"], winner, settings.marker_name)
-    if new_body != (issue["body"] or ""):
-        edit_body(settings.repo, num, new_body)
-    return True
+    on_board = sync_rules.project_state(item["values"])
+    state = sync_rules.labels_state(labels)
+    adopted = sync_rules.labels_from_board(labels, on_board)
+    if adopted:
+        apply_to_labels(settings, num, labels, adopted)
+        state = adopted
+    changes = sync_rules.board_changes(state, on_board)
+    if changes:
+        apply_to_board(settings, project, num, item, changes)
+    return is_new or bool(adopted) or bool(changes)
 
 
 def close_out(settings: Settings, issue: dict) -> bool:
@@ -253,7 +229,7 @@ def takes_part(settings: Settings, project: Board, issue: dict) -> bool:
 
 
 def main() -> None:
-    """Sync every pipeline issue (or ISSUE_NUMBER alone) between labels and board."""
+    """Write the labels of every pipeline issue (or ISSUE_NUMBER alone) to the board."""
     check_environment()
     settings = load_settings()
     project = Board(

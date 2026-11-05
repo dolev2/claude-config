@@ -1,7 +1,7 @@
 name: Project board sync
 description: >
-  Two-way sync between issue labels (status:*, area:*) and the fields of the repo's
-  Project v2 board. The rules are in sync_project.py next to this file.
+  One-way sync from issue labels (status:*, area:*) to the fields of the repo's
+  Project v2 board. The rules are in sync_rules.py next to this file.
 
 # One copy for every repo with the pipeline: each repo's sync-project.yml calls
 # dolev2/claude-config/skills/dev-setup/actions/project-sync@main, so a fix merged here reaches
@@ -17,9 +17,12 @@ inputs:
   project-number:
     description: The board's number (the PROJECT_NUMBER variable)
     required: true
+  # Ignored since claude-config #111, which dropped the hidden marker. Kept so the
+  # workflows of repos installed before it, which still pass it, raise no warning.
   sync-marker:
-    description: The hidden marker name issue bodies carry, e.g. crm-sync (the SYNC_MARKER variable)
-    required: true
+    description: Ignored since claude-config #111
+    required: false
+    default: ""
   project-owner:
     description: The account that owns the board
     required: false
@@ -39,6 +42,5 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         PROJECT_OWNER: ${{ inputs.project-owner }}
         PROJECT_NUMBER: ${{ inputs.project-number }}
-        SYNC_MARKER: ${{ inputs.sync-marker }}
         ISSUE_NUMBER: ${{ inputs.issue }}
       run: python3 "${{ github.action_path }}/sync_project.py"

@@ -13,9 +13,9 @@ import pytest
 ACTION = Path(__file__).resolve().parents[1] / "actions" / "project-sync"
 REPOS = ["dolev2/secret-crm", "dolev2/no-board", "dolev2/hidden-plan"]
 BOARDS = {
-    "dolev2/secret-crm": {"PROJECT_NUMBER": "1", "SYNC_MARKER": "crm-sync"},
+    "dolev2/secret-crm": {"PROJECT_NUMBER": "1"},
     "dolev2/no-board": {},
-    "dolev2/hidden-plan": {"PROJECT_NUMBER": "4", "SYNC_MARKER": "plan-sync"},
+    "dolev2/hidden-plan": {"PROJECT_NUMBER": "4"},
 }
 
 
@@ -137,7 +137,7 @@ def test_each_repo_runs_a_quiet_full_sweep(monkeypatch):
     assert seen["cmd"][-1].endswith("sync_project.py")
     env = seen["env"]
     assert env["GITHUB_REPOSITORY"] == "dolev2/secret-crm"
-    assert env["PROJECT_NUMBER"] == "1" and env["SYNC_MARKER"] == "crm-sync"
+    assert env["PROJECT_NUMBER"] == "1"
     assert env["SYNC_QUIET"] == "1"
     assert "ISSUE_NUMBER" not in env
 

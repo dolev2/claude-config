@@ -23,7 +23,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ## Read first
 
 - **In `$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary, milestones),
-  `issue-body.md` (editing a body, the hidden marker) and `dependencies.md` ("Blocked by" links).
+  `issue-body.md` (editing a body) and `dependencies.md` ("Blocked by" links).
 - **The repo's `CLAUDE.md`**: its sources of truth, and its rules about business data. Do
   not invent prices, values or business rules. What is missing goes into "שאלות פתוחות" as an
   unticked box, not into the text.
@@ -86,9 +86,8 @@ For a bug, follow `bug.yml` instead (with the standard template: משימה קש
 The area is a label only (`area:*`, below), not a section of the body. Older issues may still
 carry an `אזור` section; leave it as it is.
 
-**Do not write the hidden sync marker (`<!-- <sync_marker>: ... -->`) yourself, and never
-edit an existing one**: a hand-written marker makes the sync revert the labels. To change an
-issue's state, change its labels only (`reference/issue-body.md` says why).
+**To change an issue's state, change its labels only.** The board follows the labels, and a
+card moved by hand goes back on the next sync (`reference/setup.md`).
 
 Write the body to a file with LF line endings and pass `--body-file`, never an inline string
 with `\n` (`reference/issue-body.md`).
@@ -155,7 +154,6 @@ Report each new issue to Dolev, in Hebrew, as a link with its title, milestone a
 ## Golden rules
 
 - Never create issues Dolev has not agreed to, and never delete one.
-- Never write or edit the sync marker.
 - Never invent business data in an issue; missing data is an unticked open question.
 - Every `תלוי ב:` entry has a matching "Blocked by" link, and the other way round.
 - Never assign a milestone on your own judgement, except `current_sprint` for a bug or a

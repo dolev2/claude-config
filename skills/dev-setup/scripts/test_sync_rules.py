@@ -1,8 +1,7 @@
-"""The board sync's rules: who wins, which issues take part, and the marker."""
+"""The board sync's rules: what is written to the board, and which issues take part."""
 
 from collections.abc import Iterator
 
-import marker
 import pytest
 import sync_rules
 
@@ -23,49 +22,51 @@ def field(name, *options):
     }
 
 
-def test_marker_reads_and_writes_only_its_own_name():
-    body = "text\n\n<!-- crm-sync: area=infra status=explore -->\n"
-    assert marker.read_marker(body, "crm-sync") == {
-        "area": "infra",
-        "status": "explore",
-    }
-    assert marker.write_marker(body, {"status": "done"}, "crm-sync").endswith(
-        "<!-- crm-sync: status=done -->\n"
-    )
-    assert marker.read_marker("<!-- wayout-sync: status=done -->", "crm-sync") == {}
+@pytest.mark.parametrize(
+    "from_labels, on_board, expected",
+    [
+        # A label the board does not show yet is written.
+        ({"status": "done"}, {"status": "explore"}, {"status": "done"}),
+        # A card dragged by hand goes back to its label (#111).
+        ({"status": "explore"}, {"status": "done"}, {"status": "explore"}),
+        # A blank board takes every label.
+        (
+            {"status": "explore", "area": "infra"},
+            {},
+            {"status": "explore", "area": "infra"},
+        ),
+        # A board that already agrees is not written.
+        ({"status": "explore"}, {"status": "explore"}, {}),
+        # A dimension with no label keeps the board's value.
+        ({"status": "explore"}, {"status": "explore", "area": "infra"}, {}),
+        ({}, {"status": "done"}, {}),
+    ],
+)
+def test_the_board_takes_the_labels(from_labels, on_board, expected):
+    assert sync_rules.board_changes(from_labels, on_board) == expected
 
 
-def test_a_missing_marker_is_added_at_the_end():
-    assert marker.write_marker("text\n\n", {"status": "backlog"}, "x-sync") == (
-        "text\n\n<!-- x-sync: status=backlog -->\n"
-    )
-
-
-def test_blank_board_takes_the_labels_even_when_the_marker_matches():
-    state = {"area": "infra", "status": "explore"}
-    assert sync_rules.choose_winner(state, state, {}) == (state, "labels")
-    assert sync_rules.choose_winner(state, state, state) == (None, None)
-    assert sync_rules.choose_winner({}, {}, {}) == (None, None)
-
-
-def test_an_old_owner_in_the_marker_is_ignored():
-    # Markers written before #110 carry owner=; it must not make the board win.
-    old = {"owner": "claude", "status": "explore"}
-    on_board = {"status": "explore"}
-    assert sync_rules.choose_winner(old, on_board, on_board) == (None, None)
-    assert sync_rules.choose_winner(old, {"status": "done"}, on_board) == (
-        {"status": "done"},
-        "labels",
-    )
-
-
-def test_board_edit_wins_over_labels():
-    previous = {"status": "explore"}
-    on_board = {"status": "done"}
-    assert sync_rules.choose_winner(previous, {"status": "backlog"}, on_board) == (
-        on_board,
-        "project",
-    )
+@pytest.mark.parametrize(
+    "labels, on_board, expected",
+    [
+        # Opened from the board: the card's column becomes its labels (WayOut #98).
+        ([], {"status": "backlog"}, {"status": "backlog"}),
+        # An area label it already has is kept over the card's.
+        (
+            ["area:infra"],
+            {"status": "backlog", "area": "both"},
+            {"status": "backlog", "area": "infra"},
+        ),
+        # With a status label the labels rule, whatever the card shows.
+        (["status:explore"], {"status": "done"}, {}),
+        # A card with no status gives nothing.
+        ([], {}, {}),
+        ([], {"area": "infra"}, {}),
+    ],
+)
+def test_an_issue_without_a_status_takes_its_card_once(labels, on_board, expected):
+    sync_rules.resolve_options({"Area": field("Area", "Infra", "Both")})
+    assert sync_rules.labels_from_board(labels, on_board) == expected
 
 
 def test_label_edit_keeps_labels_outside_the_dimensions():

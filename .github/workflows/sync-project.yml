@@ -1,16 +1,16 @@
-name: Sync labels ↔ project board
+name: Sync labels → project board
 
-# Keeps issue labels (status:*, area:*) and the Project v2 fields in agreement.
+# Writes the issue labels (status:*, area:*) onto the Project v2 fields, one way: the labels
+# are the source of truth, and a card dragged on the board goes back (claude-config #111).
 # The sync itself is shared: dolev2/claude-config, skills/dev-setup/actions/project-sync, where
-# sync_project.py documents the conflict rule. It needs claude-config's Actions access set
+# sync_rules.py documents the rules. It needs claude-config's Actions access set
 # to "user".
 #
-# Only issue events run here. The 15-minute poll that notices a card dragged on the board
+# Only issue events run here. The 15-minute poll that puts a dragged card back in place
 # runs for every repo at once from the public dolev2/.github (sync-boards.yml), where
 # Actions minutes are free (claude-config #46). Do not add a schedule back.
 #
-# Repo settings it reads: the PROJECT_TOKEN secret, and the PROJECT_NUMBER and SYNC_MARKER
-# variables. SYNC_MARKER must be the name the issue bodies already carry.
+# Repo settings it reads: the PROJECT_TOKEN secret and the PROJECT_NUMBER variable.
 
 on:
   issues:
@@ -38,6 +38,5 @@ jobs:
         with:
           token: ${{ secrets.PROJECT_TOKEN }}
           project-number: ${{ vars.PROJECT_NUMBER }}
-          sync-marker: ${{ vars.SYNC_MARKER }}
           # On an issue event, sync only that issue; a manual run sweeps everything.
           issue: ${{ github.event.issue.number }}

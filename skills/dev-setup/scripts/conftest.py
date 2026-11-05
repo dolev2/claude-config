@@ -1,6 +1,6 @@
 """Make the board sync's modules importable by their own names in the tests.
 
-sync_project.py imports its flat siblings (board, marker, ...) the way Python finds them
+sync_project.py imports its flat siblings (board, gh_api, ...) the way Python finds them
 when the script runs: from its own folder (claude-config #57).
 """
 
