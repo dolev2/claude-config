@@ -1,0 +1,286 @@
+<!doctype html>
+<!-- The ERD template (~/.claude/rules/erd.md). Copy to docs/erd.html, replace the title, the
+     subtitle and the #erd-data block, then publish it as an artifact. tests/test_erd.py fails
+     while the block and the models disagree. The drawing code below knows no table by name:
+     every change is a change to the block. -->
+<html lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>סכמת המסד</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap">
+<style>
+/* Layout: one wide diagram canvas (scrolls sideways on phones), legend top-left, link list below.
+   --c1..--c6 are the colors a target table can take ("color": "c1" in the block). A repo with
+   design tokens replaces these values with its own. */
+:root {
+  --bg: #F3F6FB;
+  --surface: #FFFFFF;
+  --surface-tint: #F6F9FE;
+  --line: #E2E9F2;
+  --line-soft: #EEF2F7;
+  --ink: #0B1B33;
+  --ink-2: #42526B;
+  --muted: #5B6B82;
+  --c1: #1A47C8; --c2: #0F7A6B; --c3: #A3580C; --c4: #7A3FB0; --c5: #B0306A; --c6: #2F6F2A;
+  --hl-row: #EEF4FF;
+  --font: 'Heebo', system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1422; --surface: #141E31; --surface-tint: #18243A; --line: #26344D; --line-soft: #1E2A40;
+    --ink: #E6ECF5; --ink-2: #B6C2D4; --muted: #8C9BB2;
+    --c1: #7EA6FF; --c2: #4CC7AE; --c3: #F0A54B; --c4: #C3A0FF; --c5: #F27BAE; --c6: #8FD47F; --hl-row: #1F2E4A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1422; --surface: #141E31; --surface-tint: #18243A; --line: #26344D; --line-soft: #1E2A40;
+  --ink: #E6ECF5; --ink-2: #B6C2D4; --muted: #8C9BB2;
+  --c1: #7EA6FF; --c2: #4CC7AE; --c3: #F0A54B; --c4: #C3A0FF; --c5: #F27BAE; --c6: #8FD47F; --hl-row: #1F2E4A;
+  color-scheme: dark;
+}
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+.page { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; max-width: 1340px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header { direction: rtl; display: flex; flex-direction: column; gap: 4px; }
+h1 { font-size: 26px; font-weight: 700; margin: 0; text-wrap: balance; }
+h2 { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
+.sub { color: var(--muted); margin: 0; max-width: 70ch; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; }
+.canvas { position: relative; direction: ltr; width: max-content; padding: 20px 20px 28px; box-sizing: border-box; }
+.top { display: flex; justify-content: flex-start; margin-bottom: 18px; }
+.legend { direction: rtl; display: grid; grid-template-columns: auto auto; gap: 6px 14px; align-items: center; font-size: 13px; color: var(--ink-2); background: var(--surface-tint); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; max-width: 560px; }
+.legend .k { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); justify-self: start; }
+.legend .ttl { grid-column: 1 / -1; font-weight: 700; color: var(--ink); font-size: 14px; }
+.sw { display: inline-block; width: 26px; height: 0; border-top: 2.5px solid; vertical-align: middle; }
+
+/* The columns come from "order": a gutter for wires, then a column, then a gutter, and so on. */
+.grid { display: grid; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 32px; }
+
+.tbl { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; position: relative; z-index: 1; }
+.tbl h3 { margin: 0; padding: 10px 12px 8px; background: var(--surface-tint); border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 14px; font-weight: 700; display: flex; flex-direction: column; gap: 0; }
+.tbl h3 span { direction: rtl; text-align: right; font-family: var(--font); font-size: 12px; font-weight: 400; color: var(--muted); }
+.tbl h3::before { content: ""; display: block; height: 3px; margin: -10px -12px 8px; background: var(--tc, var(--line)); }
+.row { display: grid; grid-template-columns: 30px 1fr auto; gap: 6px; align-items: center; padding: 3px 12px; min-height: 24px; font-family: var(--mono); font-size: 12.5px; border-top: 1px solid var(--line-soft); }
+.row:first-of-type { border-top: 0; }
+.row .key { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+.row .key.pk { color: var(--ink); }
+.row .nm { color: var(--ink); white-space: nowrap; }
+.row .nm i { font-style: normal; color: var(--muted); margin-left: 2px; }
+.row .ty { color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.row .to { font-size: 11.5px; font-weight: 500; white-space: nowrap; }
+.row.fk { cursor: default; }
+.row.hl { background: var(--hl-row); }
+
+svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: visible; }
+svg.wires path.w { fill: none; stroke-width: 1.6; opacity: 0.85; transition: opacity .15s, stroke-width .15s; }
+svg.wires path.hit { fill: none; stroke: transparent; stroke-width: 10; pointer-events: stroke; cursor: default; }
+svg.wires circle { transition: opacity .15s; }
+.canvas.focus svg.wires path.w, .canvas.focus svg.wires circle { opacity: 0.12; }
+.canvas.focus svg.wires path.w.on, .canvas.focus svg.wires circle.on { opacity: 1; stroke-width: 2.6; }
+
+.links { direction: rtl; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; }
+.links .tw { overflow-x: auto; }
+table.rel { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.rel th { text-align: right; font-weight: 500; color: var(--muted); font-size: 12.5px; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+table.rel td { padding: 7px 10px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+table.rel td.m { direction: ltr; text-align: right; font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+.note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
+@media (prefers-reduced-motion: reduce) { svg.wires path.w, svg.wires circle { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <h1>סכמת המסד</h1>
+    <p class="sub">כל הטבלאות לפי המודלים בקוד. בדיקה משווה את התרשים למודלים. כל קו יוצא מהשדה שמצביע ומגיע לשדה שהוא מצביע עליו. מעבר עם העכבר על שדה או על קו מדגיש אותו.</p>
+  </header>
+
+  <div class="scroller">
+    <div class="canvas" id="canvas">
+      <div class="top">
+        <div class="legend" id="legend" aria-label="מקרא">
+          <div class="ttl">מקרא</div>
+          <span class="k">PK</span><span>מפתח ראשי: המזהה של השורה. כמה שדות עם PK = מפתח מורכב</span>
+          <span class="k">FK</span><span>מפתח זר: מצביע על שורה בטבלה אחרת (או באותה טבלה)</span>
+          <span class="k">UK</span><span>ערך ייחודי, כשהוא מלא</span>
+          <span class="k">✱</span><span>חובה</span>
+          <span class="k">→ x.id</span><span>השדה שאליו הקו מגיע</span>
+        </div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <svg class="wires" id="wires" aria-hidden="true"></svg>
+    </div>
+  </div>
+
+  <section class="links">
+    <h2>כל הקשרים</h2>
+    <div class="tw">
+      <table class="rel" id="rel">
+        <thead><tr><th>השדה</th><th>מצביע על</th><th>פירוש</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note">לכל טבלה יש גם <code>created_at</code>, והוא לא מוצג בתרשים. טבלאות שעוד לא נוצרו בקוד לא מופיעות כאן.</p>
+  </section>
+</div>
+
+<!-- tables: {name: {he, color?, rows: [[field, type, key, required]]}}. key: "PK", "FK", "UK" or "".
+     color: "c1".."c6", only on a table that links point to.
+     links: [[from table, from field, to table, gutter, Hebrew meaning]]. gutter 0 = left of
+     column 1, k = between column k and column k+1.
+     order: {column: [table names, top to bottom]}. -->
+<script type="application/json" id="erd-data">
+{
+  "tables": {
+    "customers": {"he": "לקוח: אדם או חברה", "color": "c1", "rows": [
+      ["id","int","PK",0],
+      ["name","text","",1],
+      ["email","text","UK",0]
+    ]},
+    "orders": {"he": "הזמנה של לקוח", "rows": [
+      ["id","int","PK",0],
+      ["customer_id","int","FK",1],
+      ["total","numeric(10,2)","",1]
+    ]}
+  },
+  "links": [
+    ["orders","customer_id","customers",1,"מי הזמין. ללקוח יכולות להיות הרבה הזמנות"]
+  ],
+  "order": {"1": ["customers"], "2": ["orders"]}
+}
+</script>
+<script>
+// Everything shown comes from #erd-data, so tests/test_erd.py can compare it with the models.
+const DATA = JSON.parse(document.getElementById('erd-data').textContent);
+const TABLES = DATA.tables, LINKS = DATA.links, ORDER = DATA.order;
+const COLUMNS = Object.keys(ORDER).sort((a, b) => a - b);
+const colOf = {};
+COLUMNS.forEach(c => ORDER[c].forEach(name => { colOf[name] = +c; }));
+const COLOR = {};
+for (const [name, t] of Object.entries(TABLES)) if (t.color) COLOR[name] = 'var(--' + t.color + ')';
+const target = {};
+LINKS.forEach(([t, f, to]) => { target[t + '.' + f] = to; });
+
+const legend = document.getElementById('legend');
+for (const [name, c] of Object.entries(COLOR)) {
+  legend.insertAdjacentHTML('beforeend', '<span><i class="sw" style="color:' + c + '"></i></span><span>מצביע על <code>' + name + '</code></span>');
+}
+legend.insertAdjacentHTML('beforeend', '<span class="k">• ──▸</span><span>הנקודה בשדה המצביע, החץ בשדה שמצביעים עליו. הרבה שורות יכולות להצביע על אותה שורה (יחס 1 : N)</span>');
+
+const grid = document.getElementById('grid');
+grid.style.gridTemplateColumns = '84px ' + COLUMNS.map(() => '310px').join(' 124px ');
+const rowEl = {};
+COLUMNS.forEach((col, k) => {
+  const holder = document.createElement('div');
+  holder.className = 'col';
+  holder.id = 'col' + col;
+  holder.style.gridColumn = 2 * k + 2;
+  grid.appendChild(holder);
+  for (const name of ORDER[col]) holder.appendChild(tableBox(name));
+});
+
+function tableBox(name) {
+  const t = TABLES[name];
+  const box = document.createElement('div');
+  box.className = 'tbl';
+  if (COLOR[name]) box.style.setProperty('--tc', COLOR[name]);
+  box.innerHTML = '<h3>' + name + '<span>' + t.he + '</span></h3>';
+  for (const [f, ty, key, req] of t.rows) {
+    const r = document.createElement('div');
+    const to = target[name + '.' + f];
+    r.className = 'row' + (to ? ' fk' : '');
+    r.innerHTML = '<span class="key ' + (key === 'PK' ? 'pk' : '') + '">' + (key || '') + '</span>'
+      + '<span class="nm">' + f + (req || key === 'PK' ? '<i>✱</i>' : '') + '</span>'
+      + (to ? '<span class="to" style="color:' + COLOR[to] + '">→ ' + to + '.id</span>' : '<span class="ty">' + ty + '</span>');
+    box.appendChild(r);
+    rowEl[name + '.' + f] = r;
+  }
+  return box;
+}
+
+const tbody = document.querySelector('#rel tbody');
+LINKS.forEach(([t, f, to, , he]) => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td class="m">' + t + '.' + f + '</td><td class="m" style="color:' + COLOR[to] + '">' + to + '.id</td><td>' + he + '</td>';
+  tbody.appendChild(tr);
+});
+if (!LINKS.length) tbody.innerHTML = '<tr><td colspan="3">אין קשרים בין הטבלאות.</td></tr>';
+
+const canvas = document.getElementById('canvas');
+const svg = document.getElementById('wires');
+
+function draw() {
+  const cr = canvas.getBoundingClientRect();
+  const box = el => { const r = el.getBoundingClientRect(); return { l: r.left - cr.left, r: r.right - cr.left, t: r.top - cr.top, b: r.bottom - cr.top }; };
+  const cols = COLUMNS.map(c => box(document.getElementById('col' + c)));
+  // gutter 0 is left of the first column; gutter k is between column k and column k+1
+  const gut = { 0: [cols[0].l - 80, cols[0].l - 8] };
+  for (let k = 1; k < cols.length; k++) gut[k] = [cols[k - 1].r + 14, cols[k].l - 14];
+
+  // a wire leaves or enters a row on the side that faces its gutter
+  const side = (t, g) => colOf[t] === g ? 'r' : 'l';
+  const byGut = {};
+  LINKS.forEach((L, i) => (byGut[L[3]] = byGut[L[3]] || []).push(i));
+  const ends = {};
+  LINKS.forEach(([t, f, to, g], i) => { const k = to + '|' + side(to, g); (ends[k] = ends[k] || []).push(i); });
+
+  let out = '<defs>' + Object.entries(COLOR).map(([k, c]) =>
+    '<marker id="a-' + k + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L9 5L1 9z" style="fill:' + c + '"/></marker>').join('') + '</defs>';
+
+  LINKS.forEach(([t, f, to, g], i) => {
+    const s = box(rowEl[t + '.' + f]), d = box(rowEl[to + '.id']);
+    const ss = side(t, g), ds = side(to, g);
+    const sx = ss === 'l' ? s.l : s.r, sy = (s.t + s.b) / 2;
+    const tx = ds === 'l' ? d.l : d.r;
+    const group = ends[to + '|' + ds], k = group.indexOf(i);
+    const ty = d.t + (d.b - d.t) * (k + 1) / (group.length + 1);
+    const lanes = byGut[g], n = lanes.length, j = lanes.indexOf(i);
+    const [g0, g1] = gut[g];
+    const lx = g0 + (g1 - g0) * (j + 1) / (n + 1);
+    const r = 6, dy = ty > sy ? 1 : -1, dxs = lx > sx ? 1 : -1, dxt = tx > lx ? 1 : -1;
+    const p = 'M' + sx + ' ' + sy + ' H' + (lx - dxs * r) + ' Q' + lx + ' ' + sy + ' ' + lx + ' ' + (sy + dy * r)
+      + ' V' + (ty - dy * r) + ' Q' + lx + ' ' + ty + ' ' + (lx + dxt * r) + ' ' + ty + ' H' + (tx - dxt * 2);
+    const c = COLOR[to];
+    out += '<circle data-i="' + i + '" cx="' + sx + '" cy="' + sy + '" r="3" style="fill:' + c + '"/>'
+      + '<path class="w" data-i="' + i + '" d="' + p + '" style="stroke:' + c + '" marker-end="url(#a-' + to + ')"/>'
+      + '<path class="hit" data-i="' + i + '" d="' + p + '"/>';
+  });
+  svg.innerHTML = out;
+  svg.querySelectorAll('path.hit').forEach(h => {
+    h.addEventListener('mouseenter', () => focus(+h.dataset.i));
+    h.addEventListener('mouseleave', unfocus);
+  });
+}
+
+function focus(i) {
+  const [t, f, to] = LINKS[i];
+  canvas.classList.add('focus');
+  svg.querySelectorAll('[data-i="' + i + '"]').forEach(e => e.classList.add('on'));
+  rowEl[t + '.' + f].classList.add('hl');
+  rowEl[to + '.id'].classList.add('hl');
+}
+function unfocus() {
+  canvas.classList.remove('focus');
+  svg.querySelectorAll('.on').forEach(e => e.classList.remove('on'));
+  document.querySelectorAll('.row.hl').forEach(e => e.classList.remove('hl'));
+}
+LINKS.forEach(([t, f], i) => {
+  const r = rowEl[t + '.' + f];
+  r.addEventListener('mouseenter', () => focus(i));
+  r.addEventListener('mouseleave', unfocus);
+});
+
+draw();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+if (window.ResizeObserver) new ResizeObserver(draw).observe(canvas);
+</script>
+</body>
+</html>
