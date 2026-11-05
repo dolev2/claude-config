@@ -187,7 +187,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <line x1="392" y1="151" x2="436" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="440" y="120" width="160" height="62" rx="8" class="n-claude"/>
       <text x="520" y="146" text-anchor="middle" class="m">ready-to-execute</text>
-      <text x="520" y="166" text-anchor="middle" class="s">מאושר לביצוע</text>
+      <text x="520" y="166" text-anchor="middle" class="s">מאושר, או משימה קטנה</text>
 
       <line x1="602" y1="151" x2="646" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="650" y="120" width="160" height="62" rx="8" class="n-human"/>
@@ -218,6 +218,11 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <rect x="850" y="230" width="180" height="62" rx="8" class="n-gate"/>
       <text x="940" y="256" text-anchor="middle" class="m">open-questions-gate</text>
       <text x="940" y="276" text-anchor="middle" class="s">תיבה לא מסומנת? מתריע</text>
+
+      <!-- small path: explore straight to ready-to-execute -->
+      <path d="M60 184 V262 H460 V186" class="edge" marker-end="url(#ah)"/>
+      <text x="260" y="254" text-anchor="middle" class="m">size:small</text>
+      <text x="260" y="282" text-anchor="middle" class="s">משימה קטנה: בלי אישור תוכנית</text>
 
       <!-- skill brackets -->
       <path d="M20 196 V204 H390 V196" class="bracket"/>
@@ -437,10 +442,13 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
         <p>או, כשנשארה שאלה שחוסמת:</p>
         <div class="flowline"><span class="label h">plan-questions</span></div>
+        <p>או, למשימה קטנה (עד כ-3 קבצים, בלי שינוי שמשתמש רואה, בלי מחיקה, בלי שינוי חוזה):</p>
+        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
+        <p>עם התווית <code>size:small</code>, ובלי אישור תוכנית.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-plan</b>: עד 3 issues בריצה.</p>
-        <ul><li>כותב Plan בגוף ה-issue: "בקצרה" להחלטה, "חוויית משתמש" לאישור, "פירוט טכני" לביצוע.</li><li>שאלות נרשמות כתיבות סימון.</li><li>מוסיף יומן שינויים, ולא מוחק אותו.</li></ul>
+        <ul><li>כותב Plan בגוף ה-issue: "בקצרה" להחלטה, "חוויית משתמש" לאישור, "פירוט טכני" לביצוע.</li><li>שאלות נרשמות כתיבות סימון.</li><li>מוסיף יומן שינויים, ולא מוחק אותו.</li><li>משימה קטנה מקבלת תוכנית מקוצרת, ובסיכום שורה "עברו ישר לביצוע".</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>יוצר את ה-branch ב-remote, בלי checkout.</p>
@@ -459,6 +467,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">explore</span></div>
         <p>מאשר:</p>
         <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
+        <p>עוצר משימה קטנה לפני שנכתב קוד, ומסיר את <code>size:small</code>. dev-plan כותב תוכנית מלאה:</p>
+        <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label c">explore</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p>אין סקיל: זה תור של דולב.</p>
@@ -469,7 +479,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>ה-branch מחכה ב-remote, ריק.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> שום קוד לא נכתב על תוכנית שדולב לא אישר.</div>
+    <div class="gate-row"><strong>שער:</strong> שום קוד לא נכתב על תוכנית שדולב לא אישר, חוץ ממשימה קטנה (<code>size:small</code>) ומבאג.</div>
   </article>
 
   <article class="stage">

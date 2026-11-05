@@ -95,7 +95,8 @@ keeps them: edit it in the headings it already has.
    written for Dolev's decision: the problem, what will change for the users, what is left out
    and which issue has it, and what waits for him. Business language only, no file or function
    names, at most 8 lines. Then "חוויית משתמש", also for the decision: the user, the flow, and
-   what they see in each state, from the checklist in `reference/ux.md`. Every plan has it;
+   what they see in each state, from the checklist in `reference/ux.md`. Every plan has it, except
+   the short plan of a small task (step 7);
    work with nothing a user sees or touches gets one line saying so and why. Then "פירוט טכני"
    for the execution. No sections outside the format; a boundary with another issue is a line
    in "בקצרה", not a section of its own (`reference/issue-body.md`).
@@ -145,7 +146,19 @@ keeps them: edit it in the headings it already has.
    Add `costs-money` when the plan needs an expense (a paid cloud service, a paid API, a
    subscription) and say so in "בקצרה": the issue then waits on hold until Dolev approves.
 
-7. Hand off, exactly one of two paths:
+7. Hand off, exactly one of three paths:
+
+   **Small path**: the task meets all four conditions of "המסלול הקטן" in `reference/pipeline.md`
+   (about 3 files at most; nothing a user sees, except a text fix; no deletion; no change to a
+   contract or a new dependency). Any doubt: the normal path. The plan is the short plan from
+   `reference/issue-body.md`, and the task goes straight to Execute, without Dolev's approval:
+   ```bash
+   gh label create "size:small" --color c5def5 --description "משימה קטנה: עוברת לביצוע בלי אישור תוכנית" 2>/dev/null || true
+   gh issue edit <N> --add-label "size:small,status:ready-to-execute" --remove-label "status:explore"
+   ```
+   The label is created only when missing (without `--force`, so an existing description stays).
+   A short plan back at `status:explore` without `size:small` is a task Dolev stopped: write the
+   full plan and take the normal path. Never small-path it again.
 
    **Normal path**: the plan stands on its own:
    ```bash
@@ -164,7 +177,10 @@ keeps them: edit it in the headings it already has.
    ```
 
 8. End the run with a summary in Hebrew: which issues moved to `status:waiting-approval` with
-   their branch, and which moved to `status:plan-questions` and what was asked. Confirm with
+   their branch, and which moved to `status:plan-questions` and what was asked. Small-path
+   issues get a line of their own, "עברו ישר לביצוע (קטנות)", each with its link and the reason
+   it is small, so Dolev can stop one before code is written: he moves it to
+   `status:explore` and removes `size:small`, and the next run writes the full plan. Confirm with
    `git status --short --branch` that the working copy is exactly as you found it.
 
 ## Golden rules
@@ -172,6 +188,7 @@ keeps them: edit it in the headings it already has.
 - Never write feature code in this phase, and never `git checkout` in the shared working copy.
 - A dependency the plan relies on is a "Blocked by" link, not only a sentence in the plan.
 - Never guess on an unclear issue; take the question path.
+- The small path only when all four conditions hold; any doubt is the normal path.
 - Never touch an issue whose status is not Claude's turn, unless Dolev named it.
 - A comment is for questions only (the question path). A change Dolev asks for is an edit to
   the plan with a line in its log, and content for another issue is an edit to that issue.
