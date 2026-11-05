@@ -143,6 +143,19 @@ def test_unreachable_repo_warns_and_never_fails(tmp_path):
     assert "was not installed" in result.stderr
 
 
+def test_installs_after_an_earlier_failed_run(remote, tmp_path):
+    # A failed fetch leaves a .git with no commit next to the service files.
+    home = tmp_path / "home"
+    (home / ".claude").mkdir(parents=True)
+    (home / ".claude" / "launcher-settings.json").write_text("service\n")
+    assert run_setup(tmp_path / "missing.git", home).returncode == 0
+
+    result = run_setup(remote, home)
+
+    assert "was not installed" not in result.stderr
+    assert claude_md(home) == "CLAUDE.md v1\n"
+
+
 def test_stops_on_uncommitted_changes_and_keeps_them(remote, tmp_path):
     home = tmp_path / "home"
     assert run_setup(remote, home).returncode == 0

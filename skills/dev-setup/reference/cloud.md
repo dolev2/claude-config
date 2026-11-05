@@ -43,7 +43,7 @@ REPO=https://github.com/dolev2/claude-config
   export GIT_TERMINAL_PROMPT=0
   mkdir -p ~/.claude
   cd ~/.claude
-  if [ -d .git ] && [ -n "$(git status --porcelain)" ]; then
+  if git rev-parse -q --verify HEAD >/dev/null 2>&1 && [ -n "$(git status --porcelain)" ]; then
     echo "~/.claude has uncommitted changes: not updating it" >&2
     exit 1
   fi
