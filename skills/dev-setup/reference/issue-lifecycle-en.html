@@ -111,6 +111,7 @@ svg .branch-t { font-family: var(--font-mono); font-size: 11px; fill: var(--clau
   border: 1px solid var(--line); background: var(--code-bg); white-space: nowrap; }
 .label.c { border-color: var(--claude); background: var(--claude-fill); }
 .label.h { border-color: var(--human); background: var(--human-fill); }
+.label.a { border-color: var(--auto); background: var(--auto-fill); }
 .arrow { color: var(--muted); padding: 0 4px; }
 .flowline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 
@@ -189,12 +190,12 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <line x1="602" y1="151" x2="646" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="650" y="120" width="160" height="62" rx="8" class="n-human"/>
       <text x="730" y="146" text-anchor="middle" class="m">in-review</text>
-      <text x="730" y="166" text-anchor="middle" class="s">Dolev reviews the change</text>
+      <text x="730" y="166" text-anchor="middle" class="s">Dolev reviews, asks to merge</text>
 
       <line x1="812" y1="151" x2="856" y2="151" class="edge" marker-end="url(#ah)"/>
-      <rect x="860" y="120" width="160" height="62" rx="8" class="n-human"/>
+      <rect x="860" y="120" width="160" height="62" rx="8" class="n-auto"/>
       <text x="940" y="146" text-anchor="middle" class="m">done</text>
-      <text x="940" y="166" text-anchor="middle" class="s">Ready, waits for merge ask</text>
+      <text x="940" y="166" text-anchor="middle" class="s">Merged</text>
 
       <line x1="1022" y1="151" x2="1066" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="1070" y="120" width="100" height="62" rx="8" class="n-auto"/>
@@ -209,7 +210,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="758" y="212" text-anchor="start" class="s">Fix needed</text>
       <text x="702" y="212" text-anchor="end" class="s">Fixed</text>
 
-      <line x1="940" y1="184" x2="940" y2="226" class="edge-gate" marker-end="url(#ah)"/>
+      <line x1="800" y1="184" x2="880" y2="226" class="edge-gate" marker-end="url(#ah)"/>
       <rect x="850" y="230" width="180" height="62" rx="8" class="n-gate"/>
       <text x="940" y="256" text-anchor="middle" class="m">open-questions-gate</text>
       <text x="940" y="276" text-anchor="middle" class="s">Unchecked box? It warns</text>
@@ -218,8 +219,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="205" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-plan</text>
       <path d="M440 196 V204 H600 V196" class="bracket"/>
       <text x="520" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-code</text>
-      <path d="M1070 196 V204 H1170 V196" class="bracket"/>
-      <text x="1120" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-ship</text>
+      <path d="M860 196 V204 H1170 V196" class="bracket"/>
+      <text x="1100" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-ship</text>
     </svg>
   </div>
 </section>
@@ -364,7 +365,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <li><span class="num">6</span><div><b>Update against main, before the tests</b>This time fetch main, not the issue's branch:<br><code>git fetch origin main</code><br><code>git rebase origin/main</code><br>The commits are rebuilt on top of the latest main, with new IDs.<br>Conflict: <code>git rebase --abort</code>, a comment on the issue, and no PR.</div></li>
     <li><span class="num">7</span><div><b>Full test run, first push and PR</b>Lint, then every package, once, in parallel.<br>A plain push is enough: GitHub has no commits yet to overwrite.<br><code>gh pr create</code> with <code>Closes #42</code>, then CI, a review agent and the review app, where the user experience is checked.<br><code>Closes #42</code> only links the PR to the issue. The issue closes on its own only when the PR is merged, in step 9.</div></li>
     <li><span class="num">8</span><div><b>Fix round, if needed</b>In the same worktree, and rebase again.<br>The rebase rebuilt commits that are already on GitHub, so a forced push is needed:<br><code>git push --force-with-lease</code><br>It refuses if someone else pushed in the meantime, for example an edit in the GitHub UI.</div></li>
-    <li><span class="num">9</span><div><b>Squash merge, only on an explicit request</b><code>gh pr checks --watch --fail-fast</code><br><code>gh pr merge --squash</code><br>An approval prompt pops up before every merge.<br>The branch on GitHub deletes itself, through the repo's Automatically delete head branches setting.</div></li>
+    <li><span class="num">9</span><div><b>Squash merge, only when Dolev asks in the chat</b><code>gh pr checks --watch --fail-fast</code><br><code>gh pr merge --squash</code><br>An approval prompt pops up before every merge.<br>The branch on GitHub deletes itself, through the repo's Automatically delete head branches setting.</div></li>
     <li><span class="num">10</span><div><b>Cleanup on your computer</b>Stop the review app, then <code>git worktree remove</code>.<br>Delete the local branch, and run <code>git pull --ff-only</code> on main.</div></li>
   </ol>
 </section>
@@ -477,31 +478,31 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <p>Fix needed:</p>
         <div class="flowline"><span class="label c">needs-repair</span></div>
-        <p>All good:</p>
-        <div class="flowline"><span class="label c">done</span></div>
+        <p>All good: it stays in <code>in-review</code>, and Dolev asks in the chat: "merge #N".</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p>Dolev checks the PR and the app running from the worktree.</p>
         <p>A fix goes back to dev-code, and is exempt from the 3-PR gate.</p>
+        <p>No Approve: GitHub does not allow it on a PR opened from Dolev's own account. The chat request is the approval.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>The fix is written in the same worktree.</p>
         <p>Rebase, then <code>git push --force-with-lease</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> <code>open-questions-gate.yml</code> runs on <code>status:done</code>. An unchecked question triggers a comment, the <code>has-open-questions</code> label, and an email.</div>
+    <div class="gate-row"><strong>Gate:</strong> <code>open-questions-gate.yml</code> runs when the issue moves to <code>status:in-review</code>, before the merge. An unchecked question triggers a comment, the <code>has-open-questions</code> label, and an email.</div>
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">Stage 7</span><h3>Merge and close</h3><span class="who claude">Claude, on explicit request</span></div>
+    <div class="stage-head"><span class="idx">Stage 7</span><h3>Merge and close</h3><span class="who claude">Claude, when Dolev asks</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
-        <p>The issue closes on its own, through <code>Closes #N</code>.</p>
-        <p>The card lands in Done on the board.</p>
+        <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label a">done</span></div>
+        <p><code>done</code> only means "merged". The issue closes on its own, through <code>Closes #N</code>, and the card lands in Done.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
-        <p><b class="mono">dev-ship</b>, or <b class="mono">dev-code</b> Part B.</p>
-        <ul><li>The <code>done</code> label alone is not approval.</li><li>At the end: an offer to start a new session with the next task.</li></ul>
+        <p><b class="mono">dev-ship</b>: the only merge path.</p>
+        <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>Not MERGEABLE: rebase, push, rerun the tests.</p>

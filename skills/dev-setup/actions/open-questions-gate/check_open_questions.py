@@ -1,12 +1,13 @@
-"""Warn when an issue reaches `status:done` while it still has open questions.
+"""Warn when an issue reaches review while it still has open questions.
 
 Why this exists
 ---------------
-`status:done` means "approved - ready to merge". Reaching it with a question still
-unanswered means the review passed over something, and once the issue is merged and
-closed it stops being visible: sync_project.py drops closed issues that lack
-`status:done` off the board entirely, and the ones that carry it land in Done, where
-nobody re-reads the thread.
+`status:in-review` means "the PR is open; Dolev reviews it and asks for the merge".
+That is the last stop before the merge, so a question still unanswered must be seen
+there: once the issue is merged it moves to `status:done` and lands in Done, where
+nobody re-reads the thread. claude-config #108 moved the gate here from `status:done`,
+which now means "merged" and comes too late to stop anything. `status:done` is still
+checked, so ticking the last box on a merged issue clears the warning too.
 
 What counts as an open question
 -------------------------------
@@ -44,7 +45,8 @@ import tempfile
 
 REPO = os.environ["GITHUB_REPOSITORY"]
 WARN_LABEL = "has-open-questions"
-DONE_LABEL = "status:done"
+# In-review first: that is where the warning can still stop a merge.
+GATED_STATUSES = ("status:in-review", "status:done")
 COMMENT_MARKER = "<!-- open-questions-gate -->"
 
 HEADING_RE = re.compile(r"^\s{0,3}(#{1,6})\s*(.+?)\s*#*\s*$")
@@ -126,11 +128,16 @@ def open_questions(body: str | None) -> list[str]:
     return found
 
 
-def warning(heading: str, questions: list[str]) -> str:
+def gated_status(labels: list[str]) -> str | None:
+    """The status label that puts the issue under the gate, or None when none does."""
+    return next((s for s in GATED_STATUSES if s in labels), None)
+
+
+def warning(heading: str, questions: list[str], status: str) -> str:
     """The gate comment. `heading` is the section title as the issue spells it."""
     listed = "\n".join(f"- {q}" for q in questions)
     return (
-        "## ⚠️ עבר ל-`status:done` עם שאלות פתוחות\n\n"
+        f"## ⚠️ עבר ל-`{status}` עם שאלות פתוחות\n\n"
         f"ב-issue הזה יש {len(questions)} שאלות שעדיין לא נסגרו:\n\n{listed}\n\n"
         f'אם הן נענו — לסמן אותן בסעיף "{heading}" (`- [x]`) ולהוסיף את ההחלטה '
         f"לצד כל אחת. הסטטוס **לא** שונה, והתווית `{WARN_LABEL}` תרד "
@@ -168,7 +175,7 @@ def upsert_comment(number: str, text: str) -> None:
 
 
 def main() -> int:
-    """Check the issue in ISSUE_NUMBER; 1 when it is done with open questions."""
+    """Check the issue in ISSUE_NUMBER; 1 when it is gated with open questions."""
     number = os.environ.get("ISSUE_NUMBER")
     if not number:
         sys.exit("ISSUE_NUMBER is not set")
@@ -178,14 +185,15 @@ def main() -> int:
     )
     labels = [lb["name"] for lb in issue["labels"]]
 
-    if DONE_LABEL not in labels:
-        print(f"#{number} is not {DONE_LABEL} - nothing to check.")
+    status = gated_status(labels)
+    if status is None:
+        print(f"#{number} is not in review or done - nothing to check.")
         return 0
 
     questions = open_questions(issue["body"])
 
     if not questions:
-        print(f"#{number} reached {DONE_LABEL} with no open questions.")
+        print(f"#{number} reached {status} with no open questions.")
         if WARN_LABEL in labels:
             gh("issue", "edit", number, "--repo", REPO, "--remove-label", WARN_LABEL)
             upsert_comment(
@@ -193,7 +201,7 @@ def main() -> int:
             )
         return 0
 
-    upsert_comment(number, warning(find_section(issue["body"])[0], questions))
+    upsert_comment(number, warning(find_section(issue["body"])[0], questions, status))
 
     if WARN_LABEL not in labels:
         gh("issue", "edit", number, "--repo", REPO, "--add-label", WARN_LABEL)

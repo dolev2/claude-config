@@ -11,7 +11,7 @@ name: Tests
 # install step already serves both.
 #
 # This marks a PR red, but does not lock its merge button: a private repo on a free plan has
-# no branch protection. The merge paths (dev-ship, dev-code Part B) check `gh pr checks`.
+# no branch protection. The merge path (dev-ship) checks `gh pr checks`.
 
 on:
   pull_request:

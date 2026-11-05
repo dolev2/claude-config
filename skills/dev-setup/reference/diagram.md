@@ -46,18 +46,17 @@ flowchart TD
     end
 
     WCI --> REV["status:in-review<br/>התור של דולב"]:::human
+    REV -.-> GATE["open-questions-gate.yml<br/>shared action in claude-config<br/>בודק את סעיף השאלות הפתוחות"]:::auto
+    GATE -.-> WARN["נשארה תיבה לא מסומנת<br/>תגובה ותווית אזהרה<br/>הפלת ריצה שולחת מייל"]:::gate
+
     REV --> RC(["Dolev reviews the PR"]):::human
     RC -- "נדרש תיקון" --> REP["status:needs-repair<br/>התור של Claude"]:::routine
     REP --> EXEC
-    RC -- "תקין" --> DONE["status:done<br/>approved, ready to merge"]:::human
+    RC -- "תקין" --> ASK(["דולב מבקש מיזוג בצ'אט<br/>תמזג את #N"]):::human
 
-    DONE -.-> GATE["open-questions-gate.yml<br/>shared action in claude-config<br/>בודק את סעיף השאלות הפתוחות"]:::auto
-    GATE -.-> WARN["נשארה תיבה לא מסומנת<br/>תגובה ותווית אזהרה<br/>הפלת ריצה שולחת מייל"]:::gate
-
-    DONE --> ASK(["Dolev explicitly asks for the merge<br/>התווית לבדה אינה אישור"]):::human
-    ASK --> SHIP["dev-ship<br/>dev-code Part B"]:::routine
-    SHIP --> MERGE["verifies the PR still merges cleanly<br/>rebase, then tests<br/>waits for CI checks<br/>squash merge"]:::routine
-    MERGE --> CLOSED(["המשימה נסגרת אוטומטית<br/>the card lands in Done"]):::auto
+    ASK --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
+    SHIP --> MERGE["checks the open questions<br/>verifies the PR still merges cleanly<br/>rebase, then tests<br/>waits for CI checks<br/>squash merge"]:::routine
+    MERGE --> DONE(["המשימה נסגרת אוטומטית<br/>status:done = merged<br/>the card lands in Done"]):::auto
 
     classDef human fill:#fff4d6,stroke:#9a6700,color:#24292f
     classDef routine fill:#ddf0ff,stroke:#0969da,color:#24292f

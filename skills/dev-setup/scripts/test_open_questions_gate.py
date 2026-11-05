@@ -8,6 +8,8 @@ import os
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "actions" / "open-questions-gate"
 TEMPLATE = ROOT / "templates" / ".github" / "workflows" / "open-questions-gate.yml"
@@ -78,12 +80,28 @@ def test_gate_warning_names_the_section_as_the_issue_spells_it():
     gate = load_gate()
     body = "## Goal\nx\n## Open questions\n- [ ] which currency?\n"
     heading, _ = gate.find_section(body)
-    text = gate.warning(heading, gate.open_questions(body))
+    text = gate.warning(heading, gate.open_questions(body), "status:in-review")
     assert '"Open questions"' in text
     assert "- which currency?" in text
+    assert "`status:in-review`" in text
     assert '"שאלות פתוחות"' in gate.warning(
-        gate.find_section("### שאלות פתוחות\n- [ ] a\n")[0], ["a"]
+        gate.find_section("### שאלות פתוחות\n- [ ] a\n")[0], ["a"], "status:done"
     )
+
+
+@pytest.mark.parametrize(
+    "labels, expected",
+    [
+        # claude-config #108: the warning comes before the merge, not after it.
+        (["task", "status:in-review"], "status:in-review"),
+        # Ticking the last box after the merge must still clear the warning label.
+        (["status:done", "has-open-questions"], "status:done"),
+        (["status:ready-to-execute"], None),
+        ([], None),
+    ],
+)
+def test_gate_checks_issues_in_review_or_done(labels, expected):
+    assert load_gate().gated_status(labels) == expected
 
 
 def test_action_runs_a_script_that_exists():
