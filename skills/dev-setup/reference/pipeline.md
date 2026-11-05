@@ -101,7 +101,8 @@ gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:e
 
 ספק באחד מהם: המסלול הרגיל. משימה קטנה מקבלת `size:small`, תוכנית מקוצרת (`issue-body.md`), ועוברת
 ישר ל-`status:ready-to-execute`. דולב רואה אותה בסיכום של `dev-plan` וב-PR.
-**ביטול:** דולב מעביר אותה ל-`status:waiting-approval` ומסיר את `size:small`; משם היא במסלול הרגיל.
+**ביטול:** דולב מעביר אותה ל-`status:explore` ומסיר את `size:small`. `dev-plan` כותב תוכנית מלאה, והיא במסלול הרגיל.
+משימה שגדלה בביצוע מעבר לתנאים: `dev-code` עוצר, מסיר את `size:small` ומחזיר אותה ל-`status:explore`.
 `size:small` לא ברשימת התוויות החובה של `pipeline_info.py`: `dev-plan` יוצר אותה כשהיא חסרה.
 
 ## ספרינטים

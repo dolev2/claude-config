@@ -95,7 +95,8 @@ keeps them: edit it in the headings it already has.
    written for Dolev's decision: the problem, what will change for the users, what is left out
    and which issue has it, and what waits for him. Business language only, no file or function
    names, at most 8 lines. Then "חוויית משתמש", also for the decision: the user, the flow, and
-   what they see in each state, from the checklist in `reference/ux.md`. Every plan has it, except the short plan of a small task (step 7);
+   what they see in each state, from the checklist in `reference/ux.md`. Every plan has it, except
+   the short plan of a small task (step 7);
    work with nothing a user sees or touches gets one line saying so and why. Then "פירוט טכני"
    for the execution. No sections outside the format; a boundary with another issue is a line
    in "בקצרה", not a section of its own (`reference/issue-body.md`).
@@ -156,8 +157,8 @@ keeps them: edit it in the headings it already has.
    gh issue edit <N> --add-label "size:small,status:ready-to-execute" --remove-label "status:explore"
    ```
    The label is created only when missing (without `--force`, so an existing description stays).
-   An issue that comes back from Dolev with a plan already is never small-pathed again: he took
-   it off this path, or he answered a question.
+   A short plan back at `status:explore` without `size:small` is a task Dolev stopped: write the
+   full plan and take the normal path. Never small-path it again.
 
    **Normal path**: the plan stands on its own:
    ```bash
@@ -179,7 +180,7 @@ keeps them: edit it in the headings it already has.
    their branch, and which moved to `status:plan-questions` and what was asked. Small-path
    issues get a line of their own, "עברו ישר לביצוע (קטנות)", each with its link and the reason
    it is small, so Dolev can stop one before code is written: he moves it to
-   `status:waiting-approval` and removes `size:small`. Confirm with
+   `status:explore` and removes `size:small`, and the next run writes the full plan. Confirm with
    `git status --short --branch` that the working copy is exactly as you found it.
 
 ## Golden rules

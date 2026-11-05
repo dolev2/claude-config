@@ -14,7 +14,7 @@ flowchart TD
 
     subgraph PG["שלב התכנון — סשן מקומי"]
       PLAN["dev-plan<br/>עד 3 פריטים בכל ריצה<br/>לפי כמה משימות מחכות להם"]:::routine
-      PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>כולל סעיף חוויית משתמש<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
+      PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>כולל סעיף חוויית משתמש<br/>חוץ ממשימה קטנה<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
       PQ -- "לא" --> SZ{"משימה קטנה<br/>עד כ-3 קבצים, בלי שינוי שמשתמש רואה<br/>בלי מחיקה, בלי שינוי חוזה"}:::routine
     end
@@ -31,7 +31,7 @@ flowchart TD
     WAIT --> APP(["דולב קורא את התוכנית"]):::human
     APP -- "מאשר" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
     APP -- "יש לי הסתייגות" --> BACK
-    SMALL -. "דולב עוצר אותה" .-> WAIT
+    SMALL -. "דולב עוצר אותה" .-> BACK
 
     RDY --> EXEC
 

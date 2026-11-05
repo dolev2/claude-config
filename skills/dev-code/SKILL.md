@@ -140,7 +140,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    **A failure to run the tests is not permission to skip them.** If the install or the run
    fails, stop: leave the issue's status as it is, comment with the exact error, open no PR.
 
-8. If the plan turns out to be wrong mid-implementation, do not silently deviate. Update the
+8. A `size:small` task that turns out to break one of its four conditions (`reference/pipeline.md`):
+   stop, remove `size:small`, move it to `status:explore` with a comment saying which condition,
+   and open no PR.
+   If the plan turns out to be wrong mid-implementation, do not silently deviate. Update the
    Plan in the issue body (read it fresh first) and add a line to the plan log.
 
 9. Open a PR against `<default>` whose body contains `Closes #<N>`. If a PR is already open

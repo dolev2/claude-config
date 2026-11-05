@@ -184,7 +184,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <line x1="392" y1="151" x2="436" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="440" y="120" width="160" height="62" rx="8" class="n-claude"/>
       <text x="520" y="146" text-anchor="middle" class="m">ready-to-execute</text>
-      <text x="520" y="166" text-anchor="middle" class="s">Approved to build</text>
+      <text x="520" y="166" text-anchor="middle" class="s">Approved, or a small task</text>
 
       <line x1="602" y1="151" x2="646" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="650" y="120" width="160" height="62" rx="8" class="n-human"/>
@@ -214,7 +214,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="940" y="256" text-anchor="middle" class="m">open-questions-gate</text>
       <text x="940" y="276" text-anchor="middle" class="s">Unchecked box? It warns</text>
 
-      <path d="M60 184 V262 H460 V186" class="edge" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+      <path d="M60 184 V262 H460 V186" class="edge" marker-end="url(#ah)"/>
       <text x="260" y="254" text-anchor="middle" class="m">size:small</text>
       <text x="260" y="282" text-anchor="middle" class="s">A small task: no plan approval</text>
 
@@ -446,8 +446,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">explore</span></div>
         <p>Approves:</p>
         <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
-        <p>Stops a small task before code is written, and removes <code>size:small</code>:</p>
-        <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
+        <p>Stops a small task before code is written, and removes <code>size:small</code>. dev-plan writes the full plan:</p>
+        <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label c">explore</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p>No skill: it is Dolev's turn.</p>
@@ -458,7 +458,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>The branch waits on the remote, empty.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> no code is written on a plan Dolev has not approved.</div>
+    <div class="gate-row"><strong>Gate:</strong> no code is written on a plan Dolev has not approved, except a small task (<code>size:small</code>) and a bug.</div>
   </article>
 
   <article class="stage">
