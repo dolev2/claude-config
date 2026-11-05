@@ -1,11 +1,13 @@
 """Two failures of the board sync: an issue already on the board (claude-config #101),
 and a transient server error from GitHub (claude-config #105)."""
 
+import json
 import subprocess
 
 import board
 import gh_api
 import pytest
+import sync_project
 
 # An issue node as ONE_ISSUE_ITEMS returns it, on board 1 with its Status.
 ON_BOARD = {
@@ -43,7 +45,7 @@ def test_an_issue_already_on_the_board_goes_on_with_its_item(monkeypatch):
     error = "gh api graphql -f failed: gh: Content already exists in this project"
     monkeypatch.setattr(gh_api, "graphql", graphql_that_finds(ON_BOARD, error))
     item = board.add_item("P", "dolev2/charging-crm", 1, ISSUE)
-    assert item == {"id": "I126", "values": {"Status": "Backlog"}}
+    assert item == ({"id": "I126", "values": {"Status": "Backlog"}}, False)
 
 
 def test_already_on_the_board_but_not_found_still_fails(monkeypatch):
@@ -65,7 +67,51 @@ def test_another_add_error_still_fails(monkeypatch):
 def test_a_new_issue_gets_an_empty_item(monkeypatch):
     added = {"data": {"addProjectV2ItemById": {"item": {"id": "I7"}}}}
     monkeypatch.setattr(gh_api, "graphql", lambda query, **kw: added)
-    assert board.add_item("P", "dolev2/x", 1, ISSUE) == {"id": "I7", "values": {}}
+    assert board.add_item("P", "dolev2/x", 1, ISSUE) == (
+        {"id": "I7", "values": {}},
+        True,
+    )
+
+
+def test_the_sync_goes_on_with_the_item_already_on_the_board(monkeypatch, capsys):
+    # The read at the start of the run missed the card (charging-crm #126).
+    monkeypatch.setenv("GH_TOKEN", "x")
+    monkeypatch.setenv("PROJECT_NUMBER", "1")
+    monkeypatch.delenv("SYNC_QUIET", raising=False)
+    status = {
+        "id": "Status",
+        "name": "Status",
+        "options": [
+            {"id": "o-backlog", "name": "Backlog"},
+            {"id": "o-done", "name": "Done"},
+        ],
+    }
+    monkeypatch.setattr(
+        board, "load_project", lambda o, r, n: ("P", {"Status": status}, {}, [])
+    )
+    error = "gh: Content already exists in this project"
+    sets = []
+
+    def graphql(query, **kw):
+        if query == board.SET_SELECT:
+            sets.append(kw)
+            return {}
+        return graphql_that_finds(ON_BOARD, error)(query, **kw)
+
+    monkeypatch.setattr(gh_api, "graphql", graphql)
+    issue = {**ISSUE, "state": "OPEN", "labels": [{"name": "status:done"}]}
+
+    def gh(*args):
+        if args[:2] == ("issue", "list"):
+            return json.dumps([issue])
+        return "[]"
+
+    monkeypatch.setattr(gh_api, "gh", gh)
+    sync_project.main()
+    assert sets == [
+        {"project": "P", "item": "I126", "field": "Status", "option": "o-done"}
+    ]
+    assert "added to the project" not in capsys.readouterr().out
 
 
 # The retry in gh_api.gh, with the gh CLI and the waits replaced.

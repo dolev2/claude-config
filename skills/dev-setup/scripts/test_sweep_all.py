@@ -13,9 +13,9 @@ import pytest
 ACTION = Path(__file__).resolve().parents[1] / "actions" / "project-sync"
 REPOS = ["dolev2/secret-crm", "dolev2/no-board", "dolev2/hidden-plan"]
 BOARDS = {
-    "dolev2/secret-crm": {"PROJECT_NUMBER": "1", "SYNC_MARKER": "crm-sync"},
+    "dolev2/secret-crm": {"PROJECT_NUMBER": "1"},
     "dolev2/no-board": {},
-    "dolev2/hidden-plan": {"PROJECT_NUMBER": "4", "SYNC_MARKER": "plan-sync"},
+    "dolev2/hidden-plan": {"PROJECT_NUMBER": "4"},
 }
 
 

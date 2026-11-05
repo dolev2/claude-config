@@ -130,7 +130,7 @@ def load_issues(settings: Settings) -> list[dict]:
             "--limit",
             "500",
             "--json",
-            "number,body,labels,id,state,stateReason,milestone",
+            "number,labels,id,state,stateReason,milestone",
         )
     )
     if settings.only_issue:
@@ -174,12 +174,13 @@ def sync_issue(settings: Settings, project: Board, issue: dict) -> bool:
     num = issue["number"]
     labels = [label["name"] for label in issue["labels"]]
     item = project.items.get(num)
-    is_new = item is None
-    if is_new:
-        item = board.add_item(
+    is_new = False
+    if item is None:
+        item, is_new = board.add_item(
             project.project_id, settings.repo, settings.project_number, issue
         )
-        report(settings, f"#{num} added to the project")
+        if is_new:
+            report(settings, f"#{num} added to the project")
 
     on_board = sync_rules.project_state(item["values"])
     state = sync_rules.labels_state(labels)

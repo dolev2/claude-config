@@ -138,11 +138,11 @@ def load_project(owner: str, repo: str, number: int) -> tuple[str, dict, dict, l
     return data["id"], fields, load_items(repo, number), data["views"]["nodes"]
 
 
-def add_item(project_id: str, repo: str, number: int, issue: dict) -> dict:
-    """Put the issue on board number; return its item, new and empty or the one there.
+def add_item(project_id: str, repo: str, number: int, issue: dict) -> tuple[dict, bool]:
+    """Put the issue on board number; return (its item, whether it was added now).
 
     An issue already on the board is not a failure (claude-config #101): its item is
-    read back and the sync goes on with it.
+    read back, with its values, and the sync goes on with it.
     """
     try:
         res = gh_api.graphql(ADD_ITEM, project=project_id, content=issue["id"])
@@ -152,8 +152,9 @@ def add_item(project_id: str, repo: str, number: int, issue: dict) -> dict:
         item = find_item(repo, number, issue["number"])
         if item is None:
             raise
-        return item
-    return {"id": res["data"]["addProjectV2ItemById"]["item"]["id"], "values": {}}
+        return item, False
+    item_id = res["data"]["addProjectV2ItemById"]["item"]["id"]
+    return {"id": item_id, "values": {}}, True
 
 
 def find_item(repo: str, number: int, issue_number: int) -> dict | None:

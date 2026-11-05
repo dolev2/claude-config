@@ -208,7 +208,10 @@ def run_one_label_change(monkeypatch, quiet) -> list[tuple]:
         "load_project",
         lambda o, r, n: ("P", fields, {5: item}, [sprint_view('milestone:"M1"')]),
     )
-    monkeypatch.setattr(gh_api, "graphql", lambda query, **kw: {})
+    calls = []
+    monkeypatch.setattr(
+        gh_api, "graphql", lambda query, **kw: calls.append((query, kw)) or {}
+    )
     issue = {
         "number": 5,
         "id": "X5",
@@ -216,7 +219,6 @@ def run_one_label_change(monkeypatch, quiet) -> list[tuple]:
         "body": "<!-- x-sync: status=explore -->",  # an old marker, now ignored
         "labels": [{"name": "status:done"}, {"name": "task"}],
     }
-    calls = []
 
     def gh(*args):
         calls.append(args)
@@ -231,10 +233,15 @@ def run_one_label_change(monkeypatch, quiet) -> list[tuple]:
     return calls
 
 
-def test_a_label_change_never_edits_the_body(monkeypatch):
+def test_a_label_change_sets_the_field_and_never_edits_the_body(monkeypatch):
     calls = run_one_label_change(monkeypatch, quiet=True)
-    assert not [args for args in calls if "--body-file" in args]
-    assert not [args for args in calls if args[:2] == ("issue", "edit")]
+    graphql = [c for c in calls if len(c) == 2 and isinstance(c[1], dict)]
+    gh = [c for c in calls if c not in graphql]
+    assert [kw for query, kw in graphql if query == board.SET_SELECT] == [
+        {"project": "P", "item": "I5", "field": "Status", "option": "Done"}
+    ]
+    assert not [args for args in gh if "--body-file" in args]
+    assert not [args for args in gh if args[:2] == ("issue", "edit")]
 
 
 def test_quiet_mode_prints_only_the_counts(monkeypatch, capsys):

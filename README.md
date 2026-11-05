@@ -50,7 +50,7 @@
 | קובץ | מה הוא | למה הוא קיים |
 |---|---|---|
 | `reference/pipeline.md` | הליבה של המנגנון: מה משתנה בין ריפואים, אוצר המילים, הספרינטים, הכללים שלא משתנים, ורשימת שאר הקבצים כאן | כל סקיל `dev-*` קורא אותו, ובנוסף רק את הקבצים שה-"Read first" שלו מונה |
-| `reference/issue-body.md` | קריאת כל ההקשר של issue, פורמט ה-Plan, עריכת הגוף והסמן המוסתר, סעיף השאלות הפתוחות | `dev-issue`, `dev-plan`, `dev-code`, `dev-ship`, `dev-next` (בסקירת הסדר) |
+| `reference/issue-body.md` | קריאת כל ההקשר של issue, פורמט ה-Plan, עריכת הגוף, סעיף השאלות הפתוחות | `dev-issue`, `dev-plan`, `dev-code`, `dev-ship`, `dev-next` (בסקירת הסדר) |
 | `reference/dependencies.md` | קישורי Blocked by, פיצול ואיחוד, הדירוג בספרינט, הקודים של `audit_sprint.py` | `dev-issue`, `dev-next`, `dev-plan` |
 | `reference/git-flow.md` | issue אחד בריצה ושער ה-WIP, עותק העבודה בכל שלב, branch ו-PR, rebase ו-CI לפני merge | `dev-plan`, `dev-code`, `dev-ship` |
 | `reference/tests.md` | אילו בדיקות רצות, ומתי: ממוקד בפיתוח, מלא פעם אחת אחרי ה-rebase | `dev-code`, `dev-ship`, `dev-setup` |
