@@ -165,3 +165,25 @@ def test_main_runs_in_a_repo_with_a_hebrew_path(tmp_path, monkeypatch):
     (root / "README.md").write_text(readme, encoding="utf-8")
     monkeypatch.chdir(root)
     assert file_guide_check.main([]) == 0
+
+
+def test_a_path_in_two_rows_is_listed_twice():
+    # What merge=union leaves when two branches edit the same row.
+    readme = guide(
+        "### השורש\n"
+        + TABLE
+        + "| `app.py` | x | y |\n| `db.py` | x | y |\n| `app.py` | x | z |"
+    )
+    assert file_guide_check.listed_twice(readme) == ["app.py"]
+
+
+def test_the_same_name_in_two_folders_is_not_twice():
+    readme = guide(
+        "### `a/`\n" + TABLE + "| `x.py` | x | y |\n"
+        "### `b/`\n" + TABLE + "| `x.py` | x | y |"
+    )
+    assert file_guide_check.listed_twice(readme) == []
+
+
+def test_no_guide_lists_nothing_twice():
+    assert file_guide_check.listed_twice("# repo\n") == []

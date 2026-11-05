@@ -1,4 +1,4 @@
-"""Fails when the file guide in README.md misses a file, or names one that is gone.
+"""Fails when the file guide in README.md misses a file, or names one gone or twice.
 
 From the dev-setup template (dolev2/claude-config#89). Each repo keeps a copy at
 .github/file_guide_check.py and runs it in CI and before every PR:
@@ -133,6 +133,20 @@ def check(
     return missing, gone
 
 
+def listed_twice(readme: str) -> list[str]:
+    """First-column paths that more than one row names, in order of their first row."""
+    # README.md merges with merge=union: when two branches edit the same row, both
+    # versions stay, and this is what catches it.
+    seen: set[str] = set()
+    twice: list[str] = []
+    for paths, _ in guide_rows(guide_lines(readme) or []):
+        for path in paths:
+            if path in seen and path not in twice:
+                twice.append(path)
+            seen.add(path)
+    return twice
+
+
 def repo_files(root: Path) -> list[str]:
     """Every file git tracks or would track (new files too), relative to the root."""
     # -z: without it git quotes a non-ASCII path ("\327\247..."), which then misses.
@@ -172,7 +186,10 @@ def main(covered_by_pattern: list[str]) -> int:
         print(f"not in the guide: {file}")
     for path in gone:
         print(f"in the guide, but no such file: {path}")
-    if missing or gone:
+    twice = listed_twice(text)
+    for path in twice:
+        print(f"in the guide twice: {path}")
+    if missing or gone or twice:
         print("Add a row to the file guide in README.md, or remove the stale one.")
         return 1
     print("file guide complete")
