@@ -2,7 +2,8 @@
 
 Every repo with the pipeline runs this one copy, so these tests guard all of their
 boards. The rules alone are in test_sync_rules.py, the sprint view in
-test_sprint_view.py.
+test_sprint_view.py, and the two failures of #101 and #105 in
+test_project_sync_errors.py.
 """
 
 import ast
@@ -38,7 +39,7 @@ def sprint_view(filter_):
 def set_environment(monkeypatch, quiet=False):
     monkeypatch.setenv("GH_TOKEN", "x")
     monkeypatch.setenv("PROJECT_NUMBER", "1")
-    monkeypatch.setenv("SYNC_MARKER", "x-sync")
+    monkeypatch.delenv("SYNC_MARKER", raising=False)
     if quiet:
         monkeypatch.setenv("SYNC_QUIET", "1")
     else:
@@ -46,19 +47,23 @@ def set_environment(monkeypatch, quiet=False):
 
 
 def test_settings_come_from_the_environment(monkeypatch):
-    monkeypatch.setenv("SYNC_MARKER", "crm-sync")
+    monkeypatch.setenv("PROJECT_NUMBER", "9")
     monkeypatch.delenv("PROJECT_OWNER", raising=False)
     settings = sync_project.load_settings()
-    assert settings.marker_name == "crm-sync"
+    assert settings.project_number == 9
     assert settings.project_owner == "dolev2"
 
 
-def test_a_missing_marker_name_stops_the_run(monkeypatch):
-    # A default name would make every issue look unsynced, and the board would win.
-    monkeypatch.delenv("SYNC_MARKER", raising=False)
-    monkeypatch.setenv("GH_TOKEN", "x")
-    monkeypatch.setenv("PROJECT_NUMBER", "1")
-    with pytest.raises(SystemExit, match="SYNC_MARKER"):
+def test_the_run_needs_no_marker_name(monkeypatch):
+    # The hidden marker is gone (#111); a repo installed before it may still set one.
+    set_environment(monkeypatch)
+    sync_project.check_environment()
+
+
+def test_a_missing_project_number_stops_the_run(monkeypatch):
+    set_environment(monkeypatch)
+    monkeypatch.delenv("PROJECT_NUMBER")
+    with pytest.raises(SystemExit, match="PROJECT_NUMBER"):
         sync_project.check_environment()
 
 
@@ -121,7 +126,7 @@ def test_template_calls_the_shared_action_at_main_without_checkout():
         in workflow
     )
     assert "actions/checkout" not in workflow
-    assert "sync-marker: ${{ vars.SYNC_MARKER }}" in workflow
+    assert "sync-marker" not in workflow  # gone with the marker (#111)
     assert "if: vars.PROJECT_NUMBER != ''" in workflow
 
 
@@ -193,8 +198,8 @@ def test_a_failed_view_update_does_not_stop_the_issue_sync(monkeypatch, capsys):
 # Quiet mode, for the central sweep whose log is public (claude-config #46).
 
 
-def run_one_label_change(monkeypatch, quiet):
-    """main() over one issue whose labels moved."""
+def run_one_label_change(monkeypatch, quiet) -> list[tuple]:
+    """main() over one issue whose labels moved; the gh calls it made."""
     set_environment(monkeypatch, quiet)
     fields = {"Status": field("Status", "Done", "Explore (Claude)")}
     item = {"id": "I5", "values": {"Status": "Explore (Claude)"}}
@@ -208,11 +213,13 @@ def run_one_label_change(monkeypatch, quiet):
         "number": 5,
         "id": "X5",
         "state": "OPEN",
-        "body": "<!-- x-sync: status=explore -->",
+        "body": "<!-- x-sync: status=explore -->",  # an old marker, now ignored
         "labels": [{"name": "status:done"}, {"name": "task"}],
     }
+    calls = []
 
     def gh(*args):
+        calls.append(args)
         if args[0] == "api":
             return '[{"number": 2, "title": "M2", "open_issues": 1}]'
         if args[:2] == ("issue", "list"):
@@ -221,6 +228,13 @@ def run_one_label_change(monkeypatch, quiet):
 
     monkeypatch.setattr(gh_api, "gh", gh)
     sync_project.main()
+    return calls
+
+
+def test_a_label_change_never_edits_the_body(monkeypatch):
+    calls = run_one_label_change(monkeypatch, quiet=True)
+    assert not [args for args in calls if "--body-file" in args]
+    assert not [args for args in calls if args[:2] == ("issue", "edit")]
 
 
 def test_quiet_mode_prints_only_the_counts(monkeypatch, capsys):
@@ -257,7 +271,6 @@ def test_an_issue_opened_from_the_board_takes_its_labels(monkeypatch, capsys):
         return ""
 
     monkeypatch.setattr(gh_api, "gh", gh)
-    monkeypatch.setattr(sync_project, "edit_body", lambda repo, num, body: None)
     sync_project.main()
     assert any("status:backlog" in args for args in edits)
     assert "#9 labels <- project" in capsys.readouterr().out

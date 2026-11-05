@@ -10,8 +10,6 @@ Nothing here is configured by hand. Every value is read from the repo itself, so
 same skills work in every repo that carries the pipeline:
 
 - repo and default branch      - from `gh repo view`
-- the sync marker name         - the SYNC_MARKER variable, when the repo has the sync
-                                 workflow
 - the project number           - the PROJECT_NUMBER repository variable
 - the current sprint           - the lowest-numbered open milestone with open issues
 - where the issue forms live   - the repo's own .github/ISSUE_TEMPLATE, or else the
@@ -83,20 +81,6 @@ def run(*args: str) -> tuple[int, str]:
 def repo_root() -> Path | None:
     code, out = run("git", "rev-parse", "--show-toplevel")
     return Path(out) if code == 0 and out else None
-
-
-def sync_marker(root: Path | None, repo: str) -> str | None:
-    """The marker name issue bodies carry, e.g. crm-sync. None when there is no sync.
-
-    The shared sync action (dev-setup/actions/project-sync) reads it from the
-    SYNC_MARKER variable only, so that is the one place to look. An empty variable is
-    reported as missing rather than guessed: the action refuses to run without it.
-    """
-    workflow = root / ".github/workflows/sync-project.yml" if root else None
-    if not workflow or not workflow.exists():
-        return None
-    code, out = run("gh", "variable", "get", "SYNC_MARKER", "--repo", repo)
-    return out if code == 0 and out else None
 
 
 def issue_forms(root: Path | None, repo: str) -> str | None:
@@ -215,7 +199,6 @@ def main(argv: list[str] | None = None) -> None:
         "ready": not missing,
         "missing_labels": missing,
         "area_labels": sorted(name for name in labels if name.startswith("area:")),
-        "sync_marker": sync_marker(root, repo),
         "project_number": int(project) if code == 0 and project.isdigit() else None,
         "current_sprint": current_sprint(repo),
         "root": str(root) if root else None,

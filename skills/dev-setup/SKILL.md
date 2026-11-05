@@ -1,6 +1,6 @@
 ---
 name: dev-setup
-description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label↔board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference files and scripts the other dev-* skills use.
+description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label→board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference files and scripts the other dev-* skills use.
 ---
 
 # Set up the pipeline in a repo
@@ -20,8 +20,8 @@ This skill folder is also the shared home of the pipeline:
   actions. Run them all with pytest after any change here.
 - `actions/open-questions-gate/`: the open-questions gate, a composite action every repo calls.
   There is one copy of the gate, here; repos do not get a copy of the script.
-- `actions/project-sync/`: the label ↔ board sync, a composite action every repo with a board calls.
-  It reads the marker name from `SYNC_MARKER` and the Area options from the board itself.
+- `actions/project-sync/`: the label → board sync, a composite action every repo with a board calls.
+  It writes the labels onto the board, one way, and reads the Area options from the board itself.
 - `templates/.github/`: the two short workflows that call the actions, and the skeleton of
   `tests.yml` with its lint steps and the `files` job that runs the file guide check.
 - `templates/ruff.toml`, `templates/eslint.config.js` (+ `test_lint_templates.py`): the lint
@@ -57,7 +57,6 @@ Show Dolev, in chat, one list, and wait for his yes:
 | item | default | ask about |
 |---|---|---|
 | repo | from `gh repo view` | — |
-| sync marker name | `<short repo name>-sync`, e.g. `crm-sync` | never changes later |
 | `area:*` labels | `backend`, `frontend`, `both`, `infra` | fit this project? |
 | milestones (sprints) | none | the names, in order; titles in English |
 | Project board | a new user project named after the repo, linked to it | create one, reuse one, or skip |
@@ -70,8 +69,8 @@ Show Dolev, in chat, one list, and wait for his yes:
 Without a board the pipeline still works: labels are the source of truth. Then skip step 4
 and `sync-project.yml`, and keep the gate.
 
-**The board's scheduled sync is central.** A card dragged on the board is noticed only by a
-poll every 15 minutes, and that poll runs once for every repo from the public dolev2/.github
+**The board's scheduled sync is central.** A card dragged on the board goes back to the column
+of its label only through a poll every 15 minutes, and that poll runs once for every repo from the public dolev2/.github
 (`sync-boards.yml`, which runs `actions/project-sync/sweep_all.py`), where Actions minutes are
 free. Run in each private repo, it used up the account's 2,000 minutes (October 2026, #46).
 So `sync-project.yml` here has issue events only, never a `schedule`; the central run finds a
@@ -136,16 +135,9 @@ only what is missing:
   its workflow with the template and delete the script (show Dolev the diff first).
 - `workflows/sync-project.yml`: as is, when there is a board. It calls the shared action
   `dolev2/claude-config/skills/dev-setup/actions/project-sync@main`; there is no script to copy.
-  A repo that still has `.github/scripts/sync_project.py`: first set `SYNC_MARKER` to the marker
-  name its issues already carry (the literal in that script), then replace the workflow and
-  delete the script.
-
-Then set the marker name the sync reads. It is required: without it the sync refuses to run,
-and a wrong name makes every issue look unsynced, so the stale board wins over the labels:
-
-```bash
-gh variable set SYNC_MARKER --body "<marker>"
-```
+  A repo that still has `.github/scripts/sync_project.py`: replace the workflow and delete the
+  script. A `SYNC_MARKER` variable or a `sync-marker:` line left from an older install is
+  ignored since #111; leave it.
 
 If the repo has no CI and Dolev agreed to one, build `.github/workflows/tests.yml` from
 `templates/.github/workflows/tests.yml`: the default branch, the folders, the repo's test
@@ -355,5 +347,5 @@ Dolev what is left for him: the `PROJECT_TOKEN` secret and the first issues (`de
 
 - Nothing is written to GitHub before Dolev agrees to the list in step 1.
 - Never overwrite an existing workflow, script, issue form or label description silently.
-- Never handle the token. Never rename a sync marker that issues already carry.
+- Never handle the token.
 - Label names and Status option names are a contract with the scripts: exact text only.

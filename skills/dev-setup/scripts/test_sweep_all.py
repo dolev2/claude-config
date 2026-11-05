@@ -137,7 +137,7 @@ def test_each_repo_runs_a_quiet_full_sweep(monkeypatch):
     assert seen["cmd"][-1].endswith("sync_project.py")
     env = seen["env"]
     assert env["GITHUB_REPOSITORY"] == "dolev2/secret-crm"
-    assert env["PROJECT_NUMBER"] == "1" and env["SYNC_MARKER"] == "crm-sync"
+    assert env["PROJECT_NUMBER"] == "1"
     assert env["SYNC_QUIET"] == "1"
     assert "ISSUE_NUMBER" not in env
 

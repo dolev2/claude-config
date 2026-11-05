@@ -17,7 +17,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 - `repo_skills` lists a repo-specific plan skill? Use it instead.
 - `ready` is `False`? Offer `dev-setup` and stop.
-- Note `default_branch` (written `<default>` below), `sync_marker`, and `current_sprint`.
+- Note `default_branch` (written `<default>` below) and `current_sprint`.
 
 ## Read first
 
@@ -88,8 +88,8 @@ keeps them: edit it in the headings it already has.
 
 5. Fill in the Plan section of the issue body, in the format from `reference/issue-body.md` and the
    heading level the repo's issues use. **Read the body fresh right before the edit**, keep the
-   human-written sections byte-identical, write the file with LF line endings, preserve the
-   hidden sync marker unchanged, then `gh issue edit <N> --body-file <file>` and verify.
+   human-written sections byte-identical, write the file with LF line endings, then
+   `gh issue edit <N> --body-file <file>` and verify.
 
    **Two levels, always: the decision, then the execution.** The plan opens with "בקצרה",
    written for Dolev's decision: the problem, what will change for the users, what is left out

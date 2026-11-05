@@ -70,15 +70,14 @@
 | `scripts/lint_check.py` | מדווח על הגדרות lint שחסרות בריפו, או ששונות מהתבנית, ועל עותק חסר או שסטה של בדיקת מדריך הקבצים | כדי שהעותקים בכל ריפו לא יסטו בשקט |
 | `scripts/test_*.py` | הבדיקות של הסקריפטים, של שני ה-actions ושל התבניות | רצות ב-CI |
 | `actions/open-questions-gate/` | שער השאלות הפתוחות, action שכל ריפו קורא לו: `action.yml` מריץ את `check_open_questions.py` | עותק אחד לכל הריפואים |
-| `actions/project-sync/` | הסנכרון בין התוויות ללוח, action שכל ריפו עם לוח קורא לו. `action.yml` מריץ את `sync_project.py` | עותק אחד לכל הריפואים |
+| `actions/project-sync/` | הסנכרון מהתוויות ללוח, בכיוון אחד, action שכל ריפו עם לוח קורא לו. `action.yml` מריץ את `sync_project.py` | עותק אחד לכל הריפואים |
 | `actions/project-sync/sync_project.py` | נקודת הכניסה של הסנכרון: ההגדרות מהסביבה, הלולאה על ה-issues, ומה מודפס | `action.yml` ו-`sweep_all.py` מריצים אותו בשם הזה |
-| `actions/project-sync/sync_rules.py` | הכללים: איזה issue מסונכרן, מי מנצח, ושמות האופציות בלוח (`STATUS_OPTIONS`) | בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד (#57) |
+| `actions/project-sync/sync_rules.py` | הכללים: איזה issue מסונכרן, מה נכתב ללוח, החריג של issue שנפתח מהלוח, ושמות האופציות בלוח (`STATUS_OPTIONS`) | בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד (#57) |
 | `actions/project-sync/board.py` | קריאה וכתיבה של הלוח, מצד ה-issue | `projectV2.items` מחזיר רשימה ריקה (המוקש ב-`reference/setup.md`) |
-| `actions/project-sync/marker.py` | הסמן המוסתר בגוף ה-issue: קריאה וכתיבה | המצב האחרון שסונכרן, שלפיו מכריעים |
 | `actions/project-sync/sprint_view.py` | מזיז את הסינון של התצוגה "ספרינט נוכחי" לספרינט הנוכחי | ל-GitHub אין `milestone:@current` (#17) |
-| `actions/project-sync/gh_api.py` | הקריאות ל-`gh` ול-GraphQL | מקום אחד שהבדיקות מחליפות |
+| `actions/project-sync/gh_api.py` | הקריאות ל-`gh` ול-GraphQL, עם ניסיון חוזר על שגיאה זמנית (502/503/504) | מקום אחד שהבדיקות מחליפות; שגיאה זמנית הפילה ריצות (#105) |
 | `scripts/conftest.py` | מוסיף את `actions/project-sync/` לנתיב של הבדיקות | כדי שהבדיקות ייבאו את המודולים בשמם, כמו שהסקריפט עושה |
-| `actions/project-sync/sweep_all.py` | הבדיקה המתוזמנת של כל הלוחות בבת אחת, ומדפיס רק מספרים. נכשל כשמספר הלוחות שונה מ-`EXPECTED_BOARDS` (#49) | רץ מהריפו הציבורי `dolev2/.github`, כי שם דקות ה-Actions בחינם (#46) |
+| `actions/project-sync/sweep_all.py` | הסקר המתוזמן של כל הלוחות בבת אחת: מחזיר כרטיסים שנגררו ביד, ומדפיס רק מספרים. נכשל כשמספר הלוחות שונה מ-`EXPECTED_BOARDS` (#49) | רץ מהריפו הציבורי `dolev2/.github`, כי שם דקות ה-Actions בחינם (#46) |
 | `templates/.github/workflows/` | שני ה-workflows הקצרים שקוראים ל-actions, `open-questions-gate.yml` ו-`sync-project.yml`, ושלד של `tests.yml` עם צעדי lint ובדיקת מדריך הקבצים | מועתקים לכל ריפו בהתקנה |
 | `templates/ruff.toml` | הגדרות ruff ל-Python, לפי נהלי הקוד | כל ריפו עם Python מקבל עותק |
 | `templates/eslint.config.js` | הגדרות eslint ל-React ב-JavaScript, לפי נהלי הקוד | כל ריפו עם React מקבל עותק |

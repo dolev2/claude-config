@@ -2,11 +2,12 @@
 
 Why this exists
 ---------------
-A field edited by dragging a card raises no webhook (sync_project.py), so a poll every
-15 minutes is the only thing that notices it. Run inside each private repo, that poll
-used up the account's 2,000 free Actions minutes for October 2026, and with them CI in
-every private repo. Runs in a public repo are free, so dolev2/.github runs this script
-once for all of them (claude-config #46). Each repo's sync-project.yml keeps only the
+A card dragged on the board raises no webhook (sync_project.py), so a poll every 15
+minutes is what puts it back in the column of its label, and catches up on an issue
+event whose run failed. Run inside each private repo, that poll used up the account's
+2,000 free Actions minutes for October 2026, and with them CI in every private repo.
+Runs in a public repo are free, so dolev2/.github runs this script once for all of
+them (claude-config #46). Each repo's sync-project.yml keeps only the
 issue events, which run when a label actually changes.
 
 Which repos
@@ -100,7 +101,6 @@ def run_sync(repo: str, variables: dict[str, str]) -> subprocess.CompletedProces
     env.update(
         GITHUB_REPOSITORY=repo,
         PROJECT_NUMBER=variables["PROJECT_NUMBER"],
-        SYNC_MARKER=variables.get("SYNC_MARKER", ""),
         SYNC_QUIET="1",
     )
     return subprocess.run(
