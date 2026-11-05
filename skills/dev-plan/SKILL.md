@@ -101,6 +101,9 @@ keeps them: edit it in the headings it already has.
    in "בקצרה", not a section of its own (`reference/issue-body.md`).
    An issue coming back for a revision whose plan predates this format gets it in the same edit.
 
+   **The "בדיקות" sub-heading follows the table in `~/.claude/rules/code-tests.md`**: one line
+   per change in the plan, with the kind of test its row requires, the cases, and the test file.
+
    **Can it be written in parallel?** When the work touches more than one layer (a backend and
    a frontend, say), check whether it splits into 2 to 3 parts with no file in common. If it
    does, write the "עבודה במקביל" sub-heading: the parts with their path prefixes, the shared

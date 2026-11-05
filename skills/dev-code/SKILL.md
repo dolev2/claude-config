@@ -67,8 +67,8 @@ test commands.
    Then `/rename claude/issue-<N>-<slug>`.
 
 5. Implement, following the Plan and the repair comments, and the repo's `CLAUDE.md`. Add
-   tests as `reference/tests.md` says: a test for every new parameter, endpoint, or bug
-   fix, unless the repo's CLAUDE.md defines a manual check instead of a suite.
+   tests as the Plan's "בדיקות" lists them, by the table in `~/.claude/rules/code-tests.md`,
+   unless the repo's CLAUDE.md defines a manual check instead of a suite (`reference/tests.md`).
 
    **While writing, run only the test files of what changed**, never a full suite; a failing
    test reruns alone (`reference/tests.md`). The full run comes once, in

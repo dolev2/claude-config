@@ -30,8 +30,9 @@
 | קובץ | מה הוא | מתי נטען |
 |---|---|---|
 | `code-general.md` | נהלי קוד כלליים: מודולריות, שמות, תיעוד | תמיד |
-| `code-python.md` | נהלי Python: שלוש שכבות, סגנון | רק כשעובדים על קבצי Python (`paths`) |
-| `code-react.md` | נהלי React | רק כשעובדים על קבצי React (`paths`) |
+| `code-tests.md` | נהלי בדיקות: סוגי הבדיקות, מה חובה לבדוק לפי סוג השינוי, נתוני בדיקה ו-mock | תמיד |
+| `code-python.md` | נהלי Python: שלוש שכבות, סגנון, pytest | רק כשעובדים על קבצי Python (`paths`) |
+| `code-react.md` | נהלי React, ובדיקות ב-Testing Library | רק כשעובדים על קבצי React (`paths`) |
 | `git.md` | נהלי git: מאיפה חותכים branch, rebase ואז בדיקות, התנגשות, worktree | תמיד |
 | `env-windows.md` | נהלי הסביבה במחשב של דולב: Windows, קידוד עברית, כלים זמינים, ומה חייב לעבוד גם מחוץ ל-Windows | תמיד |
 
