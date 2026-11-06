@@ -74,6 +74,8 @@
 4. **שם הסשן:** `/rename` לא זמין. במקומו `mcp__claude-code-remote__set_session_title` עם
    `claude/issue-<N>-<slug>`, ואת `session_id` נותן `mcp__claude-code-remote__get_session` בלי פרמטרים.
    הכלי לא זמין: ממשיכים, ומציינים בדיווח שהשם לא שונה.
+   **השם כבר `claude/issue-<N>-<slug>`** (מי שפתח את הסשן קבע אותו ב-`title` של `create_session`): לא קוראים ל-`set_session_title`.
+   הקריאה מיותרת, ובסשן-בן היא עלולה לעצור על חלון אישור (`cloud.md`, "חלונות אישור בסשן-בן").
 
 ## עדכון מול ה-branch הראשי, ו-CI לפני merge
 

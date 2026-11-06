@@ -107,6 +107,21 @@ REPO=https://github.com/dolev2/claude-config
 
 **מה חסום גם ב-REST:** `PROJECT_NUMBER` (משתנה של Actions), הלוח (`gh project`, `projectItems`) ו-`dev-setup` בענן: claude-config #140. מ-`dev-setup` כבר עובדת רק הקריאה של `issue_forms` כשהוא `unknown`.
 
+## חלונות אישור בסשן-בן
+סשן-בן שמחכה לאישור לא נראה תקוע מבחוץ, ומתזמר יחכה לו בלי סוף (claude-config #155). לכן:
+1. **מאושר מראש** (`permissions.allow` ב-`settings.json`): כלי קריאה של GitHub, וכלים שנוגעים רק בסשן עצמו (`get_session`, `list_events`, `set_session_title`, `subscribe_pr_activity` ודומיהם).
+   חריג קטן: `set_session_title` יכול לשנות גם שם של סשן אחר בחשבון, לפי ה-`session_id`. הוא ברשימה כי הנזק רק שם, ומשנים אותו בחזרה.
+   הרשימה חלה גם במחשב, ושם אין בה סיכון: כלי `mcp__claude-code-remote__` לא קיימים שם, וכלי GitHub ברשימה רק קוראים.
+   הבדיקה `hooks/test_settings_permissions.py` שומרת עליה: שמות מלאים בלבד, בלי `*`, ורק מתוך הרשימה שבבדיקה.
+2. **תמיד שואל:** כל כלי שכותב מחוץ לסשן (PR, issue, תגובה, קובץ ב-GitHub), `send_later` ו-`create_trigger` (שומרים משימה מתוזמנת בחשבון), `create_session`, `send_message`, `archive_session` ו-`interrupt_session`.
+   גם בקשה שהשירות מסמן `server_policy_ask_only: true` שואלת, ושום כלל לא עוקף אותה.
+3. **מיזוג שואל תמיד:** hook שמחזיר `ask` (`ask_before_merge.py`) גובר על אישור מראש. נבדק בענן ב-6.11.2026.
+4. **איך מזהים סשן-בן תקוע** (`get_session`): `session_status` הוא `SESSION_STATUS_REQUIRES_ACTION`, `status_bucket` הוא `SESSION_STATUS_BUCKET_BLOCKED`, ו-`external_metadata.pending_actions` מראה את הכלי ואת הקלט שלו.
+   גם בקשה של סוכן-משנה (`Agent`) חוסמת את כל הסשן.
+5. **מתזמר שפותח סשן-בן** מאשר פעם אחת בסשן שלו את כלי הכתיבה שהבן צריך (פתיחת PR, תגובה), ומעביר אותם ב-`extra_allowed_tools` של `create_session`.
+   השירות מעביר לבן רק כלים שמאושרים מראש אצל מי שפתח אותו. זה גיבוי, לא תחליף לרשימה.
+6. **שם הסשן** נקבע ב-`title` של `create_session`, והבן לא קורא ל-`set_session_title` (`git-flow.md`, "בסשן ענן").
+
 ## מה עוד שונה בסשן ענן
 GraphQL חסום: הסקריפטים קוראים רק דרך REST (claude-config #138), והסקילים עובדים דרך הטבלה בסעיף הקודם.
 
