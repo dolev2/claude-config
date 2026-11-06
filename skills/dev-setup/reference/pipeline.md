@@ -17,6 +17,7 @@
 | `after-merge.md` | ההצעה לסשן של המשימה הבאה |
 | `setup.md` | מה ש-`dev-setup` מתקין ולמה: הסנכרון עם הלוח, הטפסים, השער, Netlify, lint |
 | `diagram.md` | תרשים הצינור. אף סקיל לא קורא אותו בזמן ריצה |
+| `chat-decisions.md` | החלטות של דולב בחלון השאלות בצ'אט: מה נחשב החלטה, הסדר, ומה Claude מבצע |
 | `cloud.md` | עבודה מסשן ענן ומהטלפון: Remote Control, הגדרת סביבת הענן וסקריפט ההתקנה, ומה שונה בענן |
 
 **אין רוטינות ואין תזמון.** כל שלב (Plan, Code, Ship) רץ רק כשדולב מבקש אותו, בסשן מקומי או בסשן ענן (`cloud.md`).
@@ -67,10 +68,10 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 |---|---|---|---|
 | `status:explore` | ממתין לתכנון, או לעדכון של תוכנית קיימת | Claude | Claude (Plan) |
 | `status:plan-questions` | Claude שאל שאלה על התוכנית, וממתין לתשובה | דולב | דולב |
-| `status:waiting-approval` | התוכנית מוכנה, ממתינה לאישור | דולב | דולב |
+| `status:waiting-approval` | התוכנית מוכנה, ממתינה לאישור | דולב | דולב, או Claude על תשובה שלו בחלון השאלות (`chat-decisions.md`) |
 | `status:ready-to-execute` | מאושר לביצוע | Claude | Claude (Execute) |
 | `status:needs-repair` | חזר לתיקון אחרי בדיקה | Claude | Claude (Execute) |
-| `status:in-review` | Claude סיים, PR פתוח. דולב סוקר, ומבקש מיזוג בצ'אט | דולב | דולב: תיקון (`needs-repair`), או בקשת מיזוג שמפעילה את `dev-ship` |
+| `status:in-review` | Claude סיים, PR פתוח. דולב סוקר, ומבקש מיזוג בצ'אט | דולב | דולב: תיקון (`needs-repair`), או בקשת מיזוג שמפעילה את `dev-ship`. או Claude על תשובה שלו בחלון השאלות |
 | `status:done` | מוזג | — | `dev-ship` אחרי המיזוג, או הסנכרון כש-issue נסגר כהושלם |
 | `status:backlog` | רעיון, לא בצינור | דולב | דולב |
 | `area:*` | אזור, לפי מה שקיים ב-repo | — | Claude ממלא אם חסר |
@@ -91,6 +92,10 @@ gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:e
 שאלה ב-`plan-questions`, או החזיר תוכנית מ-`waiting-approval` עם הסתייגות בתגובה: הוא מעביר את
 ה-issue ל-`explore`. `dev-plan` רואה שכבר יש Plan בגוף, ולכן מעדכן אותו (מסלול התיקון) ולא כותב
 אותו מאפס.
+
+**ההחלטות של דולב מוצעות לו גם בחלון השאלות בצ'אט** (`AskUserQuestion`): תשובה לשאלות, אישור
+תוכנית, מיזוג או תיקון. קודם התווית, אחר כך השאלה, ורק תשובה בחלון של הסשן היא החלטה. הכללים:
+`chat-decisions.md`.
 
 ## המסלול הקטן
 
@@ -140,5 +145,6 @@ gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:e
   Approve: GitHub לא מאפשר Approve ל-PR שנפתח מהחשבון של דולב, וה-PRים של Claude נפתחים ממנו.
   הבקשה מפעילה את `dev-ship`. חלון האישור של `gh pr merge` נשאר כרשת ביטחון, לא כאישור שני.
 - לא לגעת ב-issue שהסטטוס שלו לא בתור של Claude (`explore`, `ready-to-execute`, `needs-repair`),
-  אלא אם דולב ביקש במפורש (למשל מיזוג של issue ב-`status:in-review`).
+  אלא אם דולב ביקש במפורש (למשל מיזוג של issue ב-`status:in-review`), או בחר בחלון השאלות
+  (`chat-decisions.md`). מותר לשאול אותו ולבצע את מה שבחר; אסור להחליט במקומו.
 - לא להמציא נתונים עסקיים. מה שחסר הוא שאלה פתוחה, לא טקסט.
