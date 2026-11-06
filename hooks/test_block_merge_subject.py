@@ -96,3 +96,74 @@ def test_other_tools_pass(monkeypatch):
 @pytest.mark.parametrize("raw", ["", "not json", "[]", '{"tool_name": "Bash"}'])
 def test_unreadable_input_passes(monkeypatch, raw):
     assert run_hook(monkeypatch, raw) == (0, "")
+
+
+def mcp_call(tool: str, **tool_input) -> str:
+    return json.dumps({"tool_name": tool, "tool_input": tool_input})
+
+
+@pytest.mark.parametrize(
+    "tool",
+    [
+        "mcp__github__merge_pull_request",
+        "mcp__claude_ai_GitHub__merge_pull_request",
+    ],
+)
+def test_mcp_merge_title_is_blocked(monkeypatch, tool):
+    raw = mcp_call(tool, pullNumber=5, merge_method="squash", commit_title="15ב. x")
+    code, reason = run_hook(monkeypatch, raw)
+    assert code == 2
+    assert "commit_title" in reason
+
+
+@pytest.mark.parametrize(
+    "tool_input",
+    [
+        {"pullNumber": 5, "merge_method": "squash"},
+        {"pullNumber": 5, "commit_title": ""},
+        {"pullNumber": 5, "commit_message": "body"},
+    ],
+)
+def test_mcp_merge_without_title_passes(monkeypatch, tool_input):
+    raw = mcp_call("mcp__github__merge_pull_request", **tool_input)
+    assert run_hook(monkeypatch, raw) == (0, "")
+
+
+def test_mcp_merge_with_odd_input_passes(monkeypatch):
+    raw = json.dumps({"tool_name": "mcp__github__merge_pull_request", "tool_input": []})
+    assert run_hook(monkeypatch, raw) == (0, "")
+
+
+def test_other_mcp_tool_with_title_passes(monkeypatch):
+    raw = mcp_call("mcp__github__update_pull_request", commit_title="x")
+    assert run_hook(monkeypatch, raw) == (0, "")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh api -X PUT repos/a/b/pulls/5/merge -f commit_title=x",
+        "gh api -X PUT repos/a/b/pulls/5/merge -F 'commit_title=15ב. x'",
+        "gh api -X PUT repos/a/b/pulls/5/merge -fcommit_title=x",
+        "gh api -X PUT repos/a/b/pulls/5/merge --raw-field commit_title=x",
+        "gh api -X PUT repos/a/b/pulls/5/merge --field=commit_title=x",
+        "cd repo && gh api -X PUT /repos/a/b/pulls/5/merge -f commit_title=x",
+        'gh api -X PUT "repos/$REPO/pulls/$PR/merge" -f commit_title=x',
+    ],
+)
+def test_api_merge_title_is_blocked(monkeypatch, command):
+    code, reason = run_hook(monkeypatch, tool_call(command))
+    assert code == 2
+    assert "commit_title" in reason
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh api -X PUT repos/a/b/pulls/5/merge -f merge_method=squash",
+        "gh api -X PUT repos/a/b/pulls/5/merge -f commit_message=commit_title=x",
+        "gh api -X PATCH repos/a/b/pulls/5 -f title=x -f commit_title=y",
+    ],
+)
+def test_api_merge_without_title_passes(monkeypatch, command):
+    assert run_hook(monkeypatch, tool_call(command)) == (0, "")

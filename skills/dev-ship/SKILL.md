@@ -164,11 +164,19 @@ wrong, fix it first (`gh pr edit <N> --title "<title>"`) and tell Dolev. Never w
 subject by hand, and never add a task number (like `15ב.`) that the issue or PR title does not
 already carry: a commit title on `<default>` cannot be fixed without rewriting history.
 
-This pops an approval window for Dolev (an `ask` rule in `~/.claude/settings.json`). That is
-expected. If he declines it, stop and report; never merge another way (such as `gh api`).
+In a cloud session `gh pr merge` does not run (`reference/cloud.md`). Merge with
+`mcp__github__merge_pull_request`: `merge_method: "squash"`, `expectedHeadSha` set to the head
+that steps 3–4b checked, and no `commit_title` (a hook blocks it, like `--subject`). The
+branch on GitHub is deleted by the repo's "Automatically delete head branches" setting, in
+place of `--delete-branch`.
+
+Either way, this pops an approval window for Dolev: an `ask` rule in `~/.claude/settings.json`
+for `gh pr merge`, and `hooks/ask_before_merge.py` for every other way to merge. That is
+expected. If he declines it, stop and report which step you stopped at; never merge another
+way.
 
 If the merge is blocked (required reviews, protection, conflicts), stop and report the exact
-reason `gh` gives. Do not retry blindly and do not force anything. `--delete-branch` may fail
+reason `gh` or the MCP tool gives. Do not retry blindly and do not force anything. `--delete-branch` may fail
 where the harness blocks destructive git operations; that is expected. Never fall back to
 deleting branches by hand.
 

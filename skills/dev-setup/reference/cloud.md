@@ -99,7 +99,7 @@ REPO=https://github.com/dolev2/claude-config
 | `gh pr view --json closingIssuesReferences` | אין שדה כזה ב-REST: ה-issues מה-`Closes #<N>` ב-`.body` של `R/pulls/<N>` |
 | `gh pr list` (`--head`, `--state`, `--search`) | `gh api "R/pulls?state=open&head=<owner>:<branch>"` (`state` כמו ב-`--state`: `open`, `closed` או `all`). חיפוש לפי issue: ה-timeline, כמו בשורה של `closedByPullRequestsReferences` |
 | `gh pr checks --watch` | `subscribe_pr_activity`, ומסיימים את התור: האירוע `check_suite.completed` מעיר את הסשן. אחריו, ולבדיקה חד-פעמית: `gh api R/commits/<sha>/check-runs` |
-| `gh pr merge` | לא כאן: claude-config #135 |
+| `gh pr merge --squash` | `mcp__github__merge_pull_request` עם `merge_method: "squash"` ו-`expectedHeadSha`, בלי `commit_title`. `hooks/ask_before_merge.py` מקפיץ חלון אישור לפני כל מיזוג (claude-config #135). את ה-branch ב-GitHub מוחקת ההגדרה של הריפו, במקום `--delete-branch` |
 | ה-GraphQL של `issue-body.md` (sub-issues ומי שמפנה) | `gh api R/issues/<N>/sub_issues`, ו-`R/issues/<N>/timeline` (אירועי `cross-referenced`) |
 | Blocked by ו-sub-issue (`dependencies.md`, `dev-issue`) | כבר REST: רצים כמו שהם |
 
@@ -111,6 +111,4 @@ GraphQL חסום: הסקריפטים קוראים רק דרך REST (claude-confi
 ה-branch, ה-worktree ושם הסשן: `git-flow.md`, הסעיף "בסשן ענן" (claude-config #134).
 בקצרה: תמיד ה-branch של המשימה, בלי worktree, והשם נקבע ב-`set_session_title` ולא ב-`/rename`.
 
-אלה משימות פתוחות, וכל אחת מעדכנת את הקובץ הזה כשהיא נסגרת:
-1. חלון האישור לפני merge תופס רק את `gh pr merge` (claude-config #135).
-2. כללי Windows ב-`rules/env-windows.md` לא חלים בענן (claude-config #136).
+משימה פתוחה, שמעדכנת את הקובץ הזה כשהיא נסגרת: כללי Windows ב-`rules/env-windows.md` לא חלים בענן (claude-config #136).
