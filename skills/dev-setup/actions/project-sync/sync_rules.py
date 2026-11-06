@@ -12,6 +12,10 @@ The one exception: an issue with no status:* label at all, which was opened from
 board past the issue form, takes its labels from its card once (WayOut #98,
 claude-config #55). From then on its labels rule like any other's.
 
+A decision issue is not that exception: it has no status:* label by design (dev-issue),
+so a column left on its card from before is cleared, not copied back into a label
+(claude-config #128).
+
 There is no owner dimension: the status alone says whose turn it is
 (claude-config #110).
 
@@ -118,9 +122,27 @@ def labels_from_board(
     """
     if any(label.startswith("status:") for label in labels):
         return {}
+    if "decision" in labels:
+        return {}  # no status by design; see clears_status
     if "status" not in from_project:
         return {}
     return {**from_project, **labels_state(labels)}
+
+
+def clears_status(labels: list[str], values: dict[str, str]) -> bool:
+    """Whether a decision issue's card still shows a column that must be cleared.
+
+    A task that became a decision loses its status:* label, and its card keeps the
+    last column. Left there, the card would be read as the issue's status (zohar
+    #27, #31). values are the card's raw field values, so a column the sync does not
+    know (a board's default "Todo") is cleared too. With a status:* label on it the
+    labels rule as usual.
+    """
+    return (
+        "decision" in labels
+        and not any(label.startswith("status:") for label in labels)
+        and bool(values.get("Status"))
+    )
 
 
 def label_edit_args(labels: list[str], state: dict[str, str]) -> list[str]:

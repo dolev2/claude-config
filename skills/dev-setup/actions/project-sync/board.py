@@ -95,6 +95,14 @@ mutation($project:ID!, $item:ID!, $field:ID!, $option:String!) {
 }
 """
 
+CLEAR_FIELD = """
+mutation($project:ID!, $item:ID!, $field:ID!) {
+  clearProjectV2ItemFieldValue(input:{
+    projectId:$project, itemId:$item, fieldId:$field
+  }) { projectV2Item { id } }
+}
+"""
+
 
 def board_item(issue: dict, number: int) -> dict | None:
     """{"id": item id, "values": {field name: option}} of the issue on board number."""
@@ -181,3 +189,8 @@ def set_field(project_id: str, item_id: str, field: dict, option_name: str) -> b
         option=option["id"],
     )
     return True
+
+
+def clear_field(project_id: str, item_id: str, field: dict) -> None:
+    """Empty a field on a board item, so the card sits in no column."""
+    gh_api.graphql(CLEAR_FIELD, project=project_id, item=item_id, field=field["id"])

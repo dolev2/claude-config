@@ -59,6 +59,9 @@ def test_the_board_takes_the_labels(from_labels, on_board, expected):
         ),
         # With a status label the labels rule, whatever the card shows.
         (["status:explore"], {"status": "done"}, {}),
+        # A decision has no status by design: its old column is not copied back
+        # (claude-config #128).
+        (["decision"], {"status": "ready-to-execute"}, {}),
         # A card with no status gives nothing.
         ([], {}, {}),
         ([], {"area": "infra"}, {}),
@@ -177,3 +180,28 @@ def test_active_without_sprint(status, state, milestone, expected):
     issue = {"state": state, "milestone": milestone}
     labels = ["task"] + ([status] if status else [])
     assert sync_rules.is_active_without_sprint(issue, labels) is expected
+
+
+@pytest.mark.parametrize(
+    "labels, on_board, expected",
+    [
+        # claude-config #128: a task turned decision keeps its old column on the card.
+        (["decision"], {"Status": "Ready to execute (Claude)"}, True),
+        (
+            ["decision", "area:infra"],
+            {"Status": "Explore (Claude)", "Area": "Infra"},
+            True,
+        ),
+        # A column the sync does not know is cleared too.
+        (["decision"], {"Status": "Todo"}, True),
+        # The card already sits in no column: nothing to clear.
+        (["decision"], {}, False),
+        (["decision"], {"Area": "Infra"}, False),
+        # A status label rules, decision or not.
+        (["decision", "status:explore"], {"Status": "Done"}, False),
+        # Not a decision: the card is the one exception of an issue opened from it.
+        ([], {"Status": "Backlog"}, False),
+    ],
+)
+def test_a_decision_card_loses_its_column(labels, on_board, expected):
+    assert sync_rules.clears_status(labels, on_board) is expected
