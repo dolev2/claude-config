@@ -90,5 +90,9 @@ def test_cloud_table_covers_every_gh_issue_and_pr_command():
         for group, verb in GH_COMMAND.findall(path.read_text(encoding="utf-8"))
     }
     table = cloud_table()
-    missing = sorted(command for command in used if command not in table)
+    missing = sorted(
+        command
+        for command in used
+        if not re.search(re.escape(command) + r"(?![\w-])", table)
+    )
     assert missing == [], f"add a row to the table in reference/cloud.md for: {missing}"
