@@ -27,6 +27,7 @@ ranking rule and why this skill ranks without status tiers, while the phases put
 tier first. In both, `process` and `bug` issues come before the rest, then weight decides.
 Its sub-section "בדיקת הסדר" holds what the audit below finds, and the rule for merging.
 The review of the sprint order edits issue bodies, so it also reads `issue-body.md` there.
+Asking Dolev for his step in the question window (step 4) follows `chat-decisions.md`.
 
 ## Steps
 
@@ -87,7 +88,8 @@ The review of the sprint order edits issue bodies, so it also reads `issue-body.
    waits for (the table above), with a link to the issue, then name the first row in Claude's
    turn below it that step 2 would pick, and ask whether to work on that one meanwhile. Doing
    his part (approving, answering, merging, relabelling) is never yours. You may ask him for it
-   in the question window and carry out what he chooses there (`reference/chat-decisions.md`); never decide it for him.
+   in the question window and carry out what he chooses there
+   (`reference/chat-decisions.md`); never decide it for him.
 
 5. If the ranking shows an issue in `status:needs-repair` that you did not
    pick, mention it: a repair is work Dolev already reviewed, and `dev-code` on its own would

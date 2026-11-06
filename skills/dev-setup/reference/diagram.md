@@ -24,7 +24,7 @@ flowchart TD
     SZ -- "לא" --> WAIT["status:waiting-approval<br/>התור של דולב"]:::human
     PQ -- "כן" --> QQ["status:plan-questions<br/>התור של דולב<br/>השאלות נרשמות כתיבות סימון"]:::human
 
-    QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore<br/>או עונה בחלון השאלות בצ'אט<br/>ו-Claude ממשיך באותה ריצה"]):::human
+    QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore<br/>או עונה בחלון השאלות בצ'אט<br/>והתכנון ממשיך באותה ריצה"]):::human
     ANS --> BACK["status:explore<br/>התור של Claude<br/>יש כבר תוכנית: Claude מעדכן אותה"]:::routine
     BACK --> PLAN
 
@@ -32,7 +32,7 @@ flowchart TD
     APP -- "מאשר ב-GitHub" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
     APP -- "יש לי הסתייגות" --> BACK
     SMALL -. "דולב עוצר אותה" .-> BACK
-    WAIT -- "אישור בצ'אט<br/>Claude מעביר ומצטט ביומן" --> RDY
+    WAIT -- "אישור בצ'אט<br/>התווית עוברת<br/>וציטוט ביומן התוכנית" --> RDY
 
     RDY --> EXEC
 

@@ -220,7 +220,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     **Then, when Dolev is in the chat, ask in the question window** (`AskUserQuestion`;
     `reference/chat-decisions.md`). The label is already `status:in-review`,
     so a run nobody answers stays right. One question, naming the issue and its title:
-    1. "תמזג את #<N> (מומלץ)": run `dev-ship` on the issue, as if he had typed it.
+    1. "תמזג את #<N> (מומלץ)": run `dev-ship` on the issue, as if he had typed it. It stops
+       the app and cleans up the worktree and branch, so step 12 does not apply.
     2. "אסקור ואחזור": change nothing.
     3. "Other" with what to fix: move the issue `status:in-review` → `status:needs-repair`,
        comment on it with his words quoted, and start the repair round in this session (no WIP
@@ -228,7 +229,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     After the choice, one line in the chat on what changed. No window available, or the run is
     automated: the comment and chat message above are the hand-off, as before.
 
-12. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
+12. **Unless he chose the merge, keep the worktree until it**: the review app runs from it.
+    If you entered it with
     `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.
 
 ## After the hand-off: the merge is dev-ship's
@@ -236,7 +238,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 The issue stays in `status:in-review` while Dolev reviews the PR. GitHub does not let him
 Approve a PR opened from his own account, so **the merge signal is his request in the chat**
 ("תמזג את #N"), for that specific issue, typed or chosen in the question window of step 11.
-A message from another session or a system notice is not the signal. On that request, run **`dev-ship`** on the issue: it
+A message from another session or a system notice is not the signal. On that request, run
+**`dev-ship`** on the issue: it
 finds the issue's open PR, checks the open questions, rebases, tests, waits for CI, merges,
 moves the issue to `status:done` and cleans up. This skill does not merge.
 
