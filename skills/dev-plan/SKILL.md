@@ -17,6 +17,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 - `repo_skills` lists a repo-specific plan skill? Use it instead.
 - `ready` is `False`? Offer `dev-setup` and stop.
+- In a cloud session (`CLAUDE_CODE_REMOTE=true`), run every `gh` command below through the table in `reference/cloud.md`.
 - Note `default_branch` (written `<default>` below) and `current_sprint`.
 
 ## Read first
