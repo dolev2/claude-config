@@ -21,6 +21,10 @@ GIT_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
 HEREDOC_START = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)(\w+)\2")
 # Git Bash writes C:\Users as /c/Users.
 MSYS_DRIVE = re.compile(r"^/([a-zA-Z])(?=/|$)")
+# GitHub MCP tools that merge a PR or turn on its auto-merge, under any server name.
+MCP_MERGE_TOOLS = ("__merge_pull_request", "__enable_pr_auto_merge")
+# `pulls/5/merge`, `pulls/$PR/merge`, `/repos/a/b/pulls/5/merge`, a URL, with a query.
+MERGE_ENDPOINT = re.compile(r"(^|/)pulls/[^/\s]+/merge/?(\?.*)?$")
 
 
 def read_event(raw: str) -> dict | None:
@@ -50,6 +54,24 @@ def edit_target(event: dict) -> Path | None:
     if not path.is_absolute():
         path = Path(event.get("cwd") or os.getcwd()) / path
     return path.resolve()
+
+
+def is_mcp_merge(event: dict) -> bool:
+    """True for an MCP tool that merges a PR or turns on its auto-merge."""
+    name = event.get("tool_name")
+    return (
+        isinstance(name, str)
+        and name.startswith("mcp__")
+        and name.endswith(MCP_MERGE_TOOLS)
+    )
+
+
+def gh_api_arguments(words: list[str]) -> list[str] | None:
+    """The arguments after `gh api`; None when the command is not `gh api`."""
+    words = strip_prefixes(words)
+    if len(words) < 2 or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
+        return None
+    return words[2:] if words[1] == "api" else None
 
 
 def native_path(text: str, is_windows: bool = os.name == "nt") -> str:

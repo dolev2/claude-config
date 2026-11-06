@@ -18,39 +18,23 @@ read.
 """
 
 import json
-import re
 import sys
-from pathlib import PurePath
 
-from shell_commands import read_event, shell_command, split_subcommands, strip_prefixes
+from shell_commands import (
+    MERGE_ENDPOINT,
+    gh_api_arguments,
+    is_mcp_merge,
+    read_event,
+    shell_command,
+    split_subcommands,
+)
 
 REASON = (
     "מיזוג של PR: צריך את האישור של דולב (rules/git.md).\n"
     "דחייה: עוצרים ומדווחים, ולא ממזגים בדרך אחרת (claude-config#135)."
 )
 
-MCP_MERGE_TOOLS = ("__merge_pull_request", "__enable_pr_auto_merge")
 GRAPHQL_MERGE_MUTATIONS = ("mergePullRequest", "enablePullRequestAutoMerge")
-# `pulls/5/merge`, `/repos/a/b/pulls/5/merge`, a full URL, with or without a query.
-MERGE_ENDPOINT = re.compile(r"(^|/)pulls/\d+/merge/?(\?.*)?$")
-
-
-def is_mcp_merge(event: dict) -> bool:
-    """True for an MCP tool that merges a PR or turns on its auto-merge."""
-    name = event.get("tool_name")
-    return (
-        isinstance(name, str)
-        and name.startswith("mcp__")
-        and name.endswith(MCP_MERGE_TOOLS)
-    )
-
-
-def api_arguments(words: list[str]) -> list[str] | None:
-    """The arguments after `gh api`; None when the command is not `gh api`."""
-    words = strip_prefixes(words)
-    if len(words) < 2 or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
-        return None
-    return words[2:] if words[1] == "api" else None
 
 
 def http_method(arguments: list[str]) -> str | None:
@@ -82,7 +66,7 @@ def is_shell_merge(command: str) -> bool:
     if "merge" not in command.lower():
         return False
     for words in split_subcommands(command):
-        arguments = api_arguments(words)
+        arguments = gh_api_arguments(words)
         if arguments is not None and is_api_merge(arguments):
             return True
     return False

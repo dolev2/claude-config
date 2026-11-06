@@ -91,6 +91,8 @@ def test_other_tools_pass(monkeypatch, tool):
         "git fetch origin main && gh api -X PUT repos/a/b/pulls/5/merge",
         "GH_REPO=a/b gh api -X PUT repos/a/b/pulls/5/merge",
         "gh.exe api -X PUT repos/a/b/pulls/5/merge",
+        'gh api -X PUT "repos/$REPO/pulls/$PR/merge"',
+        "gh api -X PUT repos/{owner}/{repo}/pulls/${N}/merge",
         "gh api graphql -f query='mutation { mergePullRequest(input: {}) { x } }'",
         "gh api graphql -f query='mutation { enablePullRequestAutoMerge(input: {}) }'",
     ],

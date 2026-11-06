@@ -176,7 +176,7 @@ expected. If he declines it, stop and report which step you stopped at; never me
 way.
 
 If the merge is blocked (required reviews, protection, conflicts), stop and report the exact
-reason `gh` gives. Do not retry blindly and do not force anything. `--delete-branch` may fail
+reason `gh` or the MCP tool gives. Do not retry blindly and do not force anything. `--delete-branch` may fail
 where the harness blocks destructive git operations; that is expected. Never fall back to
 deleting branches by hand.
 

@@ -16,11 +16,18 @@ cannot do this: `*--subject*` misses `-t` and grouped flags like `-st`. This is 
 against mistakes, not a security boundary: `sh -c` and `--input` are not read.
 """
 
-import re
 import sys
 from pathlib import PurePath
 
-from shell_commands import read_event, shell_command, split_subcommands, strip_prefixes
+from shell_commands import (
+    MERGE_ENDPOINT,
+    gh_api_arguments,
+    is_mcp_merge,
+    read_event,
+    shell_command,
+    split_subcommands,
+    strip_prefixes,
+)
 
 REASON = (
     "מיזוג עם `--subject` או `-t` חסום: כותרת ה-commit נלקחת מכותרת ה-PR.\n"
@@ -33,8 +40,6 @@ REASON_API = (
     " (claude-config#87, #135).\n"
 )
 
-MCP_MERGE_TOOLS = ("__merge_pull_request", "__enable_pr_auto_merge")
-MERGE_ENDPOINT = re.compile(r"(^|/)pulls/\d+/merge/?(\?.*)?$")
 API_FIELD_FLAGS = ("-f", "-F", "--raw-field", "--field")
 
 # Shorthand flags of `gh pr merge` that take a value; letters after them are the value.
@@ -83,19 +88,15 @@ def sets_subject(arguments: list[str]) -> bool:
 
 def mcp_sets_title(event: dict) -> bool:
     """True for an MCP merge tool called with a commit title."""
-    name = event.get("tool_name")
-    if not isinstance(name, str) or not name.startswith("mcp__"):
+    tool_input = event.get("tool_input")
+    if not is_mcp_merge(event) or not isinstance(tool_input, dict):
         return False
-    tool_input = event.get("tool_input") or {}
-    return name.endswith(MCP_MERGE_TOOLS) and bool(tool_input.get("commit_title"))
+    return bool(tool_input.get("commit_title"))
 
 
 def api_sets_title(words: list[str]) -> bool:
     """True for `gh api ... pulls/<N>/merge` with a `commit_title` field."""
-    words = strip_prefixes(words)
-    if len(words) < 2 or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
-        return False
-    arguments = words[2:] if words[1] == "api" else []
+    arguments = gh_api_arguments(words) or []
     if not any(MERGE_ENDPOINT.search(argument) for argument in arguments):
         return False
     for index, argument in enumerate(arguments):

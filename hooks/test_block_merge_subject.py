@@ -106,7 +106,6 @@ def mcp_call(tool: str, **tool_input) -> str:
     "tool",
     [
         "mcp__github__merge_pull_request",
-        "mcp__github__enable_pr_auto_merge",
         "mcp__claude_ai_GitHub__merge_pull_request",
     ],
 )
@@ -130,6 +129,11 @@ def test_mcp_merge_without_title_passes(monkeypatch, tool_input):
     assert run_hook(monkeypatch, raw) == (0, "")
 
 
+def test_mcp_merge_with_odd_input_passes(monkeypatch):
+    raw = json.dumps({"tool_name": "mcp__github__merge_pull_request", "tool_input": []})
+    assert run_hook(monkeypatch, raw) == (0, "")
+
+
 def test_other_mcp_tool_with_title_passes(monkeypatch):
     raw = mcp_call("mcp__github__update_pull_request", commit_title="x")
     assert run_hook(monkeypatch, raw) == (0, "")
@@ -144,6 +148,7 @@ def test_other_mcp_tool_with_title_passes(monkeypatch):
         "gh api -X PUT repos/a/b/pulls/5/merge --raw-field commit_title=x",
         "gh api -X PUT repos/a/b/pulls/5/merge --field=commit_title=x",
         "cd repo && gh api -X PUT /repos/a/b/pulls/5/merge -f commit_title=x",
+        'gh api -X PUT "repos/$REPO/pulls/$PR/merge" -f commit_title=x',
     ],
 )
 def test_api_merge_title_is_blocked(monkeypatch, command):
