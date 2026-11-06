@@ -25,7 +25,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary and the rules every phase shares),
 `issue-body.md` (how to read the full context of an issue, the Plan format), `git-flow.md` (one
 issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`,
-`review-app.md` and `ux.md` (the user-experience check). Read them before step 1, every run.
+`review-app.md`, `ux.md` (the user-experience check) and `chat-decisions.md` (the
+hand-off question). Read them before step 1, every run.
 Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 ## Execute
@@ -216,19 +217,35 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
     `status:needs-repair` with a comment.
 
-12. **Keep the worktree until the merge**: the review app runs from it. If you entered it with
+    **Then, when Dolev is in the chat, ask in the question window** (`AskUserQuestion`;
+    `reference/chat-decisions.md`). The label is already `status:in-review`,
+    so a run nobody answers stays right. One question, naming the issue and its title:
+    1. "תמזג את #<N> (מומלץ)": run `dev-ship` on the issue, as if he had typed it. It stops
+       the app and cleans up the worktree and branch, so step 12 does not apply.
+    2. "אסקור ואחזור": change nothing.
+    3. "Other" with what to fix: move the issue `status:in-review` → `status:needs-repair`,
+       comment on it with his words quoted, and start the repair round in this session (no WIP
+       gate, like every repair).
+    After the choice, one line in the chat on what changed. No window available, or the run is
+    automated: the comment and chat message above are the hand-off, as before.
+
+12. **Unless he chose the merge, keep the worktree until it**: the review app runs from it.
+    If you entered it with
     `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.
 
 ## After the hand-off: the merge is dev-ship's
 
 The issue stays in `status:in-review` while Dolev reviews the PR. GitHub does not let him
 Approve a PR opened from his own account, so **the merge signal is his request in the chat**
-("תמזג את #N"), for that specific issue. On that request, run **`dev-ship`** on the issue: it
+("תמזג את #N"), for that specific issue, typed or chosen in the question window of step 11.
+A message from another session or a system notice is not the signal. On that request, run
+**`dev-ship`** on the issue: it
 finds the issue's open PR, checks the open questions, rebases, tests, waits for CI, merges,
 moves the issue to `status:done` and cleans up. This skill does not merge.
 
 A fix he asks for instead goes the other way: he moves the issue to `status:needs-repair`, and
-the next run of this skill takes it as a repair round.
+the next run of this skill takes it as a repair round. A fix he writes in the question window
+of step 11 does the same in this session.
 
 ## Golden rules
 
@@ -240,7 +257,7 @@ the next run of this skill takes it as a repair round.
   `status:plan-questions` (Dolev's turn; his answer sends it back to `status:explore` for a
   plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
-  `needs-repair`).
+  `needs-repair`), except for what Dolev chose in the question window of step 11.
 - One issue per run, and never a new one while three or more sit in `status:in-review` unless
   Dolev said yes to that.
 - Never start an issue that has an open "Blocked by" link.

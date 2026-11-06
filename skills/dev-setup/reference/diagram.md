@@ -24,14 +24,15 @@ flowchart TD
     SZ -- "לא" --> WAIT["status:waiting-approval<br/>התור של דולב"]:::human
     PQ -- "כן" --> QQ["status:plan-questions<br/>התור של דולב<br/>השאלות נרשמות כתיבות סימון"]:::human
 
-    QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore"]):::human
+    QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore<br/>או עונה בחלון השאלות בצ'אט<br/>והתכנון ממשיך באותה ריצה"]):::human
     ANS --> BACK["status:explore<br/>התור של Claude<br/>יש כבר תוכנית: Claude מעדכן אותה"]:::routine
     BACK --> PLAN
 
     WAIT --> APP(["דולב קורא את התוכנית"]):::human
-    APP -- "מאשר" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
+    APP -- "מאשר ב-GitHub" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
     APP -- "יש לי הסתייגות" --> BACK
     SMALL -. "דולב עוצר אותה" .-> BACK
+    WAIT -- "אישור בצ'אט<br/>התווית עוברת<br/>וציטוט ביומן התוכנית" --> RDY
 
     RDY --> EXEC
 
@@ -54,9 +55,9 @@ flowchart TD
     GATE -.-> WARN["נשארה תיבה לא מסומנת<br/>תגובה ותווית אזהרה<br/>הפלת ריצה שולחת מייל"]:::gate
 
     REV --> RC(["Dolev reviews the PR"]):::human
-    RC -- "נדרש תיקון" --> REP["status:needs-repair<br/>התור של Claude"]:::routine
+    RC -- "נדרש תיקון<br/>בתווית או בחלון השאלות" --> REP["status:needs-repair<br/>התור של Claude"]:::routine
     REP --> EXEC
-    RC -- "תקין" --> ASK(["דולב מבקש מיזוג בצ'אט<br/>תמזג את #N"]):::human
+    RC -- "תקין" --> ASK(["דולב מבקש מיזוג בצ'אט<br/>תמזג את #N<br/>בהקלדה או בחלון השאלות"]):::human
 
     ASK --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
     SHIP --> MERGE["checks the open questions<br/>verifies the PR still merges cleanly<br/>rebase, then tests<br/>waits for CI checks<br/>squash merge"]:::routine

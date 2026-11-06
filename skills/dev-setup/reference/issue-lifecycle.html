@@ -475,8 +475,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label c">explore</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
-        <p>אין סקיל: זה תור של דולב.</p>
-        <p>תשובה או הסתייגות מחזירות ל-dev-plan.</p>
+        <p>ההחלטה של דולב. תשובה או הסתייגות מחזירות ל-dev-plan.</p>
+        <p>כשדולב בצ'אט, dev-plan שואל בסוף הריצה בחלון השאלות, עם ההמלצה ראשונה. לחיצה על "מאשר" מעבירה ל-<code>ready-to-execute</code>, עם שורה ביומן התוכנית. תשובה לשאלות ממשיכה את התכנון באותה ריצה.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>אין פעולה.</p>
@@ -516,6 +516,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p>דולב בודק את ה-PR ואת האפליקציה שרצה מה-worktree.</p>
         <p>תיקון חוזר ל-dev-code, ופטור משער ה-3.</p>
+        <p>בסוף המסירה, dev-code שואל בחלון השאלות: "תמזג את #N", "אסקור ואחזור", או מה לתקן במלל חופשי. תיקון שנכתב בחלון מעביר ל-<code>needs-repair</code>, וסבב התיקון מתחיל באותו סשן.</p>
         <p>אין Approve: GitHub לא מאפשר אותו ל-PR שנפתח מהחשבון של דולב. הבקשה בצ'אט היא האישור.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
@@ -535,6 +536,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-ship</b>: הדרך היחידה למיזוג.</p>
+        <p>מופעל מבקשה בצ'אט, בהקלדה או בלחיצה בחלון השאלות. הודעה מסשן אחר או התראה אינן בקשה.</p>
         <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>

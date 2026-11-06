@@ -454,8 +454,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label c">explore</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
-        <p>No skill: it is Dolev's turn.</p>
-        <p>An answer or an objection sends it back to dev-plan.</p>
+        <p>Dolev's decision. An answer or an objection sends it back to dev-plan.</p>
+        <p>When Dolev is in the chat, dev-plan asks at the end of its run in the question window, recommendation first. Clicking "approve" moves it to <code>ready-to-execute</code>, with a line in the plan log. Answering the questions continues the planning in the same run.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>No action.</p>
@@ -495,6 +495,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p>Dolev checks the PR and the app running from the worktree.</p>
         <p>A fix goes back to dev-code, and is exempt from the 3-PR gate.</p>
+        <p>At the end of the hand-off, dev-code asks in the question window: "merge #N", "I'll review and come back", or what to fix, in free text. A fix written in the window moves it to <code>needs-repair</code>, and the repair round starts in the same session.</p>
         <p>No Approve: GitHub does not allow it on a PR opened from Dolev's own account. The chat request is the approval.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
@@ -514,6 +515,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-ship</b>: the only merge path.</p>
+        <p>Started by a request in the chat, typed or clicked in the question window. A message from another session or a notice is not a request.</p>
         <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
