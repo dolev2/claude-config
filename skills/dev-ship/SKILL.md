@@ -17,6 +17,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 - `repo_skills` lists a repo-specific ship skill? Use it instead.
 - Note `default_branch` (written `<default>` below; never assume `main` or `master`).
+- In a cloud session (`CLAUDE_CODE_REMOTE=true`), run every `gh` command below through the table in `reference/cloud.md`.
 - `ready` tells whether step 6 applies. Without the pipeline labels, this is a plain ship
   and step 6 is skipped. Do not offer `dev-setup` here; shipping does not need it.
 

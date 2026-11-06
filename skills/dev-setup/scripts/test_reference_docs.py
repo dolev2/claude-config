@@ -68,3 +68,27 @@ def test_no_skill_points_at_the_reference_doc_without_a_file_name():
 def test_reference_file_stays_small(doc):
     lines = doc.read_text(encoding="utf-8").count("\n")
     assert lines <= MAX_LINES, f"{doc.name}: {lines} lines; split it or cut it"
+
+
+GH_COMMAND = re.compile(r"\bgh (issue|pr) ([a-z][a-z-]*)")
+
+
+def cloud_table() -> str:
+    """The section of cloud.md that maps each gh command to its cloud replacement."""
+    text = (REFERENCE / "cloud.md").read_text(encoding="utf-8")
+    start = text.index("## פקודות GitHub בסשן ענן")
+    end = text.find("\n## ", start + 1)
+    return text[start : end if end != -1 else None]
+
+
+def test_cloud_table_covers_every_gh_issue_and_pr_command():
+    sources = [*ROOT.glob("skills/*/SKILL.md"), *DOCS]
+    used = {
+        f"gh {group} {verb}"
+        for path in sources
+        if path.name != "cloud.md"
+        for group, verb in GH_COMMAND.findall(path.read_text(encoding="utf-8"))
+    }
+    table = cloud_table()
+    missing = sorted(command for command in used if command not in table)
+    assert missing == [], f"add a row to the table in reference/cloud.md for: {missing}"

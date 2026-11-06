@@ -16,6 +16,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 - `repo_skills` lists a repo-specific next-issue skill? Use it instead.
 - `ready` is `False`? Offer `dev-setup` and stop.
+- In a cloud session (`CLAUDE_CODE_REMOTE=true`), run every `gh` command below through the table in `reference/cloud.md`.
 - When routing in step 3, prefer the repo's own plan/code skills over `dev-plan` /
   `dev-code` if `repo_skills` has them.
 

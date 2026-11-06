@@ -126,6 +126,11 @@ The issue forms are not copied. Check `issue_forms` from step 0:
   delete the local folder.
 - empty (`missing_files` names `.github/ISSUE_TEMPLATE`): there are no forms anywhere. Stop and
   tell Dolev that `<owner>/.github` is missing.
+- `unknown (no access from this session)`: not a place. The API cannot reach `<owner>/.github`
+  from here (a cloud session). Clone it read-only (`git clone --depth 1
+  https://github.com/<owner>/.github <scratchpad>/owner-github`; the git proxy serves a public
+  repo without attaching it), check the repo's own `.github/ISSUE_TEMPLATE/` on disk, and decide
+  by the three cases above.
 
 Copy from `$HOME/.claude/skills/dev-setup/templates/.github/` into the repo's `.github/`,
 only what is missing:

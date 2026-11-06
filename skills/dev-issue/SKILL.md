@@ -18,6 +18,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 - `repo_skills` lists a repo-specific skill for opening issues? Use it
   instead and stop here.
 - `ready` is `False`? The pipeline is not installed in this repo. Offer `dev-setup` and stop.
+- In a cloud session (`CLAUDE_CODE_REMOTE=true`), run every `gh` command below through the table in `reference/cloud.md`.
 - Note `area_labels`, `current_sprint`, and `issue_forms`.
 
 ## Read first
@@ -33,7 +34,10 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
   ```bash
   gh api repos/<owner>/.github/contents/.github/ISSUE_TEMPLATE/task.yml -H "Accept: application/vnd.github.raw"
   ```
-  (`bug.yml` next to it.)
+  (`bug.yml` next to it.) `unknown (no access from this session)` is not a place: the API
+  cannot reach `<owner>/.github` from here (a cloud session). Read the forms from a read-only
+  clone instead, which the session's git proxy serves for a public repo without attaching it:
+  `git clone --depth 1 https://github.com/<owner>/.github <scratchpad>/owner-github`.
 
 ## Step 1: Agree on the list before creating anything
 
