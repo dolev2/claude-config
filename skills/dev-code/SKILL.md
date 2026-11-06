@@ -61,10 +61,13 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    does not exist on the remote, create it there first
    (`git push origin origin/<default>:refs/heads/claude/issue-<N>-<slug>`). Then:
    - the session already runs in its own worktree: check out the branch there;
+   - a cloud session: check out the branch directly in its own clone, no worktree, and never
+     the branch the service may have named for the session (`reference/git-flow.md`, "בסשן ענן");
    - otherwise use the `EnterWorktree` tool if it is available, or `git worktree add` as in
      `reference/git-flow.md`, and run every later command inside that folder.
 
-   Then `/rename claude/issue-<N>-<slug>`.
+   Then `/rename claude/issue-<N>-<slug>`; in a cloud session, the session title instead
+   (same section).
 
 5. Implement, following the Plan and the repair comments, and the repo's `CLAUDE.md`. Add
    tests as the Plan's "בדיקות" lists them, by the table in `~/.claude/rules/code-tests.md`,

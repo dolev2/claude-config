@@ -50,7 +50,9 @@ When Dolev names an issue rather than a branch:
    Dolev asked by name, but say so in the summary.
 2. Work on the PR's branch (`headRefName`) in a worktree, never by switching branches in the
    shared working copy. The worktree `dev-code` left for that issue is the one to use: it
-   holds the review app (`git worktree list` shows it). Then go on to step 1.
+   holds the review app (`git worktree list` shows it). In a cloud session there is no
+   worktree: check out the branch in the session's own clone (`reference/git-flow.md`,
+   "בסשן ענן"). Then go on to step 1.
 
 ## Step 1: Sanity checks
 
@@ -220,6 +222,12 @@ refs, so without this step the local branch stays forever.
 When this ran inside a worktree the session owns, leave that worktree instead of checking out
 `<default>` in it, as `reference/git-flow.md` says; delete the branch after the
 worktree is removed (git refuses to delete a branch checked out in a worktree).
+
+In a cloud session there is no worktree to remove, and `<default>` is not checked out: run
+`git checkout --detach origin/<default>` instead of the first line above, then delete the
+local branch as above. Never delete the remote branch with `git push`: the proxy blocks it,
+and the repo setting deletes it; the `git ls-remote` check still applies
+(`reference/git-flow.md`, "בסשן ענן").
 
 If the branch has a review app (`review-app.json` names it), stop it before removing its
 worktree, as `reference/review-app.md` says.

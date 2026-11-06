@@ -53,8 +53,27 @@
 
 - branch: `claude/issue-<N>-<slug-אנגלי-קצר>`. גם `dev-ship` משתמש בשם הזה כשהעבודה שייכת ל-issue.
 - הקישור ל-issue נוצר דרך `Closes #<N>` בגוף ה-PR.
-- שם הסשן: `/rename claude/issue-<N>-<slug>` כשמתחילים לעבוד על ה-branch.
+- שם הסשן: `/rename claude/issue-<N>-<slug>` כשמתחילים לעבוד על ה-branch. בסשן ענן: הסעיף הבא.
 - מחיקת branches אחרי merge: ההגדרה "Automatically delete head branches" של ה-repo.
+
+## בסשן ענן
+
+סשן ענן (`CLAUDE_CODE_REMOTE=true`, `cloud.md`) רץ ב-container משלו, עם clone טרי. מה שונה בו:
+1. **ה-branch הוא תמיד של המשימה**, `claude/issue-<N>-<slug>` מה-Plan. השירות נותן לפעמים לסשן
+   branch משלו (`claude/<שם>`) בהנחיות הסשן: בצינור מתעלמים ממנו ולא דוחפים אליו.
+   `dev-ship` וסשן תיקון מוצאים את העבודה לפי השם של המשימה, ולפעמים השירות לא נותן branch בכלל (HEAD מנותק).
+2. **בלי worktree.** ה-clone של הסשן שלו בלבד, ולכן מחליפים בו branch ישירות, כשהעץ נקי (`rules/git.md`):
+   ```bash
+   git fetch origin claude/issue-<N>-<slug>
+   git checkout -B claude/issue-<N>-<slug> origin/claude/issue-<N>-<slug>
+   ```
+   `git worktree add` עדיין עובד, ומותר. סוכנים במקביל (`isolation: "worktree"`) לא משתנים.
+3. **הניקוי אחרי merge** (`dev-ship`): אין worktree להסיר. `git checkout --detach origin/<default>`,
+   ואז מחיקת ה-branch המקומי. ב-GitHub הוא נמחק בהגדרה Automatically delete head branches,
+   כי `git push` שמוחק branch נחסם ב-proxy (403). הבדיקה ש-`git ls-remote --heads` ריק נשארת.
+4. **שם הסשן:** `/rename` לא זמין. במקומו `mcp__claude-code-remote__set_session_title` עם
+   `claude/issue-<N>-<slug>`, ואת `session_id` נותן `get_session` בלי פרמטרים.
+   הכלי לא זמין: ממשיכים, ומציינים בדיווח שהשם לא שונה.
 
 ## עדכון מול ה-branch הראשי, ו-CI לפני merge
 
