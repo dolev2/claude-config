@@ -30,6 +30,7 @@ import json
 import sys
 from dataclasses import dataclass
 
+from gh_rest import current_repo, open_issue_nodes
 from issue_body import (
     CONTEXT_HEADINGS,
     GOAL_HEADINGS,
@@ -39,29 +40,8 @@ from issue_body import (
     section,
     sections,
 )
-from rank_issues import current_repo, current_sprint, fetch_nodes, parse_issue
+from rank_issues import current_sprint, parse_issue
 
-QUERY = """
-query($owner: String!, $name: String!, $after: String) {
-  repository(owner: $owner, name: $name) {
-    issues(states: OPEN, first: 100, after: $after) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
-        number
-        title
-        body
-        labels(first: 30) { nodes { name } }
-        milestone { title number state }
-        blockedBy(first: 50) { nodes { number state } }
-        blocking(first: 50) { nodes { number state } }
-        closedByPullRequestsReferences(first: 1) { totalCount }
-        parent { number }
-        subIssues(first: 50) { nodes { number } }
-      }
-    }
-  }
-}
-"""
 SHARED_DOCS = {"README.md", "CLAUDE.md"}
 
 
@@ -244,7 +224,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    nodes = fetch_nodes(args.repo or current_repo(), QUERY)
+    nodes = open_issue_nodes(args.repo or current_repo(), with_body=True)
     sprint = args.milestone or current_sprint(nodes)
     if sprint is None:
         sys.exit("No open milestone has open issues.")

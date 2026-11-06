@@ -66,6 +66,7 @@
 | `scripts/pipeline_info.py` | קורא מהריפו כל מה שמשתנה בין ריפואים | כל סקיל מתחיל בו, כדי ששום דבר לא יוגדר ידנית |
 | `scripts/rank_issues.py` | מדרג את ה-issues בספרינט לפי כמה עבודה מחכה להם | הסדר של `dev-next`, `dev-plan` ו-`dev-code` |
 | `scripts/audit_sprint.py` | בודק את קישורי ה-Blocked by של כל הספרינט יחד: קישור חסר, חוסם מחוץ לספרינט, מעגל, חפיפת קבצים (#54) | הדירוג טוב רק כמו הקישורים; `dev-next` מריץ אותו בכל ריצה |
+| `scripts/gh_rest.py` | קורא את ה-issues הפתוחים מ-GitHub דרך REST בלבד, באותה צורה שבה GraphQL החזיר אותם | GraphQL חסום בסשן ענן; משותף ל-`rank_issues.py`, `audit_sprint.py` ו-`pipeline_info.py` (#138) |
 | `scripts/issue_body.py` | קורא את הסעיפים של גוף issue: המטרה, ההקשר, שורת התלות והקבצים מה-Plan | משותף ל-`audit_sprint.py` |
 | `scripts/board_views.py` | יוצר את שתי התצוגות של הלוח, "ספרינט נוכחי" ו"הכל" | התקנה של לוח בלי עבודה ידנית |
 | `scripts/port_check.py` | בודק אם פורט תפוס, ובוחר פורט פנוי, גם ב-`127.0.0.1` וגם ב-`::1` | הרמה לסקירה; Vite מאזין רק ב-IPv6, ובדיקה של IPv4 לבד פספסה אותו (#52) |

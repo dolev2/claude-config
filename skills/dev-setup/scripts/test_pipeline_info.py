@@ -4,6 +4,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parent / "pipeline_info.py"
 spec = importlib.util.spec_from_file_location("pipeline_info", SCRIPT)
 pipeline_info = importlib.util.module_from_spec(spec)
@@ -14,21 +16,24 @@ def fake_gh(monkeypatch, *, defaults=True, root=None):
     """Answer the gh/git calls main() makes; record the paths asked of contents API."""
     asked = []
 
-    def run(*args):
+    def gh_run(*args):
         if args[:2] == ("git", "rev-parse"):
-            return (0, str(root)) if root else (1, "")
-        if args[:3] == ("gh", "repo", "view"):
-            return 0, json.dumps(
-                {"nameWithOwner": "acme/widgets", "defaultBranchRef": {"name": "main"}}
-            )
-        if args[:3] == ("gh", "label", "list"):
-            return 0, "\n".join(pipeline_info.REQUIRED_LABELS)
+            return (0, str(root), "") if root else (1, "", "")
+        if args[:3] == ("gh", "api", "repos/acme/widgets"):
+            return 0, "main", ""
+        if args[:3] == ("gh", "api", "--paginate") and "/labels" in args[3]:
+            return 0, "\n".join(pipeline_info.REQUIRED_LABELS), ""
         if args[:2] == ("gh", "api") and "/contents/" in args[2]:
             asked.append(args[2])
-            return (0, ".github/ISSUE_TEMPLATE/task.yml") if defaults else (1, "")
-        return 1, ""
+            if defaults == "blocked":
+                return 1, "", "access is not enabled for this session (HTTP 403)"
+            if defaults:
+                return 0, ".github/ISSUE_TEMPLATE/task.yml", ""
+            return 1, "", "Not Found (HTTP 404)"
+        return 1, "", "HTTP 403: blocked"
 
-    monkeypatch.setattr(pipeline_info, "run", run)
+    monkeypatch.setattr(pipeline_info, "gh_run", gh_run)
+    monkeypatch.setattr(pipeline_info, "current_repo", lambda: "acme/widgets")
     return asked
 
 
@@ -158,3 +163,31 @@ def test_netlify_template_has_the_ignore_rule():
     template = SCRIPT.parent.parent / "templates" / "netlify.toml"
     settings = pipeline_info.tomllib.loads(template.read_text(encoding="utf-8"))
     assert "git diff --quiet" in settings["build"]["ignore"]
+
+
+def test_repo_and_branch_come_from_the_remote_and_rest(monkeypatch, capsys, tmp_path):
+    fake_gh(monkeypatch, root=tmp_path)
+    info = run_main(monkeypatch, capsys)
+    assert info["repo"] == "acme/widgets"
+    assert info["default_branch"] == "main"
+    assert info["ready"] is True
+
+
+def test_unreadable_project_number_is_none(monkeypatch, capsys, tmp_path):
+    """In a cloud session the Actions variables are blocked (HTTP 403)."""
+    fake_gh(monkeypatch, root=tmp_path)
+    assert run_main(monkeypatch, capsys)["project_number"] is None
+
+
+def test_unreadable_repo_exits_with_gh_error(monkeypatch):
+    monkeypatch.setattr(pipeline_info, "gh_run", lambda *args: (1, "", "HTTP 401"))
+    with pytest.raises(SystemExit, match="repos/acme/widgets failed:\nHTTP 401"):
+        pipeline_info.main(["--repo", "acme/widgets"])
+
+
+def test_forms_out_of_reach_are_unknown_not_missing(monkeypatch, capsys, tmp_path):
+    """A cloud session reaches only its own repos: the owner's .github answers 403."""
+    fake_gh(monkeypatch, defaults="blocked", root=tmp_path)
+    info = run_main(monkeypatch, capsys)
+    assert info["issue_forms"] == pipeline_info.FORMS_UNKNOWN
+    assert not any("ISSUE_TEMPLATE" in f for f in info["missing_files"])
