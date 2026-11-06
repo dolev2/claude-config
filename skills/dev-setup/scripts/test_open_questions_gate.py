@@ -92,6 +92,19 @@ def test_gate_horizontal_rule_is_not_a_question(rule):
     assert load_gate().open_questions(body) == ["legacy question"]
 
 
+@pytest.mark.parametrize("line", ["**מה המטבע?**", "__מה המטבע?__"])
+def test_gate_bold_question_is_a_question(line):
+    # claude-config #153: bold is emphasis on a question, not a placeholder.
+    body = f"### שאלות פתוחות\n{line}\n"
+    assert load_gate().open_questions(body) == [line]
+
+
+@pytest.mark.parametrize("line", ["_אין שאלות פתוחות._", "*אין שאלות פתוחות.*"])
+def test_gate_italic_placeholder_is_not_a_question(line):
+    body = f"### שאלות פתוחות\n{line}\n"
+    assert load_gate().open_questions(body) == []
+
+
 def test_gate_two_dashes_are_still_a_question():
     # Not a rule in Markdown, so the generous legacy reading keeps it.
     body = "### שאלות פתוחות\n--\n"
