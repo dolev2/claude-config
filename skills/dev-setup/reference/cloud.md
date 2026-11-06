@@ -111,4 +111,5 @@ GraphQL חסום: הסקריפטים קוראים רק דרך REST (claude-confi
 ה-branch, ה-worktree ושם הסשן: `git-flow.md`, הסעיף "בסשן ענן" (claude-config #134).
 בקצרה: תמיד ה-branch של המשימה, בלי worktree, והשם נקבע ב-`set_session_title` ולא ב-`/rename`.
 
-משימה פתוחה, שמעדכנת את הקובץ הזה כשהיא נסגרת: כללי Windows ב-`rules/env-windows.md` לא חלים בענן (claude-config #136).
+כללי Windows ב-`rules/env-windows.md` לא חלים בענן. מה מותקן בענן, ומה נשאר למחשב: `rules/env-cloud.md` (claude-config #136).
+הבדיקה הוויזואלית בענן היא צילומי מסך ב-Playwright (`ux.md`), והאפליקציה לסקירה עולה בתוך הסשן (`review-app.md`).
