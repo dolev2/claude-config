@@ -96,3 +96,36 @@ def test_cloud_table_covers_every_gh_issue_and_pr_command():
         if not re.search(re.escape(command) + r"(?![\w-])", table)
     )
     assert missing == [], f"add a row to the table in reference/cloud.md for: {missing}"
+
+
+JSON_FIELDS = re.compile(r"--json\s+([\w,]+)")
+
+
+def json_fields_used() -> dict[str, set[str]]:
+    """Each --json field a skill or reference doc asks gh issue/pr for, with where."""
+    sources = [*ROOT.glob("skills/*/SKILL.md"), *DOCS]
+    used: dict[str, set[str]] = {}
+    for path in sources:
+        if path.name == "cloud.md":
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not GH_COMMAND.search(line):
+                continue
+            for group in JSON_FIELDS.findall(line):
+                for field in filter(None, group.split(",")):
+                    used.setdefault(field, set()).add(path.relative_to(ROOT).as_posix())
+    return used
+
+
+def test_cloud_table_covers_every_json_field():
+    # No exception list: a field that keeps its name in REST is still named in the
+    # section (item 6), so a look-alike such as url (REST: html_url) gets documented.
+    table = cloud_table()
+    missing = sorted(
+        f"{field} ({', '.join(sorted(where))})"
+        for field, where in json_fields_used().items()
+        if not re.search(r"(?<!\w)" + re.escape(field) + r"(?![\w-])", table)
+    )
+    assert missing == [], (
+        f"name these --json fields and their REST form in reference/cloud.md: {missing}"
+    )
