@@ -81,12 +81,16 @@ def cloud_table() -> str:
     return text[start : end if end != -1 else None]
 
 
+def gh_sources() -> list[Path]:
+    """The skills and reference docs whose gh commands the cloud table must cover."""
+    paths = [*ROOT.glob("skills/*/SKILL.md"), *DOCS]
+    return [path for path in paths if path.name != "cloud.md"]
+
+
 def test_cloud_table_covers_every_gh_issue_and_pr_command():
-    sources = [*ROOT.glob("skills/*/SKILL.md"), *DOCS]
     used = {
         f"gh {group} {verb}"
-        for path in sources
-        if path.name != "cloud.md"
+        for path in gh_sources()
         for group, verb in GH_COMMAND.findall(path.read_text(encoding="utf-8"))
     }
     table = cloud_table()
@@ -98,16 +102,14 @@ def test_cloud_table_covers_every_gh_issue_and_pr_command():
     assert missing == [], f"add a row to the table in reference/cloud.md for: {missing}"
 
 
-JSON_FIELDS = re.compile(r"--json\s+([\w,]+)")
+# ASCII only, so a Hebrew word after --json is not a field. Quotes and = are allowed.
+JSON_FIELDS = re.compile(r"--json[=\s]+[\"']?([A-Za-z,]+)")
 
 
 def json_fields_used() -> dict[str, set[str]]:
     """Each --json field a skill or reference doc asks gh issue/pr for, with where."""
-    sources = [*ROOT.glob("skills/*/SKILL.md"), *DOCS]
     used: dict[str, set[str]] = {}
-    for path in sources:
-        if path.name == "cloud.md":
-            continue
+    for path in gh_sources():
         for line in path.read_text(encoding="utf-8").splitlines():
             if not GH_COMMAND.search(line):
                 continue
@@ -120,11 +122,12 @@ def json_fields_used() -> dict[str, set[str]]:
 def test_cloud_table_covers_every_json_field():
     # No exception list: a field that keeps its name in REST is still named in the
     # section (item 6), so a look-alike such as url (REST: html_url) gets documented.
+    # One hyphen may precede it (ה-milestone), but a flag like --state does not count.
     table = cloud_table()
     missing = sorted(
         f"{field} ({', '.join(sorted(where))})"
         for field, where in json_fields_used().items()
-        if not re.search(r"(?<!\w)" + re.escape(field) + r"(?![\w-])", table)
+        if not re.search(r"(?<!\w)(?<!--)" + re.escape(field) + r"(?![\w-])", table)
     )
     assert missing == [], (
         f"name these --json fields and their REST form in reference/cloud.md: {missing}"
