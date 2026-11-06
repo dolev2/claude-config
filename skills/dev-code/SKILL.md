@@ -171,13 +171,15 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
       the command, ports and URL come from the repo's `CLAUDE.md`. Its outcome is one of: a
       link to the PR's app (started now, or already running from this branch), a link with a
       warning that names who holds the port, or a line saying why there is no link (the repo
-      has no app, the session is not on Dolev's machine, the app failed to start). A failure
+      has no app, CI, the command is Windows-only in a cloud session, the app failed to start).
+      In a cloud session it runs inside the session: report its port with `report_preview_port`. A failure
       here does not block the hand-off: say so in it.
 
     **Once the app is up, check the user experience yourself**, as `reference/ux.md` says: walk
-    the Plan's "חוויית משתמש" section in the built-in browser, at desktop and phone width. A gap
+    the Plan's "חוויית משתמש" section in the built-in browser, at desktop and phone width; in a
+    cloud session, in a headless Playwright script at 1280 and 375, with screenshots sent by `SendUserFile`. A gap
     inside the Plan is fixed like a review finding; one outside it is proposed as a task. No app
-    (or not on Dolev's machine): check what you can (output, messages) and say what was not
+    (or no browser at all): check what you can (output, messages) and say what was not
     checked. A plan with "אין ממשק", or the short plan of a `size:small` task, skips this.
 
     **When the agent returns**, check that `git status --porcelain` in the worktree is still

@@ -14,7 +14,7 @@
 - **מה צריך:** המחשב דולק, ו-Claude Desktop פתוח.
 - **איך מפעילים:** ב-Claude Desktop פותחים Settings, אחר כך Claude Code, אחר כך Remote Control, ובוחרים את התיקיות.
   דרך אחרת: `claude remote-control` בטרמינל, בתיקייה של הפרויקט.
-- **מתי לבחור בה:** כשהעבודה צריכה את המחשב. למשל הרמה לסקירה (`review-app.md`), או כלי של Windows.
+- **מתי לבחור בה:** כשהעבודה צריכה את המחשב. למשל כלי של Windows, או אפליקציה לסקירה שהפקודה שלה ל-Windows בלבד (`review-app.md`).
 
 ## דרך 2: סשן ענן מלא
 הסשן רץ בענן, גם כשהמחשב כבוי.
@@ -111,5 +111,5 @@ GraphQL חסום: הסקריפטים קוראים רק דרך REST (claude-confi
 ה-branch, ה-worktree ושם הסשן: `git-flow.md`, הסעיף "בסשן ענן" (claude-config #134).
 בקצרה: תמיד ה-branch של המשימה, בלי worktree, והשם נקבע ב-`set_session_title` ולא ב-`/rename`.
 
-כללי Windows ב-`rules/env-windows.md` לא חלים בענן. מה מותקן בענן, ומה נשאר למחשב: `rules/env-cloud.md` (claude-config #136).
+כללי Windows ב-`rules/env-windows.md` לא חלים בענן, חוץ מהסעיף "מה חייב לעבוד גם מחוץ ל-Windows". מה מותקן בענן, ומה נשאר למחשב: `rules/env-cloud.md` (claude-config #136).
 הבדיקה הוויזואלית בענן היא צילומי מסך ב-Playwright (`ux.md`), והאפליקציה לסקירה עולה בתוך הסשן (`review-app.md`).

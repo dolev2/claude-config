@@ -474,7 +474,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-code</b>: exactly one issue per run.</p>
-        <ul><li>Implements the plan and adds a test for every change.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user-experience section, at desktop and phone width.</li><li>Hands over a PR with a link to the review app.</li></ul>
+        <ul><li>Implements the plan and adds a test for every change.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user-experience section, at desktop and phone width. In a cloud session: Playwright screenshots.</li><li>Hands over a PR with a link to the review app. In a cloud session: the app runs in the session, and the screenshots are in the chat.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>Worktree, commits, then <code>fetch</code> + <code>rebase origin/main</code>.</p>
