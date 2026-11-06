@@ -51,10 +51,11 @@
 בכל סביבה, אחרי הבדיקה: שני צילומים לקובץ, של המסך שהמשימה שינתה, כדי שדולב יראה אותו בצ'אט בלי לפתוח את האפליקציה.
 צילום בדפדפן המובנה חוזר כתמונה ל-Claude ולא כקובץ, ולכן הצילומים נעשים בדפדפן headless.
 1. **הכתובת:** של המסך שהשתנה באפליקציית הסקירה, כפי שהיא נטענת, בלי לחיצות לפני הצילום.
+   מסך שמגיעים אליו רק אחרי כניסה או לחיצה: "לא צולם: <למה>" (סעיף 5).
 2. **שני רוחבים:** מחשב 1280 וטלפון 375, לשני קבצי PNG בתיקיית ה-scratchpad.
 3. **הפקודה, לפי הסביבה:**
-   1. במחשב (Windows): Edge headless (`rules/env-windows.md`), פעם עם `--window-size=1280,800` ופעם עם `--window-size=375,812`:
-      `msedge.exe --headless --disable-gpu --user-data-dir=<תיקייה זמנית> --window-size=1280,800 --screenshot=<out>.png <url>`.
+   1. במחשב (Windows): Edge headless, בנתיב המלא שלו ובנתיבים מלאים לקבצים (`rules/env-windows.md`), פעם עם `--window-size=1280,800` ופעם עם `--window-size=375,812`:
+      `"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless --disable-gpu --force-device-scale-factor=2 --user-data-dir=<תיקייה זמנית> --window-size=1280,800 --screenshot=<out>.png <url>`.
    2. בסשן ענן (Linux): Playwright עם `viewport` בכל אחד מהגדלים, ו-`deviceScaleFactor: 2` (צילום שאדם יראה).
 4. **נשלחים במסירה** (`dev-code`, שלב 11), ב-`SendUserFile` עם כיתוב בעברית.
 5. **אין ממשק במשימה:** אין צילומים, ואין עליהם שורה.

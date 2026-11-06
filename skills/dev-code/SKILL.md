@@ -222,7 +222,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
     **Bring the result to Dolev**, right after the comment, in this order:
     1. **The chat message opens with the link to the PR's changes**,
-       `https://github.com/<repo>/pull/<PR>/files`, first in its link list.
+       `https://github.com/<repo>/pull/<PR>/files`, first in its link list, named in Hebrew
+       like every link there ("השינויים ב-PR #<PR>").
     2. **The screenshots:** `SendUserFile` with the two files from step 10 and a Hebrew caption
        (desktop, phone). None: the "לא צולם: <למה>" line from `reference/ux.md` is in the
        message instead. A task with no interface has neither.
