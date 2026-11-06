@@ -108,7 +108,9 @@ REPO=https://github.com/dolev2/claude-config
 ## מה עוד שונה בסשן ענן
 GraphQL חסום: הסקריפטים קוראים רק דרך REST (claude-config #138), והסקילים עובדים דרך הטבלה בסעיף הקודם.
 
+ה-branch, ה-worktree ושם הסשן: `git-flow.md`, הסעיף "בסשן ענן" (claude-config #134).
+בקצרה: תמיד ה-branch של המשימה, בלי worktree, והשם נקבע ב-`set_session_title` ולא ב-`/rename`.
+
 אלה משימות פתוחות, וכל אחת מעדכנת את הקובץ הזה כשהיא נסגרת:
-1. הסשן מקבל branch משלו, ואין צורך ב-worktree (claude-config #134).
-2. חלון האישור לפני merge תופס רק את `gh pr merge` (claude-config #135).
-3. כללי Windows ב-`rules/env-windows.md` לא חלים בענן (claude-config #136).
+1. חלון האישור לפני merge תופס רק את `gh pr merge` (claude-config #135).
+2. כללי Windows ב-`rules/env-windows.md` לא חלים בענן (claude-config #136).
