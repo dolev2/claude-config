@@ -9,8 +9,10 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 Nothing here is configured by hand. Every value is read from the repo itself, so the
 same skills work in every repo that carries the pipeline:
 
-- repo and default branch      - from `gh repo view`
-- the project number           - the PROJECT_NUMBER repository variable
+- repo and default branch      - the `origin` remote, then REST (GraphQL is blocked
+                                 in cloud sessions, claude-config #138)
+- the project number           - the PROJECT_NUMBER repository variable; None when
+                                 it is missing or unreadable (blocked in the cloud)
 - the current sprint           - the lowest-numbered open milestone with open issues
 - where the issue forms live   - the repo's own .github/ISSUE_TEMPLATE, or else the
                                  account's public <owner>/.github repo, which GitHub
@@ -36,6 +38,8 @@ import sys
 import tomllib
 from pathlib import Path
 
+from gh_rest import NOT_A_REPO, repo_from_url
+from gh_rest import run as gh_run
 from lint_check import all_gaps, tracked_files
 
 REQUIRED_LABELS = [
@@ -63,6 +67,7 @@ PIPELINE_FILES = [
 
 NETLIFY_CONFIG = "netlify.toml"
 FILE_GUIDE = "README.md"
+FORMS_UNKNOWN = "unknown (no access from this session)"
 FILE_GUIDE_HEADINGS = ("מדריך קבצים", "file guide")
 
 
@@ -89,14 +94,20 @@ def issue_forms(root: Path | None, repo: str) -> str | None:
     A repo with its own .github/ISSUE_TEMPLATE hides every default form, so the local
     copy wins whenever it exists. Otherwise GitHub serves the forms of the owner's
     public .github repo, from the same path inside it.
+
+    Only a 404 means the forms are missing. Any other failure (a cloud session reaches
+    only the repos attached to it, HTTP 403) says FORMS_UNKNOWN, which is not reported
+    as missing.
     """
     if root and all((root / f).exists() for f in FORM_FILES):
         return "repo"
     defaults = f"{repo.split('/')[0]}/.github"
-    code, _ = run(
+    code, _, err = gh_run(
         "gh", "api", f"repos/{defaults}/contents/{FORM_FILES[0]}", "--jq", ".path"
     )
-    return defaults if code == 0 else None
+    if code == 0:
+        return defaults
+    return None if "HTTP 404" in err else FORMS_UNKNOWN
 
 
 def has_file_guide(root: Path) -> bool:
@@ -156,26 +167,25 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    view = ["gh", "repo", "view", "--json", "nameWithOwner,defaultBranchRef"]
     if args.repo:
-        view.insert(3, args.repo)
-    code, out = run(*view)
-    if code != 0 or not out:
-        sys.exit("Not inside a GitHub repo that gh can see; pass --repo owner/name.")
-    meta = json.loads(out)
-    repo = meta["nameWithOwner"]
+        repo = args.repo
+    else:
+        code, url = run("git", "remote", "get-url", "origin")
+        repo = repo_from_url(url) if code == 0 else None
+    code, default_branch = (
+        run("gh", "api", f"repos/{repo}", "--jq", ".default_branch")
+        if repo
+        else (1, "")
+    )
+    if code != 0 or not default_branch:
+        sys.exit(NOT_A_REPO)
 
     root = repo_root() if not args.repo else None
     _, labels_raw = run(
         "gh",
-        "label",
-        "list",
-        "--repo",
-        repo,
-        "--limit",
-        "300",
-        "--json",
-        "name",
+        "api",
+        "--paginate",
+        f"repos/{repo}/labels?per_page=100",
         "--jq",
         ".[].name",
     )
@@ -195,7 +205,7 @@ def main(argv: list[str] | None = None) -> None:
 
     info = {
         "repo": repo,
-        "default_branch": meta["defaultBranchRef"]["name"],
+        "default_branch": default_branch,
         "ready": not missing,
         "missing_labels": missing,
         "area_labels": sorted(name for name in labels if name.startswith("area:")),

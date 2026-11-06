@@ -74,7 +74,8 @@ REPO=https://github.com/dolev2/claude-config
 
 ## מה עוד שונה בסשן ענן
 אלה משימות פתוחות, וכל אחת מעדכנת את הקובץ הזה כשהיא נסגרת:
-1. GraphQL חסום, ולכן `gh issue`, `gh pr` ו-`gh project` נכשלים. `gh api repos/...` (REST) עובד (claude-config #133).
+1. GraphQL חסום, ולכן `gh issue`, `gh pr` ו-`gh project` נכשלים. `gh api repos/...` (REST) עובד.
+   הסקריפטים של הצינור כבר קוראים רק דרך REST (claude-config #138). הסקילים: claude-config #139.
 2. הסשן מקבל branch משלו, ואין צורך ב-worktree (claude-config #134).
 3. חלון האישור לפני merge תופס רק את `gh pr merge` (claude-config #135).
 4. כללי Windows ב-`rules/env-windows.md` לא חלים בענן (claude-config #136).

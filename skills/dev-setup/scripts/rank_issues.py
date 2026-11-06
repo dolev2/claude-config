@@ -8,8 +8,9 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
     python "$S/rank_issues.py" --status explore
     python "$S/rank_issues.py" --repo owner/name --json
 
-The repo is the one `gh repo view` sees from the current directory, unless --repo is
-given.
+The repo is the `origin` remote of the current directory, unless --repo is given.
+Everything is read through REST (gh_rest.py), because GraphQL is blocked in cloud
+sessions (claude-config #138).
 
 The rule is in ../reference/dependencies.md. In short:
 an issue's weight is the number of open issues in the sprint that wait on it through
@@ -29,32 +30,15 @@ them (claude-config #55). They are listed, never ranked.
 
 import argparse
 import json
-import subprocess
 import sys
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
+from gh_rest import current_repo, open_issue_nodes
+
 FIRST_KINDS = ["process", "bug"]
 NOT_ACTIVE = (None, "backlog", "done")
 ON_HOLD_LABEL = "costs-money"
-
-QUERY = """
-query($owner: String!, $name: String!, $after: String) {
-  repository(owner: $owner, name: $name) {
-    issues(states: OPEN, first: 100, after: $after) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
-        number
-        title
-        labels(first: 30) { nodes { name } }
-        milestone { title number state }
-        blockedBy(first: 50) { nodes { number state } }
-        blocking(first: 50) { nodes { number state } }
-      }
-    }
-  }
-}
-"""
 
 
 @dataclass
@@ -162,54 +146,6 @@ def active_without_sprint(nodes: list[dict]) -> list[Issue]:
     )
 
 
-def current_repo() -> str:
-    """owner/name of the repo `gh` resolves from the current directory."""
-    result = subprocess.run(
-        ["gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        check=False,
-    )
-    if result.returncode != 0 or not result.stdout.strip():
-        sys.exit(
-            "Not inside a GitHub repo that gh can see; pass --repo owner/name.\n"
-            + result.stderr
-        )
-    return result.stdout.strip()
-
-
-def fetch_nodes(repo: str, query: str = QUERY) -> list[dict]:
-    """Every open issue of the repo, as GraphQL nodes of `query`."""
-    owner, name = repo.split("/", 1)
-    nodes: list[dict] = []
-    after = None
-    while True:
-        args = [
-            "gh",
-            "api",
-            "graphql",
-            "-f",
-            f"query={query}",
-            "-F",
-            f"owner={owner}",
-            "-F",
-            f"name={name}",
-        ]
-        if after:
-            args += ["-F", f"after={after}"]
-        result = subprocess.run(
-            args, capture_output=True, text=True, encoding="utf-8", check=False
-        )
-        if result.returncode != 0:
-            sys.exit(f"gh api graphql failed:\n{result.stderr}")
-        page = json.loads(result.stdout)["data"]["repository"]["issues"]
-        nodes += page["nodes"]
-        if not page["pageInfo"]["hasNextPage"]:
-            return nodes
-        after = page["pageInfo"]["endCursor"]
-
-
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -229,7 +165,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    nodes = fetch_nodes(args.repo or current_repo())
+    nodes = open_issue_nodes(args.repo or current_repo())
     sprint = args.milestone or current_sprint(nodes)
     if sprint is None:
         sys.exit("No open milestone has open issues.")
