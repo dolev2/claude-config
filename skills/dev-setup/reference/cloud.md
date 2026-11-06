@@ -81,6 +81,8 @@ REPO=https://github.com/dolev2/claude-config
    שער השאלות מדלג עליו (claude-config #142).
 5. **רשימה רצה עם `--paginate`** (תוויות, issues, תגובות, timeline). בלעדיו GitHub מחזיר רק את העמוד הראשון, 30 פריטים.
 6. **REST מחזיר ערכים בצורה אחרת מ-`--json`:** `.state` הוא `open` או `closed` (PR שמוזג: `.merged` הוא `true`), ו-`.mergeable` הוא `true`, `false` או `null` (עוד מחושב: שואלים שוב). `--jq` שמשווה ל-`"OPEN"` או ל-`"MERGEABLE"` מתורגם בהתאם.
+   השדות `number`, `title`, `body` ו-`state` נקראים באותו שם ב-REST. `url` לא: ב-REST `.url` היא כתובת ה-API, וכתובת הדף היא `.html_url`.
+   שדה חדש ב-`--json` של סקיל נכנס לכאן או לטבלה, אחרת `test_cloud_table_covers_every_json_field` נכשלת.
 
 | הפקודה | בסשן ענן |
 |---|---|
