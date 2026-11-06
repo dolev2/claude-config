@@ -57,7 +57,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    clearly stands alone. Also read what is already on the branch and in any open PR.
 
 4. **Work in a worktree (in a cloud session: its own clone), never by switching branches in
-   the shared working copy** (reference doc, "עותק העבודה"). The branch is the one the Plan names, `claude/issue-<N>-<slug>`; if it
+   the shared working copy** (`reference/git-flow.md`). The branch is the one the Plan names, `claude/issue-<N>-<slug>`; if it
    does not exist on the remote, create it there first
    (`git push origin origin/<default>:refs/heads/claude/issue-<N>-<slug>`). Then:
    - the session already runs in its own worktree: check out the branch there;
