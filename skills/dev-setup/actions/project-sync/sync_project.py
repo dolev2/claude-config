@@ -173,6 +173,7 @@ def clear_status(settings: Settings, project: Board, num: int, item: dict) -> bo
     """Empty the Status of a decision issue's card; True when it did."""
     field = project.fields.get("Status")
     if field is None:
+        report(settings, "  ! the project has no field 'Status' - skipped")
         return False
     board.clear_field(project.project_id, item["id"], field)
     report(settings, f"#{num} decision: board status cleared")
@@ -201,7 +202,7 @@ def sync_issue(settings: Settings, project: Board, issue: dict) -> bool:
     changes = sync_rules.board_changes(state, on_board)
     if changes:
         apply_to_board(settings, project, num, item, changes)
-    cleared = sync_rules.clears_status(labels, on_board) and clear_status(
+    cleared = sync_rules.clears_status(labels, item["values"]) and clear_status(
         settings, project, num, item
     )
     return is_new or bool(adopted) or bool(changes) or cleared

@@ -129,17 +129,19 @@ def labels_from_board(
     return {**from_project, **labels_state(labels)}
 
 
-def clears_status(labels: list[str], from_project: dict[str, str]) -> bool:
+def clears_status(labels: list[str], values: dict[str, str]) -> bool:
     """Whether a decision issue's card still shows a column that must be cleared.
 
     A task that became a decision loses its status:* label, and its card keeps the
     last column. Left there, the card would be read as the issue's status (zohar
-    #27, #31). With a status:* label on it the labels rule as usual.
+    #27, #31). values are the card's raw field values, so a column the sync does not
+    know (a board's default "Todo") is cleared too. With a status:* label on it the
+    labels rule as usual.
     """
     return (
         "decision" in labels
         and not any(label.startswith("status:") for label in labels)
-        and "status" in from_project
+        and bool(values.get("Status"))
     )
 
 

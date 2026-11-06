@@ -283,9 +283,9 @@ def test_an_issue_opened_from_the_board_takes_its_labels(monkeypatch, capsys):
     assert "#9 labels <- project" in capsys.readouterr().out
 
 
-def test_a_decision_clears_its_column_and_keeps_its_labels(monkeypatch, capsys):
-    # claude-config #128: zohar #27 and #31 got their old status label back.
-    set_environment(monkeypatch)
+def run_one_decision(monkeypatch, quiet) -> list[tuple]:
+    """main() over one decision whose card keeps its old column; the calls it made."""
+    set_environment(monkeypatch, quiet)
     fields = {"Status": field("Status", "Ready to execute (Claude)")}
     item = {"id": "I7", "values": {"Status": "Ready to execute (Claude)"}}
     monkeypatch.setattr(
@@ -307,8 +307,19 @@ def test_a_decision_clears_its_column_and_keeps_its_labels(monkeypatch, capsys):
 
     monkeypatch.setattr(gh_api, "gh", gh)
     sync_project.main()
-    assert [kw for c in calls if c[0] == board.CLEAR_FIELD for kw in [c[1]]] == [
+    return calls
+
+
+def test_a_decision_clears_its_column_and_keeps_its_labels(monkeypatch, capsys):
+    # claude-config #128: zohar #27 and #31 got their old status label back.
+    calls = run_one_decision(monkeypatch, quiet=False)
+    assert [c[1] for c in calls if c[0] == board.CLEAR_FIELD] == [
         {"project": "P", "item": "I7", "field": "Status"}
     ]
     assert not [c for c in calls if c[:2] == ("issue", "edit")]
     assert "#7 decision: board status cleared" in capsys.readouterr().out
+
+
+def test_a_cleared_decision_counts_as_updated(monkeypatch, capsys):
+    run_one_decision(monkeypatch, quiet=True)
+    assert capsys.readouterr().out == "updated issues: 1\nactive without a sprint: 0\n"

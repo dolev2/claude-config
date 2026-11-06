@@ -186,15 +186,21 @@ def test_active_without_sprint(status, state, milestone, expected):
     "labels, on_board, expected",
     [
         # claude-config #128: a task turned decision keeps its old column on the card.
-        (["decision"], {"status": "ready-to-execute"}, True),
-        (["decision", "area:infra"], {"status": "explore", "area": "infra"}, True),
+        (["decision"], {"Status": "Ready to execute (Claude)"}, True),
+        (
+            ["decision", "area:infra"],
+            {"Status": "Explore (Claude)", "Area": "Infra"},
+            True,
+        ),
+        # A column the sync does not know is cleared too.
+        (["decision"], {"Status": "Todo"}, True),
         # The card already sits in no column: nothing to clear.
         (["decision"], {}, False),
-        (["decision"], {"area": "infra"}, False),
+        (["decision"], {"Area": "Infra"}, False),
         # A status label rules, decision or not.
-        (["decision", "status:explore"], {"status": "done"}, False),
+        (["decision", "status:explore"], {"Status": "Done"}, False),
         # Not a decision: the card is the one exception of an issue opened from it.
-        ([], {"status": "backlog"}, False),
+        ([], {"Status": "Backlog"}, False),
     ],
 )
 def test_a_decision_card_loses_its_column(labels, on_board, expected):
