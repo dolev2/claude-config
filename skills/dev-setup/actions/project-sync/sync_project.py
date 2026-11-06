@@ -169,6 +169,16 @@ def apply_to_board(
     report(settings, f"#{num} project <- labels: {changes}")
 
 
+def clear_status(settings: Settings, project: Board, num: int, item: dict) -> bool:
+    """Empty the Status of a decision issue's card; True when it did."""
+    field = project.fields.get("Status")
+    if field is None:
+        return False
+    board.clear_field(project.project_id, item["id"], field)
+    report(settings, f"#{num} decision: board status cleared")
+    return True
+
+
 def sync_issue(settings: Settings, project: Board, issue: dict) -> bool:
     """Sync one issue that takes part; True when anything was written."""
     num = issue["number"]
@@ -191,7 +201,10 @@ def sync_issue(settings: Settings, project: Board, issue: dict) -> bool:
     changes = sync_rules.board_changes(state, on_board)
     if changes:
         apply_to_board(settings, project, num, item, changes)
-    return is_new or bool(adopted) or bool(changes)
+    cleared = sync_rules.clears_status(labels, on_board) and clear_status(
+        settings, project, num, item
+    )
+    return is_new or bool(adopted) or bool(changes) or cleared
 
 
 def close_out(settings: Settings, issue: dict) -> bool:

@@ -281,3 +281,34 @@ def test_an_issue_opened_from_the_board_takes_its_labels(monkeypatch, capsys):
     sync_project.main()
     assert any("status:backlog" in args for args in edits)
     assert "#9 labels <- project" in capsys.readouterr().out
+
+
+def test_a_decision_clears_its_column_and_keeps_its_labels(monkeypatch, capsys):
+    # claude-config #128: zohar #27 and #31 got their old status label back.
+    set_environment(monkeypatch)
+    fields = {"Status": field("Status", "Ready to execute (Claude)")}
+    item = {"id": "I7", "values": {"Status": "Ready to execute (Claude)"}}
+    monkeypatch.setattr(
+        board, "load_project", lambda o, r, n: ("P", fields, {7: item}, [])
+    )
+    issue = {"number": 7, "id": "X7", "state": "OPEN", "labels": [{"name": "decision"}]}
+    calls = []
+    monkeypatch.setattr(
+        gh_api, "graphql", lambda query, **kw: calls.append((query, kw)) or {}
+    )
+
+    def gh(*args):
+        calls.append(args)
+        if args[0] == "api":
+            return "[]"
+        if args[:2] == ("issue", "list"):
+            return json.dumps([issue])
+        return ""
+
+    monkeypatch.setattr(gh_api, "gh", gh)
+    sync_project.main()
+    assert [kw for c in calls if c[0] == board.CLEAR_FIELD for kw in [c[1]]] == [
+        {"project": "P", "item": "I7", "field": "Status"}
+    ]
+    assert not [c for c in calls if c[:2] == ("issue", "edit")]
+    assert "#7 decision: board status cleared" in capsys.readouterr().out
