@@ -68,11 +68,11 @@
    git checkout -B claude/issue-<N>-<slug> origin/claude/issue-<N>-<slug>
    ```
    `git worktree add` עדיין עובד, ומותר. סוכנים במקביל (`isolation: "worktree"`) לא משתנים.
-3. **הניקוי אחרי merge** (`dev-ship`): אין worktree להסיר. `git checkout --detach origin/<default>`,
-   ואז מחיקת ה-branch המקומי. ב-GitHub הוא נמחק בהגדרה Automatically delete head branches,
+3. **הניקוי אחרי merge** (`dev-ship`): אין worktree להסיר. `git fetch origin <default>` ואז `git checkout --detach origin/<default>`
+   (בלי ה-fetch זה `main` שלפני המיזוג), ואז מחיקת ה-branch המקומי. ב-GitHub הוא נמחק בהגדרה Automatically delete head branches,
    כי `git push` שמוחק branch נחסם ב-proxy (403). הבדיקה ש-`git ls-remote --heads` ריק נשארת.
 4. **שם הסשן:** `/rename` לא זמין. במקומו `mcp__claude-code-remote__set_session_title` עם
-   `claude/issue-<N>-<slug>`, ואת `session_id` נותן `get_session` בלי פרמטרים.
+   `claude/issue-<N>-<slug>`, ואת `session_id` נותן `mcp__claude-code-remote__get_session` בלי פרמטרים.
    הכלי לא זמין: ממשיכים, ומציינים בדיווח שהשם לא שונה.
 
 ## עדכון מול ה-branch הראשי, ו-CI לפני merge

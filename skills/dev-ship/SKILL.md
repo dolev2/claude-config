@@ -51,12 +51,13 @@ When Dolev names an issue rather than a branch:
 2. Work on the PR's branch (`headRefName`) in a worktree, never by switching branches in the
    shared working copy. The worktree `dev-code` left for that issue is the one to use: it
    holds the review app (`git worktree list` shows it). In a cloud session there is no
-   worktree: check out the branch in the session's own clone (`reference/git-flow.md`,
-   "בסשן ענן"). Then go on to step 1.
+   worktree: check out the branch in the session's own clone (`reference/git-flow.md`). Then go on
+   to step 1.
 
 ## Step 1: Sanity checks
 
-1. If you are on `<default>`, do not ship from it. If there is nothing to ship at all (clean
+1. If you are on `<default>`, or in a cloud session on a branch the service named for the
+   session rather than the issue's branch (`reference/git-flow.md`), do not ship from it. If there is nothing to ship at all (clean
    tree and `<default>` not ahead of `origin/<default>`), say so and stop. Otherwise cut a
    feature branch off the current state first: `claude/issue-<N>-<slug>` when the work belongs
    to an issue, otherwise a name after what actually changed (`fix/lead-duplicate-webhook`,
@@ -223,11 +224,13 @@ When this ran inside a worktree the session owns, leave that worktree instead of
 `<default>` in it, as `reference/git-flow.md` says; delete the branch after the
 worktree is removed (git refuses to delete a branch checked out in a worktree).
 
-In a cloud session there is no worktree to remove, and `<default>` is not checked out: run
-`git checkout --detach origin/<default>` instead of the first line above, then delete the
-local branch as above. Never delete the remote branch with `git push`: the proxy blocks it,
+In a cloud session there is no worktree to remove, and `<default>` is not checked out:
+instead of the first line above, run `git fetch origin <default>` and then
+`git checkout --detach origin/<default>` (without the fetch, that is `<default>` before the
+merge). `git status` then shows a detached HEAD at `origin/<default>`, which is expected.
+Then delete the local branch as above. Never delete the remote branch with `git push`: the proxy blocks it,
 and the repo setting deletes it; the `git ls-remote` check still applies
-(`reference/git-flow.md`, "בסשן ענן").
+(`reference/git-flow.md`).
 
 If the branch has a review app (`review-app.json` names it), stop it before removing its
 worktree, as `reference/review-app.md` says.

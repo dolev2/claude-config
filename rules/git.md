@@ -26,4 +26,4 @@
   בתיקייה הראשית של `~/.claude` זה נאכף: hook ב-`~/.claude/hooks/guard_main_folder.py` חוסם שם `git checkout` ו-`git switch`.
 - אם בכל זאת חייבים: רק כש-`git status --porcelain` ריק (`git diff` לא רואה קבצים חדשים).
   פלט לא ריק: עוצרים ומדווחים, לא מנקים.
-- **חריג: סשן ענן** (`CLAUDE_CODE_REMOTE=true`). ה-clone שלו לא משותף, ולכן מחליפים בו branch ישירות, באותו תנאי של עץ נקי (`skills/dev-setup/reference/git-flow.md`, "בסשן ענן").
+- **חריג: סשן ענן** (`CLAUDE_CODE_REMOTE=true`). ה-clone שלו לא משותף, ולכן מחליפים בו branch ישירות, באותו תנאי של עץ נקי. לא ב-`~/.claude`, שם ה-hook חוסם גם בענן (`skills/dev-setup/reference/git-flow.md`, "בסשן ענן").
