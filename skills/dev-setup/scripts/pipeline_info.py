@@ -33,12 +33,11 @@ same skills work in every repo that carries the pipeline:
 import argparse
 import json
 import re
-import subprocess
 import sys
 import tomllib
 from pathlib import Path
 
-from gh_rest import NOT_A_REPO, repo_from_url
+from gh_rest import current_repo
 from gh_rest import run as gh_run
 from lint_check import all_gaps, tracked_files
 
@@ -72,15 +71,9 @@ FILE_GUIDE_HEADINGS = ("מדריך קבצים", "file guide")
 
 
 def run(*args: str) -> tuple[int, str]:
-    p = subprocess.run(
-        args,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
-    return p.returncode, p.stdout.strip()
+    """Run a command; return its exit code and stdout (gh_rest.run without stderr)."""
+    code, out, _ = gh_run(*args)
+    return code, out
 
 
 def repo_root() -> Path | None:
@@ -167,18 +160,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    if args.repo:
-        repo = args.repo
-    else:
-        code, url = run("git", "remote", "get-url", "origin")
-        repo = repo_from_url(url) if code == 0 else None
-    code, default_branch = (
-        run("gh", "api", f"repos/{repo}", "--jq", ".default_branch")
-        if repo
-        else (1, "")
+    repo = args.repo or current_repo()
+    code, default_branch, err = gh_run(
+        "gh", "api", f"repos/{repo}", "--jq", ".default_branch"
     )
     if code != 0 or not default_branch:
-        sys.exit(NOT_A_REPO)
+        sys.exit(f"gh api repos/{repo} failed:\n{err}")
 
     root = repo_root() if not args.repo else None
     _, labels_raw = run(

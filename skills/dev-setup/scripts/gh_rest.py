@@ -105,32 +105,26 @@ def to_node(repo: str, issue: dict, with_body: bool) -> dict:
         subs = (issue.get("sub_issues_summary") or {}).get("total")
         node["body"] = issue.get("body") or ""
         node["subIssues"] = links(repo, issue, subs, "sub_issues")
+        node["parent"] = parent_ref(issue)
     return node
 
 
 def closing_pr_count(number: int, pulls: list[dict]) -> int:
-    """How many of `pulls` close issue `number` with a keyword in their body."""
+    """How many of `pulls` close issue `number` with a keyword in their body.
+
+    Narrower than GraphQL's closedByPullRequestsReferences: a full `owner/repo#N`
+    reference, an issue URL, or a link made by hand in the Development panel is not
+    counted. The pipeline always writes `Closes #N` (git-flow.md), and the count only
+    feeds the audit's merge-candidate hint.
+    """
     pattern = re.compile(CLOSING.format(number), re.IGNORECASE)
     return sum(1 for pr in pulls if pattern.search(pr.get("body") or ""))
 
 
-def add_family_and_prs(nodes: list[dict], pulls: list[dict]) -> None:
-    """Fill `parent` (from the sub-issues of open issues) and the closing-PR count.
-
-    REST has no parent field on an issue. An issue whose only parent is closed gets
-    none, which is fine: the audit uses the family to skip mentions of an umbrella,
-    and a closed umbrella is not in the sprint.
-    """
-    parents = {
-        sub["number"]: {"number": node["number"]}
-        for node in nodes
-        for sub in node["subIssues"]["nodes"]
-    }
-    for node in nodes:
-        node["parent"] = parents.get(node["number"])
-        node["closedByPullRequestsReferences"] = {
-            "totalCount": closing_pr_count(node["number"], pulls)
-        }
+def parent_ref(issue: dict) -> dict | None:
+    """{"number": N} of the parent issue, read from the end of `parent_issue_url`."""
+    url = issue.get("parent_issue_url")
+    return {"number": int(url.rstrip("/").rsplit("/", 1)[1])} if url else None
 
 
 def open_issue_nodes(repo: str, with_body: bool = False) -> list[dict]:
@@ -146,7 +140,9 @@ def open_issue_nodes(repo: str, with_body: bool = False) -> list[dict]:
         if "pull_request" not in issue
     ]
     if with_body:
-        add_family_and_prs(
-            nodes, api_list(f"repos/{repo}/pulls?state=open&per_page=100")
-        )
+        pulls = api_list(f"repos/{repo}/pulls?state=open&per_page=100")
+        for node in nodes:
+            node["closedByPullRequestsReferences"] = {
+                "totalCount": closing_pr_count(node["number"], pulls)
+            }
     return nodes

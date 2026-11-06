@@ -139,7 +139,12 @@ def test_links_are_fetched_only_where_the_summary_counts_them(monkeypatch):
 def test_body_mode_adds_sub_issues_parent_and_closing_prs(monkeypatch):
     fake_github(
         monkeypatch,
-        [rest_issue(5, subs=1), rest_issue(7)],
+        [
+            rest_issue(5, subs=1),
+            rest_issue(
+                7, parent_issue_url=f"https://api.github.com/repos/{REPO}/issues/5"
+            ),
+        ],
         {f"repos/{REPO}/issues/5/sub_issues": [{"number": 7, "state": "open"}]},
         pulls=[{"body": "Closes #7"}, {"body": "Fixes: #7 and see #5"}],
     )

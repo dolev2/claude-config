@@ -16,28 +16,24 @@ def fake_gh(monkeypatch, *, defaults=True, root=None):
     """Answer the gh/git calls main() makes; record the paths asked of contents API."""
     asked = []
 
-    def run(*args):
-        if args[:2] == ("git", "rev-parse"):
-            return (0, str(root)) if root else (1, "")
-        if args[:3] == ("git", "remote", "get-url"):
-            return 0, "https://github.com/acme/widgets.git"
-        if args[:3] == ("gh", "api", "repos/acme/widgets"):
-            return 0, "main"
-        if args[:3] == ("gh", "api", "--paginate") and "/labels" in args[3]:
-            return 0, "\n".join(pipeline_info.REQUIRED_LABELS)
-        return 1, ""
-
     def gh_run(*args):
-        """The forms lookup, which also needs gh's stderr."""
-        asked.append(args[2])
-        if defaults == "blocked":
-            return 1, "", "GitHub access is not enabled for this session (HTTP 403)"
-        if defaults:
-            return 0, ".github/ISSUE_TEMPLATE/task.yml", ""
-        return 1, "", "Not Found (HTTP 404)"
+        if args[:2] == ("git", "rev-parse"):
+            return (0, str(root), "") if root else (1, "", "")
+        if args[:3] == ("gh", "api", "repos/acme/widgets"):
+            return 0, "main", ""
+        if args[:3] == ("gh", "api", "--paginate") and "/labels" in args[3]:
+            return 0, "\n".join(pipeline_info.REQUIRED_LABELS), ""
+        if args[:2] == ("gh", "api") and "/contents/" in args[2]:
+            asked.append(args[2])
+            if defaults == "blocked":
+                return 1, "", "access is not enabled for this session (HTTP 403)"
+            if defaults:
+                return 0, ".github/ISSUE_TEMPLATE/task.yml", ""
+            return 1, "", "Not Found (HTTP 404)"
+        return 1, "", "HTTP 403: blocked"
 
-    monkeypatch.setattr(pipeline_info, "run", run)
     monkeypatch.setattr(pipeline_info, "gh_run", gh_run)
+    monkeypatch.setattr(pipeline_info, "current_repo", lambda: "acme/widgets")
     return asked
 
 
@@ -183,10 +179,10 @@ def test_unreadable_project_number_is_none(monkeypatch, capsys, tmp_path):
     assert run_main(monkeypatch, capsys)["project_number"] is None
 
 
-def test_no_github_remote_exits_with_the_hint(monkeypatch):
-    monkeypatch.setattr(pipeline_info, "run", lambda *args: (1, ""))
-    with pytest.raises(SystemExit, match="pass --repo owner/name"):
-        pipeline_info.main([])
+def test_unreadable_repo_exits_with_gh_error(monkeypatch):
+    monkeypatch.setattr(pipeline_info, "gh_run", lambda *args: (1, "", "HTTP 401"))
+    with pytest.raises(SystemExit, match="repos/acme/widgets failed:\nHTTP 401"):
+        pipeline_info.main(["--repo", "acme/widgets"])
 
 
 def test_forms_out_of_reach_are_unknown_not_missing(monkeypatch, capsys, tmp_path):
