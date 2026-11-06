@@ -128,6 +128,10 @@ svg .branch-t { font-family: var(--font-mono); font-size: 11px; fill: var(--clau
 @media (max-width: 400px) { .rules { grid-template-columns: 1fr; } }
 a { color: var(--claude); }
 a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
+.where { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14px; }
+.where th, .where td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: start; vertical-align: top; }
+.where th { color: var(--muted); font-weight: 600; font-size: 13px; }
+.where code { white-space: nowrap; }
 </style>
 
 <div class="page">
@@ -470,7 +474,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-code</b>: exactly one issue per run.</p>
-        <ul><li>Implements the plan and adds a test for every change.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user-experience section, at desktop and phone width.</li><li>Hands over a PR with a link to the review app.</li></ul>
+        <ul><li>Implements the plan and adds a test for every change.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user-experience section, at desktop and phone width. In a cloud session: Playwright screenshots.</li><li>Hands over a PR with a link to the review app. In a cloud session: the app runs in the session, and the screenshots are in the chat.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>Worktree, commits, then <code>fetch</code> + <code>rebase origin/main</code>.</p>
@@ -519,6 +523,26 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
     </div>
   </article>
+</section>
+
+<section aria-labelledby="where-h">
+  <h2 id="where-h">Computer or cloud</h2>
+  <p>Every stage runs both on Dolev's computer and in a cloud session. The table says what is different in the cloud, and what stays on the computer.</p>
+  <p>The full rules: <code>rules/env-cloud.md</code> and <code>reference/cloud.md</code>.</p>
+  <div class="panel">
+  <table class="where">
+    <thead><tr><th>Stage</th><th>On the computer</th><th>In the cloud</th><th>What is different in the cloud</th></tr></thead>
+    <tbody>
+      <tr><td>Settings</td><td>The <code>~/.claude</code> folder</td><td>Yes</td><td>The environment's setup script copies <code>main</code>, and <code>cloud_refresh.py</code> updates it in every session.</td></tr>
+      <tr><td>Plan (<code>dev-plan</code>)</td><td>Yes</td><td>Yes</td><td>GitHub commands through REST only, by the table in <code>cloud.md</code>.</td></tr>
+      <tr><td>Execute (<code>dev-code</code>)</td><td>In a worktree</td><td>No worktree</td><td>The task branch in the session's own clone. The name is set with <code>set_session_title</code>, and CI wakes the session through <code>subscribe_pr_activity</code>.</td></tr>
+      <tr><td>Review app and user-experience check</td><td>A localhost link and the built-in browser</td><td>Inside the session</td><td>Playwright screenshots at 1280 and 375 wide. A Windows-only command: the check stays on the computer.</td></tr>
+      <tr><td>Merge (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>The GitHub MCP tool</td><td>An approval prompt in both. Cleanup: <code>git checkout --detach origin/main</code>.</td></tr>
+      <tr><td>Publishing this page</td><td>Yes</td><td>When the Artifact tool is available</td><td>Not available: tell Dolev the publish is pending.</td></tr>
+      <tr><td>The board and pipeline setup (<code>dev-setup</code>)</td><td>Yes</td><td>No</td><td>Blocked even over REST (claude-config #140).</td></tr>
+    </tbody>
+  </table>
+  </div>
 </section>
 
 <section aria-labelledby="rules-h">

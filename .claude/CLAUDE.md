@@ -17,6 +17,7 @@
   תרשים הסכמה (ERD) של ריפו עם מסד, והבדיקה שלו: `erd.md` (נטען תמיד). התבניות שלו ב-`skills/dev-setup/templates/`.
   נהלי git (branch, rebase, התנגשות, worktree): `git.md` (נטען תמיד).
   נהלי הסביבה של המחשב (Windows, קידוד עברית, כלים זמינים, ניידות): `env-windows.md` (נטען תמיד).
+  נהלי הסביבה בסשן ענן (Linux, כלים מותקנים, רשת, מה נשאר למחשב): `env-cloud.md` (נטען תמיד, חל רק בענן).
 - `settings.json`: ההגדרות של Claude Code לכל הפרויקטים: כללי ההרשאות, ה-hooks ומשתני הסביבה.
 - `hooks/`: הסקריפטים של ה-hooks, קובץ Python אחד לכל hook והבדיקות לצידו. כל hook מחובר ב-`settings.json` באותה צורה: `"$(command -v python3 || command -v python)" "$HOME/.claude/hooks/<name>.py"`.
   החוזה: JSON ב-stdin, יציאה 0 בלי פלט כשאין החלטה, יציאה 2 עם הסיבה ב-stderr כדי לחסום.

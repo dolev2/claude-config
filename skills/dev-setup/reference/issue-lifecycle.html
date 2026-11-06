@@ -128,6 +128,10 @@ svg .branch-t { font-family: var(--font-mono); font-size: 11px; fill: var(--clau
 }
 a { color: var(--claude); }
 a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
+.where { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14px; }
+.where th, .where td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: start; vertical-align: top; }
+.where th { color: var(--muted); font-weight: 600; font-size: 13px; }
+.where code { white-space: nowrap; }
 </style>
 
 <div class="page">
@@ -491,7 +495,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-code</b>: issue אחד בדיוק בריצה.</p>
-        <ul><li>מממש את התוכנית ומוסיף טסט לכל שינוי.</li><li>חלוקה לסוכנים רק כשב-Plan יש "עבודה במקביל".</li><li>עובר על הפיצ'ר בדפדפן מול סעיף חוויית המשתמש, במחשב ובטלפון.</li><li>מוסר PR עם קישור לאפליקציית הסקירה.</li></ul>
+        <ul><li>מממש את התוכנית ומוסיף טסט לכל שינוי.</li><li>חלוקה לסוכנים רק כשב-Plan יש "עבודה במקביל".</li><li>עובר על הפיצ'ר בדפדפן מול סעיף חוויית המשתמש, במחשב ובטלפון. בסשן ענן: צילומי מסך ב-Playwright.</li><li>מוסר PR עם קישור לאפליקציית הסקירה. בסשן ענן: האפליקציה רצה בסשן, והצילומים בשיחה.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>worktree, commits, ואז <code>fetch</code> + <code>rebase origin/main</code>.</p>
@@ -540,6 +544,26 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
     </div>
   </article>
+</section>
+
+<section aria-labelledby="where-h">
+  <h2 id="where-h">מחשב או ענן</h2>
+  <p>כל שלב רץ גם במחשב של דולב וגם בסשן ענן. הטבלה אומרת מה שונה בענן, ומה נשאר למחשב.</p>
+  <p>הכללים המלאים: <code>rules/env-cloud.md</code> ו-<code>reference/cloud.md</code>.</p>
+  <div class="panel">
+  <table class="where">
+    <thead><tr><th>שלב</th><th>במחשב</th><th>בענן</th><th>מה שונה בענן</th></tr></thead>
+    <tbody>
+      <tr><td>ההגדרות</td><td>התיקייה <code>~/.claude</code></td><td>כן</td><td>סקריפט ההתקנה של הסביבה מעתיק את <code>main</code>, ו-<code>cloud_refresh.py</code> מעדכן בכל סשן.</td></tr>
+      <tr><td>תכנון (<code>dev-plan</code>)</td><td>כן</td><td>כן</td><td>פקודות GitHub רק דרך REST, לפי הטבלה ב-<code>cloud.md</code>.</td></tr>
+      <tr><td>ביצוע (<code>dev-code</code>)</td><td>ב-worktree</td><td>בלי worktree</td><td>ה-branch של המשימה ב-clone של הסשן. השם נקבע ב-<code>set_session_title</code>, ו-CI מעיר את הסשן דרך <code>subscribe_pr_activity</code>.</td></tr>
+      <tr><td>אפליקציה לסקירה ובדיקת חוויית משתמש</td><td>קישור localhost ודפדפן מובנה</td><td>בתוך הסשן</td><td>צילומי מסך ב-Playwright, ברוחב 1280 ו-375. פקודה של Windows בלבד: הבדיקה נשארת למחשב.</td></tr>
+      <tr><td>מיזוג (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>כלי ה-MCP של GitHub</td><td>חלון אישור בשתי הסביבות. בניקוי: <code>git checkout --detach origin/main</code>.</td></tr>
+      <tr><td>פרסום העמוד הזה</td><td>כן</td><td>כשכלי Artifact זמין</td><td>לא זמין: מדווחים לדולב שהפרסום מחכה.</td></tr>
+      <tr><td>הלוח והקמת הצינור (<code>dev-setup</code>)</td><td>כן</td><td>לא</td><td>חסומים גם ב-REST (claude-config #140).</td></tr>
+    </tbody>
+  </table>
+  </div>
 </section>
 
 <section aria-labelledby="rules-h">
