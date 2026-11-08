@@ -367,6 +367,7 @@ def test_a_full_sweep_reads_every_page_and_leaves_prs_out(monkeypatch):
 
 def test_one_issue_past_500_is_read_directly(monkeypatch):
     set_environment(monkeypatch)
+    monkeypatch.setenv("GITHUB_REPOSITORY", "dolev2/example")
     monkeypatch.setenv("ISSUE_NUMBER", "750")
     asked = []
     monkeypatch.setattr(
