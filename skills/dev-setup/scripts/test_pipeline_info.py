@@ -191,3 +191,30 @@ def test_forms_out_of_reach_are_unknown_not_missing(monkeypatch, capsys, tmp_pat
     info = run_main(monkeypatch, capsys)
     assert info["issue_forms"] == pipeline_info.FORMS_UNKNOWN
     assert not any("ISSUE_TEMPLATE" in f for f in info["missing_files"])
+
+
+def test_current_sprint_skips_a_milestone_with_only_an_open_pr(monkeypatch):
+    # milestone.open_issues counts PRs, so M1 used to be reported here while
+    # rank_issues.py said M2 (#164). The issues are read page by page.
+    def issue(number, pr=False):
+        found = {
+            "state": "open",
+            "milestone": {"number": number, "title": f"M{number}"},
+        }
+        found["milestone"]["state"] = "open"
+        return {**found, "pull_request": {}} if pr else found
+
+    asked = []
+
+    def gh_run(*args):
+        asked.append(args)
+        return 0, json.dumps([[issue(1, pr=True)], [issue(2)]]), ""
+
+    monkeypatch.setattr(pipeline_info, "gh_run", gh_run)
+    assert pipeline_info.current_sprint("acme/widgets") == "M2"
+    assert "--paginate" in asked[0] and "--slurp" in asked[0]
+
+
+def test_unreadable_issues_mean_no_sprint(monkeypatch):
+    monkeypatch.setattr(pipeline_info, "gh_run", lambda *args: (1, "", "HTTP 403"))
+    assert pipeline_info.current_sprint("acme/widgets") is None

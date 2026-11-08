@@ -5,6 +5,7 @@ number reaches it, not even when a repo fails.
 """
 
 import importlib.util
+import json
 import subprocess
 from pathlib import Path
 
@@ -212,3 +213,21 @@ def test_a_sync_without_the_sprint_count_reads_as_zero(monkeypatch, capsys):
     sweep, _ = fake(monkeypatch, BOTH_SYNCED)
     assert sweep.main(["--owner", "dolev2"]) == 0
     assert "active issues without a sprint: 0" in capsys.readouterr().out
+
+
+def test_list_repos_reads_every_page_of_the_owner(monkeypatch):
+    # `gh repo list --limit 500` stopped at 500 repos (claude-config #164).
+    sweep = load_sweep()
+
+    def page(*names):
+        nodes = [{"nameWithOwner": n} for n in names]
+        return {"data": {"repositoryOwner": {"repositories": {"nodes": nodes}}}}
+
+    asked = []
+    pages = [page("dolev2/a", "dolev2/b"), page("dolev2/c", "someone/forked-in")]
+    monkeypatch.setattr(
+        sweep, "gh", lambda *args: asked.append(args) or json.dumps(pages)
+    )
+    assert sweep.list_repos("dolev2") == ["dolev2/a", "dolev2/b", "dolev2/c"]
+    assert asked[0][:4] == ("api", "graphql", "--paginate", "--slurp")
+    assert "owner=dolev2" in asked[0]

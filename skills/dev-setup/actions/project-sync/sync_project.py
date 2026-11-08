@@ -20,7 +20,8 @@ Where each part lives
 This file is the entry point: settings, the loop over issues, and what is printed.
 The rules (what is written where) are in sync_rules.py, the board reads and writes in
 board.py (and why the board is read from the issue side), the sprint view in
-sprint_view.py, and gh / GraphQL in gh_api.py. They
+sprint_view.py, the current-sprint rule in sprint_rule.py (a copy of the scripts' one),
+and gh / GraphQL in gh_api.py. They
 are flat modules next to this file, so every copy of it must ship the whole folder:
 action.yml runs it in place, and dolev2/.github's sync-boards.yml downloads every .py
 here (claude-config #57). A failure to move the sprint view is printed and the issue
@@ -117,25 +118,43 @@ def report(settings: Settings, line: str) -> None:
         print(line)
 
 
+def as_issue(item: dict) -> dict:
+    """A REST issue in the shape the sync reads (the old `gh issue list --json`)."""
+    reason = item.get("state_reason")
+    return {
+        "number": item["number"],
+        "labels": [{"name": label["name"]} for label in item["labels"]],
+        "id": item["node_id"],
+        "state": item["state"].upper(),
+        "stateReason": reason.upper() if reason else None,
+        "milestone": item.get("milestone"),
+    }
+
+
 def load_issues(settings: Settings) -> list[dict]:
-    """Every issue of the repo, open and closed, or ISSUE_NUMBER alone."""
-    issues = json.loads(
-        gh_api.gh(
-            "issue",
-            "list",
-            "--repo",
-            settings.repo,
-            "--state",
-            "all",
-            "--limit",
-            "500",
-            "--json",
-            "number,labels,id,state,stateReason,milestone",
-        )
-    )
+    """Every issue of the repo, open and closed, or ISSUE_NUMBER alone.
+
+    Read through REST over every page: `gh issue list --limit 500` stopped at 500, and
+    even ISSUE_NUMBER was looked for inside that list (claude-config #164).
+    Pull requests are left out.
+    """
     if settings.only_issue:
-        issues = [i for i in issues if i["number"] == int(settings.only_issue)]
-    return issues
+        items = [
+            json.loads(
+                gh_api.gh("api", f"repos/{settings.repo}/issues/{settings.only_issue}")
+            )
+        ]
+    else:
+        pages = json.loads(
+            gh_api.gh(
+                "api",
+                f"repos/{settings.repo}/issues?state=all&per_page=100",
+                "--paginate",
+                "--slurp",
+            )
+        )
+        items = [item for page in pages for item in page]
+    return [as_issue(item) for item in items if "pull_request" not in item]
 
 
 def apply_to_labels(

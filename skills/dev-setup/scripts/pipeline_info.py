@@ -13,7 +13,8 @@ same skills work in every repo that carries the pipeline:
                                  in cloud sessions, claude-config #138)
 - the project number           - the PROJECT_NUMBER repository variable; None when
                                  it is missing or unreadable (blocked in the cloud)
-- the current sprint           - the lowest-numbered open milestone with open issues
+- the current sprint           - the lowest-numbered open milestone with an open
+                                 issue, PRs not counted (sprint_rule.py)
 - where the issue forms live   - the repo's own .github/ISSUE_TEMPLATE, or else the
                                  account's public <owner>/.github repo, which GitHub
                                  serves to every repo without forms of its own
@@ -37,6 +38,7 @@ import sys
 import tomllib
 from pathlib import Path
 
+import sprint_rule
 from gh_rest import current_repo
 from gh_rest import run as gh_run
 from lint_check import all_gaps, tracked_files
@@ -142,14 +144,17 @@ def netlify_gaps(root: Path) -> list[str]:
 
 
 def current_sprint(repo: str) -> str | None:
+    """The current sprint by the shared rule (sprint_rule.py); None when unreadable."""
     code, out = run(
         "gh",
         "api",
-        f"repos/{repo}/milestones?state=open&per_page=100",
-        "--jq",
-        "[.[] | select(.open_issues > 0)] | sort_by(.number) | .[0].title // empty",
+        f"repos/{repo}/issues?state=open&per_page=100",
+        "--paginate",
+        "--slurp",
     )
-    return out or None if code == 0 else None
+    if code != 0:
+        return None
+    return sprint_rule.current_sprint([i for page in json.loads(out) for i in page])
 
 
 def main(argv: list[str] | None = None) -> None:

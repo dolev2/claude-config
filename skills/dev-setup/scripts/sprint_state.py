@@ -172,7 +172,11 @@ def state(
         "dispatch": dispatch,
         "held_by_overlap": held,
         "blocked": [
-            {"number": i.number, "blocked_by": i.open_blockers}
+            {
+                "number": i.number,
+                "blocked_by": i.open_blockers,
+                "outside_blockers": i.outside_blockers,
+            }
             for i in claude_turn
             if i.blocked
         ],

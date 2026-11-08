@@ -186,9 +186,9 @@ def test_a_failed_view_update_does_not_stop_the_issue_sync(monkeypatch, capsys):
     )
 
     def gh(*args):
-        if args[0] == "api":
+        if "issues?state=open" in args[1]:  # the sprint view's read
             raise RuntimeError("gh api failed: boom")
-        return "[]"  # gh issue list: no issues
+        return "[[]]"  # every issue: one empty page
 
     monkeypatch.setattr(gh_api, "gh", gh)
     sync_project.main()
@@ -196,6 +196,21 @@ def test_a_failed_view_update_does_not_stop_the_issue_sync(monkeypatch, capsys):
 
 
 # Quiet mode, for the central sweep whose log is public (claude-config #46).
+
+
+def rest_issue(number, labels=("task",), milestone=None, state="open", **extra):
+    """An issue as the REST API returns it."""
+    return {
+        "number": number,
+        "node_id": f"X{number}",
+        "state": state,
+        "state_reason": None,
+        "labels": [{"name": name} for name in labels],
+        "milestone": {"number": milestone[0], "title": milestone[1], "state": "open"}
+        if milestone
+        else None,
+        **extra,
+    }
 
 
 def run_one_label_change(monkeypatch, quiet) -> list[tuple]:
@@ -212,20 +227,18 @@ def run_one_label_change(monkeypatch, quiet) -> list[tuple]:
     monkeypatch.setattr(
         gh_api, "graphql", lambda query, **kw: calls.append((query, kw)) or {}
     )
-    issue = {
-        "number": 5,
-        "id": "X5",
-        "state": "OPEN",
-        "body": "<!-- x-sync: status=explore -->",  # an old marker, now ignored
-        "labels": [{"name": "status:done"}, {"name": "task"}],
-    }
+    issue = rest_issue(5, labels=("status:done", "task"))
+    issue["body"] = "<!-- x-sync: status=explore -->"  # an old marker, now ignored
+    in_sprint = rest_issue(6, milestone=(2, "M2"))
 
     def gh(*args):
         calls.append(args)
-        if args[0] == "api":
-            return '[{"number": 2, "title": "M2", "open_issues": 1}]'
-        if args[:2] == ("issue", "list"):
-            return json.dumps([issue])
+        if args[0] != "api":
+            return ""
+        if "issues?state=open" in args[1]:
+            return json.dumps([[in_sprint]])
+        if "issues?state=all" in args[1]:
+            return json.dumps([[issue]])
         return ""
 
     monkeypatch.setattr(gh_api, "gh", gh)
@@ -271,13 +284,12 @@ def test_an_issue_opened_from_the_board_takes_its_labels(monkeypatch, capsys):
     def gh(*args):
         if args[0] == "api":
             return "[]"  # no milestones, so the sprint view stays
-        if args[:2] == ("issue", "list"):
-            return json.dumps([issue])
         if args[:2] == ("issue", "edit"):
             edits.append(args)
         return ""
 
     monkeypatch.setattr(gh_api, "gh", gh)
+    monkeypatch.setattr(sync_project, "load_issues", lambda settings: [issue])
     sync_project.main()
     assert any("status:backlog" in args for args in edits)
     assert "#9 labels <- project" in capsys.readouterr().out
@@ -301,11 +313,10 @@ def run_one_decision(monkeypatch, quiet) -> list[tuple]:
         calls.append(args)
         if args[0] == "api":
             return "[]"
-        if args[:2] == ("issue", "list"):
-            return json.dumps([issue])
         return ""
 
     monkeypatch.setattr(gh_api, "gh", gh)
+    monkeypatch.setattr(sync_project, "load_issues", lambda settings: [issue])
     sync_project.main()
     return calls
 
@@ -323,3 +334,55 @@ def test_a_decision_clears_its_column_and_keeps_its_labels(monkeypatch, capsys):
 def test_a_cleared_decision_counts_as_updated(monkeypatch, capsys):
     run_one_decision(monkeypatch, quiet=True)
     assert capsys.readouterr().out == "updated issues: 1\nactive without a sprint: 0\n"
+
+
+# Loading the issues: every page, and ISSUE_NUMBER read directly (claude-config #164).
+
+
+def test_a_full_sweep_reads_every_page_and_leaves_prs_out(monkeypatch):
+    set_environment(monkeypatch)
+    pages = [
+        [rest_issue(n) for n in range(1, 101)],
+        [rest_issue(601, state="closed", state_reason="completed")],
+        [rest_issue(602, pull_request={"url": "x"})],
+    ]
+    pages[1][0]["state_reason"] = "completed"
+    asked = []
+    monkeypatch.setattr(
+        gh_api, "gh", lambda *args: asked.append(args) or json.dumps(pages)
+    )
+    issues = sync_project.load_issues(sync_project.load_settings())
+    assert [i["number"] for i in issues][-2:] == [100, 601]
+    assert len(issues) == 101
+    assert issues[-1] == {
+        "number": 601,
+        "labels": [{"name": "task"}],
+        "id": "X601",
+        "state": "CLOSED",
+        "stateReason": "COMPLETED",
+        "milestone": None,
+    }
+    assert "--paginate" in asked[0] and "--slurp" in asked[0]
+
+
+def test_one_issue_past_500_is_read_directly(monkeypatch):
+    set_environment(monkeypatch)
+    monkeypatch.setenv("GITHUB_REPOSITORY", "dolev2/example")
+    monkeypatch.setenv("ISSUE_NUMBER", "750")
+    asked = []
+    monkeypatch.setattr(
+        gh_api,
+        "gh",
+        lambda *args: asked.append(args) or json.dumps(rest_issue(750)),
+    )
+    issues = sync_project.load_issues(sync_project.load_settings())
+    assert [i["number"] for i in issues] == [750]
+    assert asked == [("api", "repos/dolev2/example/issues/750")]
+
+
+def test_one_pull_request_is_not_an_issue(monkeypatch):
+    set_environment(monkeypatch)
+    monkeypatch.setenv("ISSUE_NUMBER", "7")
+    pr = rest_issue(7, pull_request={"url": "x"})
+    monkeypatch.setattr(gh_api, "gh", lambda *args: json.dumps(pr))
+    assert sync_project.load_issues(sync_project.load_settings()) == []

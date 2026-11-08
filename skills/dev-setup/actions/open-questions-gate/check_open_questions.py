@@ -158,10 +158,11 @@ def warning(heading: str, questions: list[str]) -> str:
 
 def upsert_comment(number: str, text: str) -> None:
     """One gate comment per issue, edited in place: a rerun must not spam the thread."""
-    raw = gh("api", f"repos/{REPO}/issues/{number}/comments", "--paginate")
-    existing = next(
-        (c for c in json.loads(raw) if COMMENT_MARKER in (c["body"] or "")), None
-    )
+    # --slurp: --paginate alone prints one JSON array per page, which json.loads
+    # cannot read past 30 comments (claude-config #164).
+    raw = gh("api", f"repos/{REPO}/issues/{number}/comments", "--paginate", "--slurp")
+    comments = [c for page in json.loads(raw) for c in page]
+    existing = next((c for c in comments if COMMENT_MARKER in (c["body"] or "")), None)
     path = None
     try:
         with tempfile.NamedTemporaryFile(

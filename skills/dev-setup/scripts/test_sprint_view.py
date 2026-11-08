@@ -1,22 +1,14 @@
 """The sprint view follows the current sprint (claude-config #17)."""
 
+import json
+
 import gh_api
 import pytest
 import sprint_view as sv
 
 
-def milestone(number, title, open_issues):
-    return {"number": number, "title": title, "open_issues": open_issues}
-
-
 def sprint_view(filter_):
     return {"id": "V1", "name": "ספרינט נוכחי", "filter": filter_}
-
-
-def test_current_sprint_is_the_first_milestone_with_open_issues():
-    milestones = [milestone(3, "M3", 1), milestone(1, "M1", 0), milestone(2, "M2", 4)]
-    assert sv.current_sprint(milestones) == "M2"
-    assert sv.current_sprint([milestone(1, "M1", 0)]) is None
 
 
 def test_finished_sprint_moves_the_filter():
@@ -56,17 +48,23 @@ def test_only_the_milestone_term_changes():
     assert change == ("V1", 'milestone:"New"')
 
 
+def open_item(milestone_number, title, is_pr=False):
+    item = {
+        "state": "open",
+        "milestone": {"number": milestone_number, "title": title, "state": "open"},
+    }
+    return {**item, "pull_request": {}} if is_pr else item
+
+
 def test_sync_sprint_view_sends_the_update(monkeypatch):
-    sent = []
+    # M1 holds only an open PR, on the second page: the sprint is M2 (#164).
+    pages = [[open_item(2, "M2")], [open_item(1, "M1", is_pr=True)]]
+    calls, sent = [], []
     monkeypatch.setattr(
-        gh_api,
-        "gh",
-        lambda *args: (
-            '[{"number": 1, "title": "M1", "open_issues": 0},'
-            ' {"number": 2, "title": "M2", "open_issues": 2}]'
-        ),
+        gh_api, "gh", lambda *args: calls.append(args) or json.dumps(pages)
     )
     monkeypatch.setattr(gh_api, "graphql", lambda query, **kw: sent.append(kw))
     moved_to = sv.sync_sprint_view("dolev2/example", [sprint_view('milestone:"M1"')])
     assert sent == [{"view": "V1", "filter": 'milestone:"M2"'}]
     assert moved_to == 'milestone:"M2"'
+    assert "--paginate" in calls[0] and "--slurp" in calls[0]

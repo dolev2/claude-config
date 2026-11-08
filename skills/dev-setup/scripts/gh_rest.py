@@ -94,18 +94,33 @@ def api_list(path: str) -> list:
     return [item for page in pages for item in page]
 
 
-def refs(items: list[dict]) -> dict:
-    """GraphQL-style connection of issue references: {"nodes": [{number, state}]}."""
-    return {
-        "nodes": [{"number": i["number"], "state": i["state"].upper()} for i in items]
-    }
+def ref_repo(item: dict) -> str | None:
+    """owner/name of a linked issue, from the end of its `repository_url`."""
+    url = item.get("repository_url")
+    return "/".join(url.rstrip("/").rsplit("/", 2)[-2:]) if url else None
+
+
+def refs(repo: str, items: list[dict]) -> dict:
+    """GraphQL-style connection of issue references: {"nodes": [{number, state}]}.
+
+    A reference to an issue of another repo also carries its `repository` (owner/name):
+    its number alone would read as the issue of `repo` with that number (#164).
+    """
+    nodes = []
+    for item in items:
+        node = {"number": item["number"], "state": item["state"].upper()}
+        other = ref_repo(item)
+        if other and other.lower() != repo.lower():
+            node["repository"] = other
+        nodes.append(node)
+    return {"nodes": nodes}
 
 
 def links(repo: str, issue: dict, count: int, path: str) -> dict:
     """The linked issues behind `path`, fetched only when the summary counts any."""
     if not count:
         return {"nodes": []}
-    return refs(api_list(f"repos/{repo}/issues/{issue['number']}/{path}"))
+    return refs(repo, api_list(f"repos/{repo}/issues/{issue['number']}/{path}"))
 
 
 def to_node(repo: str, issue: dict, with_body: bool) -> dict:

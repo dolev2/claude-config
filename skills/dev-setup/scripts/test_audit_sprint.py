@@ -142,3 +142,29 @@ def test_digest_carries_findings_as_data():
         "detail": "a.py  merge-candidate",
         "line": "OVERLAP #1 #2: a.py  merge-candidate",
     }
+
+
+# A blocker of another repo with the number of a sprint issue (claude-config #164).
+
+FOREIGN_2 = {"number": 2, "state": "OPEN", "repository": "dolev2/other"}
+
+
+def with_foreign_blocker(n):
+    found = node(n)
+    found["blockedBy"]["nodes"].append(dict(FOREIGN_2))
+    return found
+
+
+def test_a_blocker_of_another_repo_is_outside_even_with_a_sprint_number():
+    assert lines(with_foreign_blocker(1), node(2)) == ["OUTSIDE #1 -> dolev2/other#2"]
+
+
+def test_a_blocker_of_another_repo_makes_no_cycle():
+    # #2 really waits on #1 here; #1 waits on dolev2/other#2, not on #2.
+    found = lines(with_foreign_blocker(1), node(2, blocked_by=[(1, "OPEN")]))
+    assert not [f for f in found if f.startswith("CYCLE")]
+
+
+def test_a_blocker_of_another_repo_is_not_a_line_link():
+    found = lines(with_foreign_blocker(1) | {"body": body(context="תלוי ב: אין.")})
+    assert not [f for f in found if f.startswith("LINE-MISMATCH")]

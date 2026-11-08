@@ -55,7 +55,8 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
 
 2. Pick the first row, top down, that:
    - has no `BLOCKED by`. A blocked issue is never the next one; what blocks it ranks above
-     it anyway, since it carries at least the same weight plus one;
+     it anyway, since it carries at least the same weight plus one. A blocker of another
+     repo (`owner/name#N`) is not in the ranking at all: the issue waits on that repo;
    - is not `status:backlog` with `0 waiting`. That is a sprint umbrella or an idea nobody
      waits on, not work to pick up;
    - is not a `decision` issue (no status) with `0 waiting`, unless nothing
