@@ -21,12 +21,13 @@ from ask_before_merge import ask_decision
 from shell_commands import read_event
 
 # What the orchestrator's child needs beyond the allow list in settings.json (#150).
+# No send_message: the service raises a prompt on it anyway, so a child reports on
+# GitHub instead and the orchestrator polls it (#184).
 CHILD_TOOLS = frozenset(
     {
         "mcp__github__create_pull_request",
         "mcp__github__update_pull_request",
         "mcp__github__add_issue_comment",
-        "mcp__claude-code-remote__send_message",
     }
 )
 

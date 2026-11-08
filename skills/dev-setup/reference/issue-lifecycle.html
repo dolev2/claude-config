@@ -578,7 +578,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <tr><td>ביצוע (<code>dev-code</code>)</td><td>ב-worktree</td><td>בלי worktree</td><td>ה-branch של המשימה ב-clone של הסשן. השם נקבע ב-<code>set_session_title</code>, ו-CI מעיר את הסשן דרך <code>subscribe_pr_activity</code>.</td></tr>
       <tr><td>אפליקציה לסקירה ובדיקת חוויית משתמש</td><td>קישור localhost ודפדפן מובנה</td><td>בתוך הסשן</td><td>צילומי מסך ב-Playwright, ברוחב 1280 ו-375. פקודה של Windows בלבד: הבדיקה נשארת למחשב.</td></tr>
       <tr><td>מיזוג (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>כלי ה-MCP של GitHub</td><td>חלון אישור בשתי הסביבות. בניקוי: <code>git checkout --detach origin/main</code>.</td></tr>
-      <tr><td>המתזמר (<code>dev-orchestrate</code>)</td><td>לא</td><td>כן</td><td>סשנים-בנים במקביל, ומעקב בהודעות מהם, באירועי PR ובבדיקת גיבוי. הסעיף הבא.</td></tr>
+      <tr><td>המתזמר (<code>dev-orchestrate</code>)</td><td>לא</td><td>כן</td><td>סשנים-בנים במקביל, ומעקב ב-GitHub: בדיקה ברקע של ה-issues שלהם, אירועי PR ובדיקת גיבוי. הסעיף הבא.</td></tr>
       <tr><td>פרסום העמוד הזה</td><td>כן</td><td>כשכלי Artifact זמין</td><td>לא זמין: מדווחים לדולב שהפרסום מחכה.</td></tr>
       <tr><td>הלוח והקמת הצינור (<code>dev-setup</code>)</td><td>כן</td><td>לא</td><td>חסומים גם ב-REST (claude-config #140).</td></tr>
     </tbody>
@@ -611,8 +611,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <li class="human"><strong>פתיחה</strong><p>דולב מבקש. המתזמר מראה מה ייפתח עכשיו, מה מחכה לחוסם, ומה מחכה לו.</p></li>
     <li class="claude"><strong>בדיקה</strong><p><code>sprint_state.py</code> אומר מה מוכן לבן, מה מחכה לחפיפת קבצים, ומה מוכן למיזוג.</p><p>הסקילים השתנו ב-<code>main</code>: קוראים אותם מחדש.</p></li>
     <li class="claude"><strong>בן לכל משימה פנויה</strong><p>עד 3 במקביל, עם התגיות <code>issue:N</code>. בן לתכנון ובן נפרד לקוד.</p></li>
-    <li class="gate"><strong>החוזה של הבן</strong><p>לא שואל את דולב, לא נוגע בקישורים, לא ממזג. מדווח להורה ב-<code>send_message</code>.</p></li>
-    <li class="claude"><strong>אחרי דיווח</strong><p>המתזמר בודק ב-GitHub: את התוכנית, את ה-PR וה-CI, ושאין branch או תווית מיותרים.</p></li>
+    <li class="gate"><strong>החוזה של הבן</strong><p>לא שואל את דולב, לא נוגע בקישורים, לא ממזג, ולא קורא לכלי הסשנים: לא שולח הודעות ולא משנה את שם הסשן (השירות מקפיץ חלון על כל קריאה). הדיווח שלו הוא מה שב-GitHub: תוכנית, תווית, תגובה ו-PR.</p></li>
+    <li class="claude"><strong>אחרי שינוי</strong><p>בדיקה ברקע (<code>watch_children.py</code>) מעירה את המתזמר כשתווית של בן זזה או שנוספה תגובה. המתזמר בודק ב-GitHub: את התוכנית, את ה-PR וה-CI, ושאין branch או תווית מיותרים.</p></li>
     <li class="human"><strong>חלון שאלות אחד</strong><p>תשובות לתוכניות, אישורים, ומיזוג אחד בכל פעם. רק דולב מחליט.</p></li>
     <li class="gate"><strong>באג או מכסה</strong><p>באג שפוגע באחרים: issue, Blocked by, עצירת הבנים שנפגעים, ובן שמתקן.</p><p>מכסה בחריגה: לא נפתח בן חדש, ושואלים את דולב.</p></li>
     <li class="auto"><strong>סוף הספרינט</strong><p>אין מה לפתוח, לשאול או למזג: סיכום, והלולאה נעצרת.</p></li>

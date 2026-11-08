@@ -69,7 +69,7 @@ flowchart TD
     subgraph OG["המתזמר — סשן ענן אחד"]
       ORC["dev-orchestrate<br/>sprint_state.py<br/>בונה את התמונה מחדש בכל בדיקה"]:::routine
       ORC --> KID["סשן-בן לכל משימה שלא חסומה<br/>עד 3 במקביל<br/>חפיפת קבצים: אחת אחרי השנייה"]:::routine
-      KID --> REPORT["הבן מדווח להורה<br/>send_message"]:::routine
+      KID --> REPORT["הבן כותב ב-GitHub<br/>תווית, תגובה, PR<br/>המתזמר מתעורר מהבדיקה ברקע"]:::routine
       REPORT --> CHECK["המתזמר בודק את התוצאה<br/>ושואל את דולב בחלון אחד"]:::routine
       CHECK --> ORC
     end
