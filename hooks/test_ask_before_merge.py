@@ -196,3 +196,9 @@ def test_script_run_prints_the_decision():
     )
     assert result.returncode == 0
     assert_asks(result.stdout.decode("utf-8"))
+
+
+def test_ask_decision_reason():
+    assert_asks(ask_before_merge.ask_decision())
+    decision = json.loads(ask_before_merge.ask_decision("סיבה אחרת"))
+    assert decision["hookSpecificOutput"]["permissionDecisionReason"] == "סיבה אחרת"
