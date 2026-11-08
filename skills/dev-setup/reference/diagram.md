@@ -63,7 +63,7 @@ flowchart TD
 
     ASK --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
     SHIP --> MERGE["rebase onto the default branch<br/>runs the tests<br/>push, then opens or reuses the PR<br/>waits for CI checks<br/>בודק את השאלות הפתוחות<br/>not MERGEABLE: back to the rebase<br/>squash merge"]:::routine
-    MERGE --> DONE(["dev-ship sets status:done<br/>status:done = merged<br/>Closes #N closes the issue<br/>the card lands in Done<br/>ואז ניקוי"]):::routine
+    MERGE --> DONE(["dev-ship sets status:done<br/>status:done = merged<br/>Closes #N closes the issue<br/>the card lands in Done<br/>ניקוי: אפליקציה, worktree, branch מקומי"]):::routine
 
     ORCGO(["דולב: תריץ את הספרינט<br/>רק בסשן ענן"]):::human --> ORC
 

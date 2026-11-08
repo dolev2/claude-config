@@ -44,8 +44,11 @@
   אלה אף פעם לא מגיעים ל-GitHub. קובץ החלקים, ההרשמה וה-hook `hooks/guard_parallel_parts.py`:
   `dev-code`, שלב 5. ה-hook חוסם כתיבה בלבד, קריאה מכל עותק מותרת.
 - **בסוף ריצת Code, ה-worktree נשאר.** האפליקציה לסקירה רצה ממנו (`review-app.md`), וסבב
-  תיקון ממשיך בו. הוא נמחק במיזוג (`dev-ship`): קודם עוצרים את האפליקציה,
-  ואז `git worktree remove <path>`. הפקודה מסרבת כשיש בו שינויים, וזה המצב שבו עוצרים ומדווחים.
+  תיקון ממשיך בו. הוא נמחק במיזוג, ברשימה של `dev-ship` צעד 7: עוצרים את האפליקציה,
+  `git worktree remove <path>`, `git fetch --prune`, ואז מוחקים את ה-branch המקומי. `git worktree remove` מסרב כשיש בו
+  שינויים, וזה המצב שבו עוצרים ומדווחים.
+  התיקייה הראשית לא עוברת branch בניקוי. היא מתעדכנת ב-`git pull --ff-only` רק כשהיא כבר על `<default>`
+  ו-`git status --porcelain` ריק. אחרת לא נוגעים בה, והסיכום אומר שהיא לא עודכנה.
 - **אם בכל זאת עובדים בתיקייה המשותפת** (דולב ביקש במפורש), כלל העץ הנקי של `rules/git.md` חל בין
   issue ל-issue, לפני כל `git checkout <default>`.
 
@@ -54,7 +57,9 @@
 - branch: `claude/issue-<N>-<slug-אנגלי-קצר>`. גם `dev-ship` משתמש בשם הזה כשהעבודה שייכת ל-issue.
 - הקישור ל-issue נוצר דרך `Closes #<N>` בגוף ה-PR.
 - שם הסשן: `/rename claude/issue-<N>-<slug>` כשמתחילים לעבוד על ה-branch. בסשן ענן: הסעיף הבא.
-- מחיקת branches אחרי merge: ההגדרה "Automatically delete head branches" של ה-repo.
+- מחיקת branches אחרי merge: ב-GitHub, ההגדרה "Automatically delete head branches" של ה-repo, בכל סביבה.
+  `dev-ship` לא מעביר `--delete-branch`, כי `gh` עם הדגל גם עושה checkout ל-`<default>` בתיקייה שבה הוא רץ.
+  את ה-branch המקומי מוחק `dev-ship` צעד 7. ה-branch נשאר ב-GitHub (ההגדרה כבויה): מדווחים ומציעים להפעיל אותה, ולא מוחקים ביד.
 
 ## בסשן ענן
 
