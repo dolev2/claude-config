@@ -110,8 +110,8 @@ On Dolev's request only, instead of the steps above. It picks no issue.
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/audit_sprint.py" --json
    ```
-   Each issue's goal, the files its Plan lists, its open blockers, whether it has a PR, and
-   the findings. Open the full body of an issue only where the goal is not enough to judge.
+   Each issue's goal, the files its Plan lists, its open blockers, whether it has a PR, its
+   parent (`#N`, or `owner/name#N` for one in another repo), and the findings. Open the full body of an issue only where the goal is not enough to judge.
 2. Judge every pair that could depend on each other, not only the findings: does one need
    something the other delivers before it can start? Judge each finding too:
    - `MENTION`: a dependency, or only a reference?
