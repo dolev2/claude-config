@@ -10,7 +10,7 @@
 - **קומפוננטה:** מסך או קומפוננטה ב-Vitest עם Testing Library: מה המשתמש רואה ומה קורה כשהוא לוחץ.
 - **בדיקה ידנית בדפדפן:** המעבר של `dev-code` על סעיף "חוויית משתמש" (`skills/dev-setup/reference/ux.md`). היא הבדיקה מקצה לקצה.
   אין בדיקת קצה לקצה אוטומטית בדפדפן (Playwright): הוחלט ב-claude-config #109, והרעיון בבקלוג (claude-config #113).
-  למה, ומה נדחה: claude-config `docs/decisions/109-no-browser-e2e.md`.
+  למה, ומה נדחה: `~/.claude/docs/decisions/109-no-browser-e2e.md`.
 
 ## מה חובה, לפי סוג השינוי
 אין יעד אחוזי כיסוי. הכלל הוא הטבלה: כל שינוי מקבל את הבדיקות של השורה שלו.

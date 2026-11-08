@@ -79,6 +79,16 @@ def test_a_replaced_page_points_at_a_page_that_points_back(page):
     )
 
 
+@pytest.mark.parametrize("page", PAGES, ids=lambda page: page.name)
+def test_a_replacing_page_names_an_old_page_that_says_so(page):
+    for old in REPLACES.findall(page.read_text(encoding="utf-8")):
+        target = DECISIONS / old
+        assert target.is_file(), f"{page.name}: replaces {old}, which does not exist"
+        assert replaced_by(target.read_text(encoding="utf-8")) == page.name, (
+            f"{old}: set its status line to **מצב:** הוחלף ב-[{page.name}]({page.name})"
+        )
+
+
 def test_every_pointer_to_a_page_names_a_page_that_exists():
     names = {page.name for page in PAGES}
     dead = [

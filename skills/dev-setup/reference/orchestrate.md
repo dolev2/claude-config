@@ -39,7 +39,7 @@
 ```
 
 ## איך המתזמר יודע שבן התקדם
-בן לא שולח הודעות: השירות מקפיץ חלון על כל `send_message` (`cloud.md`, "חלונות אישור בסשן-בן", #184). למה, ומה נדחה: `docs/decisions/184-orchestrator-pulls-from-github.md`.
+בן לא שולח הודעות: השירות מקפיץ חלון על כל `send_message` (`cloud.md`, "חלונות אישור בסשן-בן", #184). למה, ומה נדחה: `~/.claude/docs/decisions/184-orchestrator-pulls-from-github.md`.
 שלושה דברים מעירים את המתזמר, ואף אחד מהם לא מקפיץ חלון:
 1. **הבדיקה ברקע:** `watch_children.py`, ב-Bash עם `run_in_background`, יוצא כשה-status של issue של בן פעיל זז
    או כשנוספה בו תגובה. היציאה שלו מעירה את המתזמר. השהיה: עד כדקה (`--interval`).

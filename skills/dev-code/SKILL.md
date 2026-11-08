@@ -101,7 +101,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    first such page creates the folder, and the file guide gets a `docs/decisions/*.md` row. The
    rule or doc that relies on the decision gets a one-line pointer to the page, never a copy of
    it. A page that replaces an older one: the new page gets the `**מחליף:**` line, and the old
-   page's status line becomes `הוחלף ב-<file>`, the only edit an existing page ever gets.
+   page's status line becomes `הוחלף ב-[<file>](<file>)`, the only edit an existing page ever gets.
 
    **While writing, run only the test files of what changed**, never a full suite; a failing
    test reruns alone (`reference/tests.md`). The full run comes once, in
