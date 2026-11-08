@@ -9,13 +9,15 @@
 1. `title`: ה-branch מה-Plan. אין עדיין Plan (בן תכנון): המתזמר בוחר `claude/issue-<N>-<slug>`, והחוזה אומר לבן
    שזה ה-branch שה-Plan יכתוב, במקום ש-`dev-plan` יבחר שם משלו. הבן לא משנה את השם (`git-flow.md`).
 2. `tags`: `claude-config:orchestrated` ו-`issue:<N>`. כך המתזמר מוצא את הבנים שלו בלי זיכרון.
+   הסינון לפי תגית ב-`list_sessions` לא תמיד זמין (`tags filter is not currently available`, נבדק ב-8.11.2026, #189).
+   לכן המתזמר מבקש רשימה מלאה (`mine: true`, בלי `tags`), מסנן לפי השדה `tags` של כל סשן, וממשיך לעמוד הבא (`after_id`) כל עוד `has_more`.
 3. `prompt`: ה-`prompt` מ-`sprint_state.py` (`תחקור את #N` או `תקודד את #N`).
 4. `append_system_prompt`: החוזה מהסעיף הבא, עם `<N>`, `<repo>` וה-branch במקומם. שם הוא נשאר גם אחרי דחיסה.
 5. `extra_allowed_tools`: `CHILD_TOOLS` מ-`hooks/guard_create_session.py`, בדיוק. הם ב-`permissions.allow` של
    `settings.json`, כי השירות מעביר לבן רק כלים שמאושרים מראש אצל המתזמר (`cloud.md`, "חלונות אישור בסשן-בן").
 6. בלי `environment_id`: הבן יורש את הסביבה של המתזמר. ה-hook מקפיץ חלון על כל חריגה מ-5 או 6.
 
-**עד 3 בנים פעילים.** פעיל: לא בארכיון, ו-`status_bucket` עובד או חסום. בן שסיים את התור (תוכנית נכתבה, PR
+**עד 3 בנים פעילים.** פעיל: לא בארכיון, ועובד או חסום על חלון הרשאה ("מצב בן" למטה). בן שסיים את התור (תוכנית נכתבה, PR
 ב-`in-review`) לא פעיל: הוא לא נספר ב-3, וה-issue שלו לא נכנס ל-`--claimed`.
 **בן אחד לכל issue.** לפני שנפתח בן ל-issue, כל בן קודם שלו שלא בארכיון מקבל `archive_session`.
 תכנון וקוד באותה משימה הם שני בנים: בן הקוד קורא את ה-Plan מה-issue. סבב תיקון (`needs-repair`) הוא בן קוד חדש.
@@ -55,8 +57,11 @@
 ## מצב בן
 `get_session` לכל בן עם התג `claude-config:orchestrated` שלא בארכיון:
 1. `status_bucket`: עובד, חסום, מוכן לסקירה, הושלם או נכשל. `post_turn_summary` אומר במילים איפה הוא.
-2. **חסום** (`SESSION_STATUS_BUCKET_BLOCKED`, `pending_actions` מראה את הכלי): זה חלון הרשאה, לא שאלה של הבן.
-   המתזמר אומר לדולב איזה כלי, באיזה סשן, עם קישור, ושזה חלון הרשאה.
+2. **חסום על חלון הרשאה:** `external_metadata.pending_actions` לא ריק (הוא מראה את הכלי), או `session_status` הוא `SESSION_STATUS_REQUIRES_ACTION`.
+   זה חלון הרשאה, לא שאלה של הבן. המתזמר אומר לדולב איזה כלי, באיזה סשן, עם קישור, ושזה חלון הרשאה.
+   **`SESSION_STATUS_BUCKET_BLOCKED` לבדו לא אומר חסום.** בן שסיים את התור ומבקש החלטה (`post_turn_summary.status_category: need_input`)
+   מראה `SESSION_STATUS_IDLE` ו-`BLOCKED`, בלי `pending_actions` (נבדק ב-8.11.2026, #189).
+   הוא לא פעיל, לא נספר ב-3, וה-issue שלו לא נכנס ל-`--claimed`. המתזמר קורא את המצב שלו מ-GitHub (תווית, Plan, PR).
 3. **נכשל:** התור האחרון הסתיים בשגיאה. המתזמר אומר מה נכשל, ומציע `send_message` "המשך" או בן חדש.
    `send_message` מהמתזמר לבן כנראה מקפיץ חלון הרשאה, כמו מבן להורה (`cloud.md`; הכיוון הזה לא נבדק). המתזמר אומר את זה לדולב לפני.
 4. `rate_limit_info.isUsingOverage` הוא `true` אצל בן כלשהו: לא פותחים בן חדש, ושואלים את דולב.
