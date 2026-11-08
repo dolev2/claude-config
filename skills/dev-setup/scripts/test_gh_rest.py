@@ -62,12 +62,13 @@ def test_api_failure_exits_with_gh_error(monkeypatch):
 def flaky_gh(monkeypatch, failures):
     """`gh` that fails with each stderr in `failures`, then succeeds; counts calls."""
     calls = []
-    monkeypatch.setattr(gh_rest.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(gh_rest.time, "sleep", lambda seconds: calls.append(seconds))
 
     def run(*args):
         calls.append(args)
-        if len(calls) <= len(failures):
-            return 1, "", failures[len(calls) - 1]
+        tries = [c for c in calls if isinstance(c, tuple)]
+        if len(tries) <= len(failures):
+            return 1, "", failures[len(tries) - 1]
         return 0, '{"ok": true}', ""
 
     monkeypatch.setattr(gh_rest, "run", run)
@@ -87,18 +88,24 @@ def flaky_gh(monkeypatch, failures):
 def test_a_transient_failure_is_tried_again(monkeypatch, stderr):
     calls = flaky_gh(monkeypatch, [stderr])
     assert gh_rest.api("repos/x/y") == {"ok": True}
-    assert len(calls) == 2
+    assert calls == [("gh", "api", "repos/x/y"), 2, ("gh", "api", "repos/x/y")]
 
 
 def test_three_transient_failures_exit_with_the_last_error(monkeypatch):
     calls = flaky_gh(monkeypatch, ["HTTP 502", "HTTP 502", "HTTP 504: timeout"])
     with pytest.raises(SystemExit, match="HTTP 504"):
         gh_rest.api_list("repos/x/y/issues")
-    assert len(calls) == 3
+    assert [c for c in calls if not isinstance(c, tuple)] == [2, 4]
 
 
 @pytest.mark.parametrize(
-    "stderr", ["HTTP 404: Not Found", "HTTP 403: blocked", "HTTP 422: invalid"]
+    "stderr",
+    [
+        "HTTP 404: Not Found",
+        "HTTP 403: blocked",
+        "HTTP 422: invalid",
+        "HTTP 408: Request Timeout",
+    ],
 )
 def test_a_client_error_is_not_tried_again(monkeypatch, stderr):
     calls = flaky_gh(monkeypatch, [stderr])

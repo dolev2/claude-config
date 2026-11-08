@@ -10,7 +10,8 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 The orchestrator (claude-config #150) keeps no memory between checks: every check runs
 this and rebuilds its picture from GitHub. Which issue already has a child session is
 not on GitHub, so the orchestrator reads it from the sessions' `issue:<N>` tags and
-passes it in --claimed (claude-config #174).
+passes it in --claimed (claude-config #174). A claimed issue outside the sprint holds
+nothing back: its planned files are not read.
 
 The keys:
 
@@ -21,7 +22,9 @@ The keys:
                      (claimed, in review, or earlier in dispatch), so it runs after it
     blocked          Claude's turn, waiting on an open blocker
     waiting_dolev    plan questions, plans to approve, PRs to review
-    merge_queue      in review with an open PR: its head, mergeable_state and CI
+    merge_queue      in review with an open PR: its head, mergeable_state and CI.
+                     mergeable_state "unknown" means GitHub is still computing it:
+                     not yet, ask again next check (cloud.md)
     on_hold          costs-money, until Dolev approves the expense
     findings         audit_sprint.py's findings, as data
     pipeline_sha     the last commit that touched skills/ on the pipeline's main: when

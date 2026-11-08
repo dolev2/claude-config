@@ -20,8 +20,9 @@ import time
 REMOTE = re.compile(r"(?:github\.com[:/]|/git/)([^/:]+)/([^/]+?)(?:\.git)?/?$")
 CLOSING = r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#{}\b"
 NOT_A_REPO = "Not inside a GitHub repo that gh can see; pass --repo owner/name."
+CLIENT_ERROR = re.compile(r"HTTP 4\d\d")
 TRANSIENT = re.compile(
-    r"HTTP 5\d\d|timeout|connection reset|connection refused|EOF", re.IGNORECASE
+    r"HTTP 5\d\d|timeout|connection reset|connection refused|\bEOF\b", re.IGNORECASE
 )
 RETRY_DELAYS = (2, 4)
 
@@ -62,6 +63,8 @@ def is_transient(stderr: str) -> bool:
     own fault and fails at once, and so does anything not known to be passing: the
     cloud proxy answers 403 for what it blocks, and waiting will not change that.
     """
+    if CLIENT_ERROR.search(stderr):
+        return False
     return bool(TRANSIENT.search(stderr))
 
 
