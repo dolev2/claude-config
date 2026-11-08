@@ -217,7 +217,8 @@ live, where its design tokens come from, its glossary, its commands. The code ru
 `~/.claude/rules/` load in every session, so a rule already written there is not repeated
 here; if the file already repeats one, point it out to Dolev rather than deleting it.
 
-Also make sure it has a tests section with the exact commands, the lint commands among them;
+Also make sure it has a tests section with the exact commands, the lint commands among them
+(`ruff check .`, `ruff format --check .`, `npm --prefix <folder> run lint`);
 `dev-code` and `dev-ship` run whatever it says. If there is none, ask Dolev rather than guessing.
 
 **The file guide and its check** (`~/.claude/rules/code-general.md`), when `missing_files`
