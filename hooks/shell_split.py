@@ -39,25 +39,90 @@ WORD_BREAKS = " \t\n;&|()"
 # How deep `bash -c "sh -c '...'"` is unwrapped; deeper text is not read.
 MAX_NESTING = 3
 # `<<EOF`, `<<-'EOF'`, `<< "EOF"`; not the `<<<` here-string, which has no body.
-HEREDOC_START = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)(\w+)\2")
+# The delimiter is the whole word: after `<<EOF.x`, bash waits for `EOF.x`, not `EOF`.
+HEREDOC_START = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)(\w+)\2(?=[\s;&|()<>]|$)")
+# Quotes in which `<<` and `#` are text: `'`, `"` and bash's `$'...'`.
+QUOTES = ("'", '"', "$'")
 
 
 def strip_heredocs(command: str) -> str:
-    """The command without heredoc bodies, which are text and not commands."""
-    lines = command.split("\n")
+    """The command without heredoc bodies, which are text and not commands.
+
+    A `<<` opens a heredoc only where the shell reads it as code: not inside quotes and
+    not in a `#` comment, but yes inside `"$(...)"`, as in a commit message.
+    """
     kept: list[str] = []
+    pending: list[tuple[bool, str]] = []
+    # Open quotes and parentheses, innermost last: one of QUOTES, or "(".
+    contexts: list[str] = []
     index = 0
-    while index < len(lines):
-        line = lines[index]
-        kept.append(line)
-        index += 1
-        for strip_tabs, _quote, delimiter in HEREDOC_START.findall(line):
-            while index < len(lines):
-                body_line = lines[index].lstrip("\t") if strip_tabs else lines[index]
-                index += 1
-                if body_line.rstrip("\r") == delimiter:
-                    break
-    return "\n".join(kept)
+    while index < len(command):
+        is_code = all(context == "(" for context in contexts)
+        if command[index] == "\n" and pending and is_code:
+            kept.append("\n")
+            index = skip_heredoc_bodies(command, index + 1, pending)
+            pending = []
+            continue
+        step = code_step(command, index, pending) if is_code else 0
+        step = step or quote_step(command, index, contexts)
+        kept.append(command[index : index + step])
+        index += step
+    return "".join(kept)
+
+
+def code_step(command: str, index: int, pending: list[tuple[bool, str]]) -> int:
+    """The length of a `#` comment or a heredoc start at index, or 0 for neither.
+
+    A heredoc start adds its delimiter to pending.
+    """
+    if command[index] == "#" and (index == 0 or command[index - 1] in WORD_BREAKS):
+        end = command.find("\n", index)
+        return (len(command) if end == -1 else end) - index
+    match = HEREDOC_START.match(command, index)
+    if not match:
+        return 0
+    pending.append((bool(match[1]), match[3]))
+    return len(match[0])
+
+
+def quote_step(command: str, index: int, contexts: list[str]) -> int:
+    """How far to move past index; opens or closes a quote or parenthesis on the way."""
+    char = command[index]
+    context = contexts[-1] if contexts else ""
+    if char == "\\" and context != "'":
+        return 2
+    if context in QUOTES:
+        if char == context[-1]:
+            contexts.pop()
+        elif context == '"' and command.startswith("$(", index):
+            contexts.append("(")
+            return 2
+        return 1
+    if command.startswith(("$'", "$("), index):
+        contexts.append("$'" if command[index + 1] == "'" else "(")
+        return 2
+    if char in "'\"(":
+        contexts.append(char)
+    elif char == ")" and context == "(":
+        contexts.pop()
+    return 1
+
+
+def skip_heredoc_bodies(
+    command: str, start: int, delimiters: list[tuple[bool, str]]
+) -> int:
+    """The index after the bodies that start at start, one per delimiter, in order."""
+    index = start
+    for strip_tabs, delimiter in delimiters:
+        while index < len(command):
+            end = command.find("\n", index)
+            end = len(command) if end == -1 else end
+            line = command[index:end]
+            index = end + 1
+            line = line.lstrip("\t") if strip_tabs else line
+            if line.rstrip("\r") == delimiter:
+                break
+    return min(index, len(command))
 
 
 def command_substitutions(command: str) -> list[str]:
@@ -115,7 +180,10 @@ def split_words(command: str) -> list[list[str]]:
     try:
         tokens = list(lexer)
     except ValueError:
-        tokens = command.split()
+        # Each line stays a subcommand of its own, so an open quote hides no later line.
+        tokens = [
+            word for line in command.split("\n") for word in [*line.split(), "\n"]
+        ]
     subcommands: list[list[str]] = [[]]
     for token in tokens:
         if token and all(char in SEPARATOR_CHARS for char in token):
@@ -205,7 +273,7 @@ def split_subcommands(command: str, depth: int = 0) -> list[list[str]]:
     `$(...)`, backticks, `sh -c`, `eval` and `env -S` is split again as commands of its
     own. Quotes are respected, so `git commit -m "a; git push -f"` stays one subcommand,
     and heredoc bodies and `#` comments are skipped. Text shlex cannot parse (an open
-    quote) falls back to splitting on whitespace.
+    quote) falls back to splitting each line on whitespace.
     """
     command = strip_comments(strip_heredocs(command))
     subcommands = split_words(command)

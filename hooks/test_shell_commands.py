@@ -57,6 +57,18 @@ def commands(text: str) -> list[list[str]]:
         "echo $# x; git push -f",
         'git commit -m "a # b"; git push -f',
         "x # don't\ngit push -f",
+        'echo "see cat <<EOF in docs"\ngit push -f',
+        "echo 'see cat <<EOF in docs'\ngit push -f",
+        'echo "a\n<<EOF b"\ngit push -f',
+        "# see cat <<EOF\ngit push -f",
+        "cat <<EOF\nbody\nEOF\ngit push -f",
+        "cat <<-EOF\n\tbody\n\tEOF\ngit push -f",
+        "git commit -m \"$(cat <<'EOF'\ndon't\nEOF\n)\"\ngit push -f",
+        "echo $'it\\'s <<EOF'\ngit push -f",
+        "cat <<EOF.x\nhi\nEOF.x\ngit push -f",
+        "cat <<'EOF'x\nhi\nEOFx\ngit push -f\nEOF",
+        'cat <<EOF "x\ny"\nbody\nEOF\necho "<<EOF"\ngit push -f',
+        "cat <<A <<B\na\nA\nb\nB\ngit push -f",
     ],
 )
 def test_inner_command_is_found(text):
