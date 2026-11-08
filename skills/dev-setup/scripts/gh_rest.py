@@ -178,10 +178,11 @@ def parent_ref(repo: str, issue: dict) -> dict | None:
     url = issue.get("parent_issue_url")
     if not url:
         return None
-    *_, owner, name, _, number = url.rstrip("/").split("/")
+    repository_url, number = url.rstrip("/").rsplit("/issues/", 1)
     parent = {"number": int(number)}
-    if f"{owner}/{name}".lower() != repo.lower():
-        parent["repository"] = f"{owner}/{name}"
+    other = ref_repo({"repository_url": repository_url})
+    if other and other.lower() != repo.lower():
+        parent["repository"] = other
     return parent
 
 
