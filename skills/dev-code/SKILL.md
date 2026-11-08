@@ -248,8 +248,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
        `https://github.com/<repo>/pull/<PR>/files`, first in its link list, named in Hebrew
        like every link there ("השינויים ב-PR #<PR>").
     2. **The screenshots:** `SendUserFile` with the files from step 10 and a Hebrew caption
-       (desktop, phone; on Windows desktop only). None: the "לא צולם: <למה>" line from `reference/ux.md` is in the
-       message instead. A task with no interface has neither.
+       (desktop, phone; on Windows desktop only). On Windows the message also carries the fixed
+       "לא צולם ברוחב טלפון" line from `reference/ux.md`. None: the "לא צולם: <למה>" line from
+       `reference/ux.md` is in the message instead. A task with no interface has neither.
     3. **The diff pane:** open it only if the session has a tool for it (`show_pane`); otherwise
        the link above is the way in, with no line about it.
     4. **A phone notification:** `PushNotification`, in Hebrew, up to 200 characters:

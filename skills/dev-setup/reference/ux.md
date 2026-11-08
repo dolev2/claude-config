@@ -66,7 +66,9 @@
    מסך שמגיעים אליו רק אחרי כניסה או לחיצה: "לא צולם: <למה>" (סעיף 5).
 2. **הרוחבים, לקבצי PNG בתיקיית ה-scratchpad:**
    1. בסשן ענן: שני צילומים, מחשב 1280 וטלפון 375.
-   2. במחשב (Windows): צילום אחד, מחשב 1280. אין צילום טלפון, כי Edge לא קובע viewport (הכלל בראש "הבדיקה בקידוד"). רוחב הטלפון כבר נבדק בדפדפן המובנה.
+   2. במחשב (Windows): צילום אחד, מחשב 1280.
+      אין צילום טלפון, כי Edge לא קובע viewport (הכלל בראש "הבדיקה בקידוד").
+      רוחב הטלפון כבר נבדק בדפדפן המובנה.
 3. **הפקודה, לפי הסביבה:**
    1. במחשב (Windows): Edge headless, בנתיב המלא שלו ובנתיבים מלאים לקבצים (`rules/env-windows.md`), רק עם `--window-size=1280,800`:
       `"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless --disable-gpu --force-device-scale-factor=2 --user-data-dir=<תיקייה זמנית> --window-size=1280,800 --screenshot=<out>.png <url>`.
