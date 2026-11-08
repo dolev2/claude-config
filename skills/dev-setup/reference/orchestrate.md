@@ -58,10 +58,12 @@
 `get_session` לכל בן עם התג `claude-config:orchestrated` שלא בארכיון:
 1. `status_bucket`: עובד, חסום, מוכן לסקירה, הושלם או נכשל. `post_turn_summary` אומר במילים איפה הוא.
 2. **חסום על חלון הרשאה:** `external_metadata.pending_actions` לא ריק (הוא מראה את הכלי), או `session_status` הוא `SESSION_STATUS_REQUIRES_ACTION`.
-   זה חלון הרשאה, לא שאלה של הבן. המתזמר אומר לדולב איזה כלי, באיזה סשן, עם קישור, ושזה חלון הרשאה.
-   **`SESSION_STATUS_BUCKET_BLOCKED` לבדו לא אומר חסום.** בן שסיים את התור ומבקש החלטה (`post_turn_summary.status_category: need_input`)
-   מראה `SESSION_STATUS_IDLE` ו-`BLOCKED`, בלי `pending_actions` (נבדק ב-8.11.2026, #189).
-   הוא לא פעיל, לא נספר ב-3, וה-issue שלו לא נכנס ל-`--claimed`. המתזמר קורא את המצב שלו מ-GitHub (תווית, Plan, PR).
+   זה חלון הרשאה, לא שאלה של הבן.
+   המתזמר אומר לדולב איזה כלי, באיזה סשן, עם קישור, ושזה חלון הרשאה.
+   **הערך `SESSION_STATUS_BUCKET_BLOCKED` לבדו לא אומר חסום.**
+   בן שסיים את התור ומבקש החלטה (`post_turn_summary.status_category: need_input`) מראה `SESSION_STATUS_IDLE` ו-`BLOCKED`, בלי `pending_actions` (נבדק ב-8.11.2026, #189).
+   הוא לא פעיל, לא נספר ב-3, וה-issue שלו לא נכנס ל-`--claimed`.
+   המתזמר קורא את המצב שלו מ-GitHub (תווית, Plan, PR).
 3. **נכשל:** התור האחרון הסתיים בשגיאה. המתזמר אומר מה נכשל, ומציע `send_message` "המשך" או בן חדש.
    `send_message` מהמתזמר לבן כנראה מקפיץ חלון הרשאה, כמו מבן להורה (`cloud.md`; הכיוון הזה לא נבדק). המתזמר אומר את זה לדולב לפני.
 4. `rate_limit_info.isUsingOverage` הוא `true` אצל בן כלשהו: לא פותחים בן חדש, ושואלים את דולב.
