@@ -25,6 +25,15 @@
 - **HTML ל-PNG דרך Edge במצב headless.** `msedge.exe` לא ב-PATH: הנתיב `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`.
   מריצים עם `--headless --disable-gpu --user-data-dir=<תיקייה זמנית> --screenshot=<out>.png <file>.html`, בנתיבים מלאים.
   בלי `--user-data-dir` נפרד, Edge שכבר פתוח בולע את הקריאה ולא נוצרת תמונה.
+  **מתאים לצילום ברוחב מחשב בלבד.** `--window-size` קובע גודל חלון ולא viewport.
+  ברוחב 375 העמוד מוצג רחב יותר, ונראה כאילו הוא גולל הצידה.
+  רוחב טלפון נבדק בדפדפן המובנה, לפי הכלל ב-`skills/dev-setup/reference/ux.md` ("הבדיקה בקידוד").
+  לכן במחשב אין צילום טלפון במסירה.
+- **עמוד HTML סטטי בדפדפן המובנה:** הדפדפן לא פותח `file://`.
+  1. מגישים את התיקייה ב-`python -m http.server <port> --bind 127.0.0.1 --directory <תיקייה>`, כתצורה ב-`.claude/launch.json`, ואז `preview_start`.
+  2. `preview_start` קורא את `launch.json` מהתיקייה הראשית של הסשן, לא מה-worktree.
+     ב-`~/.claude` הקובץ מותר, כי `.gitignore` מחריג אותו (`/.claude/*`). בריפו אחר: מוודאים שהוא לא נכנס ל-git.
+  3. הוא מחזיק נתיב מוחלט, ולכן מוחקים אותו בסוף.
 
 ## מה חייב לעבוד גם מחוץ ל-Windows
 - **כל מה שסוכן עלול להריץ בסביבה אחרת (CI, סשן ענן, מחשב אחר) עובד גם ב-Linux וב-macOS.**
