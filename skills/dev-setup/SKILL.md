@@ -281,17 +281,14 @@ gh api repos/{owner}/{repo} --jq .visibility
   diff, and replace it only on his yes:
   `gh api -X PUT repos/{owner}/{repo}/rulesets/<id> --input "$HOME/.claude/skills/dev-setup/templates/ruleset-main.json"`.
 
-The gate workflow resolves its action from `dolev2/claude-config`, which is private. That works
-only while claude-config shares its actions with the owner's other repos, and only for private
-repos (on a user account, a private repo's actions reach only that user's private repos):
+The gate workflow resolves its action from `dolev2/claude-config`, which is public, so the
+action reaches every repo, private or public, with no access setting. Check that it still is:
 
 ```bash
-gh api repos/dolev2/claude-config/actions/permissions/access --jq .access_level   # expect: user
-gh repo view --json visibility --jq .visibility                                  # expect: PRIVATE
+gh api repos/dolev2/claude-config --jq .visibility   # expect: public
 ```
 
-Anything other than `user`, or a public repo: tell Dolev. Without it every gate run fails on
-"Unable to resolve action".
+Private: tell Dolev. Then every gate run fails on "Unable to resolve action".
 
 With a board, give it its views now that the milestones exist:
 

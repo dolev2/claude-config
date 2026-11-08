@@ -6,12 +6,13 @@
 
 | מנגנון | מתי | מה עושה | טוקן |
 |---|---|---|---|
-| `sync-project.yml` | אירוע issue, ועוד סקר כל 15 דקות | כותב את התוויות לשדות הלוח, בכיוון אחד. issue שנסגר כהושלם (`COMPLETED`) מקבל `status:done` | `PROJECT_TOKEN` (PAT) |
+| `sync-project.yml` | אירוע issue. הסקר של 15 הדקות רץ מ-`dolev2/.github` לכל הריפואים | כותב את התוויות לשדות הלוח, בכיוון אחד. issue שנסגר כהושלם (`COMPLETED`) מקבל `status:done` | `PROJECT_TOKEN` (PAT) |
 | `open-questions-gate.yml` | כל נגיעה ב-`status:in-review` או ב-`status:done`, וגם עריכת גוף | קורא ל-action המשותף ב-`claude-config`; מתריע על שאלה פתוחה, ומסיר את התווית לבד כשכולן מסומנות | `GITHUB_TOKEN` |
 
 **למה הסקר של 15 הדקות:** גרירת כרטיס בלוח של פרויקט בבעלות משתמש לא מייצרת webhook. תווית
 שמוסיפים ישירות על ה-issue מפעילה הכל מיד. כרטיס שנגרר ביד חוזר לעמודה של התווית שלו רק בסקר
-הבא. הסקר גם משלים issue שהריצה של האירוע שלו נכשלה.
+הבא. הסקר גם משלים issue שהריצה של האירוע שלו נכשלה. הוא רץ לכל הריפואים יחד מ-`dolev2/.github`
+(`sync-boards.yml`, דקות Actions חינם, claude-config #46), ולכן אין schedule בתבנית.
 
 ## למה תוויות ולא שדות הפרויקט
 
@@ -106,8 +107,7 @@ gh api graphql -f query='mutation($id:ID!,$f:String!){updateProjectV2View(input:
 תיקון שנכנס ל-main כאן מגיע לכל הריפואים מיד, ותקלה שנכנסת לשם שוברת את כולם יחד; לכן הבדיקות
 ב-CI.
 
-ה-action נמצא בריפו פרטי, אז הוא זמין רק כשהגישה ל-actions של `claude-config` מוגדרת `user`, ורק
-לריפואים פרטיים. אחרת הריצה נופלת ב-"Unable to resolve action".
+`claude-config` ציבורי, ולכן ה-action זמין מכל ריפו בלי הגדרת גישה. אם הוא יהפוך לפרטי, כל ריצה נופלת ב-"Unable to resolve action".
 
 ## Netlify: deploy רק כשהאתר משתנה
 

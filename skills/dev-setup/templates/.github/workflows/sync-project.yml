@@ -3,8 +3,8 @@ name: Sync labels → project board
 # Writes the issue labels (status:*, area:*) onto the Project v2 fields, one way: the labels
 # are the source of truth, and a card dragged on the board goes back (claude-config #111).
 # The sync itself is shared: dolev2/claude-config, skills/dev-setup/actions/project-sync, where
-# sync_rules.py documents the rules. It needs claude-config's Actions access set
-# to "user".
+# sync_rules.py documents the rules. claude-config is public, so the action resolves
+# from any repo with no access setting.
 #
 # Only issue events run here. The 15-minute poll that puts a dragged card back in place
 # runs for every repo at once from the public dolev2/.github (sync-boards.yml), where

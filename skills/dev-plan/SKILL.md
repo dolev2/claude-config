@@ -1,12 +1,12 @@
 ---
 name: dev-plan
-description: Runs the Plan phase of Dolev's Claude-assisted GitHub pipeline in the current repo — reads issues labelled status:explore (new ones, and plans Dolev answered or sent back), researches feasibility, and writes a plan into the issue body. Use in any of Dolev's repos whenever he asks to run/process the Plan phase, to plan a specific issue ("תתכנן את #12"), or to check what is waiting for Claude to plan. Works in any repo that has the pipeline labels; if the repo has its own repo-specific plan skill, use that instead. Pairs with dev-code, which handles Execute and Merge.
+description: Runs the Plan phase of Dolev's Claude-assisted GitHub pipeline in the current repo — reads issues labelled status:explore (new ones, and plans Dolev answered or sent back), researches feasibility, and writes a plan into the issue body. Use in any of Dolev's repos whenever he asks to run/process the Plan phase, to plan a specific issue ("תתכנן את #12"), or to check what is waiting for Claude to plan. Works in any repo that has the pipeline labels; if the repo has its own repo-specific plan skill, use that instead. Pairs with dev-code, which handles Execute; dev-ship merges.
 ---
 
 # Plan phase
 
 Part 1 of 2 of Dolev's GitHub × Claude Code pipeline (the other half is `dev-code`, covering
-Execute + Merge). This phase reads issues, researches feasibility, and writes a plan: **no
+Execute, up to a PR in review; `dev-ship` merges). This phase reads issues, researches feasibility, and writes a plan: **no
 feature code, and no branch switching in the working copy**.
 
 ## Step 0: Orient

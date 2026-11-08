@@ -44,7 +44,7 @@
 | `dev-issue` | פותח issues ומפרק משימות |
 | `dev-next` | בוחר את המשימה הבאה בספרינט |
 | `dev-plan` | שלב התכנון |
-| `dev-code` | שלב הביצוע וה-merge |
+| `dev-code` | שלב הביצוע, עד PR ב-`status:in-review`. המיזוג ב-`dev-ship` |
 | `dev-ship` | שחרור branch מההתחלה ועד הסוף |
 | `dev-orchestrate` | מריץ את כל הספרינט מסשן ענן אחד: סשן-בן לכל משימה שלא חסומה, ושאלות ומיזוגים רק דרכו (#150) |
 | `dev-setup` | מתקין את הצינור בריפו חדש, ומחזיק את החלקים המשותפים (הטבלה הבאה) |
@@ -65,7 +65,7 @@
 | `reference/orchestrate.md` | המתזמר והסשנים-הבנים: איך נפתח בן, החוזה שעובר אליו ב-`append_system_prompt`, מה בודקים אחרי דיווח, באג, ומיזוג | `dev-orchestrate`. החוזה כתוב פעם אחת, כדי שכל בן יקבל אותו מילה במילה (#150) |
 | `reference/cloud.md` | עבודה מסשן ענן ומהטלפון: Remote Control, הגדרת סביבת הענן וסקריפט ההתקנה שלה, ומה שונה בענן | בסשן ענן `~/.claude` שייך לשירות, ובלי ההתקנה לא נטען שם כלום מהריפו הזה (#132). `test_cloud_setup.py` מריץ את הסקריפט כמו שהוא |
 | `reference/diagram.md` | תרשים ה-Mermaid של הצינור, וכלל העריכה שלו | לבני אדם; אף סקיל לא קורא אותו בזמן ריצה |
-| `reference/issue-lifecycle.html` | העמוד "חייו של issue": מפת התוויות, ציר git, טבלת שלבים וכללי git, לבני אדם. מפורסם כ-Artifact | הסקילים קוראים את `reference/*.md`. העמוד הוא התצוגה, ומתעדכן באותו PR (`.claude/CLAUDE.md`) |
+| `reference/issue-lifecycle.html` | העמוד "חייו של issue": מפת התוויות, ציר git, טבלת שלבים וכללי git, לבני אדם. מפורסם כ-Artifact | הסקילים קוראים את `reference/*.md`, חוץ מ-`diagram.md`. העמוד הוא התצוגה, ומתעדכן באותו PR (`.claude/CLAUDE.md`) |
 | `reference/issue-lifecycle-en.html` | אותו עמוד באנגלית ("Life of an Issue"), מפורסם כ-Artifact נפרד | מי שלא קורא עברית. כל שינוי באחת הגרסאות משתקף בשנייה באותו PR (`.claude/CLAUDE.md`) |
 | `scripts/pipeline_info.py` | קורא מהריפו כל מה שמשתנה בין ריפואים | כל סקיל מתחיל בו, כדי ששום דבר לא יוגדר ידנית |
 | `scripts/sprint_rule.py` | הכלל היחיד לספרינט הנוכחי: ה-milestone הפתוח הנמוך ביותר שיש בו issue פתוח, בלי לספור PRים | `rank_issues.py`, `pipeline_info.py` והתצוגה "ספרינט נוכחי" בחרו קודם ספרינטים שונים (#164) |
