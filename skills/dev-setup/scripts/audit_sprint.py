@@ -58,6 +58,15 @@ class Finding:
             refs = " ".join(f"#{n}" for n in self.numbers)
         return f"{self.code} {refs}{': ' + self.detail if self.detail else ''}"
 
+    def as_dict(self) -> dict:
+        """The finding as data, with its text line, for the --json digest."""
+        return {
+            "code": self.code,
+            "numbers": self.numbers,
+            "detail": self.detail,
+            "line": self.line(),
+        }
+
 
 @dataclass
 class SprintIssue:
@@ -211,7 +220,7 @@ def digest(sprint: str, issues: list[SprintIssue], findings: list[Finding]) -> d
             }
             for i in issues
         ],
-        "findings": [f.line() for f in findings],
+        "findings": [f.as_dict() for f in findings],
     }
 
 

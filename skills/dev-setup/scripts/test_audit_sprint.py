@@ -129,3 +129,16 @@ def test_digest_carries_goal_and_files():
     result = audit_sprint.digest("W1", issues, [])
     assert result["issues"][0]["goal"] == "the goal"
     assert result["issues"][0]["files"] == ["a.py"]
+
+
+def test_digest_carries_findings_as_data():
+    nodes = [node(1, body(files=["a.py"])), node(2, body(files=["a.py"]))]
+    issues = [audit_sprint.sprint_issue(n) for n in nodes]
+    digest = audit_sprint.digest("W1", issues, audit_sprint.audit(issues))
+    [finding] = digest["findings"]
+    assert finding == {
+        "code": "OVERLAP",
+        "numbers": [1, 2],
+        "detail": "a.py  merge-candidate",
+        "line": "OVERLAP #1 #2: a.py  merge-candidate",
+    }

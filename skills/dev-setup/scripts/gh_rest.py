@@ -15,10 +15,16 @@ import json
 import re
 import subprocess
 import sys
+import time
 
 REMOTE = re.compile(r"(?:github\.com[:/]|/git/)([^/:]+)/([^/]+?)(?:\.git)?/?$")
 CLOSING = r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#{}\b"
 NOT_A_REPO = "Not inside a GitHub repo that gh can see; pass --repo owner/name."
+CLIENT_ERROR = re.compile(r"HTTP 4\d\d")
+TRANSIENT = re.compile(
+    r"HTTP 5\d\d|timeout|connection reset|connection refused|\bEOF\b", re.IGNORECASE
+)
+RETRY_DELAYS = (2, 4)
 
 
 def run(*args: str) -> tuple[int, str, str]:
@@ -49,20 +55,43 @@ def current_repo() -> str:
     return repo
 
 
+def is_transient(stderr: str) -> bool:
+    """True when gh failed for a reason that a second try may not hit.
+
+    An orchestrator runs these scripts dozens of times a sprint (claude-config #174),
+    so one dropped connection should not fail a whole check. A 4xx is the request's
+    own fault and fails at once, and so does anything not known to be passing: the
+    cloud proxy answers 403 for what it blocks, and waiting will not change that.
+    """
+    if CLIENT_ERROR.search(stderr):
+        return False
+    return bool(TRANSIENT.search(stderr))
+
+
+def gh_api(path: str, *flags: str) -> str:
+    """stdout of `gh api <flags> <path>`, tried again on a transient failure.
+
+    Exits with gh's error when the last try fails, or at once on any other failure.
+    """
+    for delay in (*RETRY_DELAYS, None):
+        code, out, err = run("gh", "api", *flags, path)
+        if code == 0:
+            return out
+        if delay is None or not is_transient(err):
+            sys.exit(f"gh api {path} failed:\n{err}")
+        time.sleep(delay)
+    raise AssertionError("unreachable")
+
+
 def api(path: str) -> object:
-    """One REST call; exits with gh's error when it fails."""
-    code, out, err = run("gh", "api", path)
-    if code != 0:
-        sys.exit(f"gh api {path} failed:\n{err}")
-    return json.loads(out)
+    """One REST call, as parsed JSON."""
+    return json.loads(gh_api(path))
 
 
 def api_list(path: str) -> list:
     """Every item of a paginated REST list, all pages flattened into one list."""
-    code, out, err = run("gh", "api", "--paginate", "--slurp", path)
-    if code != 0:
-        sys.exit(f"gh api {path} failed:\n{err}")
-    return [item for page in json.loads(out) for item in page]
+    pages = json.loads(gh_api(path, "--paginate", "--slurp"))
+    return [item for page in pages for item in page]
 
 
 def refs(items: list[dict]) -> dict:
@@ -109,16 +138,20 @@ def to_node(repo: str, issue: dict, with_body: bool) -> dict:
     return node
 
 
-def closing_pr_count(number: int, pulls: list[dict]) -> int:
-    """How many of `pulls` close issue `number` with a keyword in their body.
+def closing_prs(number: int, pulls: list[dict]) -> list[dict]:
+    """The PRs of `pulls` that close issue `number`: [{number, headSha}].
 
-    Narrower than GraphQL's closedByPullRequestsReferences: a full `owner/repo#N`
-    reference, an issue URL, or a link made by hand in the Development panel is not
-    counted. The pipeline always writes `Closes #N` (git-flow.md), and the count only
-    feeds the audit's merge-candidate hint.
+    Read from a closing keyword in the PR body, so narrower than GraphQL's
+    closedByPullRequestsReferences: a full `owner/repo#N` reference, an issue URL, or a
+    link made by hand in the Development panel is not counted. The pipeline always
+    writes `Closes #N` (git-flow.md).
     """
     pattern = re.compile(CLOSING.format(number), re.IGNORECASE)
-    return sum(1 for pr in pulls if pattern.search(pr.get("body") or ""))
+    return [
+        {"number": pr["number"], "headSha": pr["head"]["sha"]}
+        for pr in pulls
+        if pattern.search(pr.get("body") or "")
+    ]
 
 
 def parent_ref(issue: dict) -> dict | None:
@@ -130,8 +163,9 @@ def parent_ref(issue: dict) -> dict | None:
 def open_issue_nodes(repo: str, with_body: bool = False) -> list[dict]:
     """Every open issue of `repo` (pull requests left out), as GraphQL-shaped nodes.
 
-    With `with_body`, each node also carries `body`, `subIssues`, `parent` and
-    `closedByPullRequestsReferences`, the fields audit_sprint.py reads.
+    With `with_body`, each node also carries `body`, `subIssues`, `parent`,
+    `closedByPullRequestsReferences` (the fields audit_sprint.py reads) and
+    `closingPullRequests` (the open PRs themselves, for sprint_state.py).
     """
     issues = api_list(f"repos/{repo}/issues?state=open&per_page=100")
     nodes = [
@@ -142,7 +176,7 @@ def open_issue_nodes(repo: str, with_body: bool = False) -> list[dict]:
     if with_body:
         pulls = api_list(f"repos/{repo}/pulls?state=open&per_page=100")
         for node in nodes:
-            node["closedByPullRequestsReferences"] = {
-                "totalCount": closing_pr_count(node["number"], pulls)
-            }
+            prs = closing_prs(node["number"], pulls)
+            node["closingPullRequests"] = prs
+            node["closedByPullRequestsReferences"] = {"totalCount": len(prs)}
     return nodes
