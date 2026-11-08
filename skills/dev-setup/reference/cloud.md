@@ -126,6 +126,8 @@ REPO=https://github.com/dolev2/claude-config
 3. **מיזוג שואל תמיד:** hook שמחזיר `ask` (`ask_before_merge.py`) גובר על אישור מראש. נבדק בענן ב-6.11.2026.
 4. **איך מזהים סשן-בן תקוע** (`get_session`): `session_status` הוא `SESSION_STATUS_REQUIRES_ACTION`, `status_bucket` הוא `SESSION_STATUS_BUCKET_BLOCKED`, ו-`external_metadata.pending_actions` מראה את הכלי ואת הקלט שלו.
    גם בקשה של סוכן-משנה (`Agent`) חוסמת את כל הסשן.
+   **הערך `SESSION_STATUS_BUCKET_BLOCKED` לבדו לא מספיק:** בן שסיים את התור ומחכה להחלטה מראה אותו גם כן, עם `SESSION_STATUS_IDLE` ובלי `pending_actions` (נבדק ב-8.11.2026, #189).
+   תקוע הוא רק `pending_actions` לא ריק או `SESSION_STATUS_REQUIRES_ACTION` (`orchestrate.md`, "מצב בן").
 5. **מתזמר שפותח סשן-בן** מעביר את כלי הכתיבה שהבן צריך (`CHILD_TOOLS`, מאושרים מראש לפי החריג השני) ב-`extra_allowed_tools` של `create_session`.
    השירות מעביר לבן רק כלים שמאושרים מראש אצל מי שפתח אותו. זה גיבוי, לא תחליף לרשימה.
    **hook מקפיץ חלון אישור** (`hooks/guard_create_session.py`, claude-config #175) כשהבן מקבל יותר מזה:
