@@ -132,6 +132,23 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 .where th, .where td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: start; vertical-align: top; }
 .where th { color: var(--muted); font-weight: 600; font-size: 13px; }
 .where code { white-space: nowrap; }
+.life { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: life; }
+.life li { counter-increment: life; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 8px; border: 1.5px solid; font-size: 14px; min-width: 0; }
+.life li::before { content: counter(life); font-size: 12px; font-weight: 600; color: var(--muted); }
+.life li p { margin: 0; }
+.life li.human { background: var(--human-fill); border-color: var(--human); }
+.life li.claude { background: var(--claude-fill); border-color: var(--claude); }
+.life li.auto { background: var(--auto-fill); border-color: var(--auto); }
+.life li.gate { background: var(--gate-fill); border-color: var(--gate); }
+.life li strong { font-weight: 600; }
+@media (max-width: 860px) { .life { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .life { grid-template-columns: minmax(0, 1fr); } }
+.keeps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; font-size: 14px; }
+.keeps div { padding: 10px 12px; border-radius: 8px; border: 1.5px solid; }
+.keeps .kept { background: var(--auto-fill); border-color: var(--auto); }
+.keeps .lost { background: var(--gate-fill); border-color: var(--gate); }
+.keeps p { margin: 0; }
+@media (max-width: 480px) { .keeps { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
 <div class="page">
@@ -544,6 +561,25 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <tr><td>The board and pipeline setup (<code>dev-setup</code>)</td><td>Yes</td><td>No</td><td>Blocked even over REST (claude-config #140).</td></tr>
     </tbody>
   </table>
+  </div>
+  <h3 id="life-h">The life of a cloud session</h3>
+  <p>The environment is the recipe: network, variables, secrets and a setup script, saved in the account. The container is the temporary machine built from it.</p>
+  <p>The conversation is kept on the server. The container is deleted when the session is idle, and built again when you come back to it.</p>
+  <div class="panel">
+  <ol class="life" aria-labelledby="life-h">
+    <li class="human"><strong>Send</strong><p>Dolev picks an environment, a repo and a branch, and sends a message.</p></li>
+    <li class="auto"><strong>New container</strong><p>A clean machine. The environment's network rules (proxy), variables and secrets take effect.</p></li>
+    <li class="auto"><strong>Clone</strong><p>The session's repo is cloned into the container.</p></li>
+    <li class="gate"><strong>Setup script</strong><p>Copies claude-config's <code>main</code> into <code>~/.claude</code>.</p><p>A failing script stops the session, so this one never fails (#132).</p></li>
+    <li class="claude"><strong>Claude Code starts</strong><p><code>cloud_refresh.py</code> pulls <code>main</code>, and <code>CLAUDE.md</code>, the rules and the skills load.</p></li>
+    <li class="claude"><strong>Work</strong><p>Plan or execute, commit and push. Only what is pushed is kept.</p></li>
+    <li class="gate"><strong>Idle time</strong><p>The container is deleted, with every file in it.</p></li>
+    <li class="human"><strong>Return or archive</strong><p>Return to the session: a new container, from step 2. The conversation continues.</p><p>Archive: the conversation stays read-only.</p></li>
+  </ol>
+  <div class="keeps">
+    <div class="kept"><p><strong>Kept:</strong> the conversation, the environment settings, and what was pushed to GitHub.</p></div>
+    <div class="lost"><p><strong>Gone:</strong> files that were not pushed, and tools installed by hand in the session.</p></div>
+  </div>
   </div>
 </section>
 
