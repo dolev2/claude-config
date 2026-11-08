@@ -82,7 +82,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 | `size:small` | משימה קטנה: עברה ישר מהתכנון לביצוע, בלי אישור תוכנית ("המסלול הקטן" למטה) | — | Claude מוסיף בתכנון (`dev-plan`). דולב מסיר כשהוא מחזיר אותה למסלול הרגיל |
 | `has-open-questions` | נכתבת רק ע"י שער השאלות | — | — |
 
-**הסטטוס לבדו אומר של מי התור.** אין תווית בעלים: כל מעבר הוא שינוי סטטוס אחד.
+**הסטטוס לבדו אומר של מי התור.** אין תווית בעלים: כל מעבר הוא שינוי סטטוס אחד. למה: `docs/decisions/110-status-is-whose-turn.md`.
 `status:*` היא קבוצה בלעדית. תמיד להסיר את הקודמת באותה פקודה שמוסיפה את החדשה:
 
 ```bash
@@ -143,7 +143,7 @@ gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:e
 - לא לנחש על issue לא ברור. לשאול בתגובה ולהעביר ל-`status:plan-questions`.
 - **אות המיזוג הוא בקשה אחת של דולב בצ'אט** ("תמזג את #N"), על ה-issue הספציפי. לא תווית ולא
   Approve: GitHub לא מאפשר Approve ל-PR שנפתח מהחשבון של דולב, וה-PRים של Claude נפתחים ממנו.
-  הבקשה מפעילה את `dev-ship`. חלון האישור של `gh pr merge` נשאר כרשת ביטחון, לא כאישור שני.
+  הבקשה מפעילה את `dev-ship`. חלון האישור של `gh pr merge` נשאר כרשת ביטחון, לא כאישור שני. למה: `docs/decisions/108-merge-signal-chat.md`.
 - לא לגעת ב-issue שהסטטוס שלו לא בתור של Claude (`explore`, `ready-to-execute`, `needs-repair`),
   אלא אם דולב ביקש במפורש (למשל מיזוג של issue ב-`status:in-review`), או בחר בחלון השאלות
   (`chat-decisions.md`). מותר לשאול אותו ולבצע את מה שבחר; אסור להחליט במקומו.
