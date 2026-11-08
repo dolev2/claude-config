@@ -78,6 +78,8 @@ def tool_call(command: str, tool: str = "Bash") -> str:
         "nice -n 5 git push -f",
         "timeout -s KILL 30 git push -f",
         "sudo -u root git push -f",
+        "echo $((1<<EOF))\ngit push -f\nEOF",
+        "echo \"${x#'\"'}\"\ngit push -f\necho it\\'s",
     ],
 )
 def test_force_push_is_blocked(monkeypatch, command):

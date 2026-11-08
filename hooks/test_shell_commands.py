@@ -69,6 +69,18 @@ def commands(text: str) -> list[list[str]]:
         "cat <<'EOF'x\nhi\nEOFx\ngit push -f\nEOF",
         'cat <<EOF "x\ny"\nbody\nEOF\necho "<<EOF"\ngit push -f',
         "cat <<A <<B\na\nA\nb\nB\ngit push -f",
+        "echo $((1<<EOF))\ngit push -f\nEOF",
+        'echo "$(( (1+2) <<EOF ))"\ngit push -f\nEOF',
+        "((x = 1<<EOF))\ngit push -f\nEOF",
+        "echo $((1)+(2)) '$( #' ; git push -f",
+        "echo $((1)+(2)) \"${x:-'\"'}\"\ngit push -f\necho it\\'s",
+        "echo $((1)+(2)) <<EOF\nbody\nEOF\ngit push -f",
+        "echo \"${x#'\"'}\"\ngit push -f\necho it\\'s",
+        "echo \"${x:-'\"'}\"\ngit push -f\necho it\\'s",
+        "echo \"${x/'\"'/q}\"\ngit push -f\necho it\\'s",
+        'echo "${x:-"a b"}"\ngit push -f\necho it\\\'s',
+        'echo "${x#\'"\'}" <<EOF\nbody\nEOF\ngit push -f',
+        'echo "${x:-$(git push -f)}"',
     ],
 )
 def test_inner_command_is_found(text):
@@ -88,6 +100,9 @@ def test_inner_command_is_found(text):
         "sh -c",
         "# a note; git push -f",
         "echo done # then git push -f",
+        "echo \"${x:-'; git push -f'}\"",
+        'echo "${x#\'"\'}" <<EOF\ngit push -f\nEOF',
+        "echo \"$(cat <<'EOF'\n(git push -f)\nEOF\n)\"",
     ],
 )
 def test_text_is_not_a_command(text):
