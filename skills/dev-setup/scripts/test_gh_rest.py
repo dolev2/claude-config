@@ -221,6 +221,22 @@ def test_body_mode_adds_sub_issues_parent_and_closing_prs(monkeypatch):
 
 
 @pytest.mark.parametrize(
+    ("url", "parent"),
+    [
+        (f"https://api.github.com/repos/{REPO}/issues/5", {"number": 5}),
+        (f"https://api.github.com/repos/{REPO.upper()}/issues/5", {"number": 5}),
+        (
+            "https://api.github.com/repos/acme/other/issues/5",
+            {"number": 5, "repository": "acme/other"},
+        ),
+        (None, None),
+    ],
+)
+def test_a_parent_of_another_repo_keeps_its_repo(url, parent):
+    assert gh_rest.parent_ref(REPO, {"parent_issue_url": url}) == parent
+
+
+@pytest.mark.parametrize(
     ("body", "count"),
     [
         ("Closes #12", 1),

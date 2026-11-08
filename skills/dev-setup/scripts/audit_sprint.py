@@ -87,6 +87,7 @@ class SprintIssue:
     outside_blockers: list[str]
     has_pr: bool
     family: set[int]
+    parent: str | None
 
 
 def sprint_issue(node: dict) -> SprintIssue:
@@ -106,16 +107,27 @@ def sprint_issue(node: dict) -> SprintIssue:
         outside_blockers=issue.outside_blockers,
         has_pr=node["closedByPullRequestsReferences"]["totalCount"] > 0,
         family=family(node),
+        parent=parent_name(node.get("parent")),
     )
 
 
 def family(node: dict) -> set[int]:
-    """The parent and the sub-issues: an umbrella names them without waiting on them."""
+    """The parent and the sub-issues: an umbrella names them without waiting on them.
+
+    A parent of another repo is left out: its number belongs to that repo, and counting
+    it here would hide a real MENTION of the local issue with that number (#196).
+    """
     parent = node.get("parent")
     subs = (node.get("subIssues") or {}).get("nodes", [])
-    return {s["number"] for s in subs if is_local(s)} | (
-        {parent["number"]} if parent else set()
-    )
+    local_parent = {parent["number"]} if parent and is_local(parent) else set()
+    return {s["number"] for s in subs if is_local(s)} | local_parent
+
+
+def parent_name(parent: dict | None) -> str | None:
+    """The parent as the digest shows it: #N, or owner/name#N for another repo."""
+    if not parent:
+        return None
+    return f"{parent.get('repository', '')}#{parent['number']}"
 
 
 def line_mismatches(issues: list[SprintIssue]) -> list[Finding]:
@@ -227,6 +239,7 @@ def digest(sprint: str, issues: list[SprintIssue], findings: list[Finding]) -> d
                 "files": sorted(i.files),
                 "blocked_by": i.open_blockers,
                 "outside_blockers": i.outside_blockers,
+                "parent": i.parent,
                 "has_pr": i.has_pr,
             }
             for i in issues

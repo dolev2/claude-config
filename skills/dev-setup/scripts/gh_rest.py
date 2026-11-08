@@ -149,7 +149,7 @@ def to_node(repo: str, issue: dict, with_body: bool) -> dict:
         subs = (issue.get("sub_issues_summary") or {}).get("total")
         node["body"] = issue.get("body") or ""
         node["subIssues"] = links(repo, issue, subs, "sub_issues")
-        node["parent"] = parent_ref(issue)
+        node["parent"] = parent_ref(repo, issue)
     return node
 
 
@@ -169,10 +169,20 @@ def closing_prs(number: int, pulls: list[dict]) -> list[dict]:
     ]
 
 
-def parent_ref(issue: dict) -> dict | None:
-    """{"number": N} of the parent issue, read from the end of `parent_issue_url`."""
+def parent_ref(repo: str, issue: dict) -> dict | None:
+    """{"number": N} of the parent issue, read from the end of `parent_issue_url`.
+
+    A parent of another repo also carries its `repository` (owner/name): its number
+    alone would read as the issue of `repo` with that number (claude-config #196).
+    """
     url = issue.get("parent_issue_url")
-    return {"number": int(url.rstrip("/").rsplit("/", 1)[1])} if url else None
+    if not url:
+        return None
+    *_, owner, name, _, number = url.rstrip("/").split("/")
+    parent = {"number": int(number)}
+    if f"{owner}/{name}".lower() != repo.lower():
+        parent["repository"] = f"{owner}/{name}"
+    return parent
 
 
 def open_issue_nodes(repo: str, with_body: bool = False) -> list[dict]:

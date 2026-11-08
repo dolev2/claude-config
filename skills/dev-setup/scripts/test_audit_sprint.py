@@ -22,6 +22,7 @@ def body(goal="", context="", files=()):
 
 
 def node(number, text="", blocked_by=(), has_pr=False, parent=None, subs=()):
+    """A sprint issue node; `parent` is a number, or a dict for one of another repo."""
     return {
         "number": number,
         "title": f"issue {number}",
@@ -31,7 +32,9 @@ def node(number, text="", blocked_by=(), has_pr=False, parent=None, subs=()):
         "blockedBy": {"nodes": [{"number": n, "state": s} for n, s in blocked_by]},
         "blocking": {"nodes": []},
         "closedByPullRequestsReferences": {"totalCount": 1 if has_pr else 0},
-        "parent": {"number": parent} if parent else None,
+        "parent": parent
+        if isinstance(parent, dict) or not parent
+        else {"number": parent},
         "subIssues": {"nodes": [{"number": n} for n in subs]},
     }
 
@@ -81,6 +84,22 @@ def test_an_umbrella_naming_its_sub_issues_is_not_a_mention():
     umbrella = node(1, body(goal="- [ ] #2 the first part"), subs=[2])
     part = node(2, body(context="part of #1"), parent=1)
     assert lines(umbrella, part) == []
+
+
+def test_a_parent_of_another_repo_does_not_hide_a_local_mention():
+    other_parent = {"number": 1, "repository": "acme/other"}
+    part = node(2, body(context="needs #1 here first"), parent=other_parent)
+    assert lines(node(1), part) == ["MENTION #2 -> #1"]
+
+
+def test_digest_names_the_parent_in_full():
+    nodes = [
+        node(2, parent={"number": 1, "repository": "acme/other"}),
+        node(3, parent=2),
+    ]
+    issues = [audit_sprint.sprint_issue(n) for n in nodes]
+    result = audit_sprint.digest("W1", issues, [])
+    assert [i["parent"] for i in result["issues"]] == ["acme/other#1", "#2"]
 
 
 def test_overlapping_plans_are_a_merge_candidate_before_any_pr():
