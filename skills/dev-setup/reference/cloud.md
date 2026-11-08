@@ -116,6 +116,11 @@ REPO=https://github.com/dolev2/claude-config
    חריג שני: ארבעת הכלים שהבן של המתזמר צריך (`CHILD_TOOLS` ב-`hooks/guard_create_session.py`: פתיחת PR, עדכון PR, תגובה ב-issue, `send_message`). הם מאושרים מראש כדי שיעברו לבן (סעיף 5, #150).
 2. **תמיד שואל:** כל כלי אחר שכותב מחוץ לסשן (issue, קובץ ב-GitHub), `send_later` ו-`create_trigger` (שומרים משימה מתוזמנת בחשבון), `create_session`, `archive_session` ו-`interrupt_session`.
    גם בקשה שהשירות מסמן `server_policy_ask_only: true` שואלת, ושום כלל לא עוקף אותה.
+   **השירות מכריח חלון ל-`create_session` ול-`archive_session`, ושום כלל לא עוקף אותו** (claude-config #179).
+   החלון שלהם מגיע עם `decision_reason_type: "other"` ו-`suppress_always_allow_rule: true`, ולכן אין בו "אשר תמיד".
+   נבדק ב-8.11.2026: `archive_session` ב-`permissions.allow` של ה-container, והחלון קפץ בכל זאת.
+   לכן הם לא נכנסים ל-`permissions.allow`: כלל שם לא היה משנה כלום.
+   `interrupt_session`: לא נבדק אם השירות מכריח חלון גם לו.
 3. **מיזוג שואל תמיד:** hook שמחזיר `ask` (`ask_before_merge.py`) גובר על אישור מראש. נבדק בענן ב-6.11.2026.
 4. **איך מזהים סשן-בן תקוע** (`get_session`): `session_status` הוא `SESSION_STATUS_REQUIRES_ACTION`, `status_bucket` הוא `SESSION_STATUS_BUCKET_BLOCKED`, ו-`external_metadata.pending_actions` מראה את הכלי ואת הקלט שלו.
    גם בקשה של סוכן-משנה (`Agent`) חוסמת את כל הסשן.
