@@ -231,12 +231,14 @@ the folder the work happened in, and never in the shared folder unless item 4 al
    `reference/review-app.md` says ("עצירה"). Before item 2: on Windows a folder cannot be
    deleted while a process runs from it.
 2. **Remove the branch's worktree** (`git worktree list` shows it). Leave it first:
-   - created with `EnterWorktree`: `ExitWorktree`, removing it;
-   - created with `git worktree add`: `git -C <main folder> worktree remove <path>`.
+   - this session entered it with `EnterWorktree`: `ExitWorktree`, removing it;
+   - any other worktree (usually the one `dev-code` kept from an earlier session):
+     `git -C <main folder> worktree remove <path>`.
 
    git refuses when the worktree has changes: stop and report them, never `--force`. A
    worktree the session runs in but did not create (Claude Desktop opens sessions so): leave
-   it, and say so in the summary.
+   it, and with it the local branch checked out there: skip item 5, and say both in the
+   summary.
 3. **Fetch:** `git -C <main folder> fetch --prune origin`. No checkout and no pull in the
    folder the work happened in.
 4. **Update the main folder, only when it is already on `<default>` and clean**
@@ -250,6 +252,7 @@ the folder the work happened in, and never in the shared folder unless item 4 al
    when the local tip is exactly what was merged:
    ```bash
    MERGED=$(gh pr view <N> --json state,headRefOid --jq 'select(.state=="MERGED") | .headRefOid')
+   # in a cloud session, gh pr view does not run: reference/cloud.md has the REST form
    [ -n "$MERGED" ] && [ "$(git -C <main folder> rev-parse <branch>)" = "$MERGED" ] && git -C <main folder> branch -D <branch>
    ```
    If the tips differ, the local branch has commits that were never merged: leave it and say
