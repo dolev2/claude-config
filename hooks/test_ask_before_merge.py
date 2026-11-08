@@ -106,13 +106,56 @@ def test_api_merge_asks(monkeypatch, command):
 @pytest.mark.parametrize(
     "command",
     [
+        "gh pr merge 5 --squash",
+        "gh -R o/r pr merge 5",
+        "gh --repo o/r pr merge 5",
+        "gh --repo=o/r pr merge 5",
+        "gh alias set m 'pr merge' && gh m 5",
+        "gh alias import aliases.yml",
+        "gh api graphql -f query='mutation{mergeBranch(input:{}){x}}'",
+        "gh api graphql -f query='mutation{enqueuePullRequest(input:{}){x}}'",
+        "gh api graphql -F query=@m.graphql",
+        "gh api graphql --input q.json",
+        "gh api -X POST repos/o/r/merges -f base=main -f head=x",
+        "gh api repos/o/r/merges -f base=main -f head=x",
+        "env gh api -X PUT repos/o/r/pulls/5/merge",
+        "(gh pr merge 5)",
+        "{ gh pr merge 5; }",
+        "if true; then gh api -X PUT repos/o/r/pulls/5/merge; fi",
+        "sh -c 'gh api -X PUT repos/o/r/pulls/5/merge'",
+        "bash -c 'gh pr merge 5'",
+        "eval 'gh pr merge 5'",
+        "x=$(gh api -X PUT repos/o/r/pulls/5/merge)",
+        'echo "$(gh pr merge 5)"',
+        "echo `gh pr merge 5`",
+        "timeout -s KILL 30 gh api -X PUT repos/o/r/pulls/5/merge",
+        "nice -n 5 gh pr merge 5",
+        "sudo -u root gh pr merge 5",
+        "echo 5 | xargs gh pr merge",
+        "exec gh pr merge 5",
+    ],
+)
+def test_wrapped_or_other_merge_asks(monkeypatch, command):
+    code, output = run_hook(monkeypatch, shell_call(command))
+    assert code == 0
+    assert_asks(output)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
         "gh api repos/a/b/pulls/5/merge",
         "gh api -X GET repos/a/b/pulls/5/merge",
         "gh api -X PUT repos/a/b/pulls/5/requested_reviewers",
         "gh api -X PUT repos/a/b/pulls/5/merge_requests",
         "gh api graphql -f query='{ repository { pullRequest { mergeable } } }'",
-        "gh pr merge 5 --squash",
         "git merge origin/main",
+        "gh pr view 5 --json mergeable",
+        "gh api graphql -f query='{ viewer { login } }'",
+        "gh api repos/a/b/merges",
+        "gh alias set co 'pr checkout'",
+        "echo '$(gh pr merge 5)'",
+        "git commit -m \"$(cat <<'EOF'\nfix: gh pr merge 5\nEOF\n)\"",
         "echo gh api -X PUT repos/a/b/pulls/5/merge",
         "cat > notes.md <<'EOF'\ngh api -X PUT repos/a/b/pulls/5/merge\nEOF",
     ],

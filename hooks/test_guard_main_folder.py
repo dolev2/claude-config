@@ -27,6 +27,8 @@ GITIGNORE = """/*
 !/.claude/
 /.claude/*
 !/.claude/CLAUDE.md
+/skills/synced/
+__pycache__/
 """
 
 
@@ -131,6 +133,31 @@ def test_files_outside_the_repo_and_settings_pass(monkeypatch, root, relative):
     assert run_hook(monkeypatch, edit(root / relative, "Write")) == (0, "")
 
 
+@pytest.mark.parametrize(
+    "relative",
+    [
+        ".git/config",
+        ".git/hooks/pre-commit",
+        "skills/x/__pycache__/helper.cpython-312.pyc",
+        "skills/synced/y/SKILL.md",
+        "skills/session-start-hook/SKILL.md",
+        "agents/reviewer.md",
+        "commands/ship.md",
+        "plugins/p/plugin.json",
+        "output-styles/short.md",
+    ],
+)
+def test_live_ignored_file_in_main_folder_is_blocked(monkeypatch, root, relative):
+    code, reason = run_hook(monkeypatch, edit(root / relative, "Write"))
+    assert code == 2
+    assert "worktree" in reason
+
+
+def test_live_ignored_name_in_worktree_passes(monkeypatch, root):
+    path = root / "worktrees" / "b" / "skills" / "x" / "__pycache__" / "a.pyc"
+    assert run_hook(monkeypatch, edit(path, "Write")) == (0, "")
+
+
 def test_path_outside_main_folder_passes_without_git(monkeypatch, root, tmp_path):
     def no_git(*_arguments):
         raise AssertionError("git should not run for a path outside the main folder")
@@ -147,6 +174,21 @@ def test_path_outside_main_folder_passes_without_git(monkeypatch, root, tmp_path
         "git checkout -- CLAUDE.md",
         "git status && git checkout main",
         "cd skills && git switch feature",
+        "git reset --hard",
+        "git reset --hard origin/main",
+        "git reset --keep HEAD~1",
+        "git restore .",
+        "git restore --worktree --staged CLAUDE.md",
+        "git stash",
+        "git stash push -m x",
+        "git stash pop",
+        "git symbolic-ref HEAD refs/heads/x",
+        "git clean -fd",
+        "git clean --force",
+        "(git checkout feature)",
+        "if true; then git checkout feature; fi",
+        "env git checkout feature",
+        "bash -c 'git stash'",
     ],
 )
 def test_branch_switch_in_main_folder_is_blocked(monkeypatch, root, command):
@@ -157,6 +199,24 @@ def test_branch_switch_in_main_folder_is_blocked(monkeypatch, root, command):
 
 def test_cd_into_main_folder_is_followed(monkeypatch, root, tmp_path):
     command = f'cd "{root}" && git checkout feature'
+    assert run_hook(monkeypatch, shell(command, tmp_path))[0] == 2
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "git --git-dir={root}/.git --work-tree={root} checkout feature",
+        "git --git-dir {root}/.git checkout feature",
+        "git --work-tree={root} reset --hard",
+        "GIT_DIR={root}/.git git checkout feature",
+        "GIT_WORK_TREE={root} git restore .",
+        "env GIT_DIR={root}/.git git stash",
+        "(cd {root} && git checkout feature)",
+        "if cd {root}; then git checkout feature; fi",
+    ],
+)
+def test_other_ways_into_main_folder_are_blocked(monkeypatch, root, tmp_path, template):
+    command = template.format(root=root)
     assert run_hook(monkeypatch, shell(command, tmp_path))[0] == 2
 
 
@@ -217,6 +277,8 @@ def test_command_after_heredoc_is_checked(monkeypatch, root):
     [
         "git checkout feature",
         "git switch -c feature",
+        "git reset --hard",
+        "git stash",
     ],
 )
 def test_branch_switch_in_worktree_passes(monkeypatch, root, command):
@@ -231,7 +293,20 @@ def test_dash_c_into_worktree_passes(monkeypatch, root):
 
 @pytest.mark.parametrize(
     "command",
-    ["git pull", "git fetch origin", "git worktree add ../x", 'echo "git checkout x"'],
+    [
+        "git pull",
+        "git fetch origin",
+        "git worktree add ../x",
+        'echo "git checkout x"',
+        "git reset",
+        "git reset --soft HEAD~1",
+        "git restore --staged CLAUDE.md",
+        "git stash list",
+        "git stash show -p",
+        "git symbolic-ref HEAD",
+        "git symbolic-ref --short HEAD",
+        "git clean -n",
+    ],
 )
 def test_other_git_commands_in_main_folder_pass(monkeypatch, root, command):
     assert run_hook(monkeypatch, shell(command, root)) == (0, "")

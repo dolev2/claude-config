@@ -1,4 +1,4 @@
-"""PreToolUse hook: no repo edits and no branch switches in the main ~/.claude folder.
+"""PreToolUse hook: no repo edits and no work-losing git commands in the main ~/.claude.
 
 The main folder is the live skills and instructions every session loads, so code is
 written only in a worktree (.claude/CLAUDE.md, rules/git.md; claude-config#62).
@@ -9,9 +9,18 @@ stderr is the reason Claude sees.
 
 What may be written there on purpose (memory, plans, sessions, local settings) is
 exactly what .gitignore keeps out of the repo, so `git check-ignore` is the allow-list.
-Anything that goes wrong (no git, odd input) lets the call through: a guard that breaks
-memory writes is worse than one that misses a case. Writes from shell commands
-(`sed -i`, `>`) are not caught.
+The exception is what .gitignore hides but every session still runs or loads: `.git/`,
+Python's bytecode cache, the skills the cloud service syncs, agents, commands, plugins
+and output styles (LIVE_IGNORED; claude-config#163).
+
+The git commands blocked there are the ones that switch the branch or throw away work
+that is not committed: checkout, switch, `reset --hard`, restore of the working tree,
+stash, writing symbolic-ref, `clean -f`. The folder is found from `cd`, `-C`,
+`--git-dir`, `--work-tree`, and `GIT_DIR=` / `GIT_WORK_TREE=` before the command.
+
+Anything that goes wrong (no git, odd input, no Python) lets the call through: a guard
+that breaks memory writes is worse than one that misses a case. Writes from shell
+commands (`sed -i`, `>`) are not caught.
 """
 
 import os
@@ -23,13 +32,27 @@ from shell_commands import (
     edit_target,
     git_subcommand,
     native_path,
+    parse_prefixes,
     read_event,
     shell_command,
     split_subcommands,
 )
 
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
-BRANCH_SWITCHES = ("checkout", "switch")
+# Git commands that switch the branch or can throw away uncommitted work.
+GUARDED_SUBCOMMANDS = (
+    "checkout",
+    "switch",
+    "reset",
+    "restore",
+    "stash",
+    "symbolic-ref",
+    "clean",
+)
+# Ignored by .gitignore, yet run or loaded by every session: first folder, or any part.
+LIVE_IGNORED_TOP = ("skills/synced", "skills/session-start-hook", "agents", "commands")
+LIVE_IGNORED_TOP += ("plugins", "output-styles")
+LIVE_IGNORED_PARTS = ("__pycache__",)
 CHANGE_DIRECTORY = ("cd", "chdir", "pushd", "set-location", "sl")
 # Tracked, yet Claude Code and the settings tools write it in place (claude-config#62).
 ALLOWED_TRACKED = ("settings.json", "settings.local.json")
@@ -41,7 +64,7 @@ EDIT_REASON = (
 )
 SWITCH_REASON = (
     "`git {subcommand}` בתיקייה הראשית של ~/.claude חסום: היא עותק משותף,"
-    " ושינויים שלא נשמרו נגררים ל-branch הלא נכון.\n"
+    " ושינויים שלא נשמרו נגררים ל-branch הלא נכון או נמחקים.\n"
     "עובדים ב-worktree (rules/git.md, התיקייה המשותפת).\n"
 )
 
@@ -97,16 +120,27 @@ def is_ignored(root: Path, path: Path) -> bool:
     return result is None or result.returncode == 0
 
 
+def is_live_ignored(relative: str) -> bool:
+    """True for a path .gitignore hides that sessions still run or load."""
+    parts = relative.lower().split("/")
+    if any(part in LIVE_IGNORED_PARTS for part in parts) or relative.endswith(".pyc"):
+        return True
+    return any(f"{relative.lower()}/".startswith(f"{top}/") for top in LIVE_IGNORED_TOP)
+
+
 def blocks_edit(path: Path, root: Path) -> bool:
     """True when path is a repo file of the main folder itself, not of a worktree."""
     if not is_inside(path, root):
         return False
+    relative = Path(os.path.relpath(path, root)).as_posix()
+    if relative.split("/")[0] == ".git":
+        return True
     toplevel = repo_toplevel(path.parent)
     if toplevel is None or not same_folder(toplevel, root):
         return False
     if same_folder(path.parent, root) and path.name.lower() in ALLOWED_TRACKED:
         return False
-    return not is_ignored(root, path)
+    return is_live_ignored(relative) or not is_ignored(root, path)
 
 
 def expand(path_text: str) -> str:
@@ -122,26 +156,72 @@ def change_folder(current: Path, arguments: list[str]) -> Path:
     return (current / expand(targets[0])).resolve()
 
 
-def git_folder(current: Path, options: list[str]) -> Path:
-    """The folder git works in: current, moved by each `-C <path>` in order."""
+def option_values(options: list[str], name: str) -> list[str]:
+    """The values of `name <value>` and `name=<value>` among git's options, in order."""
+    values = []
+    for index, option in enumerate(options):
+        if option == name and index + 1 < len(options):
+            values.append(options[index + 1])
+        elif option.startswith(f"{name}="):
+            values.append(option.split("=", 1)[1])
+    return values
+
+
+def git_folder(current: Path, options: list[str], assignments: dict[str, str]) -> Path:
+    """The folder git works in: current, moved by `-C`, then the work tree or git dir.
+
+    `--git-dir` (or `GIT_DIR=`) names the `.git` folder, so its parent is the repo.
+    """
     folder = current
-    for index, option in enumerate(options[:-1]):
-        if option == "-C":
-            folder = (folder / expand(options[index + 1])).resolve()
+    for path in option_values(options, "-C"):
+        folder = (folder / expand(path)).resolve()
+    work_trees = option_values(options, "--work-tree")
+    git_dirs = option_values(options, "--git-dir")
+    work_tree = work_trees[-1] if work_trees else assignments.get("GIT_WORK_TREE")
+    git_dir = git_dirs[-1] if git_dirs else assignments.get("GIT_DIR")
+    if work_tree:
+        return (folder / expand(work_tree)).resolve()
+    if git_dir:
+        return (folder / expand(git_dir)).resolve().parent
     return folder
 
 
+def is_guarded(subcommand: str, arguments: list[str]) -> bool:
+    """True when this git command switches the branch or can lose uncommitted work."""
+    flags = [argument for argument in arguments if argument.startswith("-")]
+    if subcommand in ("checkout", "switch"):
+        return True
+    if subcommand == "reset":
+        return any(flag in ("--hard", "--merge", "--keep") for flag in flags)
+    if subcommand == "restore":
+        staged_only = any(flag in ("--staged", "-S") for flag in flags)
+        return not staged_only or any(flag in ("--worktree", "-W") for flag in flags)
+    if subcommand == "stash":
+        return not arguments or arguments[0] not in ("list", "show")
+    if subcommand == "symbolic-ref":
+        return len(arguments) - len(flags) >= 2
+    if subcommand == "clean":
+        short = [flag for flag in flags if not flag.startswith("--")]
+        return "--force" in flags or any("f" in flag for flag in short)
+    return False
+
+
 def blocked_switch(command: str, cwd: Path, root: Path) -> str | None:
-    """The `git checkout` or `git switch` that would run in the main folder, if any."""
+    """The guarded git command that would run in the main folder, if any.
+
+    A `cd` inside `(...)` is read as if it stayed in effect after it: that blocks a rare
+    harmless command rather than let a harmful one through.
+    """
     current = cwd
     for words in split_subcommands(command):
-        if words[0].lower() in CHANGE_DIRECTORY:
-            current = change_folder(current, words[1:])
+        assignments, command_words = parse_prefixes(words)
+        if command_words and command_words[0].lower() in CHANGE_DIRECTORY:
+            current = change_folder(current, command_words[1:])
             continue
         parts = git_subcommand(words)
-        if parts is None or parts[1] not in BRANCH_SWITCHES:
+        if parts is None or not is_guarded(parts[1], parts[2]):
             continue
-        toplevel = repo_toplevel(git_folder(current, parts[0]))
+        toplevel = repo_toplevel(git_folder(current, parts[0], assignments))
         if toplevel is not None and same_folder(toplevel, root):
             return parts[1]
     return None
@@ -156,7 +236,7 @@ def decide(event: dict) -> str | None:
             return EDIT_REASON.format(path=path)
         return None
     command = shell_command(event)
-    if command is None or not any(word in command for word in BRANCH_SWITCHES):
+    if command is None or not any(word in command for word in GUARDED_SUBCOMMANDS):
         return None
     subcommand = blocked_switch(command, Path(event.get("cwd") or os.getcwd()), root)
     return SWITCH_REASON.format(subcommand=subcommand) if subcommand else None

@@ -12,9 +12,29 @@ import shlex
 from pathlib import Path, PurePath
 
 SHELL_TOOLS = ("Bash", "PowerShell")
-SEPARATOR_CHARS = ";&|\n"
-# Run their argument as the command; `timeout` also takes a duration first.
-WRAPPERS = {"command", "builtin", "nohup", "nice", "time", "stdbuf", "sudo"}
+# `(`, `)` and the backtick open or close a subshell; each one also ends a subcommand.
+SEPARATOR_CHARS = ";&|\n()`"
+# Words a shell reads before the command itself: `if git push -f; then ...`.
+KEYWORDS = {"if", "then", "else", "elif", "do", "while", "until", "!", "{", "}"}
+# Run their argument as the command, after their own options. The value is the options
+# that take the next word as their value; `timeout` also takes a duration after them.
+WRAPPERS = {
+    "builtin": set(),
+    "command": set(),
+    "env": {"-u", "--unset", "-C", "--chdir", "-S", "--split-string"},
+    "exec": {"-a"},
+    "nice": {"-n", "--adjustment"},
+    "nohup": set(),
+    "stdbuf": {"-i", "-o", "-e"},
+    "sudo": {"-u", "-g", "-h", "-p", "-C", "-D", "-r", "-t", "-U", "-T"},
+    "time": {"-f", "-o", "--format", "--output"},
+    "timeout": {"-s", "--signal", "-k", "--kill-after"},
+    "xargs": {"-I", "-n", "-P", "-d", "-L", "-s", "-E", "-a", "--arg-file"},
+}
+# Shells whose `-c <text>` runs the text as a command; `eval` does the same.
+SHELLS = {"sh", "bash", "zsh", "dash", "ksh"}
+# How deep `bash -c "sh -c '...'"` is unwrapped; deeper text is not read.
+MAX_NESTING = 3
 # git options before the subcommand whose value is the next argument.
 GIT_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
 # `<<EOF`, `<<-'EOF'`, `<< "EOF"`; not the `<<<` here-string, which has no body.
@@ -68,10 +88,10 @@ def is_mcp_merge(event: dict) -> bool:
 
 def gh_api_arguments(words: list[str]) -> list[str] | None:
     """The arguments after `gh api`; None when the command is not `gh api`."""
-    words = strip_prefixes(words)
-    if len(words) < 2 or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
+    arguments = gh_subcommand(words)
+    if not arguments or arguments[0] != "api":
         return None
-    return words[2:] if words[1] == "api" else None
+    return arguments[1:]
 
 
 def native_path(text: str, is_windows: bool = os.name == "nt") -> str:
@@ -102,14 +122,53 @@ def strip_heredocs(command: str) -> str:
     return "\n".join(kept)
 
 
-def split_subcommands(command: str) -> list[list[str]]:
-    """The command's words, one list per subcommand between `&&`, `;`, `|` or a newline.
+def command_substitutions(command: str) -> list[str]:
+    """The text inside each `$(...)` and backtick pair that is not in single quotes.
 
-    Quotes are respected, so `git commit -m "a; git push -f"` stays one subcommand, and
-    heredoc bodies are skipped. Text shlex cannot parse (an open quote) falls back to
-    splitting on whitespace.
+    Inside double quotes these still run, and shlex would keep them in one word.
     """
-    command = strip_heredocs(command)
+    found: list[str] = []
+    quote = ""
+    index = 0
+    while index < len(command):
+        char = command[index]
+        if char == "\\" and quote != "'":
+            index += 2
+            continue
+        if quote == "'":
+            quote = "" if char == "'" else quote
+        elif char == "'" and not quote:
+            quote = "'"
+        elif char == '"':
+            quote = "" if quote == '"' else '"'
+        elif command.startswith("$(", index):
+            end = closing_parenthesis(command, index + 2)
+            found.append(command[index + 2 : end])
+            index = end
+        elif char == "`":
+            end = command.find("`", index + 1)
+            end = len(command) if end == -1 else end
+            found.append(command[index + 1 : end])
+            index = end
+        index += 1
+    return found
+
+
+def closing_parenthesis(command: str, start: int) -> int:
+    """The index of the `)` that closes the `(` just before start, or the text's end."""
+    depth = 1
+    for index in range(start, len(command)):
+        if command[index] == "(":
+            depth += 1
+        elif command[index] == ")":
+            depth -= 1
+            if depth == 0:
+                return index
+    return len(command)
+
+
+def split_words(command: str) -> list[list[str]]:
+    """The words of each subcommand between `&&`, `;`, `|`, `(`, `)` or a newline."""
     lexer = shlex.shlex(command, posix=True, punctuation_chars=SEPARATOR_CHARS)
     lexer.whitespace = " \t\r"
     lexer.whitespace_split = True
@@ -126,17 +185,99 @@ def split_subcommands(command: str) -> list[list[str]]:
     return [words for words in subcommands if words]
 
 
-def strip_prefixes(words: list[str]) -> list[str]:
-    """The words without leading `VAR=value` assignments and wrappers (`timeout 30`)."""
+def nested_command(words: list[str]) -> str | None:
+    """The text that `sh -c '<text>'` or `eval <text>` runs; None for anything else."""
+    words = strip_prefixes(words)
+    if not words:
+        return None
+    name = PurePath(words[0]).name.lower()
+    if name == "eval":
+        return " ".join(words[1:])
+    if name not in SHELLS:
+        return None
+    for index, word in enumerate(words[1:-1], start=1):
+        if not word.startswith("-") or word.startswith("--"):
+            return None
+        if "c" in word:
+            return words[index + 1]
+    return None
+
+
+def split_subcommands(command: str, depth: int = 0) -> list[list[str]]:
+    """The command's words, one list per subcommand it runs.
+
+    Subcommands are split at `&&`, `;`, `|`, `(`, `)` and newlines; the text of
+    `$(...)`, backticks, `sh -c` and `eval` is split again as commands of its own.
+    Quotes are respected, so `git commit -m "a; git push -f"` stays one subcommand, and
+    heredoc bodies are skipped. Text shlex cannot parse (an open quote) falls back to
+    splitting on whitespace.
+    """
+    command = strip_heredocs(command)
+    subcommands = split_words(command)
+    if depth >= MAX_NESTING:
+        return subcommands
+    inner = command_substitutions(command)
+    inner += [text for words in subcommands if (text := nested_command(words))]
+    for text in inner:
+        subcommands += split_subcommands(text, depth + 1)
+    return subcommands
+
+
+def is_assignment(word: str) -> bool:
+    """True for a `NAME=value` word."""
+    return "=" in word and word.split("=")[0].isidentifier()
+
+
+def skip_options(words: list[str], index: int, with_value: set[str]) -> int:
+    """The index of the first word after a wrapper's options, from index on."""
+    while index < len(words) and words[index].startswith("-"):
+        word = words[index]
+        index += 1
+        if word == "--":
+            break
+        if word in with_value:
+            index += 1
+    return index
+
+
+def parse_prefixes(words: list[str]) -> tuple[dict[str, str], list[str]]:
+    """The `VAR=value` assignments before the command, and the command's own words.
+
+    Shell keywords (`if`, `then`, `{`) and wrappers with their options (`env -i`,
+    `timeout -s KILL 30`, `sudo -u root`) are dropped on the way.
+    """
+    assignments: dict[str, str] = {}
     index = 0
     while index < len(words):
         word = words[index]
-        if word in WRAPPERS or ("=" in word and word.split("=")[0].isidentifier()):
+        name = PurePath(word).name.lower()
+        if word in KEYWORDS:
             index += 1
-        elif word == "timeout":
-            index += 2
+        elif is_assignment(word):
+            key, value = word.split("=", 1)
+            assignments[key] = value
+            index += 1
+        elif name in WRAPPERS:
+            index = skip_options(words, index + 1, WRAPPERS[name])
+            index += 1 if name == "timeout" else 0
         else:
             break
+    return assignments, words[index:]
+
+
+def strip_prefixes(words: list[str]) -> list[str]:
+    """The words without leading keywords, `VAR=value` assignments and wrappers."""
+    return parse_prefixes(words)[1]
+
+
+def gh_subcommand(words: list[str]) -> list[str] | None:
+    """The words after `gh` and its `-R`/`--repo` option; None when it is not gh."""
+    words = strip_prefixes(words)
+    if not words or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
+        return None
+    index = 1
+    while index < len(words) and words[index].startswith(("-R", "--repo")):
+        index += 2 if words[index] in ("-R", "--repo") else 1
     return words[index:]
 
 
