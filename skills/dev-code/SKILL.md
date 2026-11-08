@@ -57,8 +57,29 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    sub-issue labelled `bug` is part of the same work and is fixed on the same branch unless it
    clearly stands alone. Also read what is already on the branch and in any open PR.
 
+   **A bug without a Plan.** A `bug` issue skips planning (`reference/pipeline.md`), so its
+   Plan may still read `_טרם נכתבה תוכנית._`. Then, before step 4 and before any code
+   (a bug that already has a Plan, from `dev-plan` or a repair round, follows that Plan):
+   1. **Context:** also read the task named in the form's "משימה קשורה" field, at least its
+      goal and its Plan. That is usually where it says what the code was meant to do.
+   2. **Scope check:** the fix deletes a file, a feature or data, changes a contract, or adds a
+      dependency (conditions 3–4 of "המסלול הקטן", `reference/pipeline.md`): stop before any
+      code. Move `status:ready-to-execute` → `status:explore`, comment saying which condition,
+      and open no PR; `dev-plan` writes it a full Plan, which goes through approval.
+      Conditions 1–2 (the number of files, a change the user sees) do not stop a bug: most bugs
+      are visible. A bug that is unclear goes to `status:plan-questions` with the question
+      (golden rules).
+   3. **The slug:** from the title, in English, 2–5 kebab-case words
+      (`claude/issue-<N>-<slug>`, `reference/git-flow.md`). A Hebrew title is translated for its
+      meaning, never transliterated.
+   4. **Write the short plan for a bug** into the issue body (`reference/issue-body.md`,
+      "תוכנית מקוצרת, לבאג"), with the body-editing rules there: a fresh read, the sections a
+      person wrote kept letter for letter, LF. It names the branch, so step 4 creates it on the
+      remote as for any Plan.
+
 4. **Work in a worktree (in a cloud session: its own clone), never by switching branches in
-   the shared working copy** (`reference/git-flow.md`). The branch is the one the Plan names, `claude/issue-<N>-<slug>`; if it
+   the shared working copy** (`reference/git-flow.md`). The branch is the one the Plan names, `claude/issue-<N>-<slug>`
+   (a bug without a Plan: the one its short plan from step 3 names); if it
    does not exist on the remote, create it there first
    (`git push origin origin/<default>:refs/heads/claude/issue-<N>-<slug>`). Then:
    - the session already runs in its own worktree: check out the branch there;
@@ -184,6 +205,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     inside the Plan is fixed like a review finding; one outside it is proposed as a task. No app
     (or no browser at all): check what you can (output, messages) and say what was not
     checked. A plan with "אין ממשק", or the short plan of a `size:small` task, skips this.
+    The short plan of a bug does not: its "חוויית משתמש" section with content is checked, and
+    only its "אין ממשק" line skips this. The screenshots follow the same rule.
 
     **When the agent returns**, check that `git status --porcelain` in the worktree is still
     empty (the agent wrote nothing), then decide each finding: right and inside the Plan: fix
@@ -271,6 +294,8 @@ of step 11 does the same in this session.
 - Never switch branches in the shared working copy; code is written in a worktree (in a
   cloud session, in its own clone).
 - Never start an issue without reading its sub-issues.
+- A bug without a Plan gets its short plan in the issue body before the first line of code
+  (step 3).
 - If an issue lacks context, do not guess: comment with the question, move it to
   `status:plan-questions` (Dolev's turn; his answer sends it back to `status:explore` for a
   plan update), and flag it in the summary.
