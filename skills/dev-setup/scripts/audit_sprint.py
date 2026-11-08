@@ -127,7 +127,8 @@ def parent_name(parent: dict | None) -> str | None:
     """The parent as the digest shows it: #N, or owner/name#N for another repo."""
     if not parent:
         return None
-    return f"{parent.get('repository', '')}#{parent['number']}"
+    prefix = "" if is_local(parent) else parent["repository"]
+    return f"{prefix}#{parent['number']}"
 
 
 def line_mismatches(issues: list[SprintIssue]) -> list[Finding]:

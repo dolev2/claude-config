@@ -32,9 +32,7 @@ def node(number, text="", blocked_by=(), has_pr=False, parent=None, subs=()):
         "blockedBy": {"nodes": [{"number": n, "state": s} for n, s in blocked_by]},
         "blocking": {"nodes": []},
         "closedByPullRequestsReferences": {"totalCount": 1 if has_pr else 0},
-        "parent": parent
-        if isinstance(parent, dict) or not parent
-        else {"number": parent},
+        "parent": {"number": parent} if isinstance(parent, int) else parent,
         "subIssues": {"nodes": [{"number": n} for n in subs]},
     }
 
