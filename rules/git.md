@@ -25,7 +25,7 @@
 ## התיקייה המשותפת
 - **לא מחליפים branch בתיקייה הראשית של ריפו.** דולב או סשן אחר עלולים לעבוד בה, עם שינויים שלא נשמרו,
   ו-`git checkout` גורר אותם בשקט ל-branch הלא נכון. עובדים ב-worktree.
-  בתיקייה הראשית של `~/.claude` זה נאכף: hook ב-`~/.claude/hooks/guard_main_folder.py` חוסם שם `git checkout` ו-`git switch`.
+  בתיקייה הראשית של `~/.claude` זה נאכף: hook ב-`~/.claude/hooks/guard_main_folder.py` חוסם שם `git checkout` ו-`git switch`, וגם פקודות שמוחקות עבודה שלא נשמרה (`reset --hard`, `restore`, `stash`, `clean -f`).
 - אם בכל זאת חייבים: רק כש-`git status --porcelain` ריק (`git diff` לא רואה קבצים חדשים).
   פלט לא ריק: עוצרים ומדווחים, לא מנקים.
 - **חריג: סשן ענן** (`CLAUDE_CODE_REMOTE=true`). ה-clone שלו לא משותף, ולכן מחליפים בו branch ישירות, באותו תנאי של עץ נקי. לא ב-`~/.claude`, שם ה-hook חוסם גם בענן (`skills/dev-setup/reference/git-flow.md`, "בסשן ענן").

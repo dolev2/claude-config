@@ -1,5 +1,8 @@
 """PreToolUse hook: blocks `git push --force` and lets `--force-with-lease` through.
 
+Also blocked: `push --mirror`, which overwrites every ref, and `git send-pack --force`
+or a `+` refspec there (claude-config#163).
+
 Wired in settings.json for the Bash and PowerShell tools (claude-config#61), run by
 python3 or python, whichever exists, from $HOME/.claude/hooks/.
 
@@ -8,13 +11,22 @@ decision, and the normal permission rules decide. Exit 2 blocks the call, and st
 the reason Claude sees.
 
 A deny rule cannot do this: it matches text, so `*--force*` would also block
-`--force-with-lease`, and it misses `-fu` and a `+main` refspec. This is a guard against
-mistakes, not a security boundary: `sh -c 'git push -f'` is not caught.
+`--force-with-lease`, and it misses `-fu` and a `+main` refspec.
+
+This is a guard against mistakes, not a security boundary; on the default branch the
+ruleset is (claude-config#162). Wrappers a command is often written in (`env`, `(...)`,
+`if`, `$(...)`, `bash -c`) are read through shell_commands.py. Not read, by decision
+(claude-config#163): a push hidden in config set on the command line, `git -c
+alias.p='push -f' p` or `git -c remote.origin.push=+HEAD:main push`; nobody writes those
+by accident. Input that is not a JSON object with a string command passes (Claude Code
+never sends it), and so does a call whose hook cannot start for lack of Python (exit
+127, shown as a hook error; README).
 """
 
 import sys
 
-from shell_commands import git_subcommand, read_event, shell_command, split_subcommands
+from shell_commands import git_subcommand, read_event, shell_command
+from shell_split import split_subcommands
 
 REASON = (
     "דחיפה בכוח חסומה: `--force`, `-f` או refspec עם `+` דורסים בשקט commits"
@@ -30,9 +42,9 @@ def read_command(raw: str) -> str | None:
 
 
 def push_arguments(words: list[str]) -> list[str] | None:
-    """The arguments after `git ... push`; None when the subcommand is not a push."""
+    """The arguments after `git ... push` or `send-pack`; None for any other command."""
     parts = git_subcommand(words)
-    if parts is None or parts[1] != "push":
+    if parts is None or parts[1] not in ("push", "send-pack"):
         return None
     return parts[2]
 
@@ -49,7 +61,7 @@ def is_force_push(arguments: list[str]) -> bool:
                 return True
         elif argument == "--":
             only_refspecs = True
-        elif argument == "--force":
+        elif argument in ("--force", "--mirror"):
             return True
         elif argument.startswith("--"):
             continue
@@ -65,7 +77,7 @@ def is_force_push(arguments: list[str]) -> bool:
 def main() -> int:
     """Read the tool call from stdin; return 2 to block a force push, 0 otherwise."""
     command = read_command(sys.stdin.buffer.read().decode("utf-8", errors="replace"))
-    if command is None or "push" not in command:
+    if command is None or not any(word in command for word in ("push", "send-pack")):
         return 0
     for words in split_subcommands(command):
         arguments = push_arguments(words)

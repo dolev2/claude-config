@@ -1,5 +1,5 @@
 """Shared by the hooks: reading the tool call from stdin, the file an edit writes, and
-splitting shell commands.
+the gh and git subcommand of a command. Splitting the shell line is in shell_split.py.
 
 Imported by hooks that sit next to it in hooks/; Python puts the script's own folder
 first on sys.path, so a plain `import shell_commands` finds it.
@@ -8,17 +8,13 @@ first on sys.path, so a plain `import shell_commands` finds it.
 import json
 import os
 import re
-import shlex
 from pathlib import Path, PurePath
 
+from shell_split import strip_prefixes
+
 SHELL_TOOLS = ("Bash", "PowerShell")
-SEPARATOR_CHARS = ";&|\n"
-# Run their argument as the command; `timeout` also takes a duration first.
-WRAPPERS = {"command", "builtin", "nohup", "nice", "time", "stdbuf", "sudo"}
 # git options before the subcommand whose value is the next argument.
 GIT_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
-# `<<EOF`, `<<-'EOF'`, `<< "EOF"`; not the `<<<` here-string, which has no body.
-HEREDOC_START = re.compile(r"(?<!<)<<(?!<)(-?)\s*(['\"]?)(\w+)\2")
 # Git Bash writes C:\Users as /c/Users.
 MSYS_DRIVE = re.compile(r"^/([a-zA-Z])(?=/|$)")
 # GitHub MCP tools that merge a PR or turn on its auto-merge, under any server name.
@@ -68,10 +64,10 @@ def is_mcp_merge(event: dict) -> bool:
 
 def gh_api_arguments(words: list[str]) -> list[str] | None:
     """The arguments after `gh api`; None when the command is not `gh api`."""
-    words = strip_prefixes(words)
-    if len(words) < 2 or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
+    arguments = gh_subcommand(words)
+    if not arguments or arguments[0] != "api":
         return None
-    return words[2:] if words[1] == "api" else None
+    return arguments[1:]
 
 
 def native_path(text: str, is_windows: bool = os.name == "nt") -> str:
@@ -84,60 +80,25 @@ def native_path(text: str, is_windows: bool = os.name == "nt") -> str:
     return MSYS_DRIVE.sub(lambda match: f"{match.group(1).upper()}:", text)
 
 
-def strip_heredocs(command: str) -> str:
-    """The command without heredoc bodies, which are text and not commands."""
-    lines = command.split("\n")
-    kept: list[str] = []
-    index = 0
-    while index < len(lines):
-        line = lines[index]
-        kept.append(line)
-        index += 1
-        for strip_tabs, _quote, delimiter in HEREDOC_START.findall(line):
-            while index < len(lines):
-                body_line = lines[index].lstrip("\t") if strip_tabs else lines[index]
-                index += 1
-                if body_line.rstrip("\r") == delimiter:
-                    break
-    return "\n".join(kept)
+def gh_subcommand(words: list[str]) -> list[str] | None:
+    """The words after `gh`, without `-R`/`--repo` and its value; None when not gh.
 
-
-def split_subcommands(command: str) -> list[list[str]]:
-    """The command's words, one list per subcommand between `&&`, `;`, `|` or a newline.
-
-    Quotes are respected, so `git commit -m "a; git push -f"` stays one subcommand, and
-    heredoc bodies are skipped. Text shlex cannot parse (an open quote) falls back to
-    splitting on whitespace.
+    gh takes `-R` anywhere after the command group: `gh -R a/b pr merge`, `gh pr -R a/b
+    merge`.
     """
-    command = strip_heredocs(command)
-    lexer = shlex.shlex(command, posix=True, punctuation_chars=SEPARATOR_CHARS)
-    lexer.whitespace = " \t\r"
-    lexer.whitespace_split = True
-    try:
-        tokens = list(lexer)
-    except ValueError:
-        tokens = command.split()
-    subcommands: list[list[str]] = [[]]
-    for token in tokens:
-        if token and all(char in SEPARATOR_CHARS for char in token):
-            subcommands.append([])
-        else:
-            subcommands[-1].append(token)
-    return [words for words in subcommands if words]
-
-
-def strip_prefixes(words: list[str]) -> list[str]:
-    """The words without leading `VAR=value` assignments and wrappers (`timeout 30`)."""
-    index = 0
-    while index < len(words):
-        word = words[index]
-        if word in WRAPPERS or ("=" in word and word.split("=")[0].isidentifier()):
-            index += 1
-        elif word == "timeout":
-            index += 2
-        else:
-            break
-    return words[index:]
+    words = strip_prefixes(words)
+    if not words or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
+        return None
+    kept: list[str] = []
+    skip_value = False
+    for word in words[1:]:
+        if skip_value:
+            skip_value = False
+        elif word in ("-R", "--repo"):
+            skip_value = True
+        elif not word.startswith(("-R", "--repo=")):
+            kept.append(word)
+    return kept
 
 
 def git_subcommand(words: list[str]) -> tuple[list[str], str, list[str]] | None:
