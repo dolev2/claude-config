@@ -1,7 +1,9 @@
 """settings.json: the allow list pre-approves only read or session-only tools.
 
 The list applies on Dolev's computer too, so a tool joins it only together
-with this test (#155).
+with this test (#155). The one exception is CHILD_TOOLS, the write tools the
+orchestrator's child needs: the service passes a child only tools that are
+pre-approved for its parent, so they must be on the list too (#150).
 """
 
 import json
@@ -9,6 +11,7 @@ import re
 from pathlib import Path
 
 import pytest
+from guard_create_session import CHILD_TOOLS
 
 SETTINGS = Path(__file__).resolve().parent.parent / "settings.json"
 
@@ -41,9 +44,11 @@ SESSION_ONLY = [
     "subscribe_pr_activity",
     "unsubscribe_pr_activity",
 ]
-ALLOWED_TOOLS = {f"mcp__github__{name}" for name in GITHUB_READ} | {
-    f"mcp__claude-code-remote__{name}" for name in SESSION_ONLY
-}
+ALLOWED_TOOLS = (
+    {f"mcp__github__{name}" for name in GITHUB_READ}
+    | {f"mcp__claude-code-remote__{name}" for name in SESSION_ONLY}
+    | CHILD_TOOLS
+)
 
 
 def load_settings() -> dict:
@@ -84,6 +89,12 @@ def test_current_allow_list_is_valid():
     assert len(allow) == len(set(allow))
 
 
+def test_every_child_tool_is_pre_approved():
+    # Without it, create_session drops the tool and the child stops on a prompt.
+    missing = sorted(CHILD_TOOLS - set(load_settings()["permissions"]["allow"]))
+    assert missing == [], f"add to permissions.allow in settings.json: {missing}"
+
+
 def test_merge_hook_is_still_wired():
     assert merge_hook_matchers(load_settings()), (
         "ask_before_merge.py lost its MCP matcher"
@@ -94,7 +105,7 @@ def test_merge_hook_is_still_wired():
     ("rule", "reason"),
     [
         ("mcp__github__*", "wildcard"),
-        ("mcp__github__create_pull_request", "not in ALLOWED_TOOLS"),
+        ("mcp__github__issue_write", "not in ALLOWED_TOOLS"),
         ("mcp__claude-code-remote__send_later", "not in ALLOWED_TOOLS"),
         ("mcp__github__merge_pull_request", "ask_before_merge.py"),
         ("Bash(gh api *)", "wildcard"),

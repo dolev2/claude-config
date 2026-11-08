@@ -557,6 +557,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <tr><td>Execute (<code>dev-code</code>)</td><td>In a worktree</td><td>No worktree</td><td>The task branch in the session's own clone. The name is set with <code>set_session_title</code>, and CI wakes the session through <code>subscribe_pr_activity</code>.</td></tr>
       <tr><td>Review app and user-experience check</td><td>A localhost link and the built-in browser</td><td>Inside the session</td><td>Playwright screenshots at 1280 and 375 wide. A Windows-only command: the check stays on the computer.</td></tr>
       <tr><td>Merge (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>The GitHub MCP tool</td><td>An approval prompt in both. Cleanup: <code>git checkout --detach origin/main</code>.</td></tr>
+      <tr><td>The orchestrator (<code>dev-orchestrate</code>)</td><td>No</td><td>Yes</td><td>Child sessions in parallel, followed through their reports, PR events and a fallback check. The section below.</td></tr>
       <tr><td>Publishing this page</td><td>Yes</td><td>When the Artifact tool is available</td><td>Not available: tell Dolev the publish is pending.</td></tr>
       <tr><td>The board and pipeline setup (<code>dev-setup</code>)</td><td>Yes</td><td>No</td><td>Blocked even over REST (claude-config #140).</td></tr>
     </tbody>
@@ -580,6 +581,21 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="kept"><p><strong>Kept:</strong> the conversation, the environment settings, and what was pushed to GitHub.</p></div>
     <div class="lost"><p><strong>Gone:</strong> files that were not pushed, and tools installed by hand in the session.</p></div>
   </div>
+  </div>
+  <h3 id="orch-h">The orchestrator: a whole sprint from one session</h3>
+  <p>Cloud only, and only when Dolev writes "run the sprint". The skill: <code>dev-orchestrate</code>. The contract: <code>reference/orchestrate.md</code>.</p>
+  <p>The children go through the same pipeline as above. The orchestrator remembers nothing between checks: every check rebuilds the picture from GitHub and the sessions' tags.</p>
+  <div class="panel">
+  <ol class="life" aria-labelledby="orch-h">
+    <li class="human"><strong>Start</strong><p>Dolev asks. The orchestrator shows what opens now, what waits on a blocker, and what waits for him.</p></li>
+    <li class="claude"><strong>Check</strong><p><code>sprint_state.py</code> says what is ready for a child, what waits on a shared file, and what is ready to merge.</p><p>The skills changed on <code>main</code>: read them again.</p></li>
+    <li class="claude"><strong>A child per free task</strong><p>Up to 3 at a time, tagged <code>issue:N</code>. One child plans, a separate one codes.</p></li>
+    <li class="gate"><strong>The child's contract</strong><p>It never asks Dolev, never touches links, never merges. It reports to its parent with <code>send_message</code>.</p></li>
+    <li class="claude"><strong>After a report</strong><p>The orchestrator checks GitHub: the plan, the PR and its CI, and no stray branch or label.</p></li>
+    <li class="human"><strong>One question window</strong><p>Plan answers, approvals, and one merge at a time. Only Dolev decides.</p></li>
+    <li class="gate"><strong>A bug or the quota</strong><p>A bug that hurts others: an issue, Blocked by, the hurt children stopped, and a child that fixes it.</p><p>Quota in overage: no new child, and Dolev is asked.</p></li>
+    <li class="auto"><strong>End of the sprint</strong><p>Nothing to open, ask or merge: a summary, and the loop stops.</p></li>
+  </ol>
   </div>
 </section>
 
