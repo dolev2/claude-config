@@ -132,6 +132,23 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 .where th, .where td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: start; vertical-align: top; }
 .where th { color: var(--muted); font-weight: 600; font-size: 13px; }
 .where code { white-space: nowrap; }
+.life { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: life; }
+.life li { counter-increment: life; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 8px; border: 1.5px solid; font-size: 14px; min-width: 0; }
+.life li::before { content: counter(life); font-size: 12px; font-weight: 600; color: var(--muted); }
+.life li p { margin: 0; }
+.life li.human { background: var(--human-fill); border-color: var(--human); }
+.life li.claude { background: var(--claude-fill); border-color: var(--claude); }
+.life li.auto { background: var(--auto-fill); border-color: var(--auto); }
+.life li.gate { background: var(--gate-fill); border-color: var(--gate); }
+.life li strong { font-weight: 600; }
+@media (max-width: 860px) { .life { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .life { grid-template-columns: minmax(0, 1fr); } }
+.keeps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; font-size: 14px; }
+.keeps div { padding: 10px 12px; border-radius: 8px; border: 1.5px solid; }
+.keeps .kept { background: var(--auto-fill); border-color: var(--auto); }
+.keeps .lost { background: var(--gate-fill); border-color: var(--gate); }
+.keeps p { margin: 0; }
+@media (max-width: 480px) { .keeps { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
 <div class="page">
@@ -565,6 +582,25 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <tr><td>הלוח והקמת הצינור (<code>dev-setup</code>)</td><td>כן</td><td>לא</td><td>חסומים גם ב-REST (claude-config #140).</td></tr>
     </tbody>
   </table>
+  </div>
+  <h3 id="life-h">החיים של סשן ענן</h3>
+  <p>הסביבה היא המתכון: רשת, משתנים, סודות וסקריפט התקנה, שמורים בחשבון. הקונטיינר הוא המחשב הזמני שנבנה ממנה.</p>
+  <p>השיחה נשמרת בשרת. הקונטיינר נמחק כשהסשן לא פעיל, ונבנה מחדש כשחוזרים אליו.</p>
+  <div class="panel">
+  <ol class="life" aria-labelledby="life-h">
+    <li class="human"><strong>שליחה</strong><p>דולב בוחר סביבה, ריפו ו-branch, ושולח הודעה.</p></li>
+    <li class="auto"><strong>קונטיינר חדש</strong><p>מחשב נקי. כללי הרשת של הסביבה (proxy), המשתנים והסודות נכנסים לתוקף.</p></li>
+    <li class="auto"><strong>שכפול</strong><p>הריפו של הסשן משוכפל לקונטיינר.</p></li>
+    <li class="gate"><strong>סקריפט ההתקנה</strong><p>מעתיק את <code>main</code> של claude-config ל-<code>~/.claude</code>.</p><p>סקריפט שנכשל עוצר את הסשן, ולכן הוא לא נכשל לעולם (#132).</p></li>
+    <li class="claude"><strong>Claude Code עולה</strong><p><code>cloud_refresh.py</code> מושך את <code>main</code>, ונטענים <code>CLAUDE.md</code>, הכללים והסקילים.</p></li>
+    <li class="claude"><strong>עבודה</strong><p>תכנון או ביצוע, commit ו-push. רק מה שנדחף שמור.</p></li>
+    <li class="gate"><strong>זמן בלי פעילות</strong><p>הקונטיינר נמחק, עם כל הקבצים שבו.</p></li>
+    <li class="human"><strong>חזרה או ארכיון</strong><p>חוזרים לסשן: קונטיינר חדש, מצעד 2. השיחה ממשיכה.</p><p>ארכיון: השיחה נשארת לקריאה בלבד.</p></li>
+  </ol>
+  <div class="keeps">
+    <div class="kept"><p><strong>נשמר:</strong> השיחה, הגדרות הסביבה, ומה שנדחף ל-GitHub.</p></div>
+    <div class="lost"><p><strong>נעלם:</strong> קבצים שלא נדחפו, וכלים שהותקנו ידנית בסשן.</p></div>
+  </div>
   </div>
 </section>
 
