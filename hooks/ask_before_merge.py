@@ -140,13 +140,13 @@ def is_shell_merge(command: str) -> bool:
     return False
 
 
-def ask_decision() -> str:
+def ask_decision(reason: str = REASON) -> str:
     """The PreToolUse output that opens an approval window with the reason."""
     output = {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "permissionDecision": "ask",
-            "permissionDecisionReason": REASON,
+            "permissionDecisionReason": reason,
         }
     }
     return json.dumps(output, ensure_ascii=False)
