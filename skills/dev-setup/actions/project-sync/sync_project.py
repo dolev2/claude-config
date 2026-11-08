@@ -90,8 +90,10 @@ def check_environment() -> None:
         raise SystemExit(
             "GH_TOKEN is empty. "
             "The PROJECT_TOKEN secret is unset or was stored empty.\n"
-            "Set it again with:  $t = Read-Host 'Paste token'; "
-            "gh secret set PROJECT_TOKEN --body $t; Remove-Variable t"
+            "Set it again with one of these (reference/board.md):\n"
+            "  PowerShell:  $t = Read-Host 'Paste token'; "
+            "gh secret set PROJECT_TOKEN --body $t; Remove-Variable t\n"
+            '  bash:  read -rs t; gh secret set PROJECT_TOKEN --body "$t"; unset t'
         )
     if not os.environ.get("PROJECT_NUMBER", "").strip():
         raise SystemExit(

@@ -54,6 +54,17 @@ def test_settings_come_from_the_environment(monkeypatch):
     assert settings.project_owner == "dolev2"
 
 
+@pytest.mark.parametrize("token", ["", "   "])
+def test_an_empty_token_gives_the_command_for_both_shells(monkeypatch, token):
+    set_environment(monkeypatch)
+    monkeypatch.setenv("GH_TOKEN", token)
+    with pytest.raises(SystemExit) as failure:
+        sync_project.check_environment()
+    message = str(failure.value)
+    assert "Read-Host" in message
+    assert 'read -rs t; gh secret set PROJECT_TOKEN --body "$t"; unset t' in message
+
+
 def test_the_run_needs_no_marker_name(monkeypatch):
     # The hidden marker is gone (#111); a repo installed before it may still set one.
     set_environment(monkeypatch)

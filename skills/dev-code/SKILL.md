@@ -107,54 +107,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    test reruns alone (`reference/tests.md`). The full run comes once, in
    step 7.
 
-   **When the Plan has "עבודה במקביל", write the parts in parallel** (`reference/issue-body.md`;
-   no such sub-heading: write it all here, in sequence):
-   1. **Shared files first.** Write the shared files the contract depends on and commit them on
-      the issue branch. Note that commit as `<start>`: every agent starts from it.
-      Then write the parts file `$(git rev-parse --git-common-dir)/parallel-parts.json` from the
-      Plan's "עבודה במקביל", one entry per part with its path prefixes:
-      ```json
-      {"issue": <N>, "branch": "<branch>", "start": "<sha>", "parts": {"<part>": ["<prefix>", ...]}}
-      ```
-      It sits in the shared git folder, outside every worktree, so no agent can edit it.
-   2. **One agent per part, all in one message** so they run at the same time: the `Agent` tool
-      with `isolation: "worktree"`, no cheaper `model` (quality stays the same). Each brief
-      holds the full Plan, the contract, the part's name and path prefixes, `<start>`, and
-      these rules:
-      - first make sure the worktree sits on `<start>` (`git rev-parse HEAD`); if not,
-        `git reset --hard <start>` (the worktree is new, so nothing is lost, and the commits
-        stay on the agent's own branch). In the same step, register the part:
-        `echo <part> > "$(git rev-parse --git-dir)/parallel-part"`, in the Bash tool;
-      - install the part's dependencies, as the repo's `CLAUDE.md` says (a new worktree has
-        none);
-      - write only under the part's prefixes, and run only the part's tests;
-      - a file outside the prefixes, or a change to the contract: a request, not an edit. Do
-        not edit it; keep going with the part, and add to the report a section
-        "בקשות לסשן הראשי": for each request, the file, the change, and why. A contract change
-        stays a request; the main session decides on it;
-      - finish with one or more commits in the worktree, never a push; report the worktree
-        path, the branch, the files changed, and the requests.
-
-      The hook `hooks/guard_parallel_parts.py` blocks an edit outside the registered part's
-      prefixes, with the same "בקשה לסשן הראשי" wording. It is a safety net, not a substitute for
-      the rules in the brief: it does not catch a write through a shell command.
-   3. **Check each part's files** against its prefixes **from the Plan in the issue**, not from
-      the parts file: `git -C <agent worktree> diff --name-only <start>..HEAD`. So a wrong
-      parts file, or an agent that went around the hook, is still caught. A file outside them:
-      look at it yourself before going on.
-   4. **Join:** `git cherry-pick <start>..<agent branch>`, one part after the other. The parts
-      share no file, so a conflict means something is wrong: `git cherry-pick --abort`, stop
-      and report.
-   5. **Apply the requests:** gather the "בקשות לסשן הראשי" from all the reports and apply them
-      in a commit on the issue branch. Two requests for the same file are written once, together.
-      A request that changes the contract is a change to the plan (step 8).
-   6. **Check against the contract:** read both sides together, fix any mismatch, and finish
-      what an agent left open. A change to the contract itself is a change to the plan
-      (step 8).
-   7. **Clean up:** `git worktree remove <agent worktree>` and `git branch -D <agent branch>`
-      for each agent, only after its commits are on the issue branch. After all the agent
-      worktrees are removed, delete the parts file
-      (`$(git rev-parse --git-common-dir)/parallel-parts.json`). Then go on to step 6.
+   **When the Plan has "עבודה במקביל", write the parts in parallel**, one agent per part, as
+   `$HOME/.claude/skills/dev-setup/reference/parallel.md` says, then go on to step 6. No such
+   sub-heading (`reference/issue-body.md`): write it all here, in sequence.
 
 6. **Rebase onto the default branch before running the tests:**
    ```bash
