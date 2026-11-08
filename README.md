@@ -68,6 +68,7 @@
 | `reference/issue-lifecycle.html` | העמוד "חייו של issue": מפת התוויות, ציר git, טבלת שלבים וכללי git, לבני אדם. מפורסם כ-Artifact | הסקילים קוראים את `reference/*.md`. העמוד הוא התצוגה, ומתעדכן באותו PR (`.claude/CLAUDE.md`) |
 | `reference/issue-lifecycle-en.html` | אותו עמוד באנגלית ("Life of an Issue"), מפורסם כ-Artifact נפרד | מי שלא קורא עברית. כל שינוי באחת הגרסאות משתקף בשנייה באותו PR (`.claude/CLAUDE.md`) |
 | `scripts/pipeline_info.py` | קורא מהריפו כל מה שמשתנה בין ריפואים | כל סקיל מתחיל בו, כדי ששום דבר לא יוגדר ידנית |
+| `scripts/sprint_rule.py` | הכלל היחיד לספרינט הנוכחי: ה-milestone הפתוח הנמוך ביותר שיש בו issue פתוח, בלי לספור PRים | `rank_issues.py`, `pipeline_info.py` והתצוגה "ספרינט נוכחי" בחרו קודם ספרינטים שונים (#164) |
 | `scripts/rank_issues.py` | מדרג את ה-issues בספרינט לפי כמה עבודה מחכה להם | הסדר של `dev-next`, `dev-plan` ו-`dev-code` |
 | `scripts/audit_sprint.py` | בודק את קישורי ה-Blocked by של כל הספרינט יחד: קישור חסר, חוסם מחוץ לספרינט, מעגל, חפיפת קבצים (#54) | הדירוג טוב רק כמו הקישורים; `dev-next` מריץ אותו בכל ריצה |
 | `scripts/sprint_state.py` | מחזיר את מצב הספרינט כ-JSON אחד: מה מוכן לסשן-בן, מה מחכה לחפיפת קבצים, לחוסם או לדולב, תור המיזוג עם ה-CI, הממצאים של `audit_sprint.py`, וה-SHA של `skills/` | המתזמר של הספרינט לא זוכר כלום בין בדיקות, ובונה את התמונה מחדש מ-GitHub בכל בדיקה (#150, #174) |
@@ -83,6 +84,7 @@
 | `actions/project-sync/sync_project.py` | נקודת הכניסה של הסנכרון: ההגדרות מהסביבה, הלולאה על ה-issues, ומה מודפס | `action.yml` ו-`sweep_all.py` מריצים אותו בשם הזה |
 | `actions/project-sync/sync_rules.py` | הכללים: איזה issue מסונכרן, מה נכתב ללוח, החריג של issue שנפתח מהלוח, ושמות האופציות בלוח (`STATUS_OPTIONS`) | בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד (#57) |
 | `actions/project-sync/board.py` | קריאה וכתיבה של הלוח, מצד ה-issue | `projectV2.items` מחזיר רשימה ריקה (המוקש ב-`reference/setup.md`) |
+| `actions/project-sync/sprint_rule.py` | עותק של `scripts/sprint_rule.py` | הסנכרון מורד כתיקייה שטוחה; `test_sprint_rule.py` שומר שהשניים זהים (#164) |
 | `actions/project-sync/sprint_view.py` | מזיז את הסינון של התצוגה "ספרינט נוכחי" לספרינט הנוכחי | ל-GitHub אין `milestone:@current` (#17) |
 | `actions/project-sync/gh_api.py` | הקריאות ל-`gh` ול-GraphQL, עם ניסיון חוזר על שגיאה זמנית (502/503/504) | מקום אחד שהבדיקות מחליפות; שגיאה זמנית הפילה ריצות (#105) |
 | `scripts/conftest.py` | מוסיף את `actions/project-sync/` לנתיב של הבדיקות | כדי שהבדיקות ייבאו את המודולים בשמם, כמו שהסקריפט עושה |

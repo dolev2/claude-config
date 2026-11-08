@@ -1,7 +1,6 @@
 """Two failures of the board sync: an issue already on the board (claude-config #101),
 and a transient server error from GitHub (claude-config #105)."""
 
-import json
 import subprocess
 
 import board
@@ -102,11 +101,10 @@ def test_the_sync_goes_on_with_the_item_already_on_the_board(monkeypatch, capsys
     issue = {**ISSUE, "state": "OPEN", "labels": [{"name": "status:done"}]}
 
     def gh(*args):
-        if args[:2] == ("issue", "list"):
-            return json.dumps([issue])
         return "[]"
 
     monkeypatch.setattr(gh_api, "gh", gh)
+    monkeypatch.setattr(sync_project, "load_issues", lambda settings: [issue])
     sync_project.main()
     assert sets == [
         {"project": "P", "item": "I126", "field": "Status", "option": "o-done"}

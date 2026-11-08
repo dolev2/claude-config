@@ -106,7 +106,9 @@ def test_blocked_and_on_hold_are_listed_apart():
     result = run(
         node(1, blocked_by=[(9, "OPEN")]), node(2, labels=("task", "costs-money"))
     )
-    assert result["blocked"] == [{"number": 1, "blocked_by": [9]}]
+    assert result["blocked"] == [
+        {"number": 1, "blocked_by": [9], "outside_blockers": []}
+    ]
     assert result["on_hold"] == [2]
 
 

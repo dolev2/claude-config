@@ -165,8 +165,8 @@ def test_gate_warns_only_before_the_merge(
         calls.append(args)
         if args[:2] == ("issue", "view"):
             return json.dumps(issue)
-        if args[0] == "api" and args[-1] == "--paginate":
-            return "[]"
+        if args[0] == "api" and "--paginate" in args:
+            return "[[]]"
         return ""
 
     monkeypatch.setattr(gate, "gh", fake_gh)
@@ -213,3 +213,27 @@ def test_home_repo_workflow_can_read_its_own_action():
         "uses: dolev2/claude-config/skills/dev-setup/actions/open-questions-gate@main"
         in workflow
     )
+
+
+def test_the_gate_finds_its_comment_past_the_first_page(monkeypatch):
+    # Past 30 comments, `--paginate` alone prints one array per page and json.loads
+    # stopped with "Extra data" (claude-config #164).
+    gate = load_gate()
+    pages = [
+        [{"id": n, "body": "a comment"} for n in range(30)],
+        [{"id": 99, "body": "old warning\n" + gate.COMMENT_MARKER}],
+    ]
+    calls = []
+
+    def fake_gh(*args, **kwargs):
+        calls.append(args)
+        if args[0] == "api" and "--paginate" in args:
+            if "--slurp" in args:
+                return json.dumps(pages)
+            return "".join(json.dumps(page) for page in pages)  # what gh prints
+        return ""
+
+    monkeypatch.setattr(gate, "gh", fake_gh)
+    gate.upsert_comment("7", "new warning")
+    assert any("PATCH" in args and args[3].endswith("/comments/99") for args in calls)
+    assert not [args for args in calls if args[:2] == ("issue", "comment")]

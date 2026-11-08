@@ -12,7 +12,8 @@ rank_issues.py is only as good as the links behind it; these are the findings a 
 can see without judging the work itself:
 
     LINE-MISMATCH #N   the "תלוי ב:" line and the links list different issues
-    OUTSIDE #N -> #B   an open blocker that is not an open issue of this sprint
+    OUTSIDE #N -> #B   an open blocker that is not an open issue of this sprint;
+                       one of another repo reads owner/name#B
     CYCLE #A #B ...    issues that block each other, so none of them can move
     MENTION #N -> #B   the goal or context names a sprint issue, with no link either way
                        (a parent naming its sub-issues, or the other way, is not one)
@@ -40,7 +41,7 @@ from issue_body import (
     section,
     sections,
 )
-from rank_issues import current_sprint, parse_issue
+from rank_issues import current_sprint, is_local, parse_issue
 
 SHARED_DOCS = {"README.md", "CLAUDE.md"}
 
@@ -48,14 +49,15 @@ SHARED_DOCS = {"README.md", "CLAUDE.md"}
 @dataclass
 class Finding:
     code: str
-    numbers: list[int]
+    numbers: list[int | str]
     detail: str = ""
 
     def line(self) -> str:
+        named = [n if isinstance(n, str) else f"#{n}" for n in self.numbers]
         if self.code in ("OUTSIDE", "MENTION"):
-            refs = f"#{self.numbers[0]} -> #{self.numbers[1]}"
+            refs = f"{named[0]} -> {named[1]}"
         else:
-            refs = " ".join(f"#{n}" for n in self.numbers)
+            refs = " ".join(named)
         return f"{self.code} {refs}{': ' + self.detail if self.detail else ''}"
 
     def as_dict(self) -> dict:
@@ -79,6 +81,7 @@ class SprintIssue:
     files: set[str]
     linked: list[int]
     open_blockers: list[int]
+    outside_blockers: list[str]
     has_pr: bool
     family: set[int]
 
@@ -95,8 +98,9 @@ def sprint_issue(node: dict) -> SprintIssue:
         context=context,
         line=dependency_line(context),
         files=plan_files(parts.get("plan", "")),
-        linked=sorted(b["number"] for b in node["blockedBy"]["nodes"]),
+        linked=sorted(b["number"] for b in node["blockedBy"]["nodes"] if is_local(b)),
         open_blockers=issue.open_blockers,
+        outside_blockers=issue.outside_blockers,
         has_pr=node["closedByPullRequestsReferences"]["totalCount"] > 0,
         family=family(node),
     )
@@ -106,7 +110,9 @@ def family(node: dict) -> set[int]:
     """The parent and the sub-issues: an umbrella names them without waiting on them."""
     parent = node.get("parent")
     subs = (node.get("subIssues") or {}).get("nodes", [])
-    return {s["number"] for s in subs} | ({parent["number"]} if parent else set())
+    return {s["number"] for s in subs if is_local(s)} | (
+        {parent["number"]} if parent else set()
+    )
 
 
 def line_mismatches(issues: list[SprintIssue]) -> list[Finding]:
@@ -122,11 +128,12 @@ def line_mismatches(issues: list[SprintIssue]) -> list[Finding]:
 
 
 def outside_blockers(issues: list[SprintIssue]) -> list[Finding]:
+    """Open blockers that are not open issues of this sprint, other repos included."""
     in_sprint = {i.number for i in issues}
     return [
         Finding("OUTSIDE", [i.number, b])
         for i in issues
-        for b in i.open_blockers
+        for b in [*i.open_blockers, *i.outside_blockers]
         if b not in in_sprint
     ]
 
@@ -216,6 +223,7 @@ def digest(sprint: str, issues: list[SprintIssue], findings: list[Finding]) -> d
                 "goal": i.goal,
                 "files": sorted(i.files),
                 "blocked_by": i.open_blockers,
+                "outside_blockers": i.outside_blockers,
                 "has_pr": i.has_pr,
             }
             for i in issues

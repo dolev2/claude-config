@@ -233,3 +233,27 @@ def test_body_mode_adds_sub_issues_parent_and_closing_prs(monkeypatch):
 )
 def test_only_a_closing_keyword_links_a_pr(body, count):
     assert len(gh_rest.closing_prs(12, [pull(1, body)])) == count
+
+
+def test_a_link_to_another_repo_carries_its_repo(monkeypatch):
+    # Its number alone read as this repo's issue with that number (#164).
+    here = {
+        "number": 3,
+        "state": "open",
+        "repository_url": f"https://api.github.com/repos/{REPO}",
+    }
+    there = {
+        "number": 3,
+        "state": "open",
+        "repository_url": "https://api.github.com/repos/dolev2/Other",
+    }
+    fake_github(
+        monkeypatch,
+        [rest_issue(5, blocked_by=2)],
+        {f"repos/{REPO}/issues/5/dependencies/blocked_by": [here, there]},
+    )
+    [five] = gh_rest.open_issue_nodes(REPO)
+    assert five["blockedBy"]["nodes"] == [
+        {"number": 3, "state": "OPEN"},
+        {"number": 3, "state": "OPEN", "repository": "dolev2/Other"},
+    ]

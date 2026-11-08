@@ -35,6 +35,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from gh_rest import current_repo, open_issue_nodes
+from sprint_rule import current_sprint
 
 FIRST_KINDS = ["process", "bug"]
 NOT_ACTIVE = (None, "backlog", "done")
@@ -52,10 +53,11 @@ class Issue:
     open_blockers: list[int]
     blocking: list[int]
     waiting: list[int] = field(default_factory=list)
+    outside_blockers: list[str] = field(default_factory=list)
 
     @property
     def blocked(self) -> bool:
-        return bool(self.open_blockers)
+        return bool(self.open_blockers or self.outside_blockers)
 
 
 def label_value(labels: Iterable[str], prefix: str) -> str | None:
@@ -65,7 +67,29 @@ def label_value(labels: Iterable[str], prefix: str) -> str | None:
     return None
 
 
+def is_local(ref: dict) -> bool:
+    """True for a linked issue of the same repo; gh_rest.py marks the others."""
+    return not ref.get("repository")
+
+
+def open_local(refs: dict) -> list[int]:
+    """Numbers of the open linked issues of the same repo, sorted."""
+    return sorted(
+        r["number"] for r in refs["nodes"] if r["state"] == "OPEN" and is_local(r)
+    )
+
+
+def outside_ref(ref: dict) -> str:
+    return f"{ref['repository']}#{ref['number']}"
+
+
 def parse_issue(node: dict) -> Issue:
+    """A GraphQL-shaped node as an Issue.
+
+    A blocker of another repo blocks too, but is kept apart as `owner/name#N`: its
+    number is not this repo's issue, so it adds no weight and makes no cycle (#164).
+    The same goes for what the issue blocks in another repo, which is left out.
+    """
     labels = [label["name"] for label in node["labels"]["nodes"]]
     milestone = node["milestone"]
     return Issue(
@@ -75,23 +99,14 @@ def parse_issue(node: dict) -> Issue:
         milestone=milestone["title"] if milestone else None,
         kind=next((kind for kind in FIRST_KINDS if kind in labels), None),
         costs_money=ON_HOLD_LABEL in labels,
-        open_blockers=sorted(
-            b["number"] for b in node["blockedBy"]["nodes"] if b["state"] == "OPEN"
-        ),
-        blocking=sorted(
-            b["number"] for b in node["blocking"]["nodes"] if b["state"] == "OPEN"
+        open_blockers=open_local(node["blockedBy"]),
+        blocking=open_local(node["blocking"]),
+        outside_blockers=sorted(
+            outside_ref(b)
+            for b in node["blockedBy"]["nodes"]
+            if b["state"] == "OPEN" and not is_local(b)
         ),
     )
-
-
-def current_sprint(nodes: list[dict]) -> str | None:
-    """The open milestone with the lowest number that still has open issues."""
-    open_milestones = {
-        n["milestone"]["number"]: n["milestone"]["title"]
-        for n in nodes
-        if n["milestone"] and n["milestone"]["state"] == "OPEN"
-    }
-    return open_milestones[min(open_milestones)] if open_milestones else None
 
 
 def with_waiting(issues: list[Issue]) -> list[Issue]:
@@ -190,6 +205,7 @@ def main(argv: list[str] | None = None) -> None:
                 "costs_money": i.costs_money,
                 "waiting": i.waiting,
                 "open_blockers": i.open_blockers,
+                "outside_blockers": i.outside_blockers,
             }
             for i in ranked
         ]
@@ -212,11 +228,8 @@ def print_ranking(
     if not ranked:
         print("(no matching issues)")
     for i in ranked:
-        blocked = (
-            f"  BLOCKED by {', '.join(f'#{n}' for n in i.open_blockers)}"
-            if i.blocked
-            else ""
-        )
+        blockers = [f"#{n}" for n in i.open_blockers] + i.outside_blockers
+        blocked = f"  BLOCKED by {', '.join(blockers)}" if i.blocked else ""
         print(
             f"#{i.number:<4} {len(i.waiting):>2} waiting  "
             f"{i.status or '-':<24} {i.kind or '-':<7} "

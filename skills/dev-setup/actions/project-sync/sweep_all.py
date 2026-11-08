@@ -71,21 +71,45 @@ def gh(*args: str) -> str:
     return p.stdout
 
 
+REPOS_QUERY = """
+query($owner: String!, $endCursor: String) {
+  repositoryOwner(login: $owner) {
+    repositories(first: 100, after: $endCursor, isArchived: false,
+                 ownerAffiliations: OWNER) {
+      nodes { nameWithOwner }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}
+"""
+
+
+def repos_on_pages(owner: str, pages: list[dict]) -> list[str]:
+    """owner/name of every repo on the GraphQL pages, owned by `owner` only."""
+    return [
+        repo["nameWithOwner"]
+        for page in pages
+        for repo in page["data"]["repositoryOwner"]["repositories"]["nodes"]
+        if repo["nameWithOwner"].split("/", 1)[0].lower() == owner.lower()
+    ]
+
+
 def list_repos(owner: str) -> list[str]:
-    """The owner's repos that are not archived, as owner/name."""
+    """The owner's repos that are not archived, as owner/name, over every page.
+
+    `gh repo list --limit 500` stopped at 500 repos (claude-config #164).
+    """
     out = gh(
-        "repo",
-        "list",
-        owner,
-        "--no-archived",
-        "--limit",
-        "500",
-        "--json",
-        "nameWithOwner",
-        "--jq",
-        ".[].nameWithOwner",
+        "api",
+        "graphql",
+        "--paginate",
+        "--slurp",
+        "-f",
+        f"query={REPOS_QUERY}",
+        "-f",
+        f"owner={owner}",
     )
-    return out.split()
+    return repos_on_pages(owner, json.loads(out))
 
 
 def repo_variables(repo: str) -> dict[str, str]:

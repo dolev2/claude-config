@@ -220,3 +220,23 @@ def test_the_text_output_names_them_last(capsys):
     rank_issues.print_ranking("W1", [], [], no_sprint)
     last = capsys.readouterr().out.splitlines()[-1]
     assert last == "Active, no sprint: #42 issue 42 (plan-questions)"
+
+
+# Links to another repo's issues (claude-config #164).
+
+
+def test_a_blocker_of_another_repo_blocks_but_adds_no_weight():
+    # dolev2/other#2 blocks #1. Read by its number alone, it gave weight to #2.
+    one = node(1)
+    one["blockedBy"]["nodes"].append(
+        {"number": 2, "state": "OPEN", "repository": "dolev2/other"}
+    )
+    two = node(2)
+    two["blocking"]["nodes"].append(
+        {"number": 1, "state": "OPEN", "repository": "dolev2/other"}
+    )
+    first, second = rank_issues.rank(issues(one, two))
+    assert [first.waiting, second.waiting] == [[], []]
+    assert first.open_blockers == [] and first.outside_blockers == ["dolev2/other#2"]
+    assert first.blocked
+    assert not second.blocked
