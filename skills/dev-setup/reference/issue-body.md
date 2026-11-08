@@ -116,7 +116,7 @@ gh issue view <N> --json body,labels,title
    שהם כתבו.
 2. לכתוב את הטקסט המלא לקובץ זמני, **בסיומות שורה LF**: ב-Windows קובץ עם CRLF חוזר מ-GitHub
    כ-`\r\r\n`. מ-Python: `Path(f).write_bytes(text.encode("utf-8"))`.
-3. `gh issue edit <N> --body-file <file>`, ובענן JSON מהקובץ ב-`gh api ... --input <json-file>` (`cloud.md`).
+3. `gh issue edit <N> --body-file <file>`, ובענן אובייקט JSON (`{"body": ...}`) שנבנה מהקובץ, ב-`gh api ... --input <json-file>` (`cloud.md`).
    **לעולם לא** `gh api ... -f body=...`, ולא מחרוזת JSON בשורת הפקודה: כך נוצר גוף עם `\n` מילולי.
 4. לוודא: `gh issue view <N> --json body --jq .body` מציג שורות אמיתיות.
 
