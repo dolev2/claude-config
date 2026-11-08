@@ -45,7 +45,9 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    either working, or blocked on a permission prompt: `pending_actions` not empty, or
    `session_status` `SESSION_STATUS_REQUIRES_ACTION`. `SESSION_STATUS_BUCKET_BLOCKED` with neither
    is a child that finished its turn and asks for a decision: not active, not a permission
-   prompt, and its state is read from GitHub. The active ones' `issue:<N>` tags are the claimed
+   prompt, and its state is read from GitHub. When `status_bucket` and `session_status`
+   disagree, `session_status` decides: `SESSION_STATUS_IDLE` with no `pending_actions` is a
+   child that finished its turn, even while `status_bucket` still reads working. The active ones' `issue:<N>` tags are the claimed
    list, and only they count toward the 3.
 2. **The sprint.**
    ```bash
@@ -107,7 +109,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
 
 `dispatch`, `held_by_overlap`, `waiting_dolev` and `merge_queue` are empty, and no child is
 active: a summary of what merged and what is still open and why (blocked, costs-money, outside
-the sprint), then `ScheduleWakeup` with `stop`.
+the sprint), and the stray branches of closed issues for Dolev to delete by hand (`orchestrate.md`,
+"branches יתומים"; deleting a branch is blocked in the cloud), then `ScheduleWakeup` with `stop`.
 
 ## Golden rules
 
