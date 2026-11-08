@@ -200,7 +200,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     **Once the app is up, check the user experience yourself**, as `reference/ux.md` says: walk
     the Plan's "חוויית משתמש" section in the built-in browser, at desktop and phone width; in a
     cloud session, in a headless Playwright script at 1280 and 375. In every environment, finish
-    with the two hand-off screenshots of the changed screen, as files (`reference/ux.md`,
+    with the hand-off screenshots of the changed screen, as files (`reference/ux.md`,
     "צילומים למסירה"); step 11 sends them. A gap
     inside the Plan is fixed like a review finding; one outside it is proposed as a task. No app
     (or no browser at all): check what you can (output, messages) and say what was not
@@ -247,8 +247,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     1. **The chat message opens with the link to the PR's changes**,
        `https://github.com/<repo>/pull/<PR>/files`, first in its link list, named in Hebrew
        like every link there ("השינויים ב-PR #<PR>").
-    2. **The screenshots:** `SendUserFile` with the two files from step 10 and a Hebrew caption
-       (desktop, phone). None: the "לא צולם: <למה>" line from `reference/ux.md` is in the
+    2. **The screenshots:** `SendUserFile` with the files from step 10 and a Hebrew caption
+       (desktop, phone; on Windows desktop only). None: the "לא צולם: <למה>" line from `reference/ux.md` is in the
        message instead. A task with no interface has neither.
     3. **The diff pane:** open it only if the session has a tool for it (`show_pane`); otherwise
        the link above is the way in, with no line about it.
