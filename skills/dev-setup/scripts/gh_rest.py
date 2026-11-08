@@ -94,10 +94,12 @@ def api_list(path: str) -> list:
     return [item for page in pages for item in page]
 
 
-def ref_repo(item: dict) -> str | None:
-    """owner/name of a linked issue, from the end of its `repository_url`."""
-    url = item.get("repository_url")
-    return "/".join(url.rstrip("/").rsplit("/", 2)[-2:]) if url else None
+def other_repo(repo: str, repository_url: str | None) -> str | None:
+    """owner/name from the end of `repository_url`, or None when it is `repo` itself."""
+    if not repository_url:
+        return None
+    other = "/".join(repository_url.rstrip("/").rsplit("/", 2)[-2:])
+    return other if other.lower() != repo.lower() else None
 
 
 def refs(repo: str, items: list[dict]) -> dict:
@@ -109,8 +111,8 @@ def refs(repo: str, items: list[dict]) -> dict:
     nodes = []
     for item in items:
         node = {"number": item["number"], "state": item["state"].upper()}
-        other = ref_repo(item)
-        if other and other.lower() != repo.lower():
+        other = other_repo(repo, item.get("repository_url"))
+        if other:
             node["repository"] = other
         nodes.append(node)
     return {"nodes": nodes}
@@ -149,7 +151,7 @@ def to_node(repo: str, issue: dict, with_body: bool) -> dict:
         subs = (issue.get("sub_issues_summary") or {}).get("total")
         node["body"] = issue.get("body") or ""
         node["subIssues"] = links(repo, issue, subs, "sub_issues")
-        node["parent"] = parent_ref(issue)
+        node["parent"] = parent_ref(repo, issue)
     return node
 
 
@@ -169,10 +171,21 @@ def closing_prs(number: int, pulls: list[dict]) -> list[dict]:
     ]
 
 
-def parent_ref(issue: dict) -> dict | None:
-    """{"number": N} of the parent issue, read from the end of `parent_issue_url`."""
+def parent_ref(repo: str, issue: dict) -> dict | None:
+    """{"number": N} of the parent issue, read from `parent_issue_url`, or None.
+
+    A parent of another repo also carries its `repository` (owner/name): its number
+    alone would read as the issue of `repo` with that number (claude-config #196).
+    """
     url = issue.get("parent_issue_url")
-    return {"number": int(url.rstrip("/").rsplit("/", 1)[1])} if url else None
+    if not url:
+        return None
+    repository_url, number = url.rstrip("/").rsplit("/issues/", 1)
+    parent = {"number": int(number)}
+    other = other_repo(repo, repository_url)
+    if other:
+        parent["repository"] = other
+    return parent
 
 
 def open_issue_nodes(repo: str, with_body: bool = False) -> list[dict]:
