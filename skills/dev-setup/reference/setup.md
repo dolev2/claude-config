@@ -123,6 +123,12 @@ gh api graphql -f query='mutation($id:ID!,$f:String!){updateProjectV2View(input:
 `pipeline_info.py` מדווח תחת `netlify` על repo שיש בו `netlify.toml` בלי הכלל. כך גם repo שהותקן
 לפני הכלל מתגלה, בתחילת כל ריצה של `dev-*`.
 
+## הגנה על ה-branch הראשי
+
+בלי הגנה, כל סשן יכול לדחוף ישר ל-branch הראשי, לדרוס או למחוק אותו, גם בכלים שאף hook לא תופס (כלי ה-MCP שכותבים קבצים). ב-claude-config הנזק מוכפל: `cloud_refresh.py` מושך את `main`, כולל ה-hooks, לכל סשן ענן (claude-config #162).
+לכן ריפו ציבורי מקבל את ה-ruleset `protect-main` (`templates/ruleset-main.json`): חובת PR בלי אישור סוקר (דולב לא יכול לאשר PR שלו), בלי force push, בלי מחיקה, ו-squash בלבד (`rules/git.md`). מסשן ענן ה-proxy חוסם את הכתיבה, והצעד עובר לדולב.
+ריפו פרטי בחשבון החינמי של GitHub לא יכול לקבל ruleset, ולכן `dev-setup` מדלג עליו, וה-hooks הם ההגנה שם.
+
 ## lint: עותק בכל repo, לא הגדרה מרכזית
 
 ruff ו-eslint אוכפים את נהלי הקוד ב-`~/.claude/rules/` במה שמכונה יודעת לבדוק. גודל קובץ ופונקציה,
