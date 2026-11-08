@@ -111,7 +111,7 @@ REPO=https://github.com/dolev2/claude-config
 סשן-בן שמחכה לאישור לא נראה תקוע מבחוץ, ומתזמר יחכה לו בלי סוף (claude-config #155). לכן:
 1. **מאושר מראש** (`permissions.allow` ב-`settings.json`): כלי קריאה של GitHub, וכלים שנוגעים רק בסשן עצמו (`get_session`, `list_events`, `set_session_title`, `subscribe_pr_activity` ודומיהם).
    חריג קטן: `set_session_title` יכול לשנות גם שם של סשן אחר בחשבון, לפי ה-`session_id`. הוא ברשימה כי הנזק רק שם, ומשנים אותו בחזרה.
-   הרשימה חלה גם במחשב, ושם אין בה סיכון: כלי `mcp__claude-code-remote__` לא קיימים שם, וכלי GitHub ברשימה רק קוראים.
+   הרשימה חלה גם במחשב: כלי `mcp__claude-code-remote__` לא קיימים שם, וכלי GitHub ברשימה קוראים, חוץ משלושת הכותבים של החריג השני.
    הבדיקה `hooks/test_settings_permissions.py` שומרת עליה: שמות מלאים בלבד, בלי `*`, ורק מתוך הרשימה שבבדיקה.
    חריג שני: ארבעת הכלים שהבן של המתזמר צריך (`CHILD_TOOLS` ב-`hooks/guard_create_session.py`: פתיחת PR, עדכון PR, תגובה ב-issue, `send_message`). הם מאושרים מראש כדי שיעברו לבן (סעיף 5, #150).
 2. **תמיד שואל:** כל כלי אחר שכותב מחוץ לסשן (issue, קובץ ב-GitHub), `send_later` ו-`create_trigger` (שומרים משימה מתוזמנת בחשבון), `create_session`, `archive_session` ו-`interrupt_session`.
@@ -119,7 +119,7 @@ REPO=https://github.com/dolev2/claude-config
 3. **מיזוג שואל תמיד:** hook שמחזיר `ask` (`ask_before_merge.py`) גובר על אישור מראש. נבדק בענן ב-6.11.2026.
 4. **איך מזהים סשן-בן תקוע** (`get_session`): `session_status` הוא `SESSION_STATUS_REQUIRES_ACTION`, `status_bucket` הוא `SESSION_STATUS_BUCKET_BLOCKED`, ו-`external_metadata.pending_actions` מראה את הכלי ואת הקלט שלו.
    גם בקשה של סוכן-משנה (`Agent`) חוסמת את כל הסשן.
-5. **מתזמר שפותח סשן-בן** מאשר פעם אחת בסשן שלו את כלי הכתיבה שהבן צריך (פתיחת PR, תגובה), ומעביר אותם ב-`extra_allowed_tools` של `create_session`.
+5. **מתזמר שפותח סשן-בן** מעביר את כלי הכתיבה שהבן צריך (`CHILD_TOOLS`, מאושרים מראש לפי החריג השני) ב-`extra_allowed_tools` של `create_session`.
    השירות מעביר לבן רק כלים שמאושרים מראש אצל מי שפתח אותו. זה גיבוי, לא תחליף לרשימה.
    **hook מקפיץ חלון אישור** (`hooks/guard_create_session.py`, claude-config #175) כשהבן מקבל יותר מזה:
    1. כלי ב-`extra_allowed_tools` שלא ברשימת `CHILD_TOOLS` שב-hook (פתיחת PR, עדכון PR, תגובה ב-issue, `send_message`). זה תופס `Bash(...)`, `*` וכל כלי כתיבה אחר.
