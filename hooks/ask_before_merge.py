@@ -35,8 +35,8 @@ from shell_commands import (
     is_mcp_merge,
     read_event,
     shell_command,
-    split_subcommands,
 )
+from shell_split import split_subcommands
 
 REASON = (
     "מיזוג של PR: צריך את האישור של דולב (rules/git.md).\n"
@@ -52,6 +52,12 @@ GRAPHQL_MERGE_MUTATIONS = (
 # POST repos/<owner>/<repo>/merges merges a branch into another without a PR.
 BRANCH_MERGE_ENDPOINT = re.compile(r"(^|/)merges/?(\?.*)?$")
 FIELD_FLAGS = ("-f", "-F", "--field", "--raw-field", "--input")
+# `gh api` options whose value is the next word, so it is not the endpoint.
+API_OPTIONS_WITH_VALUE = {
+    "-X", "--method", "-f", "-F", "--field", "--raw-field", "-H", "--header",
+    "--input", "-q", "--jq", "-t", "--template", "--hostname", "--cache", "-p",
+    "--preview",
+}  # fmt: skip
 
 
 def http_method(arguments: list[str]) -> str | None:
@@ -87,16 +93,28 @@ def is_graphql_merge(arguments: list[str]) -> bool:
     )
 
 
+def endpoint(arguments: list[str]) -> str | None:
+    """The path `gh api` calls: its first argument that is not an option or a value."""
+    skip_value = False
+    for argument in arguments:
+        if skip_value:
+            skip_value = False
+        elif argument in API_OPTIONS_WITH_VALUE:
+            skip_value = True
+        elif not argument.startswith("-"):
+            return argument
+    return None
+
+
 def is_api_merge(arguments: list[str]) -> bool:
     """True for a REST merge (PUT pulls/<N>/merge, POST merges) or a GraphQL one."""
-    if arguments and arguments[0] == "graphql":
+    path = endpoint(arguments) or ""
+    if path == "graphql":
         return is_graphql_merge(arguments)
     method = effective_method(arguments)
-    if method == "PUT" and any(MERGE_ENDPOINT.search(arg) for arg in arguments):
+    if method == "PUT" and MERGE_ENDPOINT.search(path):
         return True
-    return method == "POST" and any(
-        BRANCH_MERGE_ENDPOINT.search(argument) for argument in arguments
-    )
+    return method == "POST" and bool(BRANCH_MERGE_ENDPOINT.search(path))
 
 
 def is_gh_merge(words: list[str]) -> bool:

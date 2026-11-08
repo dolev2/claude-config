@@ -25,7 +25,8 @@ never sends it), and so does a call whose hook cannot start for lack of Python (
 
 import sys
 
-from shell_commands import git_subcommand, read_event, shell_command, split_subcommands
+from shell_commands import git_subcommand, read_event, shell_command
+from shell_split import split_subcommands
 
 REASON = (
     "דחיפה בכוח חסומה: `--force`, `-f` או refspec עם `+` דורסים בשקט commits"

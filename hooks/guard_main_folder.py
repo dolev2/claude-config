@@ -32,11 +32,10 @@ from shell_commands import (
     edit_target,
     git_subcommand,
     native_path,
-    parse_prefixes,
     read_event,
     shell_command,
-    split_subcommands,
 )
+from shell_split import parse_prefixes, split_subcommands
 
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 # Git commands that switch the branch or can throw away uncommitted work.
@@ -133,7 +132,7 @@ def blocks_edit(path: Path, root: Path) -> bool:
     if not is_inside(path, root):
         return False
     relative = Path(os.path.relpath(path, root)).as_posix()
-    if relative.split("/")[0] == ".git":
+    if relative.split("/")[0].lower() == ".git":
         return True
     toplevel = repo_toplevel(path.parent)
     if toplevel is None or not same_folder(toplevel, root):
@@ -167,10 +166,13 @@ def option_values(options: list[str], name: str) -> list[str]:
     return values
 
 
-def git_folder(current: Path, options: list[str], assignments: dict[str, str]) -> Path:
-    """The folder git works in: current, moved by `-C`, then the work tree or git dir.
+def git_folders(
+    current: Path, options: list[str], assignments: dict[str, str]
+) -> list[Path]:
+    """The folders git works in: current, moved by `-C`, then the work tree or git dir.
 
-    `--git-dir` (or `GIT_DIR=`) names the `.git` folder, so its parent is the repo.
+    `--git-dir` (or `GIT_DIR=`) names the `.git` folder, so its parent is the repo. With
+    no work tree named, git writes the files in the current folder: both count.
     """
     folder = current
     for path in option_values(options, "-C"):
@@ -180,10 +182,10 @@ def git_folder(current: Path, options: list[str], assignments: dict[str, str]) -
     work_tree = work_trees[-1] if work_trees else assignments.get("GIT_WORK_TREE")
     git_dir = git_dirs[-1] if git_dirs else assignments.get("GIT_DIR")
     if work_tree:
-        return (folder / expand(work_tree)).resolve()
+        return [(folder / expand(work_tree)).resolve()]
     if git_dir:
-        return (folder / expand(git_dir)).resolve().parent
-    return folder
+        return [(folder / expand(git_dir)).resolve().parent, folder]
+    return [folder]
 
 
 def is_guarded(subcommand: str, arguments: list[str]) -> bool:
@@ -199,7 +201,8 @@ def is_guarded(subcommand: str, arguments: list[str]) -> bool:
     if subcommand == "stash":
         return not arguments or arguments[0] not in ("list", "show")
     if subcommand == "symbolic-ref":
-        return len(arguments) - len(flags) >= 2
+        deletes = any(flag in ("-d", "--delete") for flag in flags)
+        return deletes or len(arguments) - len(flags) >= 2
     if subcommand == "clean":
         short = [flag for flag in flags if not flag.startswith("--")]
         return "--force" in flags or any("f" in flag for flag in short)
@@ -209,21 +212,28 @@ def is_guarded(subcommand: str, arguments: list[str]) -> bool:
 def blocked_switch(command: str, cwd: Path, root: Path) -> str | None:
     """The guarded git command that would run in the main folder, if any.
 
-    A `cd` inside `(...)` is read as if it stayed in effect after it: that blocks a rare
-    harmless command rather than let a harmful one through.
+    A `cd` or `export` inside `(...)` is read as if it stayed in effect after it. That
+    can go either way: `(cd /tmp); git checkout x` run in the main folder passes.
     """
     current = cwd
+    exported: dict[str, str] = {}
     for words in split_subcommands(command):
         assignments, command_words = parse_prefixes(words)
-        if command_words and command_words[0].lower() in CHANGE_DIRECTORY:
+        name = command_words[0].lower() if command_words else ""
+        if name in CHANGE_DIRECTORY:
             current = change_folder(current, command_words[1:])
+            continue
+        if name == "export":
+            exported.update(parse_prefixes(command_words[1:])[0])
             continue
         parts = git_subcommand(words)
         if parts is None or not is_guarded(parts[1], parts[2]):
             continue
-        toplevel = repo_toplevel(git_folder(current, parts[0], assignments))
-        if toplevel is not None and same_folder(toplevel, root):
-            return parts[1]
+        folders = git_folders(current, parts[0], {**exported, **assignments})
+        for folder in folders:
+            toplevel = repo_toplevel(folder)
+            if toplevel is not None and same_folder(toplevel, root):
+                return parts[1]
     return None
 
 

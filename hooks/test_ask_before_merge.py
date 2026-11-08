@@ -133,6 +133,12 @@ def test_api_merge_asks(monkeypatch, command):
         "sudo -u root gh pr merge 5",
         "echo 5 | xargs gh pr merge",
         "exec gh pr merge 5",
+        "gh pr -R o/r merge 5",
+        "gh pr view 5 # check first\ngh pr merge 5",
+        "gh api --hostname github.com graphql -f query='mutation{mergePullRequest}'",
+        "gh api -X POST graphql -f query='mutation{mergePullRequest(input:{}){x}}'",
+        "env -S 'gh pr merge 5'",
+        "bash --login -c 'gh pr merge 5'",
     ],
 )
 def test_wrapped_or_other_merge_asks(monkeypatch, command):
@@ -153,6 +159,8 @@ def test_wrapped_or_other_merge_asks(monkeypatch, command):
         "gh pr view 5 --json mergeable",
         "gh api graphql -f query='{ viewer { login } }'",
         "gh api repos/a/b/merges",
+        "gh api -X POST repos/a/b/issues/5/comments -f body='see /merges'",
+        "gh api repos/a/b/issues/5/comments -f body='PUT pulls/5/merge'",
         "gh alias set co 'pr checkout'",
         "echo '$(gh pr merge 5)'",
         "git commit -m \"$(cat <<'EOF'\nfix: gh pr merge 5\nEOF\n)\"",

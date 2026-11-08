@@ -138,6 +138,7 @@ def test_files_outside_the_repo_and_settings_pass(monkeypatch, root, relative):
     [
         ".git/config",
         ".git/hooks/pre-commit",
+        ".GIT/config",
         "skills/x/__pycache__/helper.cpython-312.pyc",
         "skills/synced/y/SKILL.md",
         "skills/session-start-hook/SKILL.md",
@@ -183,6 +184,8 @@ def test_path_outside_main_folder_passes_without_git(monkeypatch, root, tmp_path
         "git stash push -m x",
         "git stash pop",
         "git symbolic-ref HEAD refs/heads/x",
+        "git symbolic-ref -d HEAD",
+        "git --git-dir=/elsewhere/.git checkout feature",
         "git clean -fd",
         "git clean --force",
         "(git checkout feature)",
@@ -213,6 +216,8 @@ def test_cd_into_main_folder_is_followed(monkeypatch, root, tmp_path):
         "env GIT_DIR={root}/.git git stash",
         "(cd {root} && git checkout feature)",
         "if cd {root}; then git checkout feature; fi",
+        "export GIT_DIR={root}/.git; git checkout feature",
+        "cd {root} && git status # look first\ngit checkout feature",
     ],
 )
 def test_other_ways_into_main_folder_are_blocked(monkeypatch, root, tmp_path, template):

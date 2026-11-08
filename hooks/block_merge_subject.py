@@ -25,9 +25,8 @@ from shell_commands import (
     is_mcp_merge,
     read_event,
     shell_command,
-    split_subcommands,
-    strip_prefixes,
 )
+from shell_split import split_subcommands, strip_prefixes
 
 REASON = (
     "מיזוג עם `--subject` או `-t` חסום: כותרת ה-commit נלקחת מכותרת ה-PR.\n"
