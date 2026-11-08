@@ -10,7 +10,8 @@ flowchart TD
     START(["דולב פותח משימה חדשה<br/>task.yml / bug.yml / dev-issue"]):::human
     START --> L0["התבנית מדביקה תוויות אוטומטית<br/>task → status:explore<br/>bug → status:ready-to-execute"]:::auto
 
-    L0 --> PLAN
+    L0 -- "task" --> PLAN
+    L0 -- "bug" --> RDY
 
     subgraph PG["שלב התכנון — סשן מקומי או ענן"]
       PLAN["dev-plan<br/>עד 3 פריטים בכל ריצה<br/>לפי כמה משימות מחכות להם"]:::routine
@@ -43,7 +44,7 @@ flowchart TD
       WIP -- "לא" --> SPRINT["סריקה רק בספרינט הנוכחי<br/>issue שנקבת בשמו גם מחוצה לו<br/>תיקון לפני משימה חדשה<br/>ואז לפי כמה משימות מחכות לה"]:::routine
       SPRINT --> BLK{"חסום ע״י issue פתוח<br/>Blocked by"}:::gate
       BLK -- "כן" --> BSKIP(["מדלג עליו ומדווח במה הוא חסום"]):::gate
-      BLK -- "לא" --> IMPL["מממש את התוכנית<br/>מוסיף טסט לכל שינוי"]:::routine
+      BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי"]:::routine
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
       RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>opens a PR that closes the issue"]:::routine
