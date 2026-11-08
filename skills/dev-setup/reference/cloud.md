@@ -135,6 +135,7 @@ REPO=https://github.com/dolev2/claude-config
    החלון מונה מה בדיוק עובר לבן. דחייה: הסשן לא נפתח.
    איך המתזמר פותח בן, והחוזה שעובר אליו: `orchestrate.md`.
 6. **שם הסשן** נקבע ב-`title` של `create_session`, והבן לא קורא ל-`set_session_title` (`git-flow.md`, "בסשן ענן").
+   בסשן-בן, `set_session_title` מקפיץ חלון למרות שהוא ב-`permissions.allow` (נבדק ב-8.11.2026, #184). לכן החוזה אוסר על הבן כל כלי של `claude-code-remote` (`orchestrate.md`, סעיף 8).
 
 ## מה עוד שונה בסשן ענן
 GraphQL חסום: הסקריפטים קוראים רק דרך REST (claude-config #138), והסקילים עובדים דרך הטבלה בסעיף הקודם.
