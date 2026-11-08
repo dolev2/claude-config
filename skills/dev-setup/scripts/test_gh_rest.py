@@ -59,6 +59,54 @@ def test_api_failure_exits_with_gh_error(monkeypatch):
         gh_rest.api_list("repos/x/y/issues")
 
 
+def flaky_gh(monkeypatch, failures):
+    """`gh` that fails with each stderr in `failures`, then succeeds; counts the calls."""
+    calls = []
+    monkeypatch.setattr(gh_rest.time, "sleep", lambda seconds: None)
+
+    def run(*args):
+        calls.append(args)
+        if len(calls) <= len(failures):
+            return 1, "", failures[len(calls) - 1]
+        return 0, '{"ok": true}', ""
+
+    monkeypatch.setattr(gh_rest, "run", run)
+    return calls
+
+
+@pytest.mark.parametrize(
+    "stderr",
+    [
+        "HTTP 502: Bad Gateway",
+        "HTTP 503: Service Unavailable",
+        "read tcp 1.2.3.4:443: connection reset by peer",
+        "net/http: TLS handshake timeout",
+        "Post https://api.github.com: i/o timeout",
+    ],
+)
+def test_a_transient_failure_is_tried_again(monkeypatch, stderr):
+    calls = flaky_gh(monkeypatch, [stderr])
+    assert gh_rest.api("repos/x/y") == {"ok": True}
+    assert len(calls) == 2
+
+
+def test_three_transient_failures_exit_with_the_last_error(monkeypatch):
+    calls = flaky_gh(monkeypatch, ["HTTP 502", "HTTP 502", "HTTP 504: timeout"])
+    with pytest.raises(SystemExit, match="HTTP 504"):
+        gh_rest.api_list("repos/x/y/issues")
+    assert len(calls) == 3
+
+
+@pytest.mark.parametrize(
+    "stderr", ["HTTP 404: Not Found", "HTTP 403: blocked", "HTTP 422: invalid"]
+)
+def test_a_client_error_is_not_tried_again(monkeypatch, stderr):
+    calls = flaky_gh(monkeypatch, [stderr])
+    with pytest.raises(SystemExit, match=stderr):
+        gh_rest.api("repos/x/y")
+    assert len(calls) == 1
+
+
 def rest_issue(number, *, blocked_by=0, blocking=0, subs=0, milestone=True, **extra):
     return {
         "number": number,
@@ -76,6 +124,10 @@ def rest_issue(number, *, blocked_by=0, blocking=0, subs=0, milestone=True, **ex
         "sub_issues_summary": {"total": subs},
         **extra,
     }
+
+
+def pull(number, body):
+    return {"number": number, "body": body, "head": {"sha": f"sha{number}"}}
 
 
 def fake_github(monkeypatch, issues, links=None, pulls=()):
@@ -146,7 +198,7 @@ def test_body_mode_adds_sub_issues_parent_and_closing_prs(monkeypatch):
             ),
         ],
         {f"repos/{REPO}/issues/5/sub_issues": [{"number": 7, "state": "open"}]},
-        pulls=[{"body": "Closes #7"}, {"body": "Fixes: #7 and see #5"}],
+        pulls=[pull(40, "Closes #7"), pull(41, "Fixes: #7 and see #5")],
     )
     five, seven = gh_rest.open_issue_nodes(REPO, with_body=True)
     assert five["body"] == "body 5"
@@ -154,6 +206,10 @@ def test_body_mode_adds_sub_issues_parent_and_closing_prs(monkeypatch):
     assert five["parent"] is None
     assert seven["parent"] == {"number": 5}
     assert seven["closedByPullRequestsReferences"] == {"totalCount": 2}
+    assert seven["closingPullRequests"] == [
+        {"number": 40, "headSha": "sha40"},
+        {"number": 41, "headSha": "sha41"},
+    ]
     assert five["closedByPullRequestsReferences"] == {"totalCount": 0}
 
 
@@ -169,4 +225,4 @@ def test_body_mode_adds_sub_issues_parent_and_closing_prs(monkeypatch):
     ],
 )
 def test_only_a_closing_keyword_links_a_pr(body, count):
-    assert gh_rest.closing_pr_count(12, [{"body": body}]) == count
+    assert len(gh_rest.closing_prs(12, [pull(1, body)])) == count
