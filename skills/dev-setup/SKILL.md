@@ -5,43 +5,14 @@ description: Installs Dolev's GitHub × Claude Code issue pipeline in the curren
 
 # Set up the pipeline in a repo
 
-This skill folder is also the shared home of the pipeline:
-
-- `reference/`: the mechanism every dev-* skill follows. `pipeline.md` is the core, and lists
-  the other files and what each holds.
-- `scripts/pipeline_info.py`: reads everything repo-specific from the repo itself.
-- `scripts/rank_issues.py` (+ `test_rank_issues.py`): the sprint ranking.
-- `scripts/lint_check.py` (+ `test_lint_check.py`): which lint settings a repo lacks, or holds
-  in a copy that strays from its template. `pipeline_info.py` shows its list under `lint`.
-- `scripts/port_check.py` (+ `test_port_check.py`): whether a port is busy on 127.0.0.1 or ::1,
-  and a port free on both, for the review app (`reference/review-app.md`).
-- `scripts/board_views.py` (+ `test_board_views.py`): the board's two views, "ספרינט נוכחי" and "הכל".
-- `scripts/test_open_questions_gate.py`, `scripts/test_project_sync.py`: tests for the two shared
-  actions. Run them all with pytest after any change here.
-- `actions/open-questions-gate/`: the open-questions gate, a composite action every repo calls.
-  There is one copy of the gate, here; repos do not get a copy of the script.
-- `actions/project-sync/`: the label → board sync, a composite action every repo with a board calls.
-  It writes the labels onto the board, one way, and reads the Area options from the board itself.
-- `templates/.github/`: the two short workflows that call the actions, and the skeleton of
-  `tests.yml` with its lint steps and the `files` job that runs the file guide check.
-- `templates/ruff.toml`, `templates/eslint.config.js` (+ `test_lint_templates.py`): the lint
-  settings, following `~/.claude/rules/code-*.md`. Each repo keeps a copy; see step 3.
-- `templates/README.md`: the skeleton of a repo's file guide (step 6).
-- `templates/file_guide_check.py` (+ `scripts/test_file_guide_check.py`): the check that the
-  file guide names every file, and only files that exist. Each repo keeps a copy; see step 6.
-- `templates/netlify.toml`: the deploy-skip rule for a repo that Netlify deploys (step 3).
-- `templates/ruleset-main.json` (+ `scripts/test_ruleset_template.py`): the protection of the
-  default branch, a public repo's ruleset (step 5).
-- `templates/decision.md` (+ `scripts/test_decisions.py`): the skeleton of a decision page.
-  Setup installs nothing for it: a repo gets `docs/decisions/` with its first decision that
-  crosses tasks (`dev-code`, step 5; `~/.claude/rules/code-general.md`).
-
-The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
-serves them to every repo of the account that has no `.github/ISSUE_TEMPLATE` of its own.
+This skill folder is also the shared home of the pipeline: the mechanism every dev-* skill
+follows (`reference/`, with `pipeline.md` as its core), the scripts, the shared actions and the
+templates. What each file is, and why it exists: the file guide in the repo's `README.md`.
 
 Read `reference/pipeline.md`, `reference/setup.md`, `reference/review-app.md` and
 `reference/tests.md` (how the test commands in `CLAUDE.md` are read) before step 1,
-so you know what each piece is for.
+so you know what each piece is for. `reference/board.md` (steps 4–5) and
+`reference/repo-files.md` (steps 3 and 6) hold the details of those steps.
 
 ## Step 0: What is already there
 
@@ -75,14 +46,9 @@ Show Dolev, in chat, one list, and wait for his yes:
 Without a board the pipeline still works: labels are the source of truth. Then skip step 4
 and `sync-project.yml`, and keep the gate.
 
-**The board's scheduled sync is central.** A card dragged on the board goes back to the column
-of its label only through a poll every 15 minutes, and that poll runs once for every repo from the public dolev2/.github
-(`sync-boards.yml`, which runs `actions/project-sync/sweep_all.py`), where Actions minutes are
-free. Run in each private repo, it used up the account's 2,000 minutes (October 2026, #46).
-So `sync-project.yml` here has issue events only, never a `schedule`; the central run finds a
-new repo by its `PROJECT_NUMBER` variable. It also checks the number of boards it found against
-the `EXPECTED_BOARDS` variable of dolev2/.github, and fails on any other number (#49), so step 4
-updates that number. So does archiving a repo that has a board: the run stays red until then.
+**The board's scheduled sync is central**, run once for every repo from dolev2/.github, so
+`sync-project.yml` here has issue events only, and step 4 updates `EXPECTED_BOARDS`
+(`reference/board.md`).
 
 ## Step 2: Labels
 
@@ -156,94 +122,28 @@ If the repo has no CI and Dolev agreed to one, build `.github/workflows/tests.ym
 commands in place of each `# <...>` line, and only the jobs of the sides the repo has. Base it
 on the stack actually in the repo; do not invent commands.
 
-**Lint.** Each repo keeps its own copy of the settings, never a shared one: ruff cannot read
-settings from a URL, and one shared change would turn every repo red at once (`reference/setup.md`). What `lint` from step 0 lists:
+**Lint and Netlify**, by what step 0 listed; the details of each item are in
+`reference/repo-files.md`:
 
-- `missing ruff.toml`: copy `templates/ruff.toml` to the root. Under its `# --- local ---`
-  line add only what is this repo's own, as dotted keys (`target-version`, `extend-exclude`
-  for migrations, `lint.isort.known-first-party`). Pin `ruff==0.17.2` in the requirements the
-  CI installs.
-- `missing <folder>/eslint.config.js`: copy `templates/eslint.config.js` next to that
-  `package.json`, install the packages its header lists as `devDependencies`, and set
-  `"lint": "eslint ."`. A repo that has `oxlint` drops it and its `.oxlintrc.json`.
-- `differs <path>`: show Dolev the diff of the part above the `--- local ---` line against
-  the template, and replace it only on his yes. Never edit the template to match a copy.
-- `missing .github/workflows/tests.yml`, or `no ... step in` it: add the template's lint
-  steps to the existing jobs, before the tests. An existing workflow: show the diff first.
-  A repo without code (a static site) gets a `tests.yml` with the `files` job only.
-- `missing .github/file_guide_check.py`, or `no file guide step in` the workflow: see "The
-  file guide check" in step 6.
+- `lint`, `missing ...`: copy the template, add only this repo's own settings under its
+  `--- local ---` line, and wire it into `tests.yml`.
+- `lint`, `differs <path>`: show Dolev the diff above the `--- local ---` line, and replace
+  it only on his yes. Never edit the template to match a copy.
+- `netlify`, `no build.ignore in netlify.toml`: add the template's `ignore` line only on his
+  yes, after running it on the repo's history.
 
-**Netlify.** Each Netlify deploy costs credits, so a repo's `netlify.toml` deploys only when
-a site file changes (`reference/setup.md`). When `netlify` from step 0 says
-`no build.ignore in netlify.toml`, show Dolev the `ignore` line from `templates/netlify.toml`
-that fits the repo's `publish` (a folder of its own, or the root), and add it only on his yes.
-Before the PR, run the rule on a pipeline merge and on a site change from the repo's history:
-the first must exit 0 (skip), the second 1 (deploy). A repo without `netlify.toml` gets none.
-
-In a repo with code, lint fails on what is already there. Fixing it belongs to the repo's
-lint task (like charging-crm#66), not to a setup run; if the repo has none, open one with
-`dev-issue` and install the settings there.
+In a repo with code, lint fails on what is already there: fixing it is the repo's lint task,
+not a setup run.
 
 ## Step 4: The Project board
 
-```bash
-OWNER=$(gh repo view --json owner --jq .owner.login)
-gh project create --owner "$OWNER" --title "<Title>" --format json --jq .number
-gh project link <number> --owner "$OWNER" --repo "$OWNER/<repo>"
-gh project field-create <number> --owner "$OWNER" --name Area --data-type SINGLE_SELECT \
-  --single-select-options "Backend,Frontend,Both,Infra"   # the agreed areas' option texts
-gh variable set PROJECT_NUMBER --body <number>
-```
+Follow `reference/board.md`, in this order:
 
-Then update the number of boards the central run expects. Count them, never add 1: a second
-run on the same repo would count it twice. The count uses Dolev's own `gh`, which sees every
-repo; a token that sees too few is exactly what the number guards against.
-
-```bash
-N=$(python "$HOME/.claude/skills/dev-setup/actions/project-sync/sweep_all.py" --owner "$OWNER" --count-boards)
-gh variable set EXPECTED_BOARDS --repo "$OWNER/.github" --body "$N"
-```
-
-The Area option texts follow one rule: the label suffix, capitalised; an acronym stays
-upper-case, so `area:seo` is `SEO`. The sync matches labels to options by that rule, so
-nothing else lists the areas.
-
-`gh project` needs the `project` scope: if it is refused, ask Dolev to run
-`gh auth refresh -s project`, and wait.
-
-**Status is the built-in field**, so it is not created but rewritten. Its options must match
-`STATUS_OPTIONS` in `dev-setup/actions/project-sync/sync_rules.py` exactly. Find its id, then replace its options:
-
-```bash
-gh api graphql -f query='query($o:String!,$n:Int!){user(login:$o){projectV2(number:$n){field(name:"Status"){... on ProjectV2SingleSelectField{id}}}}}' \
-  -F o="$OWNER" -F n=<number> --jq .data.user.projectV2.field.id
-```
-
-Write this to a file and send it with `gh api graphql --input <file>`:
-
-```json
-{"query": "mutation($id:ID!,$opts:[ProjectV2SingleSelectFieldOptionInput!]){updateProjectV2Field(input:{fieldId:$id,singleSelectOptions:$opts}){projectV2Field{... on ProjectV2SingleSelectField{options{name}}}}}",
- "variables": {"id": "<field id>", "opts": [
-  {"name": "Explore (Claude)", "color": "BLUE", "description": ""},
-  {"name": "Plan questions", "color": "ORANGE", "description": ""},
-  {"name": "Waiting for Dolev approval", "color": "YELLOW", "description": ""},
-  {"name": "Ready to execute (Claude)", "color": "GREEN", "description": ""},
-  {"name": "Needs repair (Claude)", "color": "RED", "description": ""},
-  {"name": "Claude done / In review (Dolev)", "color": "PURPLE", "description": ""},
-  {"name": "Done", "color": "GREEN", "description": ""},
-  {"name": "Backlog", "color": "GRAY", "description": ""}]}}
-```
-
-If the mutation is refused, give Dolev the eight names to type in the board's field settings.
-
-**The token is Dolev's step, never yours.** The sync workflow needs a PAT with `project` and
-`repo` in the secret `PROJECT_TOKEN`. Give him this command to run himself, and do not ask
-him to paste the token into the chat:
-
-```powershell
-$t = Read-Host 'Paste token'; gh secret set PROJECT_TOKEN --body $t; Remove-Variable t
-```
+1. Create the board, link it to the repo, add the Area field, and set `PROJECT_NUMBER`.
+2. Count the boards and set `EXPECTED_BOARDS` on dolev2/.github; never add 1.
+3. Rewrite the built-in Status field so its options match `STATUS_OPTIONS` exactly.
+4. Give Dolev the `PROJECT_TOKEN` command, in both versions (PowerShell and bash), to run
+   himself. **The token is his step, never yours**: never ask him to paste it into the chat.
 
 The views come after the milestones, at the end of step 5: the sprint view filters on one.
 
@@ -293,18 +193,8 @@ gh api repos/dolev2/claude-config --jq .visibility   # expect: public
 
 Private: tell Dolev. Then every gate run fails on "Unable to resolve action".
 
-With a board, give it its views now that the milestones exist:
-
-```bash
-python "$HOME/.claude/skills/dev-setup/scripts/board_views.py" --dry-run
-python "$HOME/.claude/skills/dev-setup/scripts/board_views.py"
-```
-
-It turns the board's empty "View 1" into "ספרינט נוכחי" (Status columns, filtered to the
-current sprint) and adds "הכל" (a table). It deletes nothing and skips a view that already
-exists. If it reports that the sprint view has no columns, ask Dolev to choose "Column by:
-Status" in the board; the API cannot set it. From then on the board sync moves the filter
-to each next sprint by itself (`reference/setup.md`).
+With a board, give it its views now that the milestones exist: `board_views.py`, as
+`reference/board.md` says.
 
 ## Step 6: CLAUDE.md
 
@@ -327,47 +217,14 @@ live, where its design tokens come from, its glossary, its commands. The code ru
 `~/.claude/rules/` load in every session, so a rule already written there is not repeated
 here; if the file already repeats one, point it out to Dolev rather than deleting it.
 
-**The file guide.** Every repo has one (`~/.claude/rules/code-general.md`): a "מדריך קבצים"
-section in `README.md` that says, per folder, what each file is and why it exists. When
-`missing_files` names `README.md (file guide)`:
+Also make sure it has a tests section with the exact commands, the lint commands among them;
+`dev-code` and `dev-ship` run whatever it says. If there is none, ask Dolev rather than guessing.
 
-- no `README.md`: create it from `$HOME/.claude/skills/dev-setup/templates/README.md`;
-- a `README.md` without the section: append the section from the template at its end, and
-  leave the rest of the file untouched.
-
-Fill the tables from the files actually in the repo (`git ls-files`), one table per top-level
-folder; a folder of many similar files (tests, migrations, icons) gets one row, and its pattern
-goes into the check's local exceptions (below). Never leave the skeleton empty, and never
-guess a file's purpose: read the file, or ask Dolev. Then add one line to `CLAUDE.md`:
-
-```markdown
-- מדריך הקבצים (מה כל קובץ ולמה הוא קיים): [README.md](README.md).
-```
-
-Also make sure it has a tests section with the exact commands, the lint commands among them
-(`ruff check .`, `ruff format --check .`, `npm --prefix <folder> run lint`); `dev-code` and
-`dev-ship` run whatever it says. The lint settings files get a row in the file guide. If there is none, ask Dolev for them rather than guessing.
-
-**The file guide check.** Every repo, code or not, keeps a copy of
-`templates/file_guide_check.py` at `.github/file_guide_check.py`, for the same reasons as the
-lint settings (`reference/setup.md`). It fails when a file is missing from the guide, or the
-guide names one that is gone or names one twice; it reads only the guide's tables (the
-template's docstring says how). To install it:
-
-1. Copy the template. Below its `# --- local ---` line, fill `COVERED_BY_PATTERN` with the
-   groups the guide covers by a sentence (`backend/tests/test_*.py`, `public/*`).
-2. Run `python .github/file_guide_check.py` and complete the guide until it passes. A file you
-   cannot place: read it, or ask Dolev, as above.
-3. Add the command to the tests section of `CLAUDE.md`, and the template's `files` job to
-   `tests.yml`. The copy gets a row in the file guide. A repo with no other Python (a static
-   site) gets the `files` job only, without ruff: `lint` does not count the copy as Python.
-4. Add `README.md merge=union` to `.gitattributes` (claude-config #121). Most PRs add a row
-   to the guide, and two of them racing would stop on a rebase conflict; union keeps both
-   rows. When both sides edited the same row it keeps both versions, and the check's "twice"
-   catches that. Only `README.md`: union on prose would keep two versions silently.
-
-`differs .github/file_guide_check.py` is handled like a lint copy that differs: the diff above
-the line, replaced only on Dolev's yes.
+**The file guide and its check** (`~/.claude/rules/code-general.md`), when `missing_files`
+names `README.md (file guide)` or `lint` names the check: follow `reference/repo-files.md`.
+Fill the guide from the files actually in the repo, never guess a file's purpose, install the
+copy of `file_guide_check.py` with the `files` job, and add `README.md merge=union` to
+`.gitattributes`. Then add the guide's pointer line to `CLAUDE.md`.
 
 ## Step 7: Verify and hand over
 
