@@ -66,7 +66,7 @@ Show Dolev, in chat, one list, and wait for his yes:
 | lint | ruff for Python, eslint for React (JavaScript), by the files in the repo | — |
 | "Automatically delete head branches" | on | — |
 | squash merge commit title | the PR title (`PR_TITLE`) | — |
-| ruleset `protect-main` on the default branch | on, in a public repo; a private one is skipped | — |
+| ruleset `protect-main` on the default branch | on, in a public repo (from a cloud session: left to Dolev, step 7); a private one is skipped | — |
 | file guide in `README.md` | only if `missing_files` names it | the description line of a new `README.md` |
 
 Without a board the pipeline still works: labels are the source of truth. Then skip step 4
@@ -278,7 +278,8 @@ gh api repos/{owner}/{repo} --jq .visibility
   ```
   One named `protect-main` already exists: compare it (`gh api repos/{owner}/{repo}/rulesets/<id>`)
   with the template, its `conditions`, `bypass_actors` and `rules`. Different: show Dolev the
-  diff, and replace it (`gh api -X PUT .../rulesets/<id> --input ...`) only on his yes.
+  diff, and replace it only on his yes:
+  `gh api -X PUT repos/{owner}/{repo}/rulesets/<id> --input "$HOME/.claude/skills/dev-setup/templates/ruleset-main.json"`.
 
 The gate workflow resolves its action from `dolev2/claude-config`, which is private. That works
 only while claude-config shares its actions with the owner's other repos, and only for private
@@ -377,8 +378,11 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 Expect `ready: True`, `missing_files: []` and `lint: []` (the sync files are allowed missing when there
 is no board). The file changes are uncommitted: offer to ship them with `dev-ship`. Then tell
 Dolev what is left for him: the `PROJECT_TOKEN` secret and the first issues (`dev-issue`).
-A public repo set up from a cloud session adds the ruleset to that list: the `POST` command
-from step 5, run from his computer, or by hand in Settings → Rules → Rulesets, with the
+A public repo set up from a cloud session adds the ruleset to that list: one line to run from
+his computer, with the repo spelled out (`{owner}/{repo}` resolves only inside its folder,
+and `\` does not continue a line in PowerShell),
+`gh api -X POST repos/<owner>/<repo>/rulesets --input "$HOME/.claude/skills/dev-setup/templates/ruleset-main.json"`,
+or by hand in Settings → Rules → Rulesets, with the
 rules the template holds. A private repo gets one line instead, with nothing for him to do: the
 default branch has no ruleset, because a private repo on a free account cannot have one,
 and the hooks guard it.

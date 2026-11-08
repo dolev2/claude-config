@@ -16,11 +16,15 @@ TEMPLATE = Path(__file__).resolve().parent.parent / "templates" / "ruleset-main.
 
 @pytest.fixture(scope="module")
 def ruleset() -> dict:
+    """The template, parsed."""
     return json.loads(TEMPLATE.read_text(encoding="utf-8"))
 
 
 def rule(ruleset: dict, kind: str) -> dict:
-    return next(r for r in ruleset["rules"] if r["type"] == kind)
+    """The one rule of this type in the template; fails by name when it is missing."""
+    found = [r for r in ruleset["rules"] if r["type"] == kind]
+    assert len(found) == 1, f"the template has {len(found)} {kind} rules"
+    return found[0]
 
 
 def test_targets_the_default_branch_of_any_repo(ruleset):
