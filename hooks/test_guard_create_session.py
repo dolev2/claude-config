@@ -39,10 +39,12 @@ def run_hook(monkeypatch, raw: str) -> tuple[int, str]:
 
 
 def call(tool: str = TOOL, **tool_input) -> str:
+    """The JSON stdin of a tool call with this input."""
     return json.dumps({"tool_name": tool, "tool_input": tool_input})
 
 
 def ask_reason(output: str) -> str:
+    """The reason of the "ask" decision in output; fails if it is not one."""
     decision = json.loads(output)["hookSpecificOutput"]
     assert decision["hookEventName"] == "PreToolUse"
     assert decision["permissionDecision"] == "ask"
