@@ -15,7 +15,7 @@ flowchart TD
 
     subgraph PG["שלב התכנון — סשן מקומי או ענן"]
       PLAN["dev-plan<br/>עד 3 פריטים בכל ריצה<br/>לפי כמה משימות מחכות להם"]:::routine
-      PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>כולל סעיף חוויית משתמש<br/>חוץ ממשימה קטנה<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
+      PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>כולל סעיף חוויית משתמש<br/>חוץ ממשימה קטנה<br/>החלטה שחוצה משימות<br/>נכתבת כטיוטה בתוכנית<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
       PQ -- "לא" --> SZ{"משימה קטנה<br/>עד כ-3 קבצים, בלי שינוי שמשתמש רואה<br/>בלי מחיקה, בלי שינוי חוזה"}:::routine
     end
@@ -44,7 +44,7 @@ flowchart TD
       WIP -- "לא" --> SPRINT["סריקה רק בספרינט הנוכחי<br/>issue שנקבת בשמו גם מחוצה לו<br/>תיקון לפני משימה חדשה<br/>ואז לפי כמה משימות מחכות לה"]:::routine
       SPRINT --> BLK{"חסום ע״י issue פתוח<br/>Blocked by"}:::gate
       BLK -- "כן" --> BSKIP(["מדלג עליו ומדווח במה הוא חסום"]):::gate
-      BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי"]:::routine
+      BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי<br/>טיוטת החלטה רוחבית<br/>הופכת לדף החלטה באותו PR"]:::routine
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
       RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>opens a PR that closes the issue"]:::routine

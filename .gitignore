@@ -13,6 +13,7 @@
 /skills/synced/
 /skills/session-start-hook/
 !/rules/
+!/docs/
 !/settings.json
 !/hooks/
 

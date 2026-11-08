@@ -114,6 +114,13 @@ keeps them: edit it in the headings it already has.
    files, and the contract between the parts (`reference/issue-body.md`). `dev-code` then
    writes the parts at the same time. If every file touches both sides, leave it out.
 
+   **Does it decide something other tasks will follow?** A tool, an architecture or a work
+   rule that outlives this task (`~/.claude/rules/code-general.md`, "ב-`docs/decisions/`"):
+   write the "החלטה רוחבית" sub-heading, the draft of its decision page
+   (`reference/issue-body.md`). Dolev approves it with the plan; `dev-code` writes the page in
+   the same PR. If it replaces an existing page in `docs/decisions/`, name that page. A choice
+   that holds for this task alone stays in "הגישה".
+
    **Check the scope before writing the plan.** Three questions, every issue:
    - **Too big?** If the issue holds more than one PR that can be reviewed on its own, propose a
      split in chat: each sub-issue's title, one line of scope, and the blockers between them.

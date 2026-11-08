@@ -448,7 +448,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-plan</b>: up to 3 issues per run.</p>
-        <ul><li>Writes a Plan in the issue body: a short summary for the decision, a user-experience section for approval, technical detail for the build.</li><li>Questions are written as checkboxes.</li><li>Appends to a change log and never deletes it.</li><li>A small task gets a short plan, and a line of its own in the summary: "went straight to Execute".</li></ul>
+        <ul><li>Writes a Plan in the issue body: a short summary for the decision, a user-experience section for approval, technical detail for the build.</li><li>Questions are written as checkboxes.</li><li>Appends to a change log and never deletes it.</li><li>A small task gets a short plan, and a line of its own in the summary: "went straight to Execute".</li><li>A decision other tasks will follow (a tool, an architecture, a work rule): a draft under a "cross-task decision" sub-heading, which Dolev approves with the plan.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>Creates the branch on the remote, with no checkout.</p>
@@ -491,7 +491,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-code</b>: exactly one issue per run.</p>
-        <ul><li>Implements the plan and adds a test for every change.</li><li>A bug without a Plan: writes a short plan first. A bug that changes a contract or deletes something goes back to planning.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user-experience section, at desktop and phone width. In a cloud session: with Playwright.</li><li>Hands over a PR with a link to the review app. In a cloud session: the app runs in the session.</li><li>In the hand-off: a link to the PR's changes at the top of the message, screenshots in the chat (desktop, plus phone in a cloud session), and a phone notification once the hand-off is ready. No screenshot: one line saying why.</li></ul>
+        <ul><li>Implements the plan and adds a test for every change.</li><li>The plan has a cross-task decision: writes it as a page in <code>docs/decisions/</code> in the same PR, and the rule that relies on it points there.</li><li>A bug without a Plan: writes a short plan first. A bug that changes a contract or deletes something goes back to planning.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user-experience section, at desktop and phone width. In a cloud session: with Playwright.</li><li>Hands over a PR with a link to the review app. In a cloud session: the app runs in the session.</li><li>In the hand-off: a link to the PR's changes at the top of the message, screenshots in the chat (desktop, plus phone in a cloud session), and a phone notification once the hand-off is ready. No screenshot: one line saying why.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>Worktree, commits, then <code>fetch</code> + <code>rebase origin/main</code>.</p>

@@ -32,6 +32,9 @@ This skill folder is also the shared home of the pipeline:
 - `templates/netlify.toml`: the deploy-skip rule for a repo that Netlify deploys (step 3).
 - `templates/ruleset-main.json` (+ `scripts/test_ruleset_template.py`): the protection of the
   default branch, a public repo's ruleset (step 5).
+- `templates/decision.md` (+ `scripts/test_decisions.py`): the skeleton of a decision page.
+  Setup installs nothing for it: a repo gets `docs/decisions/` with its first decision that
+  crosses tasks (`dev-code`, step 5; `~/.claude/rules/code-general.md`).
 
 The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
 serves them to every repo of the account that has no `.github/ISSUE_TEMPLATE` of its own.

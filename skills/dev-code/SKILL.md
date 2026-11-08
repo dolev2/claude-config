@@ -95,6 +95,14 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    tests as the Plan's "בדיקות" lists them, by the table in `~/.claude/rules/code-tests.md`,
    unless the repo's CLAUDE.md defines a manual check instead of a suite (`reference/tests.md`).
 
+   **A "החלטה רוחבית" sub-heading in the Plan becomes a decision page in the same PR**
+   (`~/.claude/rules/code-general.md`, "ב-`docs/decisions/`"): `docs/decisions/<N>-<slug>.md`,
+   from `$HOME/.claude/skills/dev-setup/templates/decision.md`, filled from the draft. The repo's
+   first such page creates the folder, and the file guide gets a `docs/decisions/*.md` row. The
+   rule or doc that relies on the decision gets a one-line pointer to the page, never a copy of
+   it. A page that replaces an older one: the new page gets the `**מחליף:**` line, and the old
+   page's status line becomes `הוחלף ב-[<file>](<file>)`, the only edit an existing page ever gets.
+
    **While writing, run only the test files of what changed**, never a full suite; a failing
    test reruns alone (`reference/tests.md`). The full run comes once, in
    step 7.
