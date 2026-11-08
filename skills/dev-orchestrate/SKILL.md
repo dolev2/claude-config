@@ -69,7 +69,8 @@ the fallback `ScheduleWakeup`.
    approve: `waiting-approval` → `ready-to-execute`, a plan-log line, and the coding child opens
    next check. Send back or answer: `status:explore`, his words quoted in a comment, and a new
    planning child. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
-   line that this is a good moment for `/compact`. A fix: `needs-repair`, a comment, and a
+   line that this is a good moment for `/compact`, with the full command in a code block as the
+   global `CLAUDE.md` says ("מה פתוח": `/compact` and the summary that must survive). A fix: `needs-repair`, a comment, and a
    coding child. Each of these new children opens through step 4, so the old child is archived.
 6. **Close the check.** One summary line, always, ending with `pipeline_sha <sha>`: the next check
    compares against it. Nothing to open and nothing to ask: the line says what the sprint waits
