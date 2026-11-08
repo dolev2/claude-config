@@ -64,6 +64,20 @@ flowchart TD
     SHIP --> MERGE["checks the open questions<br/>verifies the PR still merges cleanly<br/>rebase, then tests<br/>waits for CI checks<br/>squash merge"]:::routine
     MERGE --> DONE(["המשימה נסגרת אוטומטית<br/>status:done = merged<br/>the card lands in Done"]):::auto
 
+    ORCGO(["דולב: תריץ את הספרינט<br/>רק בסשן ענן"]):::human --> ORC
+
+    subgraph OG["המתזמר — סשן ענן אחד"]
+      ORC["dev-orchestrate<br/>sprint_state.py<br/>בונה את התמונה מחדש בכל בדיקה"]:::routine
+      ORC --> KID["סשן-בן לכל משימה שלא חסומה<br/>עד 3 במקביל<br/>חפיפת קבצים: אחת אחרי השנייה"]:::routine
+      KID --> REPORT["הבן מדווח להורה<br/>send_message"]:::routine
+      REPORT --> CHECK["המתזמר בודק את התוצאה<br/>ושואל את דולב בחלון אחד"]:::routine
+      CHECK --> ORC
+    end
+
+    KID -. "תחקור את #N" .-> PLAN
+    KID -. "תקודד את #N" .-> EXEC
+    CHECK -. "תמזג את #N<br/>רק מדולב" .-> SHIP
+
     classDef human fill:#fff4d6,stroke:#9a6700,color:#24292f
     classDef routine fill:#ddf0ff,stroke:#0969da,color:#24292f
     classDef auto fill:#dcffe4,stroke:#1a7f37,color:#24292f
@@ -72,6 +86,9 @@ flowchart TD
 
 **מקרא:** צהוב: פעולה של דולב · כחול: Claude, בסקיל · ירוק: אוטומציה ב-GitHub Actions ·
 אדום: שער שעוצר או מתריע.
+
+**המתזמר** (`dev-orchestrate`, `orchestrate.md`) לא מוסיף שלבים: הבנים שלו עוברים באותו צינור, והוא
+מרכז מול דולב את השאלות, האישורים והמיזוגים.
 
 **העמוד "חייו של issue"** ([`issue-lifecycle.html`](issue-lifecycle.html), מפורסם ב-
 https://claude.ai/artifact/FcDGAbuAhUSpyYT34zHg1A) מראה את אותו צינור לבני אדם, ומוסיף את ציר
