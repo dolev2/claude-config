@@ -3,8 +3,8 @@ name: Open questions gate
 # Warns when an issue reaches `status:in-review` (or `status:done`) with a question still
 # unanswered. In-review is the last stop before the merge (claude-config #108).
 # The gate itself is shared: dolev2/claude-config, skills/dev-setup/actions/open-questions-gate.
-# It needs claude-config's Actions access set to "user" (Settings → Actions → Access),
-# otherwise this run fails on "Unable to resolve action".
+# claude-config is public, so the action resolves from any repo with no access setting.
+# If it ever turns private, this run fails on "Unable to resolve action".
 #
 # Why `edited` is here too: the fix for a warning is ticking a checkbox in the body, and
 # that must clear the label without a second label event.

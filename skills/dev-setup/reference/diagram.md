@@ -62,8 +62,8 @@ flowchart TD
     RC -- "תקין" --> ASK(["דולב מבקש מיזוג בצ'אט<br/>תמזג את #N<br/>בהקלדה או בחלון השאלות"]):::human
 
     ASK --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
-    SHIP --> MERGE["checks the open questions<br/>verifies the PR still merges cleanly<br/>rebase, then tests<br/>waits for CI checks<br/>squash merge"]:::routine
-    MERGE --> DONE(["המשימה נסגרת אוטומטית<br/>status:done = merged<br/>the card lands in Done"]):::auto
+    SHIP --> MERGE["rebase onto the default branch<br/>runs the tests<br/>push, then opens or reuses the PR<br/>waits for CI checks<br/>בודק את השאלות הפתוחות<br/>not MERGEABLE: back to the rebase<br/>squash merge"]:::routine
+    MERGE --> DONE(["dev-ship sets status:done<br/>status:done = merged<br/>Closes #N closes the issue<br/>the card lands in Done<br/>ואז ניקוי"]):::routine
 
     ORCGO(["דולב: תריץ את הספרינט<br/>רק בסשן ענן"]):::human --> ORC
 
@@ -93,7 +93,7 @@ flowchart TD
 
 **העמוד "חייו של issue"** ([`issue-lifecycle.html`](issue-lifecycle.html), מפורסם ב-
 https://claude.ai/artifact/FcDGAbuAhUSpyYT34zHg1A) מראה את אותו צינור לבני אדם, ומוסיף את ציר
-ה-git. הסקילים קוראים את הקובץ הזה, לא את העמוד.
+ה-git. אף סקיל לא קורא את הקובץ הזה או את העמוד בזמן ריצה.
 
 **התרשים והעמוד מתעדכנים יחד עם כל שינוי בצינור**, באותו PR. הכלל המלא, והפרסום מחדש של העמוד אחרי מיזוג: `.claude/CLAUDE.md` של claude-config.
 

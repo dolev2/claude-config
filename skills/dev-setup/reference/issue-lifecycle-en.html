@@ -528,7 +528,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label c">done</span></div>
-        <p><code>done</code> only means "merged". The issue closes on its own, through <code>Closes #N</code>, and the card lands in Done.</p>
+        <p><code>dev-ship</code> sets <code>done</code> after the merge, and <code>done</code> only means "merged". The issue closes through <code>Closes #N</code>, and the card lands in Done.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-ship</b>: the only merge path.</p>
@@ -536,9 +536,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
-        <p>Not MERGEABLE: rebase, push, rerun the tests.</p>
-        <p>Wait for CI, then squash merge.</p>
-        <p>Cleanup: the app, the worktree, the branch.</p>
+        <ul><li>Rebase onto the default branch, then the tests.</li><li>Push, then open the PR or reuse the open one.</li><li>Wait for CI.</li><li>Not MERGEABLE: back to the rebase.</li><li>Squash merge.</li><li>Cleanup: the app, the worktree, the branch.</li></ul>
       </div>
     </div>
   </article>

@@ -549,7 +549,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label c">done</span></div>
-        <p><code>done</code> אומר רק "מוזג". ה-issue נסגר לבד, דרך <code>Closes #N</code>, והכרטיס נוחת ב-Done.</p>
+        <p><code>dev-ship</code> מסמן <code>done</code> אחרי המיזוג, ו-<code>done</code> אומר רק "מוזג". ה-issue נסגר דרך <code>Closes #N</code>, והכרטיס נוחת ב-Done.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-ship</b>: הדרך היחידה למיזוג.</p>
@@ -557,9 +557,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
-        <p>לא MERGEABLE: rebase, push, בדיקות מחדש.</p>
-        <p>מחכים ל-CI, ואז squash merge.</p>
-        <p>ניקוי: האפליקציה, ה-worktree, ה-branch.</p>
+        <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI.</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch.</li></ul>
       </div>
     </div>
   </article>
