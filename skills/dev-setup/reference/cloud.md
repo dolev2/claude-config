@@ -101,7 +101,7 @@ REPO=https://github.com/dolev2/claude-config
 | `gh pr view --json closingIssuesReferences` | אין שדה כזה ב-REST: ה-issues מה-`Closes #<N>` ב-`.body` של `R/pulls/<N>` |
 | `gh pr list` (`--head`, `--state`, `--search`) | `gh api "R/pulls?state=open&head=<owner>:<branch>"` (`state` כמו ב-`--state`: `open`, `closed` או `all`). חיפוש לפי issue: ה-timeline, כמו בשורה של `closedByPullRequestsReferences` |
 | `gh pr checks --watch` | `subscribe_pr_activity`, ומסיימים את התור: האירוע `check_suite.completed` מעיר את הסשן. אחריו, ולבדיקה חד-פעמית: `gh api R/commits/<sha>/check-runs` |
-| `gh pr merge --squash` | `mcp__github__merge_pull_request` עם `merge_method: "squash"` ו-`expectedHeadSha`, בלי `commit_title`. `hooks/ask_before_merge.py` מקפיץ חלון אישור לפני כל מיזוג (claude-config #135). את ה-branch ב-GitHub מוחקת ההגדרה של הריפו, במקום `--delete-branch` |
+| `gh pr merge --squash` | `mcp__github__merge_pull_request` עם `merge_method: "squash"` ו-`expectedHeadSha`, בלי `commit_title`. `hooks/ask_before_merge.py` מקפיץ חלון אישור לפני כל מיזוג (claude-config #135). את ה-branch ב-GitHub מוחקת ההגדרה של הריפו, כמו מחוץ לענן (`git-flow.md`) |
 | ה-GraphQL של `issue-body.md` (sub-issues ומי שמפנה) | `gh api R/issues/<N>/sub_issues`, ו-`R/issues/<N>/timeline` (אירועי `cross-referenced`) |
 | Blocked by ו-sub-issue (`dependencies.md`, `dev-issue`) | כבר REST: רצים כמו שהם |
 

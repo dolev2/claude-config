@@ -61,10 +61,20 @@ When Dolev names an issue rather than a branch:
 
 1. If you are on `<default>`, or in a cloud session on a branch the service named for the
    session rather than the issue's branch (`reference/git-flow.md`), do not ship from it. If there is nothing to ship at all (clean
-   tree and `<default>` not ahead of `origin/<default>`), say so and stop. Otherwise cut a
-   feature branch off the current state first: `claude/issue-<N>-<slug>` when the work belongs
-   to an issue, otherwise a name after what actually changed (`fix/lead-duplicate-webhook`,
-   `docs/pipeline-stages`), never a placeholder.
+   tree and `<default>` not ahead of `origin/<default>`), say so and stop. Otherwise:
+   1. **In the shared working copy** (not a cloud session, and not a worktree:
+      `git rev-parse --git-dir` has no `/worktrees/`): never cut a branch there. Stop and
+      report what is on `<default>`: the uncommitted files (`git status --porcelain`) and the
+      local commits (`git log origin/<default>..<default> --oneline`). Offer Dolev to move
+      them to a worktree. This is `rules/git.md`: a non-empty tree in the shared folder is a
+      stop, not a cleanup.
+   2. **In a cloud session or a worktree**: the copy is the session's own, so cut a feature
+      branch off the current state: `git checkout -b <branch>`. Step 2 rebases it onto
+      `origin/<default>`, so it never rests on the local `<default>`.
+
+   The branch name is `claude/issue-<N>-<slug>` when the work belongs to an issue, otherwise a
+   name after what actually changed (`fix/lead-duplicate-webhook`, `docs/pipeline-stages`),
+   never a placeholder.
 2. `git status`. Commit anything outstanding rather than pausing for approval: read `git diff`
    (and `git diff --cached`) so the message describes the real change, then `git add -A` and
    commit in the repo's style, with the `Co-Authored-By` line the session is configured with.
@@ -158,8 +168,14 @@ Anything other than `MERGEABLE` (`UNKNOWN` right after a push: wait a few second
 again): back to step 2, then the tests and CI again. Then:
 
 ```bash
-gh pr merge <N> --squash --delete-branch
+gh pr merge <N> --squash
 ```
+
+No `--delete-branch`: besides deleting the branch on GitHub, `gh` then deletes the local
+branch and checks out `<default>` in the folder it runs in, which is a branch switch in a
+worktree or in the shared folder. The branch on GitHub is deleted by the repo's
+"Automatically delete head branches" setting (`dev-setup` turns it on), in every environment;
+step 7 checks that it is gone.
 
 No `--subject` (a hook blocks it): GitHub titles the commit with the PR title plus `(#N)`,
 once the repo's squash title setting is `PR_TITLE` (`dev-setup`, step 5). If the PR title looks
@@ -169,9 +185,7 @@ already carry: a commit title on `<default>` cannot be fixed without rewriting h
 
 In a cloud session `gh pr merge` does not run (`reference/cloud.md`). Merge with
 `mcp__github__merge_pull_request`: `merge_method: "squash"`, `expectedHeadSha` set to the head
-that steps 3–4b checked, and no `commit_title` (a hook blocks it, like `--subject`). The
-branch on GitHub is deleted by the repo's "Automatically delete head branches" setting, in
-place of `--delete-branch`.
+that steps 3–4b checked, and no `commit_title` (a hook blocks it, like `--subject`).
 
 Either way, this pops an approval window for Dolev: an `ask` rule in `~/.claude/settings.json`
 for `gh pr merge`, and `hooks/ask_before_merge.py` for every other way to merge. That is
@@ -179,9 +193,7 @@ expected. If he declines it, stop and report which step you stopped at; never me
 way.
 
 If the merge is blocked (required reviews, protection, conflicts), stop and report the exact
-reason `gh` or the MCP tool gives. Do not retry blindly and do not force anything. `--delete-branch` may fail
-where the harness blocks destructive git operations; that is expected. Never fall back to
-deleting branches by hand.
+reason `gh` or the MCP tool gives. Do not retry blindly and do not force anything.
 
 ## Step 6: Move the linked issue to Done (pipeline repos only)
 
@@ -211,40 +223,52 @@ correct; verify rather than assume.
 
 ## Step 7: Clean up locally
 
-```bash
-git checkout <default> && git pull --ff-only   # skip if <default> is checked out in another worktree
-git fetch --prune
-git status --short --branch     # expect: <default>, in sync with origin/<default>
-git ls-remote --heads origin <branch>   # expect: no output
-```
+In this order, the same as `reference/git-flow.md`. Never a `git checkout` or `git pull` in
+the folder the work happened in, and never in the shared folder unless item 4 allows it.
+`<main folder>` is the repo's main working copy: the first line of `git worktree list`.
 
-Then delete the local branch. `git branch -d` always refuses after a squash merge (the squash
-commit has a new SHA, so git sees the branch as unmerged), so check the merge yourself and use
-`-D` only when the local tip is exactly what was merged:
+1. **Stop the review app**, if `review-app.json` names it for this branch, as
+   `reference/review-app.md` says ("עצירה"). Before item 2: on Windows a folder cannot be
+   deleted while a process runs from it.
+2. **Remove the branch's worktree** (`git worktree list` shows it). Leave it first:
+   - this session entered it with `EnterWorktree`: `ExitWorktree`, removing it;
+   - any other worktree (usually the one `dev-code` kept from an earlier session):
+     `git -C <main folder> worktree remove <path>`.
 
-```bash
-MERGED=$(gh pr view <N> --json state,headRefOid --jq 'select(.state=="MERGED") | .headRefOid')
-[ -n "$MERGED" ] && [ "$(git rev-parse <branch>)" = "$MERGED" ] && git branch -D <branch>
-```
+   git refuses when the worktree has changes: stop and report them, never `--force`. A
+   worktree the session runs in but did not create (Claude Desktop opens sessions so): leave
+   it, and with it the local branch checked out there: skip item 5, and say both in the
+   summary.
+3. **Fetch:** `git -C <main folder> fetch --prune origin`. No checkout and no pull in the
+   folder the work happened in.
+4. **Update the main folder, only when it is already on `<default>` and clean**
+   (`git -C <main folder> status --porcelain` empty):
+   `git -C <main folder> pull --ff-only`. In `~/.claude` this is what brings the new skills
+   into the live folder. Otherwise leave it alone, and say in the summary that it was not
+   updated, and why (another branch, or which files are uncommitted).
+5. **Delete the local branch**, after item 2 (git refuses to delete a branch checked out in a
+   worktree). `git branch -d` always refuses after a squash merge (the squash commit has a new
+   SHA, so git sees the branch as unmerged), so check the merge yourself and use `-D` only
+   when the local tip is exactly what was merged:
+   ```bash
+   MERGED=$(gh pr view <N> --json state,headRefOid --jq 'select(.state=="MERGED") | .headRefOid')
+   # in a cloud session, gh pr view does not run: reference/cloud.md has the REST form
+   [ -n "$MERGED" ] && [ "$(git -C <main folder> rev-parse <branch>)" = "$MERGED" ] && git -C <main folder> branch -D <branch>
+   ```
+   If the tips differ, the local branch has commits that were never merged: leave it and say
+   so. `git pull` does not delete local branches, and `git fetch --prune` only removes
+   `origin/*` refs, so without this item the local branch stays forever.
+6. **Check the branch is gone on GitHub:** `git ls-remote --heads origin <branch>` prints
+   nothing. Output means the repo's "Automatically delete head branches" setting is off:
+   report it and offer to turn it on (`gh repo edit --delete-branch-on-merge`). Never delete
+   the remote branch by hand, with `git push` or otherwise.
 
-If the tips differ, the local branch has commits that were never merged: leave it and say so.
-`git pull` does not delete local branches, and `git fetch --prune` only removes `origin/*`
-refs, so without this step the local branch stays forever.
-
-When this ran inside a worktree the session owns, leave that worktree instead of checking out
-`<default>` in it, as `reference/git-flow.md` says; delete the branch after the
-worktree is removed (git refuses to delete a branch checked out in a worktree).
-
-In a cloud session there is no worktree to remove, and `<default>` is not checked out:
-instead of the first line above, run `git fetch origin <default>` and then
+**In a cloud session** there is no worktree, and the clone is the session's own. Items 1, 3,
+5 and 6 apply; in place of items 2 and 4, after the fetch, run
 `git checkout --detach origin/<default>` (without the fetch, that is `<default>` before the
 merge). `git status` then shows a detached HEAD at `origin/<default>`, which is expected.
-Then delete the local branch as above. Never delete the remote branch with `git push`: the proxy blocks it,
-and the repo setting deletes it; the `git ls-remote` check still applies
-(`reference/git-flow.md`).
-
-If the branch has a review app (`review-app.json` names it), stop it before removing its
-worktree, as `reference/review-app.md` says.
+A `git push` that deletes a branch is blocked by the proxy anyway (`reference/git-flow.md`,
+"בסשן ענן").
 
 ## Step 8: Offer a session for the next issue (pipeline repos only)
 
@@ -256,6 +280,8 @@ that issue in this session.
 ## Reporting back
 
 One short summary in Hebrew: the PR link and title, the merge method, which issue moved to `status:done` (or that
-the PR closed none, or that the repo has no pipeline), and whether both branches are gone. If
+the PR closed none, or that the repo has no pipeline), and what step 7 cleaned and what it
+left: the review app, the worktree, the main folder (updated or not, and why), and both
+branches. If
 you stopped early, say exactly which step and why. End with the next-issue offer from step 8:
 which issue, fresh or fork and why in one line, or what the sprint waits for.
