@@ -105,7 +105,7 @@ REPO=https://github.com/dolev2/claude-config
 | ה-GraphQL של `issue-body.md` (sub-issues ומי שמפנה) | `gh api R/issues/<N>/sub_issues`, ו-`R/issues/<N>/timeline` (אירועי `cross-referenced`) |
 | Blocked by ו-sub-issue (`dependencies.md`, `dev-issue`) | כבר REST: רצים כמו שהם |
 
-**מה חסום גם ב-REST:** `PROJECT_NUMBER` (משתנה של Actions), הלוח (`gh project`, `projectItems`) ו-`dev-setup` בענן: claude-config #140. מ-`dev-setup` כבר עובדת רק הקריאה של `issue_forms` כשהוא `unknown`.
+**מה חסום גם ב-REST:** `PROJECT_NUMBER` (משתנה של Actions), הלוח (`gh project`, `projectItems`) ו-`dev-setup` בענן: claude-config #140. גם הכתיבה ל-rulesets חסומה ב-proxy (403), והקריאה עובדת (claude-config #162). מ-`dev-setup` כבר עובדת רק הקריאה של `issue_forms` כשהוא `unknown`.
 
 ## חלונות אישור בסשן-בן
 סשן-בן שמחכה לאישור לא נראה תקוע מבחוץ, ומתזמר יחכה לו בלי סוף (claude-config #155). לכן:

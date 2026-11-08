@@ -91,6 +91,7 @@
 | `templates/erd.html` | עמוד ERD כללי: הקוד שמצייר קורא הכל מבלוק `erd-data`, עם דוגמה של שתי טבלאות | ריפו עם מסד מעתיק אותו ל-`docs/erd.html` בשינוי הסכמה הראשון (`rules/erd.md`) |
 | `templates/test_erd.py` | הבדיקה שמשווה את בלוק ה-ERD למודלים של SQLAlchemy, בלי מסד | מועתק לצד העמוד, כדי שהתרשים לא יתיישן בשקט |
 | `templates/netlify.toml` | כלל הדילוג של Netlify, בשתי צורות: אתר בתיקייה משלו ואתר בשורש | כל deploy עולה קרדיטים, ובלי הכלל כל מיזוג של הצינור הוא deploy (#50) |
+| `templates/ruleset-main.json` | ה-ruleset `protect-main` של ה-branch הראשי: חובת PR בלי אישור סוקר, בלי force push, בלי מחיקה, squash בלבד. זהה למה שמוגדר על claude-config | `dev-setup` שולח אותו ל-API בריפו ציבורי, כדי שאף סשן לא ידחוף ישר ל-branch הראשי (#162) |
 
 טפסי ה-issues לא כאן: הם בריפו הציבורי [dolev2/.github](https://github.com/dolev2/.github).
 

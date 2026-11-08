@@ -30,6 +30,8 @@ This skill folder is also the shared home of the pipeline:
 - `templates/file_guide_check.py` (+ `scripts/test_file_guide_check.py`): the check that the
   file guide names every file, and only files that exist. Each repo keeps a copy; see step 6.
 - `templates/netlify.toml`: the deploy-skip rule for a repo that Netlify deploys (step 3).
+- `templates/ruleset-main.json` (+ `scripts/test_ruleset_template.py`): the protection of the
+  default branch, a public repo's ruleset (step 5).
 
 The issue forms are not here. They live once, in the public repo `dolev2/.github`, and GitHub
 serves them to every repo of the account that has no `.github/ISSUE_TEMPLATE` of its own.
@@ -64,6 +66,7 @@ Show Dolev, in chat, one list, and wait for his yes:
 | lint | ruff for Python, eslint for React (JavaScript), by the files in the repo | — |
 | "Automatically delete head branches" | on | — |
 | squash merge commit title | the PR title (`PR_TITLE`) | — |
+| ruleset `protect-main` on the default branch | on, in a public repo (from a cloud session: left to Dolev, step 7); a private one is skipped | — |
 | file guide in `README.md` | only if `missing_files` names it | the description line of a new `README.md` |
 
 Without a board the pipeline still works: labels are the source of truth. Then skip step 4
@@ -255,6 +258,29 @@ title (#87).
 
 Create milestones in sprint order: the lowest number is the current sprint.
 
+**Protect the default branch** (`reference/setup.md`): a PR for every change, no force push,
+no deletion, squash only. Visibility first:
+
+```bash
+gh api repos/{owner}/{repo} --jq .visibility
+```
+
+- `private`: skip the whole step: no read, no attempt to create. A private repo on a free
+  account has no rulesets; the hooks guard it. Step 7 reports it in one line; it is not a
+  failure and not a task for Dolev.
+- `public`, in a cloud session (`CLAUDE_CODE_REMOTE=true`): do not try; the proxy refuses
+  writes to the rulesets API (a read works). Step 7 hands the step to Dolev.
+- `public`, otherwise: read what is there, and create the ruleset only when it is missing:
+  ```bash
+  gh api repos/{owner}/{repo}/rulesets --jq '.[] | "\(.id) \(.name)"'
+  gh api -X POST repos/{owner}/{repo}/rulesets \
+    --input "$HOME/.claude/skills/dev-setup/templates/ruleset-main.json"
+  ```
+  One named `protect-main` already exists: compare it (`gh api repos/{owner}/{repo}/rulesets/<id>`)
+  with the template, its `conditions`, `bypass_actors` and `rules`. Different: show Dolev the
+  diff, and replace it only on his yes:
+  `gh api -X PUT repos/{owner}/{repo}/rulesets/<id> --input "$HOME/.claude/skills/dev-setup/templates/ruleset-main.json"`.
+
 The gate workflow resolves its action from `dolev2/claude-config`, which is private. That works
 only while claude-config shares its actions with the owner's other repos, and only for private
 repos (on a user account, a private repo's actions reach only that user's private repos):
@@ -352,6 +378,14 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 Expect `ready: True`, `missing_files: []` and `lint: []` (the sync files are allowed missing when there
 is no board). The file changes are uncommitted: offer to ship them with `dev-ship`. Then tell
 Dolev what is left for him: the `PROJECT_TOKEN` secret and the first issues (`dev-issue`).
+A public repo set up from a cloud session adds the ruleset to that list: one line to run from
+his computer, with the repo spelled out (`{owner}/{repo}` resolves only inside its folder,
+and `\` does not continue a line in PowerShell),
+`gh api -X POST repos/<owner>/<repo>/rulesets --input "$HOME/.claude/skills/dev-setup/templates/ruleset-main.json"`,
+or by hand in Settings → Rules → Rulesets, with the
+rules the template holds. A private repo gets one line instead, with nothing for him to do: the
+default branch has no ruleset, because a private repo on a free account cannot have one,
+and the hooks guard it.
 
 ## Golden rules
 
