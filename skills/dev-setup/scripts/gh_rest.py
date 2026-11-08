@@ -20,6 +20,9 @@ import time
 REMOTE = re.compile(r"(?:github\.com[:/]|/git/)([^/:]+)/([^/]+?)(?:\.git)?/?$")
 CLOSING = r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#{}\b"
 NOT_A_REPO = "Not inside a GitHub repo that gh can see; pass --repo owner/name."
+TRANSIENT = re.compile(
+    r"HTTP 5\d\d|timeout|connection reset|connection refused|EOF", re.IGNORECASE
+)
 RETRY_DELAYS = (2, 4)
 
 
@@ -56,9 +59,10 @@ def is_transient(stderr: str) -> bool:
 
     An orchestrator runs these scripts dozens of times a sprint (claude-config #174),
     so one dropped connection should not fail a whole check. A 4xx is the request's
-    own fault and fails at once.
+    own fault and fails at once, and so does anything not known to be passing: the
+    cloud proxy answers 403 for what it blocks, and waiting will not change that.
     """
-    # TODO(human)
+    return bool(TRANSIENT.search(stderr))
 
 
 def gh_api(path: str, *flags: str) -> str:
