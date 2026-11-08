@@ -80,6 +80,10 @@ def context_step(command: str, index: int, contexts: list[str]) -> int:
     if closer and command.startswith(closer, index):
         contexts.pop()
         return len(closer)
+    if context == "((" and command[index] == ")":
+        # `$((1)+(2))`: one of the two opening parentheses is still open.
+        contexts[-1] = "a("
+        return 1
     opened = opening(command, index, context)
     if not opened:
         return 1
