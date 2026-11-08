@@ -60,7 +60,7 @@ def test_api_failure_exits_with_gh_error(monkeypatch):
 
 
 def flaky_gh(monkeypatch, failures):
-    """`gh` that fails with each stderr in `failures`, then succeeds; counts the calls."""
+    """`gh` that fails with each stderr in `failures`, then succeeds; counts calls."""
     calls = []
     monkeypatch.setattr(gh_rest.time, "sleep", lambda seconds: None)
 
