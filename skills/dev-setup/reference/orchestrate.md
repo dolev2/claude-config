@@ -35,7 +35,7 @@
 3. אל תוסיף ואל תסיר קישורי Blocked by, ואל תפצל משימות. הצע בתגובה ב-issue, וההורה מחליט.
 4. אל תשתמש ב-send_message: השירות מקפיץ לדולב חלון על כל הודעה. הדיווח הוא מה שב-GitHub: בתכנון ה-Plan בגוף ה-issue והתווית; בקוד PR עם Closes #<N>, status:in-review, והערת המסירה ב-issue (מה השתנה, הקבצים, ה-head sha, מה נבדק); באג, צורך בקישור או בפיצול, או תקיעה: תגובה ב-issue, ואז מסיימים את התור.
 5. לעולם אל תמזג ואל תריץ dev-ship. בתכנון: עצור אחרי שהתוכנית בגוף ה-issue והתווית הוצבה. בקוד: עצור אחרי PR ירוק עם status:in-review והערה ב-issue. בלי חלון השאלות של סוף dev-plan ו-dev-code.
-6. אל תיגע ב-issues אחרים, ואל תוסיף תווית שלא ברשימת התוויות של הריפו (gh api repos/<repo>/labels).
+6. אל תיגע ב-issues אחרים, ואל תוסיף תווית שלא ברשימת התוויות של הריפו (gh api "repos/<repo>/labels?per_page=100" --paginate).
 7. עמודי ה-Artifact של "חייו של issue" לא מתפרסמים ממך: הפרסום הוא של מי שממזג.
 8. אל תקרא לאף כלי של claude-code-remote, גם לא ל-set_session_title: השם כבר נקבע ב-create_session, והשירות מקפיץ לדולב חלון על כל קריאה כזו מבן.
 ```
@@ -67,9 +67,10 @@ branch של משימה שנסגרה בלי מיזוג, או שלא נמחק אח
 ## מצב בן
 `get_session` לכל בן עם התג `claude-config:orchestrated` שלא בארכיון:
 1. `status_bucket`: עובד, חסום, מוכן לסקירה, הושלם או נכשל. `post_turn_summary` אומר במילים איפה הוא.
-   **בסתירה בין `status_bucket` ל-`session_status`, קובע `session_status`.**
-   בן שסיים את התור הראה `SESSION_STATUS_BUCKET_WORKING` יחד עם `SESSION_STATUS_IDLE` (הבן של #196, נראה ב-8.11.2026).
-   `SESSION_STATUS_IDLE` בלי `pending_actions` הוא בן שסיים את התור: לא פעיל, והמצב שלו נקרא מ-GitHub. הבדיקה הבאה קוראת את שני השדות מחדש.
+   **`status_bucket` עובד יחד עם `SESSION_STATUS_IDLE`: קובע `session_status`.**
+   בן שסיים את התור הראה את הסתירה הזו (הבן של #196, נראה ב-8.11.2026).
+   בלי `pending_actions` הוא בן שסיים את התור: לא פעיל, והמצב שלו נקרא מ-GitHub. הבדיקה הבאה קוראת את שני השדות מחדש.
+   הכלל רק לסתירה הזו: בן שנכשל מראה גם הוא `SESSION_STATUS_IDLE`, והוא נשאר נכשל (סעיף 3).
 2. **חסום על חלון הרשאה:** `external_metadata.pending_actions` לא ריק (הוא מראה את הכלי), או `session_status` הוא `SESSION_STATUS_REQUIRES_ACTION`.
    זה חלון הרשאה, לא שאלה של הבן.
    המתזמר אומר לדולב איזה כלי, באיזה סשן, עם קישור, ושזה חלון הרשאה.

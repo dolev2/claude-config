@@ -45,10 +45,10 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    either working, or blocked on a permission prompt: `pending_actions` not empty, or
    `session_status` `SESSION_STATUS_REQUIRES_ACTION`. `SESSION_STATUS_BUCKET_BLOCKED` with neither
    is a child that finished its turn and asks for a decision: not active, not a permission
-   prompt, and its state is read from GitHub. When `status_bucket` and `session_status`
-   disagree, `session_status` decides: `SESSION_STATUS_IDLE` with no `pending_actions` is a
-   child that finished its turn, even while `status_bucket` still reads working. The active ones' `issue:<N>` tags are the claimed
-   list, and only they count toward the 3.
+   prompt, and its state is read from GitHub. `status_bucket` working with `session_status`
+   `SESSION_STATUS_IDLE` and no `pending_actions` is also a child that finished its turn:
+   `session_status` decides. Only that pair: a failed child is idle too, and stays failed.
+   The active ones' `issue:<N>` tags are the claimed list, and only they count toward the 3.
 2. **The sprint.**
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/sprint_state.py" --claimed <N,...>
