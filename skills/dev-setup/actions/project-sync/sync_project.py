@@ -20,7 +20,8 @@ Where each part lives
 This file is the entry point: settings, the loop over issues, and what is printed.
 The rules (what is written where) are in sync_rules.py, the board reads and writes in
 board.py (and why the board is read from the issue side), the sprint view in
-sprint_view.py, and gh / GraphQL in gh_api.py. They
+sprint_view.py, the current-sprint rule in sprint_rule.py (a copy of the scripts' one),
+and gh / GraphQL in gh_api.py. They
 are flat modules next to this file, so every copy of it must ship the whole folder:
 action.yml runs it in place, and dolev2/.github's sync-boards.yml downloads every .py
 here (claude-config #57). A failure to move the sprint view is printed and the issue

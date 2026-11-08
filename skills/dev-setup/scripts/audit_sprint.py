@@ -48,6 +48,9 @@ SHARED_DOCS = {"README.md", "CLAUDE.md"}
 
 @dataclass
 class Finding:
+    """One finding. `numbers` holds issue numbers, and `owner/name#N` for an issue of
+    another repo (OUTSIDE only, claude-config #164)."""
+
     code: str
     numbers: list[int | str]
     detail: str = ""
