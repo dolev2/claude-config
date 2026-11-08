@@ -116,10 +116,10 @@ REPO=https://github.com/dolev2/claude-config
    חריג שני: שלושת הכלים שהבן של המתזמר צריך (`CHILD_TOOLS` ב-`hooks/guard_create_session.py`: פתיחת PR, עדכון PR, תגובה ב-issue). הם מאושרים מראש כדי שיעברו לבן (סעיף 5, #150).
 2. **תמיד שואל:** כל כלי אחר שכותב מחוץ לסשן (issue, קובץ ב-GitHub), `send_later` ו-`create_trigger` (שומרים משימה מתוזמנת בחשבון), `create_session`, `archive_session` ו-`interrupt_session`.
    גם בקשה שהשירות מסמן `server_policy_ask_only: true` שואלת, ושום כלל לא עוקף אותה.
-   **השירות מכריח חלון ל-`create_session`, ל-`archive_session` ול-`send_message`, ושום כלל לא עוקף אותו** (claude-config #179, #184).
+   **השירות מכריח חלון ל-`create_session`, ל-`archive_session` ול-`send_message` של סשן-בן, ושום כלל לא עוקף אותו** (claude-config #179, #184).
    החלון שלהם מגיע עם `decision_reason_type: "other"` ו-`suppress_always_allow_rule: true`, ולכן אין בו "אשר תמיד".
    נבדק ב-8.11.2026: `archive_session` ב-`permissions.allow` של ה-container, והחלון קפץ בכל זאת.
-   גם `send_message` של סשן-בן להורה, נבדק ב-8.11.2026 עם אותו סימון. לכן בן לא שולח הודעות: הוא מדווח ב-GitHub, והמתזמר מושך (`orchestrate.md`, "איך המתזמר יודע שבן התקדם").
+   גם `send_message` של סשן-בן להורה, נבדק ב-8.11.2026 עם אותו סימון. הכיוון ההפוך, מהמתזמר לבן, לא נבדק. לכן בן לא שולח הודעות: הוא מדווח ב-GitHub, והמתזמר מושך (`orchestrate.md`, "איך המתזמר יודע שבן התקדם").
    לכן הם לא נכנסים ל-`permissions.allow`: כלל שם לא היה משנה כלום.
    **בדיקה ברקע לא מקפיצה חלון:** `gh api` ב-Bash עם `run_in_background` וב-Monitor רצו בסשן-בן בלי חלון, והיציאה העירה סשן שכבר סיים את התור. נבדק ב-8.11.2026.
    `interrupt_session`: לא נבדק אם השירות מכריח חלון גם לו.

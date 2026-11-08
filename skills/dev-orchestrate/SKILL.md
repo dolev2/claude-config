@@ -48,8 +48,15 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `pipeline_sha` differs from the last check's (every check ends with a line that carries it,
    step 6): run `$HOME/.claude/hooks/cloud_refresh.py` and read this skill and the "Read first" files again before
    going on. The pipeline may change during the sprint; the check never leans on an old read.
-3. **Changes.** Each issue the watch reported, or whose status moved since the last check, is
-   checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
+3. **Changes.** First note the time, as `<now>` (ISO, UTC). The watch stops at its first change,
+   so it may not have seen them all: run it once over every issue of a child that is not
+   archived, from the previous check's `since` (step 6; the first check has none and skips this):
+   ```bash
+   python "$HOME/.claude/skills/dev-setup/scripts/watch_children.py" \
+     --expect <N>=<status>,... --since <previous since> --interval 1 --timeout 1
+   ```
+   `--expect` holds the status the previous check saw, from its summary line. Each issue it
+   names, or whose status moved since the last check, is checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
    התקדם"). An issue now in `status:in-review` with an open PR: `subscribe_pr_activity` on it.
    A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
 4. **Dispatch.** While fewer than 3 children are active and nobody is in overage: one child per
@@ -75,15 +82,18 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    global `CLAUDE.md` says ("מה פתוח": `/compact` and the summary that must survive). A fix:
    `needs-repair`, a comment, and a coding child. Each of these new children opens through
    step 4, so the old child is archived.
-6. **Close the check.** One summary line, always, ending with `pipeline_sha <sha>`: the next check
-   compares against it. Nothing to open and nothing to ask: the line says what the sprint waits
+6. **Close the check.** One summary line, always, ending with
+   `since <now> expect <N>=<status>,... pipeline_sha <sha>`: the next check compares against it,
+   and step 3 reads `since` and `expect` from it. Nothing to open and nothing to ask: the line says what the sprint waits
    for. Then, when any child is active, start the background watch: stop the previous one if
    it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/watch_children.py" \
-     --expect <N>=<status>,... --since <the time this check read the sprint, ISO, UTC>
+     --expect <N>=<status>,... --since <now>
    ```
-   `--expect` holds each active child's issue with the status this check saw. Its exit wakes
+   `--expect` holds the issue of each active child, including the ones step 4 opened now,
+   with its status as this check last saw it. `<now>` is from step 3, so a comment written
+   during this check still wakes the next one. Its exit wakes
    the next check. Last, `ScheduleWakeup` of 1200–1800 seconds as a fallback; the watch and PR
    events wake it sooner.
 
