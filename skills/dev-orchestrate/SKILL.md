@@ -1,6 +1,6 @@
 ---
 name: dev-orchestrate
-description: Runs the whole current sprint from one cloud session — opens a child session per issue that is no longer blocked (up to 3 at a time), plans and codes through dev-plan and dev-code in those children, follows them through their reports, PR events and a fallback check, and brings every question, plan approval and merge to Dolev in one question window. Use only in a cloud session (CLAUDE_CODE_REMOTE=true) in one of Dolev's repos, when he says "תריץ את הספרינט", "run the sprint", "תתזמר את הספרינט", or asks to orchestrate the sprint. It never merges without his request for that specific issue. Not for a single issue: that is dev-next, dev-plan or dev-code.
+description: Runs the whole current sprint from one cloud session — opens a child session per issue that is no longer blocked (up to 3 at a time), plans and codes through dev-plan and dev-code in those children, follows them on GitHub through a background watch of their issues, PR events and a fallback check, and brings every question, plan approval and merge to Dolev in one question window. Use only in a cloud session (CLAUDE_CODE_REMOTE=true) in one of Dolev's repos, when he says "תריץ את הספרינט", "run the sprint", "תתזמר את הספרינט", or asks to orchestrate the sprint. It never merges without his request for that specific issue. Not for a single issue: that is dev-next, dev-plan or dev-code.
 ---
 
 # The sprint orchestrator
@@ -15,7 +15,7 @@ session, and stop.
 ## Read first
 
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md`, `orchestrate.md` (the child
-contract, the tags, what to check after a report; below, `orchestrate.md` always means
+contract, the tags, what wakes a check and what to check after a change; below, `orchestrate.md` always means
 `reference/orchestrate.md`), `chat-decisions.md`, `cloud.md` (the `gh`
 table and "חלונות אישור בסשן-בן"), `dependencies.md`, and `git-flow.md`. Then the repo's
 `CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 1).
@@ -32,8 +32,9 @@ table and "חלונות אישור בסשן-בן"), `dependencies.md`, and `git-
 ## Each check
 
 A check keeps no memory of the previous one: it rebuilds the picture from GitHub and the
-sessions. It starts on any wake: a child's `send_message`, a PR event, a failed-child event, or
-the fallback `ScheduleWakeup`.
+sessions. It starts on any wake: the background watch exiting (step 6), a PR event, a
+failed-child event, or the fallback `ScheduleWakeup`. Never a message from a child: children do
+not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם").
 
 1. **The children.** `list_sessions` with the tag `claude-config:orchestrated`; for each one not
    archived, `get_session`. Read `status_bucket`, `post_turn_summary` and
@@ -47,9 +48,10 @@ the fallback `ScheduleWakeup`.
    `pipeline_sha` differs from the last check's (every check ends with a line that carries it,
    step 6): run `$HOME/.claude/hooks/cloud_refresh.py` and read this skill and the "Read first" files again before
    going on. The pipeline may change during the sprint; the check never leans on an old read.
-3. **Reports.** Each child report since the last check is checked on GitHub, never taken on its
-   word (`orchestrate.md`, "דיווח הוא אות, לא החלטה"). A PR that opened: `subscribe_pr_activity`.
-   A bug, link or split a child found: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
+3. **Changes.** Each issue the watch reported, or whose status moved since the last check, is
+   checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
+   התקדם"). An issue now in `status:in-review` with an open PR: `subscribe_pr_activity` on it.
+   A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
 4. **Dispatch.** While fewer than 3 children are active and nobody is in overage: one child per
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
    on which issue. Any earlier child of the same issue that is not archived gets
@@ -75,8 +77,15 @@ the fallback `ScheduleWakeup`.
    step 4, so the old child is archived.
 6. **Close the check.** One summary line, always, ending with `pipeline_sha <sha>`: the next check
    compares against it. Nothing to open and nothing to ask: the line says what the sprint waits
-   for. Then `ScheduleWakeup` of 1200–1800 seconds as a fallback; reports and PR events wake it
-   sooner.
+   for. Then, when any child is active, start the background watch: stop the previous one if
+   it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
+   ```bash
+   python "$HOME/.claude/skills/dev-setup/scripts/watch_children.py" \
+     --expect <N>=<status>,... --since <the time this check read the sprint, ISO, UTC>
+   ```
+   `--expect` holds each active child's issue with the status this check saw. Its exit wakes
+   the next check. Last, `ScheduleWakeup` of 1200–1800 seconds as a fallback; the watch and PR
+   events wake it sooner.
 
 ## The end
 
@@ -95,5 +104,5 @@ the sprint), then `ScheduleWakeup` with `stop`.
   them; the orchestrator does, as `orchestrate.md` says.
 - Never open a child for an issue that is claimed, blocked, an umbrella, or `costs-money`:
   `sprint_state.py` already leaves those out of `dispatch`, and the check never adds them back.
-- A child is checked on GitHub after every report: the plan in the body, the PR's files and CI,
-  the status label, and no stray branch or label.
+- A child is checked on GitHub after every change the watch or a PR event shows: the plan in
+  the body, the PR's files and CI, the status label, and no stray branch or label.

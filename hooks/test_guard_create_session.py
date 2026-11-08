@@ -72,6 +72,7 @@ def test_orchestrator_child_passes(monkeypatch, tool_input):
         "*",
         "mcp__github__merge_pull_request",
         "mcp__github__delete_file",
+        "mcp__claude-code-remote__send_message",
     ],
 )
 def test_broad_tool_asks_and_names_it(monkeypatch, tool):
