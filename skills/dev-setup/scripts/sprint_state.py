@@ -27,8 +27,13 @@ The keys:
                      not yet, ask again next check (cloud.md)
     on_hold          costs-money, until Dolev approves the expense
     findings         audit_sprint.py's findings, as data
-    pipeline_sha     the last commit that touched skills/ on the pipeline's main: when
-                     it moves, the orchestrator reads the skills again
+    pipeline_sha     the last commit on the pipeline's main that touched what is read
+                     from disk on every use (RELOAD_PATHS): when it moves, the
+                     orchestrator refreshes ~/.claude and reads the skills again
+    session_sha      the last commit on the pipeline's main that touched what a session
+                     loads once, at its start (SESSION_PATHS): when it moves, the
+                     orchestrator asks for a new orchestrator session and stops
+                     (orchestrate.md, "שינוי בצינור באמצע ספרינט")
 """
 
 import argparse
@@ -48,6 +53,11 @@ PROMPTS = {
     "ready-to-execute": "תקודד את #{}",
     "needs-repair": "תקודד את #{}",
 }
+# The two groups of the pipeline repo's paths (claude-config #192). A hook's script is
+# read from disk on every run, so it reloads; registering a hook is a settings.json
+# change, so it does not.
+RELOAD_PATHS = ["skills", "hooks"]
+SESSION_PATHS = ["CLAUDE.md", "rules", "settings.json"]
 FAILED = {"failure", "timed_out", "cancelled", "action_required", "startup_failure"}
 
 
@@ -91,10 +101,20 @@ def pr_status(repo: str, pr: dict) -> dict:
     }
 
 
-def pipeline_sha() -> str:
-    """The last commit that touched skills/ on the pipeline repo's main."""
-    commits = api(f"repos/{PIPELINE_REPO}/commits?path=skills&sha=main&per_page=1")
-    return commits[0]["sha"]
+def last_commit(paths: list[str]) -> str | None:
+    """The newest commit on the pipeline repo's main that touched any of `paths`.
+
+    The REST API takes one path per call, so each path is asked on its own and the
+    newest by committer date wins: main is linear (squash merges), so that is the last.
+    None when no path has a commit.
+    """
+    newest = []
+    for path in paths:
+        commits = api(f"repos/{PIPELINE_REPO}/commits?path={path}&sha=main&per_page=1")
+        newest.extend(commits[:1])
+    if not newest:
+        return None
+    return max(newest, key=lambda c: c["commit"]["committer"]["date"])["sha"]
 
 
 def dispatch_split(
@@ -211,7 +231,8 @@ def main(argv: list[str] | None = None) -> None:
     if sprint is None:
         sys.exit("No open milestone has open issues.")
     result = state(nodes, sprint, args.claimed, lambda pr: pr_status(repo, pr))
-    result["pipeline_sha"] = pipeline_sha()
+    result["pipeline_sha"] = last_commit(RELOAD_PATHS)
+    result["session_sha"] = last_commit(SESSION_PATHS)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

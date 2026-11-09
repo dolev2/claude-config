@@ -216,18 +216,79 @@ def test_ci_summary(runs, summary):
     assert sprint_state.ci_summary(runs) == summary
 
 
-def fake_github(monkeypatch, nodes):
+def commit(sha, date):
+    return {"sha": sha, "commit": {"committer": {"date": date}}}
+
+
+def fake_api(newest_by_path):
+    """api() for the commits endpoint: the newest commit of each path, or none."""
+
+    def api(path):
+        asked = path.split("path=")[1].split("&")[0]
+        found = newest_by_path.get(asked)
+        return [found] if found else []
+
+    return api
+
+
+def fake_github(monkeypatch, nodes, newest_by_path=None):
     monkeypatch.setattr(sprint_state, "current_repo", lambda: "acme/widgets")
     monkeypatch.setattr(sprint_state, "open_issue_nodes", lambda repo, with_body: nodes)
-    monkeypatch.setattr(sprint_state, "api", lambda path: [{"sha": "abc123"}])
+    if newest_by_path is None:
+        newest_by_path = {
+            "skills": commit("abc123", "2026-11-01T10:00:00Z"),
+            "CLAUDE.md": commit("def456", "2026-11-01T09:00:00Z"),
+        }
+    monkeypatch.setattr(sprint_state, "api", fake_api(newest_by_path))
 
 
-def test_main_prints_the_state_with_the_pipeline_sha(monkeypatch, capsys):
+OLD = commit("old", "2026-11-01T10:00:00Z")
+NEW = commit("new", "2026-11-02T10:00:00Z")
+
+
+def test_a_group_takes_the_newest_commit_even_from_a_later_path(monkeypatch):
+    monkeypatch.setattr(sprint_state, "api", fake_api({"skills": OLD, "hooks": NEW}))
+    assert sprint_state.last_commit(["skills", "hooks"]) == "new"
+
+
+@pytest.mark.parametrize(
+    ("changed", "moved", "stayed"),
+    [
+        ("rules", "session_sha", "pipeline_sha"),
+        ("settings.json", "session_sha", "pipeline_sha"),
+        ("skills", "pipeline_sha", "session_sha"),
+        ("hooks", "pipeline_sha", "session_sha"),
+    ],
+)
+def test_a_merge_moves_only_the_sha_of_its_group(
+    monkeypatch, capsys, changed, moved, stayed
+):
+    before = {"skills": OLD, "CLAUDE.md": OLD}
+    fake_github(monkeypatch, [node(1)], before)
+    sprint_state.main([])
+    first = json.loads(capsys.readouterr().out)
+
+    fake_github(monkeypatch, [node(1)], before | {changed: NEW})
+    sprint_state.main([])
+    second = json.loads(capsys.readouterr().out)
+
+    assert second[moved] == "new" and first[moved] == "old"
+    assert second[stayed] == first[stayed] == "old"
+
+
+def test_a_path_without_commits_does_not_fail(monkeypatch):
+    monkeypatch.setattr(sprint_state, "api", fake_api({"rules": OLD}))
+    assert sprint_state.last_commit(["CLAUDE.md", "rules"]) == "old"
+    assert sprint_state.last_commit(["settings.json"]) is None
+
+
+def test_main_prints_the_state_with_both_shas(monkeypatch, capsys):
     fake_github(monkeypatch, [node(1), node(2)])
     sprint_state.main(["--claimed", "1"])
     result = json.loads(capsys.readouterr().out)
     assert numbers(result["dispatch"]) == [2]
     assert result["pipeline_sha"] == "abc123"
+    assert result["session_sha"] == "def456"
 
 
 def test_main_without_an_open_milestone_exits(monkeypatch):

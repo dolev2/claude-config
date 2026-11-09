@@ -3,6 +3,7 @@
 import importlib.util
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -57,13 +58,18 @@ def claude_md(home: Path) -> str:
     return (home / ".claude" / "CLAUDE.md").read_text(encoding="utf-8")
 
 
-def run_main(monkeypatch, home: Path, remote: str | None = "true") -> None:
+def run_main(
+    monkeypatch,
+    home: Path,
+    remote: str | None = "true",
+    argv: tuple[str, ...] = (),
+) -> int:
     monkeypatch.setattr(Path, "home", lambda: home)
     if remote is None:
         monkeypatch.delenv("CLAUDE_CODE_REMOTE", raising=False)
     else:
         monkeypatch.setenv("CLAUDE_CODE_REMOTE", remote)
-    cloud_refresh.main()
+    return cloud_refresh.main(list(argv))
 
 
 def test_cloud_session_moves_to_the_new_main(monkeypatch, setup):
@@ -121,3 +127,71 @@ def test_unreachable_remote_does_not_raise(monkeypatch, setup, tmp_path):
 
 def test_no_claude_folder_does_not_raise(monkeypatch, tmp_path):
     run_main(monkeypatch, tmp_path / "empty-home")
+
+
+def test_the_hook_prints_nothing(monkeypatch, setup, capsys):
+    home, work = setup
+    commit(work, "v2\n")
+
+    assert run_main(monkeypatch, home) == 0
+
+    assert capsys.readouterr().out == ""
+
+
+def test_report_after_a_refresh(monkeypatch, setup, capsys):
+    home, work = setup
+    commit(work, "v2\n")
+    new_main = git(work, "rev-parse", "HEAD").strip()
+
+    assert run_main(monkeypatch, home, argv=["--report"]) == 0
+
+    assert capsys.readouterr().out == f"refreshed {new_main}\n"
+    assert claude_md(home) == "v2\n"
+
+
+def test_report_with_uncommitted_changes(monkeypatch, setup, capsys):
+    home, work = setup
+    commit(work, "v2\n")
+    (home / ".claude" / "CLAUDE.md").write_text("edited\n", encoding="utf-8")
+
+    assert run_main(monkeypatch, home, argv=["--report"]) == 1
+
+    assert capsys.readouterr().out == "not refreshed: uncommitted changes\n"
+    assert claude_md(home) == "edited\n"
+
+
+def test_report_with_an_unreachable_remote(monkeypatch, setup, tmp_path, capsys):
+    home, _ = setup
+    missing = tmp_path / "dolev2" / "claude-config-missing.git"
+    git(home / ".claude", "remote", "set-url", "origin", str(missing))
+
+    assert run_main(monkeypatch, home, argv=["--report"]) == 1
+
+    assert capsys.readouterr().out == "not refreshed: fetch failed\n"
+
+
+def test_report_outside_a_cloud_session(monkeypatch, setup, capsys):
+    home, work = setup
+    commit(work, "v2\n")
+
+    assert run_main(monkeypatch, home, remote=None, argv=["--report"]) == 1
+
+    assert capsys.readouterr().out == "not refreshed: not a cloud session\n"
+    assert claude_md(home) == "v1\n"
+
+
+def test_report_from_the_command_line(setup, tmp_path):
+    home, work = setup
+    commit(work, "v2\n")
+    (home / ".claude" / "CLAUDE.md").write_text("edited\n", encoding="utf-8")
+    env = {**os.environ, "HOME": str(home), "CLAUDE_CODE_REMOTE": "true"}
+
+    run = subprocess.run(
+        [sys.executable, str(SCRIPT), "--report"],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    assert run.returncode == 1
+    assert run.stdout == "not refreshed: uncommitted changes\n"

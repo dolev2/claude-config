@@ -586,7 +586,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <div class="panel">
   <ol class="life" aria-labelledby="orch-h">
     <li class="human"><strong>Start</strong><p>Dolev asks. The orchestrator shows what opens now, what waits on a blocker, and what waits for him.</p></li>
-    <li class="claude"><strong>Check</strong><p><code>sprint_state.py</code> says what is ready for a child, what waits on a shared file, and what is ready to merge.</p><p>The skills changed on <code>main</code>: read them again.</p></li>
+    <li class="claude"><strong>Check</strong><p><code>sprint_state.py</code> says what is ready for a child, what waits on a shared file, and what is ready to merge.</p><p>A skill, script or hook changed on <code>main</code>: refresh <code>~/.claude</code> and read them again.</p><p>The global instructions, rules or settings changed, or the refresh failed: recommend a new orchestrator session to Dolev, and this orchestrator stops.</p></li>
     <li class="claude"><strong>A child per free task</strong><p>Up to 3 at a time, tagged <code>issue:N</code>. One child plans, a separate one codes.</p></li>
     <li class="gate"><strong>The child's contract</strong><p>It never asks Dolev, never touches links, never merges, and calls no session tools: no messages, no renaming its session (the service raises a prompt on each call). Its report is what it leaves on GitHub: the plan, the label, a comment and the PR.</p></li>
     <li class="claude"><strong>After a change</strong><p>A background watch (<code>watch_children.py</code>) wakes the orchestrator when a child's label moves or a comment lands. The orchestrator checks GitHub: the plan, the PR and its CI, and no stray branch or label.</p></li>

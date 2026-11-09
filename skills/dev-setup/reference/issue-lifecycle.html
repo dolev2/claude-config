@@ -607,7 +607,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <div class="panel">
   <ol class="life" aria-labelledby="orch-h">
     <li class="human"><strong>פתיחה</strong><p>דולב מבקש. המתזמר מראה מה ייפתח עכשיו, מה מחכה לחוסם, ומה מחכה לו.</p></li>
-    <li class="claude"><strong>בדיקה</strong><p><code>sprint_state.py</code> אומר מה מוכן לבן, מה מחכה לחפיפת קבצים, ומה מוכן למיזוג.</p><p>הסקילים השתנו ב-<code>main</code>: קוראים אותם מחדש.</p></li>
+    <li class="claude"><strong>בדיקה</strong><p><code>sprint_state.py</code> אומר מה מוכן לבן, מה מחכה לחפיפת קבצים, ומה מוכן למיזוג.</p><p>סקיל, סקריפט או hook השתנו ב-<code>main</code>: מרעננים את <code>~/.claude</code> וקוראים אותם מחדש.</p><p>הנחיות, כללים או הגדרות השתנו, או שהרענון נכשל: ממליצים לדולב על סשן מתזמר חדש, והמתזמר הזה עוצר.</p></li>
     <li class="claude"><strong>בן לכל משימה פנויה</strong><p>עד 3 במקביל, עם התגיות <code>issue:N</code>. בן לתכנון ובן נפרד לקוד.</p></li>
     <li class="gate"><strong>החוזה של הבן</strong><p>לא שואל את דולב, לא נוגע בקישורים, לא ממזג, ולא קורא לכלי הסשנים: לא שולח הודעות ולא משנה את שם הסשן (השירות מקפיץ חלון על כל קריאה). הדיווח שלו הוא מה שב-GitHub: תוכנית, תווית, תגובה ו-PR.</p></li>
     <li class="claude"><strong>אחרי שינוי</strong><p>בדיקה ברקע (<code>watch_children.py</code>) מעירה את המתזמר כשתווית של בן זזה או שנוספה תגובה. המתזמר בודק ב-GitHub: את התוכנית, את ה-PR וה-CI, ושאין branch או תווית מיותרים.</p></li>
