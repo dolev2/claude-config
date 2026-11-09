@@ -183,8 +183,28 @@ def should_sync(labels: list[str], state: str, on_board: bool) -> bool:
     """
     if not on_board and not is_pipeline_issue(labels):
         return False  # not a pipeline issue - leave it alone
-    # Closed as not-planned: it does not belong on the board.
+    # Closed and not done: it does not belong on the board. should_archive takes a
+    # card already there off it.
     return state.upper() != "CLOSED" or "status:done" in labels
+
+
+def should_archive(
+    labels: list[str], state: str, state_reason: str | None, on_board: bool
+) -> bool:
+    """Whether a closed issue's card leaves the board for the board's archive.
+
+    Closed as not planned (or as a duplicate) is not done, and should_sync stops
+    writing it, so its card sat in its last column for good (claude-config #219: 8
+    issues on board 9). Closed as completed is not archived: close_out gives a
+    pipeline issue status:done first, and its card moves to Done. One opened from the
+    board with no status:* label keeps its card, as before.
+    """
+    return (
+        on_board
+        and state.upper() == "CLOSED"
+        and (state_reason or "").upper() != "COMPLETED"
+        and "status:done" not in labels
+    )
 
 
 def needs_done_label(labels: list[str], state: str, state_reason: str | None) -> bool:

@@ -90,6 +90,7 @@
 | `actions/project-sync/` | הסנכרון מהתוויות ללוח, בכיוון אחד, action שכל ריפו עם לוח קורא לו. `action.yml` מריץ את `sync_project.py` | עותק אחד לכל הריפואים |
 | `actions/project-sync/sync_project.py` | נקודת הכניסה של הסנכרון: ההגדרות מהסביבה, הלולאה על ה-issues, ומה מודפס | `action.yml` ו-`sweep_all.py` מריצים אותו בשם הזה |
 | `actions/project-sync/sync_rules.py` | הכללים: איזה issue מסונכרן, מה נכתב ללוח, החריג של issue שנפתח מהלוח, ושמות האופציות בלוח (`STATUS_OPTIONS`) | בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד (#57) |
+| `actions/project-sync/closing.py` | מה issue סגור מקבל לפני שאר הסנכרון: הושלם, `status:done`. לא הושלם (not planned), הכרטיס שלו עובר לארכיון של הלוח | בלי זה כרטיס של issue שנסגר כ-not planned נשאר בעמודה האחרונה שלו (#219) |
 | `actions/project-sync/board.py` | קריאה וכתיבה של הלוח, מצד ה-issue | `projectV2.items` מחזיר רשימה ריקה (המוקש ב-`reference/setup.md`) |
 | `actions/project-sync/sprint_rule.py` | עותק של `scripts/sprint_rule.py` | הסנכרון מורד כתיקייה שטוחה; `test_sprint_rule.py` שומר שהשניים זהים (#164) |
 | `actions/project-sync/sprint_view.py` | מזיז את הסינון של התצוגה "ספרינט נוכחי" לספרינט הנוכחי | ל-GitHub אין `milestone:@current` (#17) |

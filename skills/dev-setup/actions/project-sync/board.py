@@ -31,9 +31,10 @@ query($owner:String!, $number:Int!) {
 """
 
 # The board items of one issue and their single-select values, in both queries below.
+# ARCHIVED is filled per query: projectItems includes archived items by default.
 ITEM_FIELDS = """
         number
-        projectItems(first:10) {
+        projectItems(first:10ARCHIVED) {
           nodes {
             id
             project { number }
@@ -56,7 +57,9 @@ query($owner:String!, $repo:String!, $after:String) {
     issues(first:100, after:$after, states:[OPEN, CLOSED]) {
       pageInfo { hasNextPage endCursor }
       nodes {"""
-    + ITEM_FIELDS
+    # An archived card is off the board: read as on it, it would be archived again on
+    # every sweep (claude-config #219).
+    + ITEM_FIELDS.replace("ARCHIVED", ", includeArchived:false")
     + """      }
     }
   }
@@ -69,7 +72,8 @@ ONE_ISSUE_ITEMS = (
 query($owner:String!, $repo:String!, $issue:Int!) {
   repository(owner:$owner, name:$repo) {
     issue(number:$issue) {"""
-    + ITEM_FIELDS
+    # Archived items included: "already exists" may be about an archived card.
+    + ITEM_FIELDS.replace("ARCHIVED", "")
     + """    }
   }
 }
@@ -92,6 +96,12 @@ mutation($project:ID!, $item:ID!, $field:ID!, $option:String!) {
     projectId:$project, itemId:$item, fieldId:$field,
     value:{singleSelectOptionId:$option}
   }) { projectV2Item { id } }
+}
+"""
+
+ARCHIVE_ITEM = """
+mutation($project:ID!, $item:ID!) {
+  archiveProjectV2Item(input:{projectId:$project, itemId:$item}) { item { id } }
 }
 """
 
@@ -194,3 +204,8 @@ def set_field(project_id: str, item_id: str, field: dict, option_name: str) -> b
 def clear_field(project_id: str, item_id: str, field: dict) -> None:
     """Empty a field on a board item, so the card sits in no column."""
     gh_api.graphql(CLEAR_FIELD, project=project_id, item=item_id, field=field["id"])
+
+
+def archive_item(project_id: str, item_id: str) -> None:
+    """Move a board item to the board's archive, so no view shows it."""
+    gh_api.graphql(ARCHIVE_ITEM, project=project_id, item=item_id)

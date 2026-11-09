@@ -6,7 +6,7 @@
 
 | מנגנון | מתי | מה עושה | טוקן |
 |---|---|---|---|
-| `sync-project.yml` | אירוע issue. הסקר של 15 הדקות רץ מ-`dolev2/.github` לכל הריפואים | כותב את התוויות לשדות הלוח, בכיוון אחד. issue שנסגר כהושלם (`COMPLETED`) מקבל `status:done` | `PROJECT_TOKEN` (PAT) |
+| `sync-project.yml` | אירוע issue. הסקר של 15 הדקות רץ מ-`dolev2/.github` לכל הריפואים | כותב את התוויות לשדות הלוח, בכיוון אחד. issue שנסגר כהושלם (`COMPLETED`) מקבל `status:done`, והכרטיס של issue שנסגר בלי להיות מושלם (not planned) עובר לארכיון של הלוח (#219) | `PROJECT_TOKEN` (PAT) |
 | `open-questions-gate.yml` | כל נגיעה ב-`status:in-review` או ב-`status:done`, וגם עריכת גוף | קורא ל-action המשותף ב-`claude-config`; מתריע על שאלה פתוחה, ומסיר את התווית לבד כשכולן מסומנות | `GITHUB_TOKEN` |
 
 **למה הסקר של 15 הדקות:** גרירת כרטיס בלוח של פרויקט בבעלות משתמש לא מייצרת webhook. תווית
