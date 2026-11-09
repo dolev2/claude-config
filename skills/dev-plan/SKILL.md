@@ -134,6 +134,11 @@ keeps them: edit it in the headings it already has.
      reason to merge.
    - **Part of it belongs elsewhere?** Work an existing issue already owns is a line in "מה לא
      כלול, ואיפה כן", not part of this plan.
+   - **Nothing Claude can do?** A task only Dolev can carry out (Claude has no access, like the
+     Netlify check of #75) takes the question route: what he must check or answer goes in as
+     unticked boxes in the open-questions section, and the issue moves to
+     `status:plan-questions` (`reference/pipeline.md`, the `status:plan-questions` row). His answer sends it back
+     to `status:explore`, and the plan goes on from there.
 
    A change to an issue whose status is not Claude's turn (`reference/pipeline.md`) is a step
    of this plan, made in Execute once Dolev approves.

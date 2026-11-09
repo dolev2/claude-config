@@ -57,6 +57,11 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    sub-issue labelled `bug` is part of the same work and is fixed on the same branch unless it
    clearly stands alone. Also read what is already on the branch and in any open PR.
 
+   **A manual task** (only Dolev can carry it out: Claude has no access) that reached Execute:
+   stop before any code. Write what he must check or answer as unticked boxes in the
+   open-questions section, move it to `status:plan-questions` with a comment, and open no PR
+   (`reference/pipeline.md`, the `status:plan-questions` row).
+
    **A bug without a Plan.** A `bug` issue skips planning (`reference/pipeline.md`), so its
    Plan may still read `_טרם נכתבה תוכנית._`. Then, before step 4 and before any code
    (a bug that already has a Plan, from `dev-plan` or a repair round, follows that Plan):

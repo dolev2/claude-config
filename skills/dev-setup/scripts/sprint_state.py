@@ -20,14 +20,17 @@ The keys:
                      flight. Repairs first, then bugs, then approved plans, then plans
                      to write.
     held_by_overlap  would be in dispatch, but shares a planned file with work in flight
-                     (claimed, in review, or earlier in dispatch), so it runs after it
+                     (claimed, in review, or earlier in dispatch), so it runs after it.
+                     Work in flight counts its planned files and the files its Plan's
+                     branch already changed (claude-config #203)
     blocked          Claude's turn, waiting on an open blocker
     umbrellas        would be in dispatch, but a sub-issue is still open: the issue
                      and its open sub-issues (#N, or owner/name#N in another repo)
     waiting_dolev    plan questions, plans to approve, PRs to review
     merge_queue      in review with an open PR: its head, mergeable_state and CI.
                      mergeable_state "unknown" means GitHub is still computing it:
-                     not yet, ask again next check (cloud.md)
+                     not yet, ask again next check (cloud.md). overlaps: the other
+                     work in flight that shares a file the PR changes, [{number, files}]
     on_hold          costs-money, until Dolev approves the expense
     findings         audit_sprint.py's findings, as data
     pipeline_sha     the last commit on the pipeline's main that touched what is read
@@ -58,7 +61,9 @@ from pathlib import Path
 
 from audit_sprint import SprintIssue, audit, is_local, is_shared_doc, sprint_issue
 from gh_rest import api, current_repo, open_issue_nodes
+from issue_body import plan_branch, sections
 from rank_issues import Issue, current_sprint, parse_issue, rank
+from sprint_github import branch_files, pr_files, pr_status
 
 PIPELINE_URL = "https://github.com/dolev2/claude-config"
 CACHE = Path.home() / ".cache" / "claude-config-pipeline.git"
@@ -75,7 +80,6 @@ PROMPTS = {
 # change, so it does not.
 RELOAD_PATHS = ["skills", "hooks"]
 SESSION_PATHS = ["CLAUDE.md", "rules", "settings.json"]
-FAILED = {"failure", "timed_out", "cancelled", "action_required", "startup_failure"}
 
 
 def claimed_list(text: str) -> list[int]:
@@ -105,30 +109,45 @@ def is_umbrella(node: dict) -> bool:
     return bool(open_subs(node))
 
 
-def shared_files(a: SprintIssue, b: SprintIssue) -> list[str]:
-    """Planned files both issues change, without README.md and CLAUDE.md."""
-    return sorted(f for f in a.files & b.files if not is_shared_doc(f))
+def shared_files(a: set[str], b: set[str]) -> list[str]:
+    """Files in both sets, without README.md and CLAUDE.md."""
+    return sorted(f for f in a & b if not is_shared_doc(f))
 
 
-def ci_summary(check_runs: list[dict]) -> str:
-    """One word for a commit's checks: none, pending, failure or success."""
-    if not check_runs:
-        return "none"
-    if any(run["status"] != "completed" for run in check_runs):
-        return "pending"
-    if any(run["conclusion"] in FAILED for run in check_runs):
-        return "failure"
-    return "success"
+def no_files(_: object) -> set[str]:
+    """The default reader of changed files: nothing read from GitHub."""
+    return set()
 
 
-def pr_status(repo: str, pr: dict) -> dict:
-    """mergeable_state and CI of one open PR, from GitHub."""
-    pull = api(f"repos/{repo}/pulls/{pr['number']}")
-    checks = api(f"repos/{repo}/commits/{pr['headSha']}/check-runs?per_page=100")
-    return {
-        "mergeable_state": pull["mergeable_state"],
-        "ci": ci_summary(checks["check_runs"]),
-    }
+def work_files(
+    in_sprint: list[dict],
+    audited: dict[int, SprintIssue],
+    in_flight: list[int],
+    files_of_branch: Callable[[str], set[str]],
+) -> dict[int, set[str]]:
+    """Each issue's planned files; for work in flight, plus what its branch changed.
+
+    A child may change a file its Plan never named (#196 after #164), so the planned
+    list alone misses the overlap (claude-config #203).
+    """
+    files = {number: issue.files for number, issue in audited.items()}
+    for node in in_sprint:
+        if node["number"] in in_flight:
+            branch = plan_branch(sections(node.get("body") or "").get("plan", ""))
+            if branch:
+                files[node["number"]] = files[node["number"]] | files_of_branch(branch)
+    return files
+
+
+def overlaps(
+    issue: int, changed: set[str], files: dict[int, set[str]], in_flight: list[int]
+) -> list[dict]:
+    """The other work in flight that shares a file with `changed`: [{number, files}]."""
+    found = (
+        {"number": other, "files": shared_files(changed, files[other])}
+        for other in sorted(set(in_flight) - {issue})
+    )
+    return [row for row in found if row["files"]]
 
 
 def git(*args: str) -> str:
@@ -193,7 +212,7 @@ def pipeline_shas(cache: Path) -> dict:
 
 
 def dispatch_split(
-    candidates: list[Issue], audited: dict[int, SprintIssue], in_flight: list[int]
+    candidates: list[Issue], files: dict[int, set[str]], in_flight: list[int]
 ) -> tuple[list[dict], list[dict]]:
     """(dispatch, held_by_overlap), in ranking order.
 
@@ -204,14 +223,13 @@ def dispatch_split(
     dispatch, held = [], []
     for issue in candidates:
         clashes = {
-            other: shared_files(audited[issue.number], audited[other])
-            for other in flying
+            other: shared_files(files[issue.number], files[other]) for other in flying
         }
-        clashes = {other: files for other, files in clashes.items() if files}
+        clashes = {other: shared for other, shared in clashes.items() if shared}
         if clashes:
-            files = sorted({f for shared in clashes.values() for f in shared})
+            held_on = sorted({f for shared in clashes.values() for f in shared})
             held.append(
-                {"number": issue.number, "with": sorted(clashes), "files": files}
+                {"number": issue.number, "with": sorted(clashes), "files": held_on}
             )
             continue
         flying.append(issue.number)
@@ -233,8 +251,14 @@ def state(
     sprint: str,
     claimed: list[int],
     status_of: Callable[[dict], dict],
+    files_of_branch: Callable[[str], set[str]] = no_files,
+    files_of_pr: Callable[[int], set[str]] = no_files,
 ) -> dict:
-    """The sprint's state; `status_of(pr)` gives mergeable_state and CI of a PR."""
+    """The sprint's state, with what it reads from GitHub passed in as functions.
+
+    `status_of(pr)` gives mergeable_state and CI of a PR, `files_of_branch(branch)` the
+    files a branch changed, and `files_of_pr(number)` the files a PR changes.
+    """
     in_sprint = [
         n for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint
     ]
@@ -258,11 +282,13 @@ def state(
     )
     in_review = [i.number for i in dolev_turn if i.status == "in-review"]
     in_flight = [n for n in claimed if n in audited] + in_review
-    dispatch, held = dispatch_split(candidates, audited, in_flight)
+    files = work_files(in_sprint, audited, in_flight, files_of_branch)
+    dispatch, held = dispatch_split(candidates, files, in_flight)
 
     merge_queue = [
         {"number": i.number, "pr": pr["number"], "head_sha": pr["headSha"]}
         | status_of(pr)
+        | {"overlaps": overlaps(i.number, files_of_pr(pr["number"]), files, in_flight)}
         for i in dolev_turn
         if i.status == "in-review"
         for pr in by_number[i.number]["closingPullRequests"]
@@ -313,7 +339,15 @@ def main(argv: list[str] | None = None) -> None:
     sprint = args.milestone or current_sprint(nodes)
     if sprint is None:
         sys.exit("No open milestone has open issues.")
-    result = state(nodes, sprint, args.claimed, lambda pr: pr_status(repo, pr))
+    base = api(f"repos/{repo}")["default_branch"]
+    result = state(
+        nodes,
+        sprint,
+        args.claimed,
+        lambda pr: pr_status(repo, pr),
+        lambda branch: branch_files(repo, base, branch),
+        lambda number: pr_files(repo, number),
+    )
     result |= pipeline_shas(CACHE)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

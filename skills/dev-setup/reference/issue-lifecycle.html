@@ -463,6 +463,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
         <p>או, כשנשארה שאלה שחוסמת:</p>
         <div class="flowline"><span class="label h">plan-questions</span></div>
+        <p>כך גם משימה ידנית, שרק דולב יכול לבצע (אין ל-Claude גישה): מה שעליו לבדוק כתוב כתיבות סימון, ושום בן או סשן קוד לא לוקח אותה.</p>
         <p>או, למשימה קטנה (עד כ-3 קבצים, בלי שינוי שמשתמש רואה, בלי מחיקה, בלי שינוי חוזה):</p>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
         <p>עם התווית <code>size:small</code>, ובלי אישור תוכנית.</p>
@@ -610,10 +611,10 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <li class="claude"><strong>בדיקה</strong><p><code>sprint_state.py</code> אומר מה מוכן לבן, מה מחכה לחפיפת קבצים, ומה מוכן למיזוג.</p><p>סקיל, סקריפט או hook השתנו ב-<code>main</code>: מרעננים את <code>~/.claude</code> וקוראים אותם מחדש.</p><p>הנחיות, כללים או הגדרות השתנו, או שהרענון נכשל: ממליצים לדולב על סשן מתזמר חדש, והמתזמר הזה עוצר.</p></li>
     <li class="claude"><strong>בן לכל משימה פנויה</strong><p>עד 3 במקביל, עם התגיות <code>issue:N</code>. בן לתכנון ובן נפרד לקוד.</p></li>
     <li class="gate"><strong>החוזה של הבן</strong><p>לא שואל את דולב, לא נוגע בקישורים, לא ממזג, ולא קורא לכלי הסשנים: לא שולח הודעות ולא משנה את שם הסשן (השירות מקפיץ חלון על כל קריאה). הדיווח שלו הוא מה שב-GitHub: תוכנית, תווית, תגובה ו-PR.</p></li>
-    <li class="claude"><strong>אחרי שינוי</strong><p>בדיקה ברקע (<code>watch_children.py</code>) מעירה את המתזמר כשתווית של בן זזה או שנוספה תגובה. המתזמר בודק ב-GitHub: את התוכנית, את ה-PR וה-CI, ושאין branch או תווית מיותרים.</p></li>
-    <li class="human"><strong>חלון שאלות אחד</strong><p>תשובות לתוכניות, אישורים, ומיזוג אחד בכל פעם. רק דולב מחליט.</p></li>
+    <li class="claude"><strong>אחרי שינוי</strong><p>בדיקה ברקע (<code>watch_children.py</code>) מעירה את המתזמר כשתווית של בן זזה או שנוספה תגובה. התגובות של המתזמר עצמו נושאות סמן מוסתר, ולא מעירות אותו. המתזמר בודק ב-GitHub: את התוכנית, את ה-PR וה-CI, ושאין branch או תווית מיותרים.</p><p>בן שאומת שסיים את התור עובר לארכיון באותה בדיקה: תשובה, החזרה או תיקון פותחים בן חדש.</p></li>
+    <li class="human"><strong>חלון שאלות אחד</strong><p>תשובות לתוכניות, אישורים, ומיזוג אחד בכל פעם. רק דולב מחליט.</p><p>שאלת המיזוג אומרת אילו בנים פעילים נוגעים באותם קבצים כמו ה-PR, לפי הקבצים שהם כבר שינו ולא רק לפי התוכנית.</p></li>
     <li class="gate"><strong>באג או מכסה</strong><p>באג שפוגע באחרים: issue, Blocked by, עצירת הבנים שנפגעים, ובן שמתקן.</p><p>מכסה בחריגה: לא נפתח בן חדש, ושואלים את דולב.</p></li>
-    <li class="auto"><strong>סוף הספרינט</strong><p>אין מה לפתוח, לשאול או למזג: סיכום, והלולאה נעצרת.</p><p>בסיכום: ה-branches של משימות סגורות שנשארו ב-GitHub, כדי שדולב ימחק אותם ביד. מהענן אי אפשר למחוק branch.</p></li>
+    <li class="auto"><strong>סוף הספרינט</strong><p>אין מה לפתוח, לשאול או למזג: בן שעוד לא בארכיון עובר לארכיון, ואז סיכום, והלולאה נעצרת.</p><p>בסיכום: ה-branches של משימות סגורות שנשארו ב-GitHub, כדי שדולב ימחק אותם ביד. מהענן אי אפשר למחוק branch.</p></li>
   </ol>
   </div>
 </section>
