@@ -55,17 +55,20 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    ```
    Compare its two shas with the last check's (every check ends with a line that carries them,
    step 6), in this order (`orchestrate.md`, "שינוי בצינור באמצע ספרינט"):
-   1. `session_sha` moved: what a session loads once changed. Tell Dolev in one message what
+   1. A sha is `null` (git failed, with a warning on stderr): tell Dolev in one line that the
+      pipeline-change check did not run this time, keep the previous shas for the next
+      comparison, and skip 2–4.
+   2. `session_sha` moved: what a session loads once changed. Tell Dolev in one message what
       changed (the group, the commit with its link), that it loads only when a session opens,
       to open a new orchestrator session and say "תריץ את הספרינט" (nothing is lost: the state
       is on GitHub and in the children's tags), and that this orchestrator stopped while the
       running children go on. Then `TaskStop` the background watch, `unsubscribe_pr_activity`
       on every PR this session follows (so the new orchestrator gets their events),
       `ScheduleWakeup` with `stop`, and end the check: no children opened, no merge asked.
-   2. `pipeline_sha` moved: `python "$HOME/.claude/hooks/cloud_refresh.py" --report`. Exit 1:
+   3. `pipeline_sha` moved: `python "$HOME/.claude/hooks/cloud_refresh.py" --report`. Exit 1:
       the same stop, with its reason in plain words. Exit 0: read this skill and the "Read
       first" files again before going on.
-   3. The first check (no previous line): only note both.
+   4. The first check (no previous line): only note both.
    The check never leans on an old read.
 3. **Changes.** First note the time, as `<now>` (ISO, UTC). The watch stops at its first change,
    so it may not have seen them all: run it once over every issue of a child that is not
@@ -133,7 +136,9 @@ the sprint), and the stray branches of closed issues for Dolev to delete by hand
   upgrade or service.
 - "Blocked by" links on GitHub are the only source of what may start. A child never edits
   them; the orchestrator does, as `orchestrate.md` says.
-- Never open a child for an issue that is claimed, blocked, an umbrella, or `costs-money`:
-  `sprint_state.py` already leaves those out of `dispatch`, and the check never adds them back.
+- Never open a child for an issue that is claimed, blocked, an umbrella (a sub-issue still
+  open), or `costs-money`: `sprint_state.py` already leaves those out of `dispatch`, and the
+  check never adds them back. Umbrellas are listed apart in `umbrellas`, with their open
+  sub-issues.
 - A child is checked on GitHub after every change the watch or a PR event shows: the plan in
   the body, the PR's files and CI, the status label, and no stray branch or label.
