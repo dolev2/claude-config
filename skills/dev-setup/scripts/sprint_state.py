@@ -177,14 +177,20 @@ def state(
         and not is_umbrella(by_number[i.number])
         and i.number not in claimed
     ]
-    in_review = [i.number for i in issues if i.status == "in-review"]
+    # Bug-first is a rule for what Claude picks (#202); Dolev's lists keep the tier
+    # first, so his questions come in the same order as before.
+    dolev_turn = sorted(
+        (i for i in issues if i.status in DOLEV_TURN),
+        key=lambda i: DOLEV_TURN.index(i.status),
+    )
+    in_review = [i.number for i in dolev_turn if i.status == "in-review"]
     in_flight = [n for n in claimed if n in audited] + in_review
     dispatch, held = dispatch_split(candidates, audited, in_flight)
 
     merge_queue = [
         {"number": i.number, "pr": pr["number"], "head_sha": pr["headSha"]}
         | status_of(pr)
-        for i in issues
+        for i in dolev_turn
         if i.status == "in-review"
         for pr in by_number[i.number]["closingPullRequests"]
     ]
@@ -203,8 +209,7 @@ def state(
         ],
         "waiting_dolev": [
             {"number": i.number, "title": i.title, "status": i.status}
-            for i in issues
-            if i.status in DOLEV_TURN
+            for i in dolev_turn
         ],
         "merge_queue": merge_queue,
         "on_hold": [i.number for i in claude_turn if i.costs_money],

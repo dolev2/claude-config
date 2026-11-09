@@ -97,6 +97,12 @@ def test_a_bug_goes_out_before_a_new_task_that_others_wait_on(bug_status):
     assert numbers(result["dispatch"]) == [4, 1]
 
 
+def test_dolev_turn_keeps_the_tier_first_even_for_a_bug():
+    """#202 picks for Claude only: his questions come before PRs to review."""
+    result = run(node(1, "plan-questions"), node(2, "in-review", labels=("bug",)))
+    assert numbers(result["waiting_dolev"]) == [1, 2]
+
+
 @pytest.mark.parametrize(
     "issue",
     [
