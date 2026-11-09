@@ -12,7 +12,9 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap">
 <style>
-/* Layout: one wide diagram canvas (scrolls sideways on phones), legend top-left, link list below.
+/* Layout: the legend above the diagram, at page width and outside the scroller (on a phone it
+   wraps instead of being cut off, #124); one wide diagram canvas (scrolls sideways on phones);
+   link list below.
    --c1..--c6 are the colors a target table can take ("color": "c1" in the block). A repo with
    design tokens replaces these values with its own. */
 :root {
@@ -53,8 +55,8 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; }
 
 .scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; }
 .canvas { position: relative; direction: ltr; width: max-content; padding: 20px 20px 28px; box-sizing: border-box; }
-.top { display: flex; justify-content: flex-start; margin-bottom: 18px; }
-.legend { direction: rtl; display: grid; grid-template-columns: auto auto; gap: 6px 14px; align-items: center; font-size: 13px; color: var(--ink-2); background: var(--surface-tint); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; max-width: 560px; }
+.top { direction: rtl; display: flex; justify-content: flex-start; }
+.legend { direction: rtl; display: grid; grid-template-columns: auto auto; gap: 6px 14px; align-items: center; font-size: 13px; color: var(--ink-2); background: var(--surface-tint); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; max-width: 560px; box-sizing: border-box; }
 .legend .k { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); justify-self: start; }
 .legend .ttl { grid-column: 1 / -1; font-weight: 700; color: var(--ink); font-size: 14px; }
 .sw { display: inline-block; width: 26px; height: 0; border-top: 2.5px solid; vertical-align: middle; }
@@ -104,18 +106,19 @@ table.rel td.m { direction: ltr; text-align: right; font-family: var(--mono); fo
     <p class="sub">כל הטבלאות לפי המודלים בקוד. בדיקה משווה את התרשים למודלים. כל קו יוצא מהשדה שמצביע ומגיע לשדה שהוא מצביע עליו. מעבר עם העכבר על שדה או על קו מדגיש אותו.</p>
   </header>
 
+  <div class="top">
+    <div class="legend" id="legend" aria-label="מקרא">
+      <div class="ttl">מקרא</div>
+      <span class="k">PK</span><span>מפתח ראשי: המזהה של השורה. כמה שדות עם PK = מפתח מורכב</span>
+      <span class="k">FK</span><span>מפתח זר: מצביע על שורה בטבלה אחרת (או באותה טבלה)</span>
+      <span class="k">UK</span><span>ערך ייחודי, כשהוא מלא</span>
+      <span class="k">✱</span><span>חובה</span>
+      <span class="k">→ x.id</span><span>השדה שאליו הקו מגיע</span>
+    </div>
+  </div>
+
   <div class="scroller">
     <div class="canvas" id="canvas">
-      <div class="top">
-        <div class="legend" id="legend" aria-label="מקרא">
-          <div class="ttl">מקרא</div>
-          <span class="k">PK</span><span>מפתח ראשי: המזהה של השורה. כמה שדות עם PK = מפתח מורכב</span>
-          <span class="k">FK</span><span>מפתח זר: מצביע על שורה בטבלה אחרת (או באותה טבלה)</span>
-          <span class="k">UK</span><span>ערך ייחודי, כשהוא מלא</span>
-          <span class="k">✱</span><span>חובה</span>
-          <span class="k">→ x.id</span><span>השדה שאליו הקו מגיע</span>
-        </div>
-      </div>
       <div class="grid" id="grid"></div>
       <svg class="wires" id="wires" aria-hidden="true"></svg>
     </div>
