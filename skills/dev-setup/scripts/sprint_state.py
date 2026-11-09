@@ -9,9 +9,10 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 
 The orchestrator (claude-config #150) keeps no memory between checks: every check runs
 this and rebuilds its picture from GitHub. Which issue already has a child session is
-not on GitHub, so the orchestrator reads it from the sessions' `issue:<N>` tags and
-passes it in --claimed (claude-config #174). A claimed issue outside the sprint holds
-nothing back: its planned files are not read.
+not on GitHub, so the orchestrator reads it from the `issue:<N>` tags of this repo's
+sessions (the `repo:<owner>/<name>` tag) and passes it in --claimed (claude-config
+#174). A claimed issue outside the sprint holds nothing back: its planned files are
+not read.
 
 The keys:
 
