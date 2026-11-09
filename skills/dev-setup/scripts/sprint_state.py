@@ -17,7 +17,8 @@ The keys:
 
     dispatch         ready for a child session: Claude's turn, no open blocker, not an
                      umbrella, not costs-money, not claimed, no file shared with work in
-                     flight. Repairs first, then approved plans, then plans to write.
+                     flight. Repairs first, then bugs, then approved plans, then plans
+                     to write.
     held_by_overlap  would be in dispatch, but shares a planned file with work in flight
                      (claimed, in review, or earlier in dispatch), so it runs after it
     blocked          Claude's turn, waiting on an open blocker

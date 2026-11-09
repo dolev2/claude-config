@@ -3,6 +3,8 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parent / "rank_issues.py"
 spec = importlib.util.spec_from_file_location("rank_issues", SCRIPT)
 rank_issues = importlib.util.module_from_spec(spec)
@@ -135,6 +137,7 @@ def test_weight_orders_within_process():
 
 
 def test_status_tier_stays_above_process():
+    """`process` orders only within its tier; a bug does not (the next tests)."""
     ranked = rank_issues.rank(
         issues(
             node(1, status="explore", labels=("process",)),
@@ -240,3 +243,87 @@ def test_a_blocker_of_another_repo_blocks_but_adds_no_weight():
     assert first.open_blockers == [] and first.outside_blockers == ["dolev2/other#2"]
     assert first.blocked
     assert not second.blocked
+
+
+EXECUTE_AND_PLAN = ["needs-repair", "ready-to-execute", "explore"]
+
+
+def test_a_bug_comes_before_a_new_task_of_a_later_tier():
+    """#202: an approved task that two issues wait on no longer passes a bug."""
+    ranked = rank_issues.rank(
+        issues(
+            node(1, status="ready-to-execute", blocking=[2, 3]),
+            node(2, blocked_by=[(1, "OPEN")]),
+            node(3, blocked_by=[(1, "OPEN")]),
+            node(4, status="explore", labels=("bug",)),
+        ),
+        statuses=EXECUTE_AND_PLAN,
+    )
+    assert numbers(ranked)[:2] == [4, 1]
+
+
+@pytest.mark.parametrize(
+    ("nodes", "statuses", "first"),
+    [
+        pytest.param(
+            [
+                node(1, status="needs-repair"),
+                node(2, status="ready-to-execute", labels=("bug",)),
+            ],
+            EXECUTE_AND_PLAN,
+            [1, 2],
+            id="a-repair-stays-before-a-bug",
+        ),
+        pytest.param(
+            [node(1, status="needs-repair"), node(2, labels=("bug",))],
+            None,
+            [2, 1],
+            id="no-repair-first-without-tiers",
+        ),
+        pytest.param(
+            [
+                node(1, status="explore", labels=("process",)),
+                node(2, status="explore", labels=("bug",)),
+            ],
+            EXECUTE_AND_PLAN,
+            [2, 1],
+            id="a-bug-before-process-in-the-same-tier",
+        ),
+        pytest.param(
+            [
+                node(1, status="ready-to-execute", labels=("process",)),
+                node(2, status="explore", labels=("bug",)),
+            ],
+            EXECUTE_AND_PLAN,
+            [2, 1],
+            id="a-bug-before-process-of-an-earlier-tier",
+        ),
+        pytest.param(
+            [node(1, labels=("process",)), node(2, labels=("bug",))],
+            None,
+            [2, 1],
+            id="a-bug-before-process-without-tiers",
+        ),
+    ],
+)
+def test_the_bug_first_rule(nodes, statuses, first):
+    assert numbers(rank_issues.rank(issues(*nodes), statuses)) == first
+
+
+def test_an_issue_with_both_labels_is_a_bug():
+    [issue] = issues(node(1, labels=("process", "bug")))
+    assert issue.kind == "bug"
+
+
+def test_a_blocked_bug_stays_listed_and_the_free_task_is_the_first_unblocked():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, status="explore", labels=("bug",), blocked_by=[(2, "OPEN")]),
+            node(2, status="ready-to-execute", blocking=[1]),
+            node(3, status="ready-to-execute"),
+        ),
+        statuses=EXECUTE_AND_PLAN,
+    )
+    assert numbers(ranked) == [1, 2, 3]
+    assert ranked[0].blocked
+    assert next(i for i in ranked if not i.blocked).number == 2

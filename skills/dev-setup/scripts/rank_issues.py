@@ -14,10 +14,11 @@ sessions (claude-config #138).
 
 The rule is in ../reference/dependencies.md. In short:
 an issue's weight is the number of open issues in the sprint that wait on it through
-"Blocked by" links, directly or through other issues. Order: the order of --status (the
-tier), then `process` and `bug` issues before the rest, then weight, highest first,
-then issue number. Blocked issues stay in the list,
-because planning ignores blockers; Execute skips them itself.
+"Blocked by" links, directly or through other issues. Order: a repair
+(`needs-repair`, when it is in --status) first, then every `bug` before any new task,
+then the order of --status (the tier), then `process` issues before the rest, then
+weight, highest first, then issue number (claude-config #202). Blocked issues stay in
+the list, because planning ignores blockers; Execute skips them itself.
 
 Issues labelled `costs-money` are on hold until Dolev approves the expense: they leave
 the ranking and are listed apart, unless --include-costs-money is given. They still add
@@ -37,7 +38,9 @@ from dataclasses import dataclass, field
 from gh_rest import current_repo, open_issue_nodes
 from sprint_rule import current_sprint
 
-FIRST_KINDS = ["process", "bug"]
+# An issue with both labels is a bug: the bug-first rule wins (#202).
+FIRST_KINDS = ["bug", "process"]
+REPAIR = "needs-repair"
 NOT_ACTIVE = (None, "backlog", "done")
 ON_HOLD_LABEL = "costs-money"
 
@@ -130,16 +133,25 @@ def with_waiting(issues: list[Issue]) -> list[Issue]:
 
 
 def rank(issues: list[Issue], statuses: list[str] | None = None) -> list[Issue]:
-    """Filters to the given statuses.
+    """Filters to the given statuses, and orders them.
 
-    Orders by tier, then kind (process/bug first), then weight, then number.
+    The key: a repair first (it is no new task, and its PR is aging), then a bug
+    before any new task, then the tier, then `process`, then weight, then number.
     """
     with_waiting(issues)
     picked = [issue for issue in issues if not statuses or issue.status in statuses]
 
-    def key(issue: Issue) -> tuple[int, int, int, int]:
+    def key(issue: Issue) -> tuple[int, int, int, int, int, int]:
         tier = statuses.index(issue.status) if statuses else 0
-        return (tier, 0 if issue.kind else 1, -len(issue.waiting), issue.number)
+        repair_first = bool(statuses) and issue.status == REPAIR
+        return (
+            0 if repair_first else 1,
+            0 if issue.kind == "bug" else 1,
+            tier,
+            0 if issue.kind == "process" else 1,
+            -len(issue.waiting),
+            issue.number,
+        )
 
     return sorted(picked, key=key)
 

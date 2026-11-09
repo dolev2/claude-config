@@ -28,6 +28,7 @@ def node(
     status="ready-to-execute",
     files=(),
     blocked_by=(),
+    blocking=(),
     labels=("task",),
     subs=(),
     prs=(),
@@ -41,7 +42,7 @@ def node(
         "labels": {"nodes": [{"name": name} for name in names]},
         "milestone": {"number": 1, "title": milestone, "state": "OPEN"},
         "blockedBy": {"nodes": [{"number": n, "state": s} for n, s in blocked_by]},
-        "blocking": {"nodes": []},
+        "blocking": {"nodes": [{"number": n, "state": "OPEN"} for n in blocking]},
         "closedByPullRequestsReferences": {"totalCount": len(prs)},
         "closingPullRequests": [{"number": p, "headSha": f"sha{p}"} for p in prs],
         "parent": None,
@@ -80,6 +81,20 @@ def test_repairs_go_first_then_approved_plans_then_plans_to_write():
         node(1, "explore"), node(2, "ready-to-execute"), node(3, "needs-repair")
     )
     assert numbers(result["dispatch"]) == [3, 2, 1]
+
+
+@pytest.mark.parametrize(
+    "bug_status", ["ready-to-execute", "explore"], ids=["same-tier", "later-tier"]
+)
+def test_a_bug_goes_out_before_a_new_task_that_others_wait_on(bug_status):
+    """#202: the bug-first rule reaches the orchestrator through the ranking."""
+    result = run(
+        node(1, "ready-to-execute", blocking=[2, 3]),
+        node(2, "explore", blocked_by=[(1, "OPEN")]),
+        node(3, "explore", blocked_by=[(1, "OPEN")]),
+        node(4, bug_status, labels=("bug",)),
+    )
+    assert numbers(result["dispatch"]) == [4, 1]
 
 
 @pytest.mark.parametrize(

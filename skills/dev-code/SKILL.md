@@ -40,7 +40,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 2. Find the work. If Dolev named a specific issue, take that one, even outside the current
    sprint (say so; never assign it a milestone). Otherwise, **inside the current sprint
-   only**, repair first, then by weight:
+   only**, repair first, then bugs, then by weight:
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --status needs-repair --status ready-to-execute
    ```
