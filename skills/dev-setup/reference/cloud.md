@@ -60,7 +60,7 @@ REPO=https://github.com/dolev2/claude-config
 השירות מריץ את סקריפט ההתקנה פעם אחת, שומר תמונה של הדיסק, וממחזר אותה כנקודת התחלה עד כשבעה ימים. בלי עדכון, `~/.claude` יכול לפגר אחרי `main` עד שבוע.
 לכן `hooks/cloud_refresh.py` (SessionStart, ב-`settings.json`) מושך את `main` בתחילת כל סשן ענן. במחשב הוא לא עושה כלום, כי `CLAUDE_CODE_REMOTE` לא מוגדר שם. כשב-`~/.claude` יש שינויים שלא נשמרו, הוא לא נוגע בהם.
 **באמצע סשן, `--report`:** המתזמר מריץ אותו כשמוזג שינוי בצינור. הוא מדפיס `refreshed <sha>` (יציאה 0) או `not refreshed: <reason>` (יציאה 1). הסיבות ב-docstring של הסקריפט, והשימוש ב-`orchestrate.md`, "שינוי בצינור באמצע ספרינט".
-**`settings.json` באמצע סשן** (נבדק ב-9.11.2026, #192): כלל הרשאות שנוסף חל אחרי כמה שניות. רישום של hook חדש לא נבדק, כי מצב auto חסם את העריכה (Self-Modification). לכן `settings.json` נשאר ב-`SESSION_PATHS` של `sprint_state.py`, עד שגם הרישום ייבדק.
+**`settings.json` באמצע סשן** (נבדק ב-9.11.2026, #192): כלל הרשאות שנוסף חל אחרי כמה שניות. רישום של hook חדש לא נבדק, כי מצב auto חסם את העריכה (Self-Modification). לכן `settings.json` נשאר ב-`SESSION_PATHS` של `pipeline_shas.py`, עד שגם הרישום ייבדק.
 
 ### איך בודקים שזה עובד
 בסשן ענן חדש, בריפו של פרויקט:
