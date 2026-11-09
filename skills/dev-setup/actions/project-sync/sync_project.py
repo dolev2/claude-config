@@ -18,7 +18,8 @@ same run catches up on an issue event whose run failed.
 Where each part lives
 ---------------------
 This file is the entry point: settings, the loop over issues, and what is printed.
-The rules (what is written where) are in sync_rules.py, the board reads and writes in
+The rules (what is written where) are in sync_rules.py, what a closed issue gets
+(status:done, or its card archived) in closing.py, the board reads and writes in
 board.py (and why the board is read from the issue side), the sprint view in
 sprint_view.py, the current-sprint rule in sprint_rule.py (a copy of the scripts' one),
 and gh / GraphQL in gh_api.py. They
@@ -52,6 +53,7 @@ import sys
 from dataclasses import dataclass
 
 import board
+import closing
 import gh_api
 import sprint_view
 import sync_rules
@@ -229,25 +231,6 @@ def sync_issue(settings: Settings, project: Board, issue: dict) -> bool:
     return is_new or bool(adopted) or bool(changes) or cleared
 
 
-def close_out(settings: Settings, issue: dict) -> bool:
-    """Move a closed-as-completed issue's labels to status:done; True when it did.
-
-    The issue's labels are updated in place, so the sync that follows sees status:done
-    and moves the card to Done.
-    """
-    labels = [label["name"] for label in issue["labels"]]
-    if not sync_rules.needs_done_label(
-        labels, issue["state"], issue.get("stateReason")
-    ):
-        return False
-    new_labels = sync_rules.done_labels(labels)
-    args = sync_rules.label_edit_args(labels, sync_rules.labels_state(new_labels))
-    gh_api.gh("issue", "edit", str(issue["number"]), "--repo", settings.repo, *args)
-    issue["labels"] = [{"name": name} for name in new_labels]
-    report(settings, f"#{issue['number']} closed as completed -> status:done")
-    return True
-
-
 def takes_part(settings: Settings, project: Board, issue: dict) -> bool:
     """Whether the loop syncs this issue; reports one with doubled labels."""
     labels = [label["name"] for label in issue["labels"]]
@@ -286,9 +269,15 @@ def main() -> None:
         if sync_rules.is_active_without_sprint(issue, labels):
             without_sprint += 1
             report(settings, f"! #{issue['number']} is active but has no sprint")
-        closed_out = close_out(settings, issue)
-        if takes_part(settings, project, issue):
-            updated += sync_issue(settings, project, issue) or closed_out
+        closed_out = closing.close_out(settings.repo, issue)
+        archived = closing.archive_out(project.project_id, project.items, issue)
+        for line in (closed_out, archived):
+            if line:
+                report(settings, line)
+        if archived:
+            updated += 1
+        elif takes_part(settings, project, issue):
+            updated += sync_issue(settings, project, issue) or bool(closed_out)
     if settings.quiet:
         print(f"updated issues: {updated}")
         print(f"active without a sprint: {without_sprint}")

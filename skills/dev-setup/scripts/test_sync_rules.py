@@ -156,6 +156,22 @@ def test_which_closed_issues_need_status_done(labels, state, reason, expected):
     assert sync_rules.needs_done_label(labels, state, reason) is expected
 
 
+@pytest.mark.parametrize(
+    "labels, state, reason, on_board, expected",
+    [
+        (["status:backlog"], "CLOSED", "NOT_PLANNED", True, True),  # #219
+        (["status:explore"], "CLOSED", "DUPLICATE", True, True),
+        ([], "CLOSED", "NOT_PLANNED", True, True),  # opened from the board
+        (["status:backlog"], "CLOSED", "NOT_PLANNED", False, False),  # not added
+        (["status:in-review"], "CLOSED", "COMPLETED", True, False),  # goes to Done
+        (["status:done"], "CLOSED", None, True, False),
+        (["status:explore"], "OPEN", None, True, False),
+    ],
+)
+def test_which_closed_cards_are_archived(labels, state, reason, on_board, expected):
+    assert sync_rules.should_archive(labels, state, reason, on_board) is expected
+
+
 def test_done_labels_replace_the_status_and_keep_the_rest():
     assert sync_rules.done_labels(["task", "area:infra", "status:in-review"]) == [
         "task",

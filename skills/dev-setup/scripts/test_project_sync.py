@@ -347,6 +347,50 @@ def test_a_cleared_decision_counts_as_updated(monkeypatch, capsys):
     assert capsys.readouterr().out == "updated issues: 1\nactive without a sprint: 0\n"
 
 
+# Closed as not planned: the card leaves the board (claude-config #219).
+
+
+def run_one_not_planned(monkeypatch, on_board) -> list[tuple]:
+    """main() over one issue closed as not planned; the GraphQL calls it made."""
+    set_environment(monkeypatch, quiet=True)
+    fields = {"Status": field("Status", "Backlog")}
+    items = {4: {"id": "I4", "values": {"Status": "Backlog"}}} if on_board else {}
+    monkeypatch.setattr(board, "load_project", lambda o, r, n: ("P", fields, items, []))
+    calls = []
+    monkeypatch.setattr(
+        gh_api, "graphql", lambda query, **kw: calls.append((query, kw)) or {}
+    )
+    issue = rest_issue(
+        4, labels=("status:backlog",), state="closed", state_reason="not_planned"
+    )
+
+    def gh(*args):
+        if "issues?state=all" in args[1]:
+            return json.dumps([[issue]])
+        return "[]"
+
+    monkeypatch.setattr(gh_api, "gh", gh)
+    sync_project.main()
+    return calls
+
+
+def test_a_not_planned_card_is_archived_and_counted(monkeypatch, capsys):
+    calls = run_one_not_planned(monkeypatch, on_board=True)
+    assert calls == [(board.ARCHIVE_ITEM, {"project": "P", "item": "I4"})]
+    assert capsys.readouterr().out == "updated issues: 1\nactive without a sprint: 0\n"
+
+
+def test_a_not_planned_issue_off_the_board_is_not_added(monkeypatch, capsys):
+    assert run_one_not_planned(monkeypatch, on_board=False) == []
+    assert capsys.readouterr().out == "updated issues: 0\nactive without a sprint: 0\n"
+
+
+def test_the_board_read_leaves_archived_cards_out():
+    # Read as on the board, an archived card would be archived on every sweep.
+    assert "includeArchived:false" in board.ISSUE_ITEMS
+    assert "includeArchived" not in board.ONE_ISSUE_ITEMS
+
+
 # Loading the issues: every page, and ISSUE_NUMBER read directly (claude-config #164).
 
 
