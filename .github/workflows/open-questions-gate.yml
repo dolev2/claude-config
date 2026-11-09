@@ -10,8 +10,8 @@ name: Open questions gate
 # that must clear the label without a second label event.
 #
 # Timing note: dragging a card on a user-owned project raises no webhook at all
-# (see sync-project.yml). The label arrives on the next 15-minute sync poll, and only then
-# does this run. Labelling the issue directly is what makes it immediate.
+# (see sync-project.yml), and the sync runs one way: a dragged card changes no label,
+# so it never runs this gate. Only a label put on the issue itself does, at once.
 
 on:
   issues:

@@ -6,7 +6,8 @@ name: Sync labels → project board
 # sync_rules.py documents the rules. claude-config is public, so the action resolves
 # from any repo with no access setting.
 #
-# Only issue events run here. The 15-minute poll that puts a dragged card back in place
+# Only issue events run here. The scheduled poll that puts a dragged card back in place
+# (hourly by its cron, which GitHub runs only a few times a day, claude-config #129)
 # runs for every repo at once from the public dolev2/.github (sync-boards.yml), where
 # Actions minutes are free (claude-config #46). Do not add a schedule back.
 #
