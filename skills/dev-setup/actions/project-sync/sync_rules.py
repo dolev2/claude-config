@@ -195,8 +195,9 @@ def should_archive(
 
     Closed as not planned (or as a duplicate) is not done, and should_sync stops
     writing it, so its card sat in its last column for good (claude-config #219: 8
-    issues on board 9). Closed as completed is not archived: close_out gives it
-    status:done first, and its card moves to Done.
+    issues on board 9). Closed as completed is not archived: close_out gives a
+    pipeline issue status:done first, and its card moves to Done. One opened from the
+    board with no status:* label keeps its card, as before.
     """
     return (
         on_board
