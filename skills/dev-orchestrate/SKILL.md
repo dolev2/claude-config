@@ -66,6 +66,9 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       the same stop, with its reason in plain words. Exit 0: read this skill and the "Read
       first" files again before going on.
    3. The first check (no previous line): only note both.
+   4. A sha is `null` (git failed, with a warning on stderr): tell Dolev in one line that the
+      pipeline-change check did not run this time, keep the previous shas for the next
+      comparison, and go on.
    The check never leans on an old read.
 3. **Changes.** First note the time, as `<now>` (ISO, UTC). The watch stops at its first change,
    so it may not have seen them all: run it once over every issue of a child that is not
@@ -133,7 +136,9 @@ the sprint), and the stray branches of closed issues for Dolev to delete by hand
   upgrade or service.
 - "Blocked by" links on GitHub are the only source of what may start. A child never edits
   them; the orchestrator does, as `orchestrate.md` says.
-- Never open a child for an issue that is claimed, blocked, an umbrella, or `costs-money`:
-  `sprint_state.py` already leaves those out of `dispatch`, and the check never adds them back.
+- Never open a child for an issue that is claimed, blocked, an umbrella (a sub-issue still
+  open), or `costs-money`: `sprint_state.py` already leaves those out of `dispatch`, and the
+  check never adds them back. Umbrellas are listed apart in `umbrellas`, with their open
+  sub-issues.
 - A child is checked on GitHub after every change the watch or a PR event shows: the plan in
   the body, the PR's files and CI, the status label, and no stray branch or label.
