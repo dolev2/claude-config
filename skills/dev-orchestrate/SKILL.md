@@ -26,7 +26,8 @@ table and "חלונות אישור בסשן-בן"), `dependencies.md`, and `git-
    `dev-setup` and stop.
 2. Not already inside `/loop`: invoke the `loop` skill with `/dev-orchestrate` and no interval,
    so each check paces itself. Inside it, every check below is one iteration.
-3. Name this session `<repo>: מתזמר הספרינט` (`reference/git-flow.md`): `get_session` with no
+3. In the first check only, name this session `<name>: מתזמר הספרינט`, where `<name>` is the repo
+   name without the owner (`claude-config`, not the full `<repo>`; `reference/git-flow.md`): `get_session` with no
    parameters, and `set_session_title` only when the title is not that already. The orchestrator
    is a session Dolev opened, not a child, so the call is allowed. The tool is missing: go on.
 4. The first check shows Dolev the opening picture: what opens now, what waits on a blocker or

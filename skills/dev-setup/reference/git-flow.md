@@ -57,7 +57,8 @@
 - branch: `claude/issue-<N>-<slug-אנגלי-קצר>`. גם `dev-ship` משתמש בשם הזה כשהעבודה שייכת ל-issue.
 - הקישור ל-issue נוצר דרך `Closes #<N>` בגוף ה-PR.
 - שם הסשן: `/rename <repo>: claude/issue-<N>-<slug>` כשמתחילים לעבוד על ה-branch. בסשן ענן: הסעיף הבא.
-  `<repo>` הוא שם הריפו בלי הבעלים (החלק שאחרי `/` בשדה `repo` של `pipeline_info.py`), כדי שברשימת הסשנים יהיה ברור לאיזה ריפו כל סשן שייך (claude-config #222).
+  `<repo>` הוא שם הריפו בלי הבעלים (החלק שאחרי `/` בשדה `repo` של `pipeline_info.py`),
+  כדי שברשימת הסשנים יהיה ברור לאיזה ריפו כל סשן שייך (claude-config #222).
   סשן של מתזמר נקרא `<repo>: מתזמר הספרינט`. זה המקום שמגדיר את הצורה, והשאר מפנים אליו.
 - מחיקת branches אחרי merge: ב-GitHub, ההגדרה "Automatically delete head branches" של ה-repo, בכל סביבה.
   `dev-ship` לא מעביר `--delete-branch`, כי `gh` עם הדגל גם עושה checkout ל-`<default>` בתיקייה שבה הוא רץ.
