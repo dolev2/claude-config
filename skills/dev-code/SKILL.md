@@ -93,7 +93,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    - otherwise use the `EnterWorktree` tool if it is available, or `git worktree add` as in
      `reference/git-flow.md`, and run every later command inside that folder.
 
-   Then `/rename claude/issue-<N>-<slug>`; in a cloud session, the session title instead
+   Then `/rename <repo>: claude/issue-<N>-<slug>` (`<repo>` without the owner); in a cloud
+   session, the session title instead, in the same form
    (`reference/git-flow.md`).
 
 5. Implement, following the Plan and the repair comments, and the repo's `CLAUDE.md`. Add

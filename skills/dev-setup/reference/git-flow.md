@@ -56,7 +56,10 @@
 
 - branch: `claude/issue-<N>-<slug-אנגלי-קצר>`. גם `dev-ship` משתמש בשם הזה כשהעבודה שייכת ל-issue.
 - הקישור ל-issue נוצר דרך `Closes #<N>` בגוף ה-PR.
-- שם הסשן: `/rename claude/issue-<N>-<slug>` כשמתחילים לעבוד על ה-branch. בסשן ענן: הסעיף הבא.
+- שם הסשן: `/rename <repo>: claude/issue-<N>-<slug>` כשמתחילים לעבוד על ה-branch. בסשן ענן: הסעיף הבא.
+  `<repo>` הוא שם הריפו בלי הבעלים (החלק שאחרי `/` בשדה `repo` של `pipeline_info.py`),
+  כדי שברשימת הסשנים יהיה ברור לאיזה ריפו כל סשן שייך (claude-config #222).
+  סשן של מתזמר נקרא `<repo>: מתזמר הספרינט`. זה המקום שמגדיר את הצורה, והשאר מפנים אליו.
 - מחיקת branches אחרי merge: ב-GitHub, ההגדרה "Automatically delete head branches" של ה-repo, בכל סביבה.
   `dev-ship` לא מעביר `--delete-branch`, כי `gh` עם הדגל גם עושה checkout ל-`<default>` בתיקייה שבה הוא רץ.
   את ה-branch המקומי מוחק `dev-ship` צעד 7. ה-branch נשאר ב-GitHub (ההגדרה כבויה): מדווחים ומציעים להפעיל אותה, ולא מוחקים ביד.
@@ -77,9 +80,9 @@
    (בלי ה-fetch זה `main` שלפני המיזוג), ואז מחיקת ה-branch המקומי. ב-GitHub הוא נמחק בהגדרה Automatically delete head branches,
    כי `git push` שמוחק branch נחסם ב-proxy (403). הבדיקה ש-`git ls-remote --heads` ריק נשארת.
 4. **שם הסשן:** `/rename` לא זמין. במקומו `mcp__claude-code-remote__set_session_title` עם
-   `claude/issue-<N>-<slug>`, ואת `session_id` נותן `mcp__claude-code-remote__get_session` בלי פרמטרים.
+   `<repo>: claude/issue-<N>-<slug>`, ואת `session_id` נותן `mcp__claude-code-remote__get_session` בלי פרמטרים.
    הכלי לא זמין: ממשיכים, ומציינים בדיווח שהשם לא שונה.
-   **השם כבר `claude/issue-<N>-<slug>`** (מי שפתח את הסשן קבע אותו ב-`title` של `create_session`): לא קוראים ל-`set_session_title`.
+   **השם כבר `<repo>: claude/issue-<N>-<slug>`** (מי שפתח את הסשן קבע אותו ב-`title` של `create_session`): לא קוראים ל-`set_session_title`.
    הקריאה מיותרת, ובסשן-בן היא עלולה לעצור על חלון אישור (`cloud.md`, "חלונות אישור בסשן-בן").
 
 ## עדכון מול ה-branch הראשי, ו-CI לפני merge

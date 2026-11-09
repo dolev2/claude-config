@@ -6,7 +6,8 @@
 
 ## פתיחת בן
 `mcp__claude-code-remote__create_session`, עם:
-1. `title`: ה-branch מה-Plan. אין עדיין Plan (בן תכנון): המתזמר בוחר `claude/issue-<N>-<slug>`, והחוזה אומר לבן
+1. `title`: `<name>: <branch>`, כש-`<name>` הוא שם הריפו בלי הבעלים (`claude-config`, לא `<repo>` המלא), וה-branch מה-Plan.
+   הצורה: `git-flow.md`, "מוסכמת branches ו-PR". אין עדיין Plan (בן תכנון): המתזמר בוחר `claude/issue-<N>-<slug>`, והחוזה אומר לבן
    שזה ה-branch שה-Plan יכתוב, במקום ש-`dev-plan` יבחר שם משלו. הבן לא משנה את השם (`git-flow.md`).
 2. `tags`: `claude-config:orchestrated`, `repo:<owner>/<name>` ו-`issue:<N>`. כך המתזמר מוצא את הבנים שלו בלי זיכרון.
    הסינון לפי תגית ב-`list_sessions` לא תמיד זמין (`tags filter is not currently available`, נבדק ב-8.11.2026, #189).

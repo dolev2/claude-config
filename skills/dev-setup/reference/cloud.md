@@ -137,14 +137,14 @@ REPO=https://github.com/dolev2/claude-config
 
    החלון מונה מה בדיוק עובר לבן. דחייה: הסשן לא נפתח.
    איך המתזמר פותח בן, והחוזה שעובר אליו: `orchestrate.md`.
-6. **שם הסשן** נקבע ב-`title` של `create_session`, והבן לא קורא ל-`set_session_title` (`git-flow.md`, "בסשן ענן").
+6. **שם הסשן**, `<repo>: <branch>`, נקבע ב-`title` של `create_session`, והבן לא קורא ל-`set_session_title` (`git-flow.md`, "בסשן ענן").
    בסשן-בן, `set_session_title` מקפיץ חלון למרות שהוא ב-`permissions.allow` (נבדק ב-8.11.2026, #184). לכן החוזה אוסר על הבן כל כלי של `claude-code-remote` (`orchestrate.md`, סעיף 8).
 
 ## מה עוד שונה בסשן ענן
 GraphQL חסום: הסקריפטים קוראים רק דרך REST (claude-config #138), והסקילים עובדים דרך הטבלה בסעיף "פקודות GitHub בסשן ענן".
 
 ה-branch, ה-worktree ושם הסשן: `git-flow.md`, הסעיף "בסשן ענן" (claude-config #134).
-בקצרה: תמיד ה-branch של המשימה, בלי worktree, והשם נקבע ב-`set_session_title` ולא ב-`/rename`.
+בקצרה: תמיד ה-branch של המשימה, בלי worktree, והשם, `<repo>: <branch>`, נקבע ב-`set_session_title` ולא ב-`/rename`.
 
 כללי Windows ב-`rules/env-windows.md` לא חלים בענן, חוץ מהסעיף "מה חייב לעבוד גם מחוץ ל-Windows". מה מותקן בענן, ומה נשאר למחשב: `rules/env-cloud.md` (claude-config #136).
 הבדיקה הוויזואלית בענן היא צילומי מסך ב-Playwright (`ux.md`), והאפליקציה לסקירה עולה בתוך הסשן (`review-app.md`).

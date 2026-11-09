@@ -574,7 +574,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <tbody>
       <tr><td>ההגדרות</td><td>התיקייה <code>~/.claude</code></td><td>כן</td><td>סקריפט ההתקנה של הסביבה מעתיק את <code>main</code>, ו-<code>cloud_refresh.py</code> מעדכן בכל סשן.</td></tr>
       <tr><td>תכנון (<code>dev-plan</code>)</td><td>כן</td><td>כן</td><td>פקודות GitHub רק דרך REST, לפי הטבלה ב-<code>cloud.md</code>.</td></tr>
-      <tr><td>ביצוע (<code>dev-code</code>)</td><td>ב-worktree</td><td>בלי worktree</td><td>ה-branch של המשימה ב-clone של הסשן. השם נקבע ב-<code>set_session_title</code>, ו-CI מעיר את הסשן דרך <code>subscribe_pr_activity</code>.</td></tr>
+      <tr><td>ביצוע (<code>dev-code</code>)</td><td>ב-worktree</td><td>בלי worktree</td><td>ה-branch של המשימה ב-clone של הסשן. השם, <code>&lt;repo&gt;: &lt;branch&gt;</code>, נקבע ב-<code>set_session_title</code>, ו-CI מעיר את הסשן דרך <code>subscribe_pr_activity</code>.</td></tr>
       <tr><td>אפליקציה לסקירה ובדיקת חוויית משתמש</td><td>קישור localhost ודפדפן מובנה</td><td>בתוך הסשן</td><td>צילומי מסך ב-Playwright, ברוחב 1280 ו-375. פקודה של Windows בלבד: הבדיקה נשארת למחשב.</td></tr>
       <tr><td>מיזוג (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>כלי ה-MCP של GitHub</td><td>חלון אישור בשתי הסביבות. בניקוי: <code>git checkout --detach origin/main</code>.</td></tr>
       <tr><td>המתזמר (<code>dev-orchestrate</code>)</td><td>לא</td><td>כן</td><td>סשנים-בנים במקביל, ומעקב ב-GitHub: בדיקה ברקע של ה-issues שלהם, אירועי PR ובדיקת גיבוי. הסעיף הבא.</td></tr>
