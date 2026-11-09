@@ -86,8 +86,8 @@ keeps them: edit it in the headings it already has.
    ```bash
    git push origin origin/<default>:refs/heads/claude/issue-<N>-<slug>
    ```
-   Then `/rename claude/issue-<N>-<slug>` so the session is findable later. In a cloud session
-   `/rename` is unavailable: set the title instead (`reference/git-flow.md`).
+   Then `/rename <repo>: claude/issue-<N>-<slug>` (`<repo>` without the owner) so the session is findable later. In a cloud session
+   `/rename` is unavailable: set the title instead, in the same form (`reference/git-flow.md`).
 
 5. Fill in the Plan section of the issue body, in the format from `reference/issue-body.md` and the
    heading level the repo's issues use. **Read the body fresh right before the edit**, keep the

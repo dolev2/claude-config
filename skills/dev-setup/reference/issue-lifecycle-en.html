@@ -553,7 +553,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <tbody>
       <tr><td>Settings</td><td>The <code>~/.claude</code> folder</td><td>Yes</td><td>The environment's setup script copies <code>main</code>, and <code>cloud_refresh.py</code> updates it in every session.</td></tr>
       <tr><td>Plan (<code>dev-plan</code>)</td><td>Yes</td><td>Yes</td><td>GitHub commands through REST only, by the table in <code>cloud.md</code>.</td></tr>
-      <tr><td>Execute (<code>dev-code</code>)</td><td>In a worktree</td><td>No worktree</td><td>The task branch in the session's own clone. The name is set with <code>set_session_title</code>, and CI wakes the session through <code>subscribe_pr_activity</code>.</td></tr>
+      <tr><td>Execute (<code>dev-code</code>)</td><td>In a worktree</td><td>No worktree</td><td>The task branch in the session's own clone. The name, <code>&lt;repo&gt;: &lt;branch&gt;</code>, is set with <code>set_session_title</code>, and CI wakes the session through <code>subscribe_pr_activity</code>.</td></tr>
       <tr><td>Review app and user-experience check</td><td>A localhost link and the built-in browser</td><td>Inside the session</td><td>Playwright screenshots at 1280 and 375 wide. A Windows-only command: the check stays on the computer.</td></tr>
       <tr><td>Merge (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>The GitHub MCP tool</td><td>An approval prompt in both. Cleanup: <code>git checkout --detach origin/main</code>.</td></tr>
       <tr><td>The orchestrator (<code>dev-orchestrate</code>)</td><td>No</td><td>Yes</td><td>Child sessions in parallel, followed on GitHub: a background watch of their issues, PR events and a fallback check. The section below.</td></tr>
