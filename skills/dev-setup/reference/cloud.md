@@ -134,6 +134,7 @@ REPO=https://github.com/dolev2/claude-config
    **hook מקפיץ חלון אישור** (`hooks/guard_create_session.py`, claude-config #175) כשהבן מקבל יותר מזה:
    1. כלי ב-`extra_allowed_tools` שלא ברשימת `CHILD_TOOLS` שב-hook (פתיחת PR, עדכון PR, תגובה ב-issue). גם `send_message`, שיצא מהרשימה ב-#184. זה תופס `Bash(...)`, `*` וכל כלי כתיבה אחר.
    2. `environment_id` מוגדר: הבן ייפתח בסביבה אחרת, עם רשת והרשאות אחרות.
+   3. בן של מתזמר (`claude-config:orchestrated`) בלי תגית `repo:<owner>/<name>`, או עם תגית שלא תואמת ל-`source_url` (#217).
 
    החלון מונה מה בדיוק עובר לבן. דחייה: הסשן לא נפתח.
    איך המתזמר פותח בן, והחוזה שעובר אליו: `orchestrate.md`.

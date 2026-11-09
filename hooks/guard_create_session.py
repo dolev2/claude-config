@@ -8,7 +8,11 @@ It prints an "ask" decision when `extra_allowed_tools` holds a tool outside
 CHILD_TOOLS (this catches `Bash(...)`, `*` and any other write tool without a block
 list), or when `environment_id` is set: a hook cannot call an MCP tool to learn the
 caller's environment, and without the field the child inherits it. The reason names
-what it caught. Otherwise it prints nothing, and the normal permission rules decide.
+what it caught. It also asks when an orchestrator's child (the tag
+`claude-config:orchestrated`) has no `repo:<owner>/<name>` tag, or one that does not
+match `source_url`: two orchestrators in one account see each other's children, and
+`issue:<N>` alone does not say which repo a child is for (claude-config#217).
+Otherwise it prints nothing, and the normal permission rules decide.
 
 This is a guard against mistakes, not a security boundary: the service already passes
 a child only tools that are pre-approved for the session that opens it (cloud.md,
@@ -32,6 +36,22 @@ CHILD_TOOLS = frozenset(
 )
 
 
+ORCHESTRATED_TAG = "claude-config:orchestrated"
+REPO_TAG_PREFIX = "repo:"
+GITHUB_URL_PREFIX = "https://github.com/"
+
+
+def as_strings(value: object) -> list[str]:
+    """A list field as strings; a lone string counts as one, nothing as none."""
+    if not value:
+        return []
+    if isinstance(value, str):
+        return [value]
+    if not isinstance(value, list):
+        return [str(value)]
+    return [str(item) for item in value]
+
+
 def is_create_session(event: dict) -> bool:
     """True for the create_session tool of any MCP server."""
     name = event.get("tool_name")
@@ -44,12 +64,35 @@ def is_create_session(event: dict) -> bool:
 
 def extra_tools(tool_input: dict) -> list[str]:
     """The tools in `extra_allowed_tools`, as strings; a lone string counts as one."""
-    tools = tool_input.get("extra_allowed_tools") or []
-    if isinstance(tools, str):
-        tools = [tools]
-    if not isinstance(tools, list):
-        return [str(tools)]
-    return [str(tool) for tool in tools]
+    return as_strings(tool_input.get("extra_allowed_tools"))
+
+
+def source_repo(tool_input: dict) -> str | None:
+    """`<owner>/<name>` from a github.com `source_url`; None when there is none."""
+    url = str(tool_input.get("source_url") or "").strip().removesuffix("/")
+    if not url.startswith(GITHUB_URL_PREFIX):
+        return None
+    return url.removeprefix(GITHUB_URL_PREFIX).removesuffix(".git") or None
+
+
+def repo_tag_problems(tool_input: dict) -> list[str]:
+    """One Hebrew line when an orchestrator's child lacks a matching `repo:` tag."""
+    tags = as_strings(tool_input.get("tags"))
+    if ORCHESTRATED_TAG not in tags:
+        return []
+    repos = [
+        tag.removeprefix(REPO_TAG_PREFIX)
+        for tag in tags
+        if tag.startswith(REPO_TAG_PREFIX)
+    ]
+    if not repos:
+        return [
+            "לבן אין תגית `repo:<owner>/<name>`, ומתזמר של ריפו אחר יספור אותו כשלו"
+        ]
+    expected = source_repo(tool_input)
+    if expected and expected.lower() not in (repo.lower() for repo in repos):
+        return [f"תגית הריפו של הבן לא תואמת ל-`source_url` (`repo:{expected}`)"]
+    return []
 
 
 def broad_grants(tool_input: dict) -> list[str]:
@@ -61,14 +104,14 @@ def broad_grants(tool_input: dict) -> list[str]:
     ]
     if tool_input.get("environment_id"):
         reasons.append(f"הבן ייפתח בסביבה אחרת (`{tool_input['environment_id']}`)")
-    return reasons
+    return reasons + repo_tag_problems(tool_input)
 
 
 def reason_text(grants: list[str]) -> str:
     """The approval window's text: what passes to the child, one line each."""
     lines = "\n".join(f"{index}. {grant}." for index, grant in enumerate(grants, 1))
     return (
-        "פתיחת סשן-בן עם יותר ממה שהבן של המתזמר צריך:\n"
+        "פתיחת סשן-בן שחורג ממה שהבן של המתזמר צריך:\n"
         f"{lines}\n"
         "דחייה: הסשן לא נפתח (claude-config#175)."
     )

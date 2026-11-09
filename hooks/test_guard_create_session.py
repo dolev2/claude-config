@@ -114,6 +114,45 @@ def test_other_server_name_is_checked(monkeypatch):
     assert "`*`" in ask_reason(run_hook(monkeypatch, raw)[1])
 
 
+ORCHESTRATED = "claude-config:orchestrated"
+URL = "https://github.com/dolev2/claude-config"
+
+
+@pytest.mark.parametrize(
+    "tool_input",
+    [
+        {
+            "tags": [ORCHESTRATED, "repo:dolev2/claude-config", "issue:5"],
+            "source_url": URL,
+        },
+        {
+            "tags": [ORCHESTRATED, "repo:Dolev2/Claude-Config"],
+            "source_url": URL + ".git/",
+        },
+        {"tags": [ORCHESTRATED, "repo:dolev2/claude-config"]},
+        {"tags": ["issue:5"], "source_url": URL},
+        {"tags": "other"},
+    ],
+)
+def test_repo_tag_present_or_not_orchestrated_passes(monkeypatch, tool_input):
+    assert run_hook(monkeypatch, call(**tool_input)) == (0, "")
+
+
+@pytest.mark.parametrize(
+    "tags",
+    [[ORCHESTRATED, "issue:5"], ORCHESTRATED],
+)
+def test_orchestrated_without_repo_tag_asks(monkeypatch, tags):
+    reason = ask_reason(run_hook(monkeypatch, call(tags=tags, source_url=URL))[1])
+    assert "`repo:<owner>/<name>`" in reason
+
+
+def test_repo_tag_of_another_repo_asks(monkeypatch):
+    raw = call(tags=[ORCHESTRATED, "repo:dolev2/other", "issue:5"], source_url=URL)
+    reason = ask_reason(run_hook(monkeypatch, raw)[1])
+    assert "`repo:dolev2/claude-config`" in reason
+
+
 @pytest.mark.parametrize(
     "raw",
     ["", "not json", "[]", json.dumps({"tool_name": TOOL, "tool_input": "x"})],

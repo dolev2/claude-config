@@ -18,7 +18,7 @@
 4. `append_system_prompt`: החוזה מהסעיף הבא, עם `<N>`, `<repo>` וה-branch במקומם. שם הוא נשאר גם אחרי דחיסה.
 5. `extra_allowed_tools`: `CHILD_TOOLS` מ-`hooks/guard_create_session.py`, בדיוק. הם ב-`permissions.allow` של
    `settings.json`, כי השירות מעביר לבן רק כלים שמאושרים מראש אצל המתזמר (`cloud.md`, "חלונות אישור בסשן-בן").
-6. בלי `environment_id`: הבן יורש את הסביבה של המתזמר. ה-hook מקפיץ חלון על כל חריגה מ-5 או 6.
+6. בלי `environment_id`: הבן יורש את הסביבה של המתזמר. ה-hook מקפיץ חלון על כל חריגה מ-5 או 6, וגם כשתגית `repo:` מסעיף 2 חסרה או לא תואמת ל-`source_url` (#217).
 7. `source_url`: `https://github.com/<repo>`. בלעדיו הבן נפתח בלי הריפו, ואין לו על מה לעבוד (נראה בהרצה הראשונה, #206).
    בלי `source_revision`: הבן מתחיל מה-branch הראשי, ועובר ל-branch של המשימה לבד (`git-flow.md`, "בסשן ענן").
 
