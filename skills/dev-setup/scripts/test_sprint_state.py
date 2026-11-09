@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -133,7 +134,23 @@ def test_an_umbrella_whose_subs_are_all_closed_is_dispatched():
 def test_an_umbrella_with_an_open_sub_is_listed_apart():
     result = run(node(1, subs=[6], closed_subs=[5]), node(2, "done", subs=[7]))
     assert result["dispatch"] == []
-    assert result["umbrellas"] == [{"number": 1, "open_subs": [6]}]
+    assert result["umbrellas"] == [{"number": 1, "open_subs": ["#6"]}]
+
+
+def test_an_umbrella_held_for_another_reason_is_not_listed_as_one():
+    result = run(
+        node(1, subs=[6], blocked_by=[(9, "OPEN")]), node(2, subs=[7]), claimed=[2]
+    )
+    assert result["umbrellas"] == []
+    assert numbers(result["blocked"]) == [1]
+
+
+def test_an_open_sub_in_another_repo_is_named_with_its_repo():
+    umbrella = node(1)
+    umbrella["subIssues"]["nodes"] = [
+        {"number": 3, "state": "OPEN", "repository": "acme/other"}
+    ]
+    assert run(umbrella)["umbrellas"] == [{"number": 1, "open_subs": ["acme/other#3"]}]
 
 
 def test_a_closed_blocker_does_not_block():
@@ -266,7 +283,9 @@ def pipeline(tmp_path, monkeypatch):
     sh(remote, "init", "-q", "-b", "main")
     sh(remote, "config", "user.email", "t@example.com")
     sh(remote, "config", "user.name", "t")
-    monkeypatch.setattr(sprint_state, "PIPELINE_URL", str(remote))
+    # file://, so the cache is a real blob-less clone, as from GitHub; a plain path
+    # makes git ignore --filter.
+    monkeypatch.setattr(sprint_state, "PIPELINE_URL", remote.as_uri())
     monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
 
     def commit(path):
@@ -325,6 +344,27 @@ def test_a_merge_outside_both_groups_moves_neither(pipeline, monkeypatch, capsys
 
 def test_a_group_without_commits_is_null(pipeline, monkeypatch, capsys):
     sha = pipeline("hooks")
+    assert shas(monkeypatch, capsys) == (sha, None)
+
+
+def test_a_failing_fetch_on_an_existing_cache_leaves_null_shas(
+    pipeline, tmp_path, monkeypatch, capsys
+):
+    pipeline("skills")
+    shas(monkeypatch, capsys)
+    shutil.rmtree(tmp_path / "remote")
+    sprint_state.main([])
+    out = capsys.readouterr()
+    result = json.loads(out.out)
+    assert result["pipeline_sha"] is None and result["session_sha"] is None
+    assert "pipeline-change check did not run" in out.err
+
+
+def test_a_broken_cache_is_cloned_again(pipeline, tmp_path, monkeypatch, capsys):
+    sha = pipeline("skills")
+    broken = tmp_path / "cache.git"
+    broken.mkdir()
+    (broken / "junk").write_text("x")
     assert shas(monkeypatch, capsys) == (sha, None)
 
 
