@@ -10,7 +10,7 @@ import os
 import re
 from pathlib import Path, PurePath
 
-from shell_split import strip_prefixes
+from shell_split import split_subcommands, strip_prefixes
 
 SHELL_TOOLS = ("Bash", "PowerShell")
 # git options before the subcommand whose value is the next argument.
@@ -19,8 +19,17 @@ GIT_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
 MSYS_DRIVE = re.compile(r"^/([a-zA-Z])(?=/|$)")
 # GitHub MCP tools that merge a PR or turn on its auto-merge, under any server name.
 MCP_MERGE_TOOLS = ("__merge_pull_request", "__enable_pr_auto_merge")
+# The one that merges now; auto-merge happens later, without Claude.
+MCP_PR_MERGE_TOOLS = ("__merge_pull_request",)
 # `pulls/5/merge`, `pulls/$PR/merge`, `/repos/a/b/pulls/5/merge`, a URL, with a query.
 MERGE_ENDPOINT = re.compile(r"(^|/)pulls/[^/\s]+/merge/?(\?.*)?$")
+FIELD_FLAGS = ("-f", "-F", "--field", "--raw-field", "--input")
+# `gh api` options whose value is the next word, so it is not the endpoint.
+API_OPTIONS_WITH_VALUE = {
+    "-X", "--method", "-f", "-F", "--field", "--raw-field", "-H", "--header",
+    "--input", "-q", "--jq", "-t", "--template", "--hostname", "--cache", "-p",
+    "--preview",
+}  # fmt: skip
 
 
 def read_event(raw: str) -> dict | None:
@@ -52,14 +61,73 @@ def edit_target(event: dict) -> Path | None:
     return path.resolve()
 
 
-def is_mcp_merge(event: dict) -> bool:
-    """True for an MCP tool that merges a PR or turns on its auto-merge."""
+def is_mcp_merge(event: dict, tools: tuple[str, ...] = MCP_MERGE_TOOLS) -> bool:
+    """True for an MCP tool that merges a PR or turns on its auto-merge.
+
+    `tools=MCP_PR_MERGE_TOOLS` leaves out auto-merge: only a merge that happens now.
+    """
     name = event.get("tool_name")
-    return (
-        isinstance(name, str)
-        and name.startswith("mcp__")
-        and name.endswith(MCP_MERGE_TOOLS)
-    )
+    return isinstance(name, str) and name.startswith("mcp__") and name.endswith(tools)
+
+
+def http_method(arguments: list[str]) -> str | None:
+    """The method `-X`, `--method`, `-XPUT` or `--method=PUT` sets, or None."""
+    for index, argument in enumerate(arguments):
+        if argument in ("-X", "--method"):
+            return arguments[index + 1].upper() if index + 1 < len(arguments) else None
+        if argument.startswith("--method="):
+            return argument.split("=", 1)[1].upper()
+        if argument.startswith("-X") and len(argument) > 2:
+            return argument[2:].upper()
+    return None
+
+
+def effective_method(arguments: list[str]) -> str:
+    """The method `gh api` sends: the one set, else POST with fields, else GET."""
+    method = http_method(arguments)
+    if method is not None:
+        return method
+    has_fields = any(argument.startswith(FIELD_FLAGS) for argument in arguments)
+    return "POST" if has_fields else "GET"
+
+
+def endpoint(arguments: list[str]) -> str | None:
+    """The path `gh api` calls: its first argument that is not an option or a value."""
+    skip_value = False
+    for argument in arguments:
+        if skip_value:
+            skip_value = False
+        elif argument in API_OPTIONS_WITH_VALUE:
+            skip_value = True
+        elif not argument.startswith("-"):
+            return argument
+    return None
+
+
+def is_rest_pr_merge(arguments: list[str]) -> bool:
+    """True for the `gh api` arguments of a REST PR merge: PUT pulls/<N>/merge."""
+    path = endpoint(arguments) or ""
+    return effective_method(arguments) == "PUT" and bool(MERGE_ENDPOINT.search(path))
+
+
+def is_gh_pr_merge(words: list[str]) -> bool:
+    """True for `gh [-R repo] pr merge`."""
+    return (gh_subcommand(words) or [])[:2] == ["pr", "merge"]
+
+
+def is_shell_pr_merge(command: str) -> bool:
+    """True when a subcommand surely merges a PR: `gh pr merge`, or a REST PUT.
+
+    Leaves out what only may merge (a `gh alias`, GraphQL from a file); the approval
+    window in ask_before_merge.py asks about those too.
+    """
+    for words in split_subcommands(command):
+        if is_gh_pr_merge(words):
+            return True
+        arguments = gh_api_arguments(words)
+        if arguments is not None and is_rest_pr_merge(arguments):
+            return True
+    return False
 
 
 def gh_api_arguments(words: list[str]) -> list[str] | None:

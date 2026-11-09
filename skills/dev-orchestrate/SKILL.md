@@ -98,7 +98,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    next check. Send back or answer: `status:explore`, his words quoted in a comment, and a new
    planning child. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
    line that this is a good moment for `/compact`, with the full command in a code block as the
-   global `CLAUDE.md` says ("מה פתוח": `/compact` and the summary that must survive). A fix:
+   global `CLAUDE.md` says ("מה פתוח": `/compact` and the summary that must survive;
+   `hooks/compact_after_merge.py` blocks the turn's end once without it). A fix:
    `needs-repair`, a comment, and a coding child. Each of these new children opens through
    step 4, so the old child is archived.
 6. **Close the check.** One summary line, always, ending with

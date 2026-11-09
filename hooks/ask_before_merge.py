@@ -29,10 +29,13 @@ import re
 import sys
 
 from shell_commands import (
-    MERGE_ENDPOINT,
+    effective_method,
+    endpoint,
     gh_api_arguments,
     gh_subcommand,
+    is_gh_pr_merge,
     is_mcp_merge,
+    is_rest_pr_merge,
     read_event,
     shell_command,
 )
@@ -51,34 +54,6 @@ GRAPHQL_MERGE_MUTATIONS = (
 )
 # POST repos/<owner>/<repo>/merges merges a branch into another without a PR.
 BRANCH_MERGE_ENDPOINT = re.compile(r"(^|/)merges/?(\?.*)?$")
-FIELD_FLAGS = ("-f", "-F", "--field", "--raw-field", "--input")
-# `gh api` options whose value is the next word, so it is not the endpoint.
-API_OPTIONS_WITH_VALUE = {
-    "-X", "--method", "-f", "-F", "--field", "--raw-field", "-H", "--header",
-    "--input", "-q", "--jq", "-t", "--template", "--hostname", "--cache", "-p",
-    "--preview",
-}  # fmt: skip
-
-
-def http_method(arguments: list[str]) -> str | None:
-    """The method `-X`, `--method`, `-XPUT` or `--method=PUT` sets, or None."""
-    for index, argument in enumerate(arguments):
-        if argument in ("-X", "--method"):
-            return arguments[index + 1].upper() if index + 1 < len(arguments) else None
-        if argument.startswith("--method="):
-            return argument.split("=", 1)[1].upper()
-        if argument.startswith("-X") and len(argument) > 2:
-            return argument[2:].upper()
-    return None
-
-
-def effective_method(arguments: list[str]) -> str:
-    """The method `gh api` sends: the one set, else POST with fields, else GET."""
-    method = http_method(arguments)
-    if method is not None:
-        return method
-    has_fields = any(argument.startswith(FIELD_FLAGS) for argument in arguments)
-    return "POST" if has_fields else "GET"
 
 
 def is_graphql_merge(arguments: list[str]) -> bool:
@@ -93,35 +68,22 @@ def is_graphql_merge(arguments: list[str]) -> bool:
     )
 
 
-def endpoint(arguments: list[str]) -> str | None:
-    """The path `gh api` calls: its first argument that is not an option or a value."""
-    skip_value = False
-    for argument in arguments:
-        if skip_value:
-            skip_value = False
-        elif argument in API_OPTIONS_WITH_VALUE:
-            skip_value = True
-        elif not argument.startswith("-"):
-            return argument
-    return None
-
-
 def is_api_merge(arguments: list[str]) -> bool:
     """True for a REST merge (PUT pulls/<N>/merge, POST merges) or a GraphQL one."""
     path = endpoint(arguments) or ""
     if path == "graphql":
         return is_graphql_merge(arguments)
-    method = effective_method(arguments)
-    if method == "PUT" and MERGE_ENDPOINT.search(path):
+    if is_rest_pr_merge(arguments):
         return True
+    method = effective_method(arguments)
     return method == "POST" and bool(BRANCH_MERGE_ENDPOINT.search(path))
 
 
 def is_gh_merge(words: list[str]) -> bool:
     """True for `gh [-R repo] pr merge`, or a `gh alias` that may define a merge."""
-    arguments = gh_subcommand(words) or []
-    if arguments[:2] == ["pr", "merge"]:
+    if is_gh_pr_merge(words):
         return True
+    arguments = gh_subcommand(words) or []
     if arguments[:2] == ["alias", "import"]:
         return True
     return arguments[:2] == ["alias", "set"] and any(

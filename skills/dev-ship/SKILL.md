@@ -285,3 +285,5 @@ left: the review app, the worktree, the main folder (updated or not, and why), a
 branches. If
 you stopped early, say exactly which step and why. End with the next-issue offer from step 8:
 which issue, fresh or fork and why in one line, or what the sprint waits for.
+After a merge, the message ends with "מה פתוח" and the full `/compact` code block (global
+`CLAUDE.md`). `hooks/compact_after_merge.py` blocks the turn's end once when it is missing.

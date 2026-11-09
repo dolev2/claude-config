@@ -30,6 +30,7 @@ are in .claude/CLAUDE.md, and the rules for all projects are in rules/. -->
   2. מזהי הסשנים, ה-PR וה-issues.
   3. בדיקות גיבוי שמחכות (למשל `ScheduleWakeup` ומתי).
   4. הכללים של הסבב שחייבים להמשיך לחול.
+- **אחרי מיזוג של PR, ההודעה האחרונה של התור תמיד נגמרת בבלוק `/compact`.** נאכף ב-`hooks/compact_after_merge.py`.
 
 ## שאלות לדולב
 - **כל שאלה לדולב נשאלת בכלי השאלות (`AskUserQuestion`)**, לא כטקסט בסוף התשובה.

@@ -606,6 +606,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="rule"><h3>Rebase, not merge</h3><p>History stays linear.</p><p>Every PR closes as a squash.</p><span class="enf">Convention</span></div>
     <div class="rule"><h3>Only force-with-lease</h3><p><code>--force</code> silently overwrites other people's commits.</p><span class="enf hook">Enforced: block_force_push.py</span></div>
     <div class="rule"><h3>Merge only with approval</h3><p>An approval prompt pops up before every merge: <code>gh pr merge</code>, <code>gh api</code> or the MCP tool.</p><p>If Dolev declines: stop, and don't work around it.</p><span class="enf hook">Enforced: ask rule and hook</span></div>
+    <div class="rule"><h3>After a merge: offer <code>/compact</code></h3><p>The turn's last message ends with "What's open" and a full <code>/compact</code> block.</p><p>Forgotten: one more message with the block. Whether to compact stays Dolev's call.</p><span class="enf hook">Enforced: compact_after_merge.py</span></div>
     <div class="rule"><h3>A conflict means stop</h3><p><code>git rebase --abort</code>, and report the files.</p><p>Never resolve by taking one side wholesale.</p><span class="enf">Convention</span></div>
     <div class="rule"><h3>Never switch branches in the main folder</h3><p>Another session or Dolev may be working there.</p><p>Work in a worktree.</p><span class="enf hook">Enforced in ~/.claude: guard_main_folder.py</span></div>
   </div>
