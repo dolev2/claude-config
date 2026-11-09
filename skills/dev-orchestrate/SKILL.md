@@ -82,7 +82,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    התקדם"). An issue now in `status:in-review` with an open PR: `subscribe_pr_activity` on it.
    A child the check verified as done with its turn (the plan in the body and Dolev's status, or
    a PR with `status:in-review` and the hand-off comment) gets `archive_session` in this check,
-   in step 4's message: it never works again, since an answer, a send-back or a fix opens a new
+   in step 4's message, or in a message of its own when step 4 opens nobody: it never works again, since an answer, a send-back or a fix opens a new
    child (`orchestrate.md`, "בן שסיים").
    A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
 4. **Dispatch.** While fewer than 3 children are active and nobody is in overage: one child per

@@ -20,22 +20,37 @@ def fake_api(monkeypatch, answers):
     return calls
 
 
+REF = "repos/o/r/git/matching-refs/heads/claude/issue-7-x"
+COMPARE = "repos/o/r/compare/main...claude/issue-7-x"
+
+
+def fake_compare(monkeypatch, code, out, err=""):
+    calls = []
+
+    def run_command(*args):
+        calls.append(args)
+        return code, out, err
+
+    monkeypatch.setattr(sprint_github, "run_command", run_command)
+    return calls
+
+
 def test_a_pushed_branch_gives_the_files_it_changed(monkeypatch):
-    fake_api(
-        monkeypatch,
-        {
-            "repos/o/r/git/matching-refs/heads/claude/issue-7-x": [
-                {"ref": "refs/heads/claude/issue-7-x"}
-            ],
-            "repos/o/r/compare/main...claude/issue-7-x": {
-                "files": [{"filename": "a.py"}, {"filename": "b/c.md"}]
-            },
-        },
-    )
+    fake_api(monkeypatch, {REF: [{"ref": "refs/heads/claude/issue-7-x"}]})
+    out = '{"files": [{"filename": "a.py"}, {"filename": "b/c.md"}]}'
+    calls = fake_compare(monkeypatch, 0, out)
     assert sprint_github.branch_files("o/r", "main", "claude/issue-7-x") == {
         "a.py",
         "b/c.md",
     }
+    assert calls == [("gh", "api", COMPARE)]
+
+
+def test_a_compare_that_answers_404_is_no_files(monkeypatch):
+    # The branch was deleted between the two calls, or shares no history with main.
+    fake_api(monkeypatch, {REF: [{"ref": "refs/heads/claude/issue-7-x"}]})
+    fake_compare(monkeypatch, 1, "", "gh: Not Found (HTTP 404)")
+    assert sprint_github.branch_files("o/r", "main", "claude/issue-7-x") == set()
 
 
 def test_a_missing_branch_is_no_files_and_no_compare(monkeypatch):

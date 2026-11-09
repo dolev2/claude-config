@@ -225,11 +225,11 @@ def dispatch_split(
         clashes = {
             other: shared_files(files[issue.number], files[other]) for other in flying
         }
-        clashes = {other: files for other, files in clashes.items() if files}
+        clashes = {other: shared for other, shared in clashes.items() if shared}
         if clashes:
-            files = sorted({f for shared in clashes.values() for f in shared})
+            held_on = sorted({f for shared in clashes.values() for f in shared})
             held.append(
-                {"number": issue.number, "with": sorted(clashes), "files": files}
+                {"number": issue.number, "with": sorted(clashes), "files": held_on}
             )
             continue
         flying.append(issue.number)

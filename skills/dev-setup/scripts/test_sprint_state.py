@@ -210,6 +210,14 @@ def test_two_ready_issues_sharing_a_file_never_go_out_together():
     assert result["held_by_overlap"] == [{"number": 2, "with": [1], "files": ["a.py"]}]
 
 
+def test_an_issue_after_a_held_one_is_still_dispatched():
+    result = run(
+        node(1, files=["a.py"]), node(2, files=["a.py"]), node(3, files=["c.py"])
+    )
+    assert numbers(result["dispatch"]) == [1, 3]
+    assert numbers(result["held_by_overlap"]) == [2]
+
+
 def test_readme_and_claude_md_are_not_an_overlap():
     shared = ["README.md", ".claude/CLAUDE.md"]
     result = run(node(1, files=shared), node(2, files=shared))

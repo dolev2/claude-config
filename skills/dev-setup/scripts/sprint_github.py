@@ -4,9 +4,11 @@ Kept apart from sprint_state.py so its logic is tested without a network: `state
 takes these readers as functions (claude-config #203).
 """
 
+import json
 from urllib.parse import quote
 
-from gh_rest import api, api_list
+from gh_rest import api, api_list, gh_api
+from gh_rest import run as run_command
 
 FAILED = {"failure", "timed_out", "cancelled", "action_required", "startup_failure"}
 
@@ -51,5 +53,10 @@ def branch_files(repo: str, base: str, branch: str) -> set[str]:
     """
     if not branch_exists(repo, branch):
         return set()
-    diff = api(f"repos/{repo}/compare/{quote(base)}...{quote(branch)}")
+    path = f"repos/{repo}/compare/{quote(base)}...{quote(branch)}"
+    code, out, err = run_command("gh", "api", path)
+    if code != 0 and "HTTP 404" in err:
+        # Deleted since the check above, or no history shared with base.
+        return set()
+    diff = json.loads(out) if code == 0 else json.loads(gh_api(path))
     return {f["filename"] for f in diff.get("files", [])}
