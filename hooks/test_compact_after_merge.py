@@ -46,26 +46,30 @@ def run_hook(monkeypatch, raw: str) -> tuple[int, str]:
     return code, stdout.buffer.getvalue().decode("utf-8")
 
 
-def tool_event(tool: str, session: str = "s-1", **tool_input) -> str:
+def tool_event(tool: str, session: str = "s-1", turn: str = "p-1", **tool_input) -> str:
     return json.dumps(
         {
             "hook_event_name": "PostToolUse",
             "session_id": session,
+            "prompt_id": turn,
             "tool_name": tool,
             "tool_input": tool_input,
         }
     )
 
 
-def shell_event(command: str, session: str = "s-1") -> str:
-    return tool_event("Bash", session, command=command)
+def shell_event(command: str, session: str = "s-1", turn: str = "p-1") -> str:
+    return tool_event("Bash", session, turn, command=command)
 
 
-def stop_event(message: str, session: str = "s-1", active: bool = False) -> str:
+def stop_event(
+    message: str, session: str = "s-1", active: bool = False, turn: str = "p-1"
+) -> str:
     return json.dumps(
         {
             "hook_event_name": "Stop",
             "session_id": session,
+            "prompt_id": turn,
             "stop_hook_active": active,
             "last_assistant_message": message,
         }
@@ -96,6 +100,7 @@ def test_merge_marks_and_reminds(monkeypatch, markers, raw):
     "raw",
     [
         shell_event("gh pr view 5"),
+        shell_event("gh pr merge 5 --auto --squash"),
         shell_event("gh api repos/a/b/pulls/5/merge"),
         shell_event("gh alias set m 'pr merge'"),
         tool_event("mcp__github__enable_pr_auto_merge", pullNumber=5),
@@ -137,6 +142,36 @@ def test_block_with_tilde_fence_counts(monkeypatch, markers):
         0,
         "",
     )
+
+
+def test_marker_of_an_earlier_turn_is_dropped(monkeypatch, markers):
+    # A turn that merged and ended without Stop (an interrupt) leaves its marker.
+    run_hook(monkeypatch, shell_event("gh pr merge 5", turn="p-1"))
+    assert run_hook(monkeypatch, stop_event(INLINE_ONLY, turn="p-2")) == (0, "")
+    assert not (markers / "compact-s-1").exists()
+
+
+def test_event_without_prompt_id_still_checks(monkeypatch, markers):
+    raw = json.loads(shell_event("gh pr merge 5"))
+    del raw["prompt_id"]
+    run_hook(monkeypatch, json.dumps(raw))
+    code, output = run_hook(monkeypatch, stop_event(INLINE_ONLY))
+    assert json.loads(output)["decision"] == "block"
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        (WITH_BLOCK, True),
+        ("```bash\n\n/compact סיכום\n```", True),
+        ("```\nls\n```\n/compact סיכום\n", False),
+        ("```\nls\n/compact\n```", False),
+        (INLINE_ONLY, False),
+        (None, False),
+    ],
+)
+def test_has_compact_block(message, expected):
+    assert compact_after_merge.has_compact_block(message) is expected
 
 
 def test_sessions_are_separate(monkeypatch, markers):

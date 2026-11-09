@@ -8,13 +8,16 @@ $HOME/.claude/hooks/:
 1. PostToolUse, for Bash and PowerShell and for the GitHub MCP merge tool. On a call
    that surely merged a PR (`gh pr merge`, a REST PUT to pulls/<N>/merge, the MCP
    `merge_pull_request`; not auto-merge, which happens later), it writes a marker for
-   the session and returns a reminder as additionalContext. PostToolUse runs only after
-   a call that succeeded: a failed or declined merge fires PostToolUseFailure, so it
-   leaves no marker (checked in a cloud session, 9.11.2026).
-2. Stop, with no matcher. With no marker it does nothing. When the last message has a
-   code block whose first line starts with /compact, it removes the marker. Otherwise it
-   blocks the stop once, with what to add; when Claude stops again (stop_hook_active),
-   it removes the marker and lets the turn end, so it never loops.
+   the session, holding the turn's prompt_id, and returns a reminder as
+   additionalContext. PostToolUse runs only after a call that succeeded: a failed or
+   declined merge fires PostToolUseFailure, so it leaves no marker (checked in a cloud
+   session, 9.11.2026). Not caught: a failed merge in a command that still exits 0
+   (`gh pr merge 5 | tail -1`); the turn then gets one needless note.
+2. Stop, with no matcher. With no marker, or a marker of an earlier turn (one that
+   ended without Stop, such as an interrupt), it removes it and does nothing. When the
+   last message has a code block whose first line starts with /compact, it removes the
+   marker. Otherwise it blocks the stop once, with what to add; when Claude stops again
+   (stop_hook_active), it removes the marker and lets the turn end, so it never loops.
 
 Input that is not a JSON object, a missing session_id, or a marker it cannot write:
 exit 0 with no output, like the other hooks.
@@ -43,8 +46,7 @@ STOP_REASON = (
     "הוסף את החלק 'מה פתוח' עם בלוק קוד אחד שמתחיל ב-`/compact`, "
     "ואחריו התקציר בעברית (CLAUDE.md הגלובלי, 'מה פתוח'; claude-config#199)."
 )
-# A fenced code block (``` or ~~~) whose first non-empty line starts with /compact.
-COMPACT_BLOCK = re.compile(r"^[ \t]*(```|~~~)[^\n]*\n\s*/compact\b", re.MULTILINE)
+FENCE = re.compile(r"^[ \t]*(```|~~~)")
 UNSAFE_ID_CHARACTERS = re.compile(r"[^A-Za-z0-9-]")
 
 
@@ -71,8 +73,30 @@ def is_merge_call(event: dict) -> bool:
 
 
 def has_compact_block(message: object) -> bool:
-    """True when the message has a code block that starts with /compact."""
-    return isinstance(message, str) and bool(COMPACT_BLOCK.search(message))
+    """True when the message has a code block whose first non-empty line is /compact.
+
+    Fences open and close in turn, so a /compact line right after a closing fence is
+    outside any block and does not count.
+    """
+    if not isinstance(message, str):
+        return False
+    is_opening = False
+    in_block = False
+    for line in message.splitlines():
+        if FENCE.match(line):
+            in_block = not in_block
+            is_opening = in_block
+        elif is_opening and line.strip():
+            if line.strip().startswith("/compact"):
+                return True
+            is_opening = False
+    return False
+
+
+def turn_id(event: dict) -> str:
+    """The event's prompt_id, which every event of one turn shares; "" when missing."""
+    prompt_id = event.get("prompt_id")
+    return prompt_id if isinstance(prompt_id, str) else ""
 
 
 def after_tool(event: dict, marker: Path) -> str | None:
@@ -80,7 +104,7 @@ def after_tool(event: dict, marker: Path) -> str | None:
     if not is_merge_call(event):
         return None
     marker.parent.mkdir(parents=True, exist_ok=True)
-    marker.write_text("merged\n", encoding="utf-8")
+    marker.write_text(turn_id(event), encoding="utf-8")
     output = {
         "hookSpecificOutput": {
             "hookEventName": "PostToolUse",
@@ -94,8 +118,12 @@ def at_stop(event: dict, marker: Path) -> str | None:
     """Block the stop once when a merge has no /compact block; the output, or None."""
     if not marker.exists():
         return None
-    if event.get("stop_hook_active") is True or has_compact_block(
-        event.get("last_assistant_message")
+    marked_turn = marker.read_text(encoding="utf-8")
+    is_stale = bool(marked_turn and turn_id(event) and marked_turn != turn_id(event))
+    if (
+        is_stale
+        or event.get("stop_hook_active") is True
+        or has_compact_block(event.get("last_assistant_message"))
     ):
         marker.unlink(missing_ok=True)
         return None

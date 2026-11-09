@@ -110,19 +110,23 @@ def is_rest_pr_merge(arguments: list[str]) -> bool:
     return effective_method(arguments) == "PUT" and bool(MERGE_ENDPOINT.search(path))
 
 
-def is_gh_pr_merge(words: list[str]) -> bool:
-    """True for `gh [-R repo] pr merge`."""
-    return (gh_subcommand(words) or [])[:2] == ["pr", "merge"]
+def is_gh_pr_merge(words: list[str], include_auto: bool = True) -> bool:
+    """True for `gh [-R repo] pr merge`; with include_auto=False, not for `--auto`."""
+    arguments = gh_subcommand(words) or []
+    if arguments[:2] != ["pr", "merge"]:
+        return False
+    return include_auto or "--auto" not in arguments[2:]
 
 
 def is_shell_pr_merge(command: str) -> bool:
-    """True when a subcommand surely merges a PR: `gh pr merge`, or a REST PUT.
+    """True when a subcommand merges a PR now: `gh pr merge`, or a REST PUT.
 
-    Leaves out what only may merge (a `gh alias`, GraphQL from a file); the approval
-    window in ask_before_merge.py asks about those too.
+    Leaves out `gh pr merge --auto`, which merges later, and what only may merge (a
+    `gh alias`, GraphQL from a file); the approval window in ask_before_merge.py asks
+    about all of those too.
     """
     for words in split_subcommands(command):
-        if is_gh_pr_merge(words):
+        if is_gh_pr_merge(words, include_auto=False):
             return True
         arguments = gh_api_arguments(words)
         if arguments is not None and is_rest_pr_merge(arguments):

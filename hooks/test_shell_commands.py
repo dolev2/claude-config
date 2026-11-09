@@ -149,3 +149,32 @@ def test_assignments_are_returned():
 )
 def test_gh_subcommand(words, expected):
     assert shell_commands.gh_subcommand(words) == expected
+
+
+@pytest.mark.parametrize(
+    ("command", "include_auto", "expected"),
+    [
+        ("gh pr merge 5 --auto", True, True),
+        ("gh pr merge 5 --auto", False, False),
+        ("gh -R a/b pr merge 5", False, True),
+        ("gh pr view 5", True, False),
+    ],
+)
+def test_is_gh_pr_merge(command, include_auto, expected):
+    words = shlex.split(command)
+    assert shell_commands.is_gh_pr_merge(words, include_auto) is expected
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("gh pr merge 5 --squash", True),
+        ("gh pr merge 5 --auto --squash", False),
+        ("gh api -X PUT repos/a/b/pulls/5/merge", True),
+        ("gh api repos/a/b/pulls/5/merge", False),
+        ("gh alias set m 'pr merge'", False),
+        ("echo hi && gh pr merge 5", True),
+    ],
+)
+def test_is_shell_pr_merge(command, expected):
+    assert shell_commands.is_shell_pr_merge(command) is expected
