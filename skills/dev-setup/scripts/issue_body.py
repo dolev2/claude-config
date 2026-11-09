@@ -1,7 +1,7 @@
 """Reads the sections of a pipeline issue body: the goal, the context, the Plan's files.
 
 The headings are the ones of the task form (dolev2/.github, task.yml), at ## or ###, the
-level the repo's issues use. Used by audit_sprint.py.
+level the repo's issues use. Used by audit_sprint.py, sprint_state.py and spec_check.py.
 """
 
 import re
@@ -14,6 +14,9 @@ SUBHEADING = re.compile(r"^#{4,6}\s")
 DEPENDENCY_LINE = re.compile(r"^\s*(תלוי ב|depends on)\s*:(.*)$", re.IGNORECASE)
 ISSUE_REF = re.compile(r"(?<![\w/])#(\d+)\b")
 FIRST_CODE = re.compile(r"`([^`]+)`")
+SPEC_LINE = re.compile(r"^\s*(?:[-*]\s+)?(אפיון|spec)\s*:(.*)$", re.IGNORECASE)
+SPEC_PATH = re.compile(r"[^\s`]+\.md\b")
+SPEC_ID = re.compile(r"\bS-\d+\.\d+\b")
 BRANCH_LINE = re.compile(r"^\s*\*\*Branch:\*\*\s*`([^`]+)`", re.MULTILINE)
 
 
@@ -41,6 +44,22 @@ def dependency_line(context: str) -> list[int] | None:
         match = DEPENDENCY_LINE.match(line)
         if match:
             return sorted({int(n) for n in ISSUE_REF.findall(match.group(2))})
+    return None
+
+
+def spec_line(context: str) -> tuple[str, list[str]] | None:
+    """(spec file, section ids) from the "אפיון:" line, or None without such a line.
+
+    A broken line keeps what it has: "" for a missing file, [] for missing ids, so that
+    spec_check.py reports it instead of passing over it (claude-config #226).
+    """
+    for line in context.splitlines():
+        match = SPEC_LINE.match(line)
+        if match:
+            rest = match.group(2)
+            path = SPEC_PATH.search(rest)
+            ids = list(dict.fromkeys(SPEC_ID.findall(rest)))
+            return (path.group(0) if path else "", ids)
     return None
 
 

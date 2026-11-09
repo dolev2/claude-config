@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  issues: read # the spec check reads the open issues (#226)
 
 concurrency:
   group: tests-${{ github.ref }}
@@ -34,5 +35,8 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: python .github/file_guide_check.py
+
+      # The local path: this repo is the action's home, so a change to it runs here first.
+      - uses: ./skills/dev-setup/actions/spec-check
 
       - run: python -m pytest skills/dev-setup/scripts hooks

@@ -26,6 +26,7 @@
 | `.github/workflows/open-questions-gate.yml`, `sync-project.yml` | הצינור של הריפו הזה עצמו | המשימות של הריפו מנוהלות באותו צינור כמו כל פרויקט |
 | `.github/file_guide_check.py` | בודק שמדריך הקבצים הזה מונה כל קובץ, ורק קבצים שקיימים: עותק של `skills/dev-setup/templates/file_guide_check.py`, עם החריגים של הריפו מתחת לשורת `--- local ---` | רץ ב-CI. הריפו שמגדיר את הבדיקה לכל הריפואים עומד בה בעצמו (#89) |
 | `docs/decisions/*.md` | דף לכל החלטה שחוצה משימות: מצב, רקע, החלטה, חלופות שנדחו ומחיר. דף לא משנים: החלטה חדשה מחליפה אותו (#187) | הכלל ב-`rules/` אומר מה, והדף אומר למה ומה נדחה. סשן חדש מגיע אליו מההפניה בכלל, ולא מציע שוב את מה שנדחה |
+| `docs/specs/README.md` | הפורמט של קובץ אפיון: קובץ לכל נושא, מזהה `S-<n>.<m>` לכל חלק, שורות המצב, ושורת `אפיון:` ב-issue | האפיון הוא מקור האמת ל"מה" (#221, #226). הבדיקה `spec_check.py` מדלגת עליו: הוא הסבר, לא אפיון |
 | `docs/retros/151-global-config.md` | רטרו חד-פעמי של הספרינט "Global config" עם המתזמר: איפה חיכו, עבודה כפולה, והצעות מדורגות לייעול (#151) | הבסיס להחלטה של דולב אילו הצעות נפתחות כ-issues. דוח ולא נוהל: שום סקיל לא קורא אותו |
 
 ### `rules/`: כללים לכל הפרויקטים
@@ -81,12 +82,14 @@
 | `scripts/sprint_github.py` | קורא מ-GitHub בשביל `sprint_state.py`: מצב המיזוג וה-CI של PR, הקבצים ש-PR משנה, והקבצים ש-branch כבר שינה מול ה-branch הראשי | הקריאות לרשת מחוץ ללוגיקה, כדי שהבדיקות של `sprint_state.py` ירוצו בלי רשת (#203) |
 | `scripts/watch_children.py` | מחכה עד שה-status של issue של בן פעיל זז או שנוספת בו תגובה שלא המתזמר כתב (הסמן `<!-- orchestrator -->`, #203), מדפיס מה השתנה ויוצא. המתזמר מריץ אותו ברקע | הבן לא שולח הודעות, כי השירות מקפיץ חלון על כל `send_message`. היציאה של הסקריפט היא מה שמעיר את המתזמר (#184) |
 | `scripts/gh_rest.py` | קורא את ה-issues הפתוחים מ-GitHub דרך REST בלבד, באותה צורה שבה GraphQL החזיר אותם, ומנסה שוב כשהרשת או GitHub נכשלים לרגע | GraphQL חסום בסשן ענן; משותף ל-`rank_issues.py`, `audit_sprint.py`, `sprint_state.py` ו-`pipeline_info.py` (#138, #174) |
-| `scripts/issue_body.py` | קורא את הסעיפים של גוף issue: המטרה, ההקשר, שורת התלות, וה-branch והקבצים מה-Plan | משותף ל-`audit_sprint.py` ול-`sprint_state.py` |
+| `scripts/issue_body.py` | קורא את הסעיפים של גוף issue: המטרה, ההקשר, שורת התלות, שורת האפיון, וה-branch והקבצים מה-Plan | משותף ל-`audit_sprint.py` ול-`sprint_state.py` |
+| `scripts/spec_check.py` | בודק את קבצי האפיון ב-`docs/specs/`: שגיאה בקובץ (מזהה כפול, כותרת שבורה, שורת מצב לא מוכרת) מכשילה, ופער מול ה-issues רק מזהיר. `--table` מדפיס טבלת סטטוס לכל קובץ | הסדר הצעה, אפיון, issue, קוד (#221) צריך מזהים שאפשר לסמוך עליהם (#226) |
 | `scripts/board_views.py` | יוצר את שתי התצוגות של הלוח, "ספרינט נוכחי" ו"הכל" | התקנה של לוח בלי עבודה ידנית |
 | `scripts/port_check.py` | בודק אם פורט תפוס, ובוחר פורט פנוי, גם ב-`127.0.0.1` וגם ב-`::1` | הרמה לסקירה; Vite מאזין רק ב-IPv6, ובדיקה של IPv4 לבד פספסה אותו (#52) |
 | `scripts/lint_check.py` | מדווח על הגדרות lint שחסרות בריפו, או ששונות מהתבנית, ועל עותק חסר או שסטה של בדיקת מדריך הקבצים | כדי שהעותקים בכל ריפו לא יסטו בשקט |
 | `scripts/test_*.py` | הבדיקות של הסקריפטים, של שני ה-actions ושל התבניות | רצות ב-CI |
 | `actions/open-questions-gate/` | שער השאלות הפתוחות, action שכל ריפו קורא לו: `action.yml` מריץ את `check_open_questions.py` | עותק אחד לכל הריפואים |
+| `actions/spec-check/` | בדיקת האפיונים, action שכל ריפו קורא לו מ-`tests.yml`: `action.yml` מריץ את `scripts/spec_check.py` | עותק אחד לכל הריפואים. `uses:` מוריד את כל הריפו, ולכן אין עותק של הסקריפט ליד ה-action (#226) |
 | `actions/project-sync/` | הסנכרון מהתוויות ללוח, בכיוון אחד, action שכל ריפו עם לוח קורא לו. `action.yml` מריץ את `sync_project.py` | עותק אחד לכל הריפואים |
 | `actions/project-sync/sync_project.py` | נקודת הכניסה של הסנכרון: ההגדרות מהסביבה, הלולאה על ה-issues, ומה מודפס | `action.yml` ו-`sweep_all.py` מריצים אותו בשם הזה |
 | `actions/project-sync/sync_rules.py` | הכללים: איזה issue מסונכרן, מה נכתב ללוח, החריג של issue שנפתח מהלוח, ושמות האופציות בלוח (`STATUS_OPTIONS`) | בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד (#57) |
@@ -106,6 +109,7 @@
 | `templates/test_erd.py` | הבדיקה שמשווה את בלוק ה-ERD למודלים של SQLAlchemy, בלי מסד | מועתק לצד העמוד, כדי שהתרשים לא יתיישן בשקט |
 | `templates/netlify.toml` | כלל הדילוג של Netlify, בשתי צורות: אתר בתיקייה משלו ואתר בשורש | כל deploy עולה קרדיטים, ובלי הכלל כל מיזוג של הצינור הוא deploy (#50) |
 | `templates/decision.md` | שלד של דף החלטה: שורת מצב וארבעת החלקים | ריפו מעתיק אותו ל-`docs/decisions/` בהחלטה הרוחבית הראשונה שלו (`rules/code-general.md`). `scripts/test_decisions.py` בודק אותו ואת הדפים |
+| `templates/spec.md` | שלד של קובץ אפיון: קבוצה, וחלק פתוח, Done ומחוץ להיקף | מעתיקים אותו ל-`docs/specs/<topic>.md`. הפורמט: `docs/specs/README.md` |
 | `templates/ruleset-main.json` | ה-ruleset `protect-main` של ה-branch הראשי: חובת PR בלי אישור סוקר, בלי force push, בלי מחיקה, squash בלבד. זהה למה שמוגדר על claude-config | `dev-setup` שולח אותו ל-API בריפו ציבורי, כדי שאף סשן לא ידחוף ישר ל-branch הראשי (#162) |
 
 טפסי ה-issues לא כאן: הם בריפו הציבורי [dolev2/.github](https://github.com/dolev2/.github).

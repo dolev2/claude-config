@@ -1,0 +1,40 @@
+name: Spec check
+description: >
+  Checks the spec files in docs/specs/ of the calling repo: a duplicate id, a broken
+  S- heading or an unknown status line fails; a gap between the open issues and the
+  specs only warns. The rules are in skills/dev-setup/scripts/spec_check.py.
+
+# One copy for every repo with the pipeline: each repo's tests.yml calls
+# dolev2/claude-config/skills/dev-setup/actions/spec-check@main, so a fix merged here
+# reaches all of them at once, like open-questions-gate (claude-config #226).
+#
+# `uses:` downloads this whole repo, so the script is read from its home in scripts/,
+# with no copy next to this file. The calling job must check out its own repo first:
+# the specs are read from its working tree.
+
+inputs:
+  token:
+    description: Token with issues:read on the calling repo
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check the specs
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ github.repository }}
+        SCRIPT: ${{ github.action_path }}/../../scripts/spec_check.py
+      run: |
+        if [ ! -f "$SCRIPT" ]; then
+          echo "::error::spec_check.py not found next to the action ($SCRIPT)"
+          exit 1
+        fi
+        code=0
+        python3 "$SCRIPT" --repo "$REPO" --table > "$RUNNER_TEMP/spec_check.txt" || code=$?
+        cat "$RUNNER_TEMP/spec_check.txt"
+        # The annotations show on the PR; the job summary gets the table and the counts.
+        grep -v '^::' "$RUNNER_TEMP/spec_check.txt" >> "$GITHUB_STEP_SUMMARY" || true
+        exit "$code"
