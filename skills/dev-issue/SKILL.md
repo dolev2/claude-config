@@ -106,6 +106,7 @@ question in the body, not a "Blocked by" link to some other issue.
 | task | `task`, `area:*`, `status:explore` | the sprint it belongs to |
 | bug | `bug`, `area:*`, `status:ready-to-execute` | always `current_sprint` |
 | process (work management, rules, aligning with claude-config) | `process` added to the task's labels | always `current_sprint` |
+| manual task (only Dolev can do it: Claude has no access) | `task`, `area:*`, `status:plan-questions`, with what he must check or answer as unticked boxes in the open-questions section (`reference/pipeline.md`, the `status:plan-questions` row) | the sprint it belongs to |
 | backlog idea | `task`, `area:*`, `status:backlog` | none |
 | umbrella (parent split into sub-issues) | keeps `task`, `area:*`; becomes `status:backlog` | unchanged |
 | decision (only if the repo has a `decision` label) | `decision`, no `status:*` (Dolev's turn by its kind) | the sprint that waits on it |

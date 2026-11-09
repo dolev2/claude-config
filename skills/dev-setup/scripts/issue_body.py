@@ -14,6 +14,7 @@ SUBHEADING = re.compile(r"^#{4,6}\s")
 DEPENDENCY_LINE = re.compile(r"^\s*(תלוי ב|depends on)\s*:(.*)$", re.IGNORECASE)
 ISSUE_REF = re.compile(r"(?<![\w/])#(\d+)\b")
 FIRST_CODE = re.compile(r"`([^`]+)`")
+BRANCH_LINE = re.compile(r"^\s*\*\*Branch:\*\*\s*`([^`]+)`", re.MULTILINE)
 
 
 def sections(body: str) -> dict[str, str]:
@@ -57,6 +58,12 @@ def plan_files(plan: str) -> set[str]:
             if match:
                 files.add(match.group(1))
     return files
+
+
+def plan_branch(plan: str) -> str | None:
+    """The branch on the Plan's `**Branch:**` line, or None when it has none."""
+    match = BRANCH_LINE.search(plan)
+    return match.group(1) if match else None
 
 
 def mentioned(text: str) -> set[int]:

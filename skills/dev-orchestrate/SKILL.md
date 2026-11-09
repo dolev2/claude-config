@@ -80,23 +80,33 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `--expect` holds the status the previous check saw, from its summary line. Each issue it
    names, or whose status moved since the last check, is checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
    התקדם"). An issue now in `status:in-review` with an open PR: `subscribe_pr_activity` on it.
+   A child the check verified as done with its turn (the plan in the body and Dolev's status, or
+   a PR with `status:in-review` and the hand-off comment) gets `archive_session` in this check,
+   in step 4's message: it never works again, since an answer, a send-back or a fix opens a new
+   child (`orchestrate.md`, "בן שסיים").
    A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
 4. **Dispatch.** While fewer than 3 children are active and nobody is in overage: one child per
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
    on which issue. Any earlier child of the same issue that is not archived gets
    `archive_session` first: one child per issue.
    `create_session` and `archive_session` always raise a permission prompt (`cloud.md`, "חלונות
-   אישור בסשן-בן"): open the children of one check in one message, and say before it how many
-   prompts are coming and that they are permission prompts, not questions.
+   אישור בסשן-בן"): open the children of one check, and archive the ones step 3 verified as done,
+   in one message, and say before it how many prompts are coming and that they are permission
+   prompts, not questions.
 5. **Dolev's window.** Everything that waits for him goes into one `AskUserQuestion` call, up to 4
    questions, most important first (`chat-decisions.md`):
    1. a plan's open questions: the questions themselves;
    2. a plan to approve: its "בקצרה", with approve first;
    3. a PR ready to merge (`merge_queue`, CI `success`, `mergeable_state` neither `dirty` nor
       `unknown`; `unknown` is asked again next check): a change
-      map and the CI state, with "תמזג את #N" first. Only one merge question per window;
+      map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
+      #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
+      warns. Only one merge question per window;
    4. a child blocked on a permission prompt or failed: which session, which tool, and a link.
-   The label moves first, the question after (`chat-decisions.md`, rule 2). After his choice:
+   The label moves first, the question after (`chat-decisions.md`, rule 2). Every comment the
+   orchestrator writes in an issue, here or anywhere else, opens with the hidden marker
+   `<!-- orchestrator -->` on its own line, so it does not wake the watch (`orchestrate.md`,
+   "איך המתזמר יודע שבן התקדם"). After his choice:
    approve: `waiting-approval` → `ready-to-execute`, a plan-log line, and the coding child opens
    next check. Send back or answer: `status:explore`, his words quoted in a comment, and a new
    planning child. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
@@ -123,7 +133,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
 ## The end
 
 `dispatch`, `held_by_overlap`, `waiting_dolev` and `merge_queue` are empty, and no child is
-active: a summary of what merged and what is still open and why (blocked, costs-money, outside
+active: first, `archive_session` for every child with the tag that is not archived yet (one
+message, the number of prompts said before it), the backup for any child step 3 missed; then a summary of what merged and what is still open and why (blocked, costs-money, outside
 the sprint), and the stray branches of closed issues for Dolev to delete by hand (`orchestrate.md`,
 "branches יתומים"; deleting a branch is blocked in the cloud), then `ScheduleWakeup` with `stop`.
 

@@ -17,8 +17,9 @@ Bad input exits 2.
     #184 status explore -> waiting-approval
     #181 comment https://github.com/<repo>/issues/181#issuecomment-1
 
-A comment the orchestrator wrote itself after --since also wakes it, once: every comment
-is written from Dolev's account, so there is no author to filter by.
+A comment the orchestrator wrote itself does not wake it: every comment is written from
+Dolev's account, so there is no author to filter by, and the orchestrator opens each of
+its comments with MARKER instead (claude-config #203).
 """
 
 import argparse
@@ -30,6 +31,7 @@ from datetime import UTC, datetime
 from gh_rest import api, api_list, current_repo
 
 NO_STATUS = "none"
+MARKER = "<!-- orchestrator -->"
 
 
 def expect_map(text: str) -> dict[int, str]:
@@ -66,7 +68,7 @@ def status_of(issue: dict) -> str:
 
 
 def new_comments(comments: list[dict], since: datetime) -> list[str]:
-    """URLs of the comments created after `since`.
+    """URLs of the comments created after `since`, without the orchestrator's own.
 
     The API's own `since` filters by update time, so an old comment edited later
     would pass it; the creation time decides here.
@@ -75,6 +77,7 @@ def new_comments(comments: list[dict], since: datetime) -> list[str]:
         c["html_url"]
         for c in comments
         if datetime.fromisoformat(c["created_at"]) > since
+        and MARKER not in (c.get("body") or "")
     ]
 
 

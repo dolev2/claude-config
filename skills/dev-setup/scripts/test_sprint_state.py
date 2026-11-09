@@ -14,14 +14,17 @@ sys.path.insert(0, str(HERE))
 spec = importlib.util.spec_from_file_location("sprint_state", HERE / "sprint_state.py")
 sprint_state = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sprint_state)
+import issue_body  # noqa: E402
+import sprint_github  # noqa: E402
 
 
-def body(files=()):
+def body(files=(), branch=None, questions="_אין שאלות פתוחות._"):
     bullets = "\n".join(f"- `{f}`: changes" for f in files)
+    branch_line = f"**Branch:** `{branch}`\n\n" if branch else ""
     return (
         "### מה רוצים\n\ngoal\n\n### הקשר / קישורים\n\ncontext\n\n---\n"
-        f"### Plan\n\n##### קבצים שצפויים להשתנות\n{bullets}\n\n"
-        "### שאלות פתוחות\n\n_אין שאלות פתוחות._\n"
+        f"### Plan\n\n{branch_line}##### קבצים שצפויים להשתנות\n{bullets}\n\n"
+        f"### שאלות פתוחות\n\n{questions}\n"
     )
 
 
@@ -36,12 +39,14 @@ def node(
     closed_subs=(),
     prs=(),
     milestone="W1",
+    branch=None,
+    questions="_אין שאלות פתוחות._",
 ):
     names = [f"status:{status}", *labels]
     return {
         "number": number,
         "title": f"issue {number}",
-        "body": body(files),
+        "body": body(files, branch, questions),
         "labels": {"nodes": [{"name": name} for name in names]},
         "milestone": {"number": 1, "title": milestone, "state": "OPEN"},
         "blockedBy": {"nodes": [{"number": n, "state": s} for n, s in blocked_by]},
@@ -60,8 +65,21 @@ def no_pr_status(pr):
     raise AssertionError(f"PR {pr['number']} should not be read")
 
 
-def run(*nodes, claimed=(), status_of=no_pr_status):
-    return sprint_state.state(list(nodes), "W1", list(claimed), status_of)
+def run(*nodes, claimed=(), status_of=no_pr_status, branches=None, pr_files=None):
+    branches = branches or {}
+    pr_files = pr_files or {}
+    return sprint_state.state(
+        list(nodes),
+        "W1",
+        list(claimed),
+        status_of,
+        lambda branch: set(branches.get(branch, ())),
+        lambda number: set(pr_files.get(number, ())),
+    )
+
+
+def clean(pr):
+    return {"mergeable_state": "clean", "ci": "success"}
 
 
 def numbers(rows):
@@ -223,9 +241,88 @@ def test_merge_queue_carries_the_pr_head_and_its_checks():
             "head_sha": "sha40",
             "mergeable_state": "behind",
             "ci": "pending",
+            "overlaps": [],
         }
     ]
     assert seen == [{"number": 40, "headSha": "sha40"}]
+
+
+def test_a_manual_task_waits_for_dolev_and_is_never_dispatched():
+    # #75 (a Netlify check only Dolev can run) reached dispatch as ready-to-execute;
+    # such a task now waits in plan-questions with its questions as checkboxes.
+    manual = node(75, "plan-questions", questions="- [ ] מה מצאת ב-Netlify?")
+    result = run(manual, node(2))
+    assert numbers(result["dispatch"]) == [2]
+    assert numbers(result["waiting_dolev"]) == [75]
+
+
+def test_a_file_a_child_changed_off_plan_holds_the_issue_that_plans_it():
+    # #196 after #164: the child changed audit_sprint.py without planning it.
+    result = run(
+        node(164, branch="claude/issue-164-x", files=["a.py"]),
+        node(196, files=["audit_sprint.py"]),
+        claimed=[164],
+        branches={"claude/issue-164-x": ["a.py", "audit_sprint.py"]},
+    )
+    assert result["dispatch"] == []
+    assert result["held_by_overlap"] == [
+        {"number": 196, "with": [164], "files": ["audit_sprint.py"]}
+    ]
+
+
+def test_a_branch_not_pushed_yet_counts_only_the_planned_files():
+    result = run(
+        node(1, branch="claude/issue-1-x", files=["a.py"]),
+        node(2, files=["b.py"]),
+        claimed=[1],
+    )
+    assert numbers(result["dispatch"]) == [2]
+
+
+def test_the_merge_queue_names_active_children_that_share_a_file():
+    result = run(
+        node(1, "in-review", prs=[40], files=["a.py"]),
+        node(2, "explore", branch="claude/issue-2-x"),
+        node(3, "ready-to-execute", files=["c.py"]),
+        claimed=[2, 3],
+        status_of=clean,
+        branches={"claude/issue-2-x": ["audit_sprint.py", "README.md"]},
+        pr_files={40: ["a.py", "audit_sprint.py", "README.md"]},
+    )
+    [queued] = result["merge_queue"]
+    assert queued["overlaps"] == [{"number": 2, "files": ["audit_sprint.py"]}]
+
+
+def test_a_pr_that_shares_nothing_has_no_overlaps():
+    result = run(
+        node(1, "in-review", prs=[40]),
+        node(2, "in-review", prs=[41], files=["b.py"]),
+        status_of=clean,
+        pr_files={40: ["a.py"], 41: ["b.py"]},
+    )
+    assert [q["overlaps"] for q in result["merge_queue"]] == [[], []]
+
+
+def test_another_pr_in_review_is_an_overlap_too():
+    result = run(
+        node(1, "in-review", prs=[40]),
+        node(2, "in-review", prs=[41], files=["a.py"]),
+        status_of=clean,
+        pr_files={40: ["a.py"]},
+    )
+    assert result["merge_queue"][0]["overlaps"] == [{"number": 2, "files": ["a.py"]}]
+
+
+@pytest.mark.parametrize(
+    ("plan", "branch"),
+    [
+        ("**Branch:** `claude/issue-7-x`\n\n#### בקצרה", "claude/issue-7-x"),
+        ("#### בקצרה\n- **הבעיה:** x", None),
+        ("", None),
+    ],
+)
+def test_plan_branch(plan, branch):
+    assert issue_body.plan_branch(plan) == branch
 
 
 def test_findings_are_data():
@@ -268,7 +365,7 @@ def test_an_empty_sprint_is_empty_everywhere():
     ],
 )
 def test_ci_summary(runs, summary):
-    assert sprint_state.ci_summary(runs) == summary
+    assert sprint_github.ci_summary(runs) == summary
 
 
 def sh(repo, *args):
@@ -310,6 +407,7 @@ def pipeline(tmp_path, monkeypatch):
 def fake_github(monkeypatch, nodes):
     monkeypatch.setattr(sprint_state, "current_repo", lambda: "acme/widgets")
     monkeypatch.setattr(sprint_state, "open_issue_nodes", lambda repo, with_body: nodes)
+    monkeypatch.setattr(sprint_state, "api", lambda path: {"default_branch": "main"})
 
 
 def shas(monkeypatch, capsys):

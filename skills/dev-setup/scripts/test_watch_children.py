@@ -23,10 +23,11 @@ def issue(status):
     return {"labels": [{"name": "task"}, {"name": f"status:{status}"}]}
 
 
-def comment(n, created):
+def comment(n, created, body="a child's comment"):
     return {
         "html_url": f"https://github.com/o/r/issues/1#issuecomment-{n}",
         "created_at": created,
+        "body": body,
     }
 
 
@@ -69,6 +70,28 @@ def test_only_comments_created_after_since_count():
         {181: [old, new]},
     )
     assert lines == [f"#181 comment {new['html_url']}"]
+
+
+ORCHESTRATOR = f"{watch_children.MARKER}\nהמתזמר: הבן נפתח מחדש."
+
+
+@pytest.mark.parametrize(
+    ("bodies", "woken_by"),
+    [
+        ([ORCHESTRATOR], []),
+        (["a child's comment"], [1]),
+        ([ORCHESTRATOR, "a child's comment"], [2]),
+    ],
+)
+def test_the_orchestrators_own_comment_does_not_wake_it(bodies, woken_by):
+    comments = [
+        comment(n, "2026-11-08T15:00:01Z", body)
+        for n, body in enumerate(bodies, start=1)
+    ]
+    lines = changes(
+        {181: "ready-to-execute"}, {181: issue("ready-to-execute")}, {181: comments}
+    )
+    assert lines == [f"#181 comment {comments[n - 1]['html_url']}" for n in woken_by]
 
 
 class Clock:
