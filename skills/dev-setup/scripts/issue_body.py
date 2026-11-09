@@ -15,7 +15,8 @@ DEPENDENCY_LINE = re.compile(r"^\s*(תלוי ב|depends on)\s*:(.*)$", re.IGNORE
 ISSUE_REF = re.compile(r"(?<![\w/])#(\d+)\b")
 FIRST_CODE = re.compile(r"`([^`]+)`")
 SPEC_LINE = re.compile(r"^\s*(?:[-*]\s+)?(אפיון|spec)\s*:(.*)$", re.IGNORECASE)
-SPEC_PATH = re.compile(r"[^\s`]+\.md\b")
+SPEC_PATH = re.compile(r"[^\s`\[\]()<>]+\.md\b")
+SPECS_DIR = "docs/specs/"
 SPEC_ID = re.compile(r"\bS-\d+\.\d+\b")
 BRANCH_LINE = re.compile(r"^\s*\*\*Branch:\*\*\s*`([^`]+)`", re.MULTILINE)
 
@@ -59,8 +60,13 @@ def spec_line(context: str) -> tuple[str, list[str]] | None:
             rest = match.group(2)
             path = SPEC_PATH.search(rest)
             ids = list(dict.fromkeys(SPEC_ID.findall(rest)))
-            return (path.group(0) if path else "", ids)
+            return (repo_path(path.group(0)) if path else "", ids)
     return None
+
+
+def repo_path(path: str) -> str:
+    """A spec path from the repo root: a link to the file on GitHub becomes its path."""
+    return path[path.index(SPECS_DIR) :] if SPECS_DIR in path else path
 
 
 def plan_files(plan: str) -> set[str]:

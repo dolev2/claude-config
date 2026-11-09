@@ -62,7 +62,10 @@ def test_empty_spec_has_no_parts():
         ("## S-3 · no minor\n", "broken part heading"),
         ("## S-3.x · not a number\n", "broken part heading"),
         ("##### S-3.1 · too deep\n", "is at level 5"),
-        ("## S-3.1 · a\n**מצב:** בעבודה\n", "unknown status 'בעבודה' under S-3.1"),
+        (
+            "## S-3.1 · a\n**מצב:** בעבודה\n",
+            "unknown status line '**מצב:** בעבודה' under S-3.1",
+        ),
     ],
 )
 def test_file_errors(text, expected):
@@ -206,3 +209,38 @@ def test_run(tmp_path, text, code):
     )
     assert done.returncode == code
     assert "| מזהה | שם | מצב | issue |" in done.stdout
+
+
+def test_duplicate_part_is_listed_once():
+    parts, _ = spec_check.parse_spec("## S-1.1 · a\n\n## S-1.1 · b\n")
+    assert [part.name for part in parts] == ["a"]
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["**מצב**: Done (#3)", "**Status** done", "**מצב:** Done #3"],
+)
+def test_near_status_line_is_an_error(line):
+    parts, errors = spec_check.parse_spec(f"## S-1.1 · a\n{line}\n")
+    assert [part.status for part in parts] == [None]
+    assert len(errors) == 1
+    assert errors[0][0] == 2
+    assert "unknown status line" in errors[0][1]
+
+
+def test_plain_first_line_is_no_status():
+    parts, errors = spec_check.parse_spec("## S-1.1 · a\nStatus of the world.\n")
+    assert errors == []
+    assert parts[0].status is None
+
+
+def test_multi_line_warning_stays_one_annotation(monkeypatch, capsys):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    spec_check.emit("warning", spec_check.Finding(None, None, "a\nb 100%"))
+    assert capsys.readouterr().out == "::warning::a%0Ab 100%25\n"
+
+
+def test_annotation_has_no_second_place(monkeypatch, capsys):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    spec_check.emit("error", spec_check.Finding(SPEC, 3, "bad"))
+    assert capsys.readouterr().out == f"::error file={SPEC},line=3::bad\n"

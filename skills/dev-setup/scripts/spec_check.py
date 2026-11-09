@@ -29,6 +29,8 @@ HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*$")
 PART_LEVELS = (2, 3, 4)
 PART_ID = re.compile(r"^S-(\d+)\.(\d+)(?:\s+(?:[·:–-]\s*)?(.*))?$")
 STATUS_LINE = re.compile(r"^\*\*(?:מצב|status):\*\*\s*(.*?)\s*$", re.IGNORECASE)
+STATUS_LIKE = re.compile(r"^\*\*\s*(?:מצב|status)\b", re.IGNORECASE)
+STATUS_FORMS = "**מצב:** Done (#<N>) or **מצב:** מחוץ להיקף"
 DONE = re.compile(r"^done\s*\(#(\d+)\)$", re.IGNORECASE)
 OUT_OF_SCOPE = ("מחוץ להיקף", "out of scope")
 NOT_STARTED = {"status:explore", "status:backlog"}
@@ -87,6 +89,22 @@ def heading_part(level: int, text: str, number: int) -> Part | str | None:
     return Part(f"S-{match[1]}.{match[2]}", (match[3] or "").strip(), number)
 
 
+def status_of(part: Part, line: str) -> Part | str:
+    """The part with the status of its first line, or an error for a broken status line.
+
+    A line that starts like a status line ("**מצב", "**status") but is not a known
+    one is an error, so that "**מצב**: Done" never leaves a part open in silence.
+    """
+    status = STATUS_LINE.match(line)
+    if status:
+        value = read_status(status.group(1))
+        if value:
+            return part._replace(status=value[0], done_issue=value[1])
+    elif not STATUS_LIKE.match(line):
+        return part
+    return f"unknown status line {line!r} under {part.id}: write {STATUS_FORMS}"
+
+
 def parse_spec(text: str) -> tuple[list[Part], list[tuple[int, str]]]:
     """The parts of one spec file, and its errors as (line, message)."""
     parts: list[Part] = []
@@ -95,41 +113,25 @@ def parse_spec(text: str) -> tuple[list[Part], list[tuple[int, str]]]:
     waiting: Part | None = None
     for number, line in lines_outside_fences(text):
         heading = HEADING.match(line)
-        if heading:
+        if heading or (waiting and line.strip()):
             if waiting:
-                parts.append(waiting)
-            found = heading_part(len(heading[1]), heading[2], number)
-            waiting = found if isinstance(found, Part) else None
-            if isinstance(found, str):
-                errors.append((number, found))
-            elif found and found.id in first_line:
-                errors.append(
-                    (
-                        number,
-                        f"duplicate id {found.id} (first at line "
-                        f"{first_line[found.id]}): give this part a new number",
-                    )
-                )
-            elif found:
-                first_line[found.id] = number
+                found = waiting if heading else status_of(waiting, line.strip())
+                parts.append(waiting if isinstance(found, str) else found)
+                if isinstance(found, str):
+                    errors.append((number, found))
+            waiting = None
+        if not heading:
             continue
-        if not waiting or not line.strip():
-            continue
-        status = STATUS_LINE.match(line.strip())
-        if status:
-            value = read_status(status.group(1))
-            if value is None:
-                errors.append(
-                    (
-                        number,
-                        f"unknown status {status.group(1)!r} under {waiting.id}: "
-                        "write Done (#<N>) or מחוץ להיקף",
-                    )
-                )
-            else:
-                waiting = waiting._replace(status=value[0], done_issue=value[1])
-        parts.append(waiting)
-        waiting = None
+        found = heading_part(len(heading[1]), heading[2], number)
+        if isinstance(found, str):
+            errors.append((number, found))
+        elif found and found.id in first_line:
+            first = first_line[found.id]
+            message = f"duplicate id {found.id} (first at line {first})"
+            errors.append((number, f"{message}: give this part a new number"))
+        elif found:
+            first_line[found.id] = number
+            waiting = found
     if waiting:
         parts.append(waiting)
     return parts, errors
@@ -248,13 +250,18 @@ def fetch_issues(repo: str | None) -> list[dict]:
     ]
 
 
+def annotation(text: str) -> str:
+    """`text` escaped for a workflow command: a line break would end the annotation."""
+    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
 def emit(kind: str, finding: Finding) -> None:
     """Print a finding; in GitHub Actions as an annotation, so it shows on the PR."""
-    place = f"{finding.path}:{finding.line}: " if finding.path else ""
     if os.environ.get("GITHUB_ACTIONS") == "true":
         where = f" file={finding.path},line={finding.line}" if finding.path else ""
-        print(f"::{kind}{where}::{place}{finding.message}")
+        print(f"::{kind}{where}::{annotation(finding.message)}")
     else:
+        place = f"{finding.path}:{finding.line}: " if finding.path else ""
         print(f"{kind}: {place}{finding.message}")
 
 

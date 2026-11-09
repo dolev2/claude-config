@@ -35,6 +35,8 @@ runs:
         code=0
         python3 "$SCRIPT" --repo "$REPO" --table > "$RUNNER_TEMP/spec_check.txt" || code=$?
         cat "$RUNNER_TEMP/spec_check.txt"
-        # The annotations show on the PR; the job summary gets the table and the counts.
-        grep -v '^::' "$RUNNER_TEMP/spec_check.txt" >> "$GITHUB_STEP_SUMMARY" || true
+        # GitHub shows only the first 10 warnings of a step on the PR, so the job summary
+        # gets every finding as plain text, then the table and the counts.
+        sed -E 's/^::(warning|error)[^:]*::/- \1: /' "$RUNNER_TEMP/spec_check.txt" \
+          >> "$GITHUB_STEP_SUMMARY"
         exit "$code"

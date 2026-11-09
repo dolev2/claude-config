@@ -14,6 +14,14 @@ from issue_body import dependency_line, spec_line
         ),
         ("Spec: docs/specs/a.md S-2.1", ("docs/specs/a.md", ["S-2.1"])),
         ("- אפיון: docs/specs/a.md S-2.1", ("docs/specs/a.md", ["S-2.1"])),
+        (
+            "אפיון: [docs/specs/a.md](docs/specs/a.md) S-1.1",
+            ("docs/specs/a.md", ["S-1.1"]),
+        ),
+        (
+            "אפיון: https://github.com/o/r/blob/main/docs/specs/a.md S-1.1",
+            ("docs/specs/a.md", ["S-1.1"]),
+        ),
         ("אפיון: S-2.1", ("", ["S-2.1"])),
         ("אפיון: docs/specs/a.md", ("docs/specs/a.md", [])),
         ("תלוי ב: #4\nשום דבר על אפיון כאן", None),
