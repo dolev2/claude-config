@@ -17,7 +17,8 @@ The keys:
 
     dispatch         ready for a child session: Claude's turn, no open blocker, not an
                      umbrella, not costs-money, not claimed, no file shared with work in
-                     flight. Repairs first, then approved plans, then plans to write.
+                     flight. Repairs first, then bugs, then approved plans, then plans
+                     to write.
     held_by_overlap  would be in dispatch, but shares a planned file with work in flight
                      (claimed, in review, or earlier in dispatch), so it runs after it
     blocked          Claude's turn, waiting on an open blocker
@@ -176,14 +177,20 @@ def state(
         and not is_umbrella(by_number[i.number])
         and i.number not in claimed
     ]
-    in_review = [i.number for i in issues if i.status == "in-review"]
+    # Bug-first is a rule for what Claude picks (#202); Dolev's lists keep the tier
+    # first, so his questions come in the same order as before.
+    dolev_turn = sorted(
+        (i for i in issues if i.status in DOLEV_TURN),
+        key=lambda i: DOLEV_TURN.index(i.status),
+    )
+    in_review = [i.number for i in dolev_turn if i.status == "in-review"]
     in_flight = [n for n in claimed if n in audited] + in_review
     dispatch, held = dispatch_split(candidates, audited, in_flight)
 
     merge_queue = [
         {"number": i.number, "pr": pr["number"], "head_sha": pr["headSha"]}
         | status_of(pr)
-        for i in issues
+        for i in dolev_turn
         if i.status == "in-review"
         for pr in by_number[i.number]["closingPullRequests"]
     ]
@@ -202,8 +209,7 @@ def state(
         ],
         "waiting_dolev": [
             {"number": i.number, "title": i.title, "status": i.status}
-            for i in issues
-            if i.status in DOLEV_TURN
+            for i in dolev_turn
         ],
         "merge_queue": merge_queue,
         "on_hold": [i.number for i in claude_turn if i.costs_money],

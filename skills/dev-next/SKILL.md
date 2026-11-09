@@ -24,7 +24,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the labels, the sprint) and `dependencies.md`: the
 ranking rule and why this skill ranks without status tiers, while the phases put the status
-tier first. In both, `process` and `bug` issues come before the rest, then weight decides.
+tier first. In both, a `bug` comes before any new task, then `process` issues, then weight decides
+(a repair, `needs-repair`, stays first in the phases).
 Its sub-section "בדיקת הסדר" holds what the audit below finds, and the rule for merging.
 The review of the sprint order edits issue bodies, so it also reads `issue-body.md` there.
 Asking Dolev for his step in the question window (step 4) follows `chat-decisions.md`.
@@ -35,7 +36,7 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py"
    ```
-   `process` and `bug` issues come first, each group by weight. Each row is `#N`, how many
+   `bug` issues come first, then `process` issues, each group by weight. Each row is `#N`, how many
    sprint issues wait on it, its status, its kind (`process`, `bug` or `-`), its title, and
    `BLOCKED by #…` if it has an open blocker. The first line names the sprint. Issues
    labelled `costs-money` are on hold until Dolev approves the expense: they are not ranked,
@@ -81,7 +82,7 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    | `backlog` | Dolev | handing it over: writing it up and moving it to `status:explore` |
 
    Before routing, tell Dolev in Hebrew, in one or two lines, which issue you picked and why: whether it
-   is a `process` or `bug` issue, how many issues wait on it, and the next one or two below it. Then invoke the phase skill with the
+   is a bug (say "באג: נבחר לפני משימה חדשה") or a `process` issue, how many issues wait on it, and the next one or two below it. Then invoke the phase skill with the
    issue number. Both phase skills take the issue Dolev named over their own ranking, and
    still apply every gate of their own (the WIP gate, the blocked check, the sprint).
 
