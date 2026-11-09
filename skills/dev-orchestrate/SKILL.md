@@ -59,8 +59,9 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       changed (the group, the commit with its link), that it loads only when a session opens,
       to open a new orchestrator session and say "תריץ את הספרינט" (nothing is lost: the state
       is on GitHub and in the children's tags), and that this orchestrator stopped while the
-      running children go on. Then `TaskStop` the background watch, `ScheduleWakeup` with
-      `stop`, and end the check: no children opened, no merge asked.
+      running children go on. Then `TaskStop` the background watch, `unsubscribe_pr_activity`
+      on every PR this session follows (so the new orchestrator gets their events),
+      `ScheduleWakeup` with `stop`, and end the check: no children opened, no merge asked.
    2. `pipeline_sha` moved: `python "$HOME/.claude/hooks/cloud_refresh.py" --report`. Exit 1:
       the same stop, with its reason in plain words. Exit 0: read this skill and the "Read
       first" files again before going on.

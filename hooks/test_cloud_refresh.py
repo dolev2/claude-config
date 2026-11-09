@@ -59,7 +59,10 @@ def claude_md(home: Path) -> str:
 
 
 def run_main(
-    monkeypatch, home: Path, remote: str | None = "true", argv: list[str] = ()
+    monkeypatch,
+    home: Path,
+    remote: str | None = "true",
+    argv: tuple[str, ...] = (),
 ) -> int:
     monkeypatch.setattr(Path, "home", lambda: home)
     if remote is None:

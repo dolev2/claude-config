@@ -69,6 +69,7 @@ def report(root: Path) -> int:
     else:
         try:
             problem = refresh(root)
+            head = "" if problem else git(root, "rev-parse", "HEAD").stdout.strip()
         except subprocess.TimeoutExpired:
             problem = "git timed out"
         except (OSError, subprocess.SubprocessError):
@@ -76,7 +77,7 @@ def report(root: Path) -> int:
     if problem:
         print(f"not refreshed: {problem}")
         return 1
-    print(f"refreshed {git(root, 'rev-parse', 'HEAD').stdout.strip()}")
+    print(f"refreshed {head}")
     return 0
 
 
