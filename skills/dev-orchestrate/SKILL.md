@@ -18,7 +18,7 @@ In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md`, `orchestrate.
 contract, the tags, what wakes a check and what to check after a change; below, `orchestrate.md` always means
 `reference/orchestrate.md`), `chat-decisions.md`, `cloud.md` (the `gh`
 table and "חלונות אישור בסשן-בן"), `dependencies.md`, and `git-flow.md`. Then the repo's
-`CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 1).
+`CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 2).
 
 ## Start
 
@@ -53,9 +53,19 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/sprint_state.py" --claimed <N,...>
    ```
-   `pipeline_sha` differs from the last check's (every check ends with a line that carries it,
-   step 6): run `$HOME/.claude/hooks/cloud_refresh.py` and read this skill and the "Read first" files again before
-   going on. The pipeline may change during the sprint; the check never leans on an old read.
+   Compare its two shas with the last check's (every check ends with a line that carries them,
+   step 6), in this order (`orchestrate.md`, "שינוי בצינור באמצע ספרינט"):
+   1. `session_sha` moved: what a session loads once changed. Tell Dolev in one message what
+      changed (the group, the commit with its link), that it loads only when a session opens,
+      to open a new orchestrator session and say "תריץ את הספרינט" (nothing is lost: the state
+      is on GitHub and in the children's tags), and that this orchestrator stopped while the
+      running children go on. Then `TaskStop` the background watch, `ScheduleWakeup` with
+      `stop`, and end the check: no children opened, no merge asked.
+   2. `pipeline_sha` moved: `python "$HOME/.claude/hooks/cloud_refresh.py" --report`. Exit 1:
+      the same stop, with its reason in plain words. Exit 0: read this skill and the "Read
+      first" files again before going on.
+   3. The first check (no previous line): only note both.
+   The check never leans on an old read.
 3. **Changes.** First note the time, as `<now>` (ISO, UTC). The watch stops at its first change,
    so it may not have seen them all: run it once over every issue of a child that is not
    archived, from the previous check's `since` (step 6; the first check has none and skips this):
@@ -91,7 +101,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `needs-repair`, a comment, and a coding child. Each of these new children opens through
    step 4, so the old child is archived.
 6. **Close the check.** One summary line, always, ending with
-   `since <now> expect <N>=<status>,... pipeline_sha <sha>`: the next check compares against it,
+   `since <now> expect <N>=<status>,... pipeline_sha <sha> session_sha <sha>`: the next check compares against it,
    and step 3 reads `since` and `expect` from it. Nothing to open and nothing to ask: the line says what the sprint waits
    for. Then, when any child is active, start the background watch: stop the previous one if
    it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
