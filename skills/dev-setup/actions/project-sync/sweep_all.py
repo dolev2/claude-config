@@ -2,9 +2,10 @@
 
 Why this exists
 ---------------
-A card dragged on the board raises no webhook (sync_project.py), so a poll every 15
-minutes is what puts it back in the column of its label, and catches up on an issue
-event whose run failed. Run inside each private repo, that poll used up the account's
+A card dragged on the board raises no webhook (sync_project.py), so a poll on an
+hourly schedule, which GitHub runs a few times a day (claude-config #129), is what
+puts it back in the column of its label, and catches up on an issue event whose run
+failed. Run inside each private repo, that poll used up the account's
 2,000 free Actions minutes for October 2026, and with them CI in every private repo.
 Runs in a public repo are free, so dolev2/.github runs this script once for all of
 them (claude-config #46). Each repo's sync-project.yml keeps only the
