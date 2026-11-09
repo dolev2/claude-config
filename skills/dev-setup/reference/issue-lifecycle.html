@@ -627,6 +627,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="rule"><h3>rebase, לא merge</h3><p>ההיסטוריה לינארית.</p><p>כל PR נסגר ב-squash.</p><span class="enf">נוהל</span></div>
     <div class="rule"><h3>רק force-with-lease</h3><p><code>--force</code> דורס בשקט commits של אחרים.</p><span class="enf hook">נאכף: block_force_push.py</span></div>
     <div class="rule"><h3>merge רק באישור</h3><p>חלון אישור קופץ לפני כל מיזוג: <code>gh pr merge</code>, <code>gh api</code> או כלי ה-MCP.</p><p>דולב דחה: עוצרים, ולא עוקפים.</p><span class="enf hook">נאכף: כלל ask ו-hook</span></div>
+    <div class="rule"><h3>אחרי מיזוג: הצעה ל-<code>/compact</code></h3><p>ההודעה האחרונה של התור נגמרת ב"מה פתוח" עם בלוק <code>/compact</code> מלא.</p><p>שכח: עוד הודעה אחת עם הבלוק. ההחלטה לדחוס נשארת של דולב.</p><span class="enf hook">נאכף: compact_after_merge.py</span></div>
     <div class="rule"><h3>התנגשות היא עצירה</h3><p><code>git rebase --abort</code>, ודיווח על הקבצים.</p><p>לא פותרים בלקיחת צד אחד.</p><span class="enf">נוהל</span></div>
     <div class="rule"><h3>לא מחליפים branch בתיקייה הראשית</h3><p>סשן אחר או דולב עובדים בה.</p><p>עובדים ב-worktree.</p><span class="enf hook">נאכף ב-~/.claude: guard_main_folder.py</span></div>
   </div>
