@@ -154,7 +154,7 @@ gh issue view <N> --json labels,milestone --jq '[.labels[].name], .milestone.tit
 ```
 
 Report each new issue to Dolev, in Hebrew, as a link with its title, milestone and blockers. If the repo has
-`sync-project.yml`, a board column that has not updated yet catches up within 15 minutes.
+`sync-project.yml`, a board column that has not updated yet catches up within a few hours.
 
 ## Golden rules
 
