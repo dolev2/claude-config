@@ -2,8 +2,6 @@
 
 import importlib.util
 import json
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -15,6 +13,7 @@ spec = importlib.util.spec_from_file_location("sprint_state", HERE / "sprint_sta
 sprint_state = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sprint_state)
 import issue_body  # noqa: E402
+import pipeline_shas  # noqa: E402
 import sprint_github  # noqa: E402
 
 
@@ -376,108 +375,16 @@ def test_ci_summary(runs, summary):
     assert sprint_github.ci_summary(runs) == summary
 
 
-def sh(repo, *args):
-    subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
-
-
-@pytest.fixture
-def pipeline(tmp_path, monkeypatch):
-    """A local git repo standing in for the pipeline's remote; commit(path) adds one."""
-    remote = tmp_path / "remote"
-    remote.mkdir()
-    sh(remote, "init", "-q", "-b", "main")
-    sh(remote, "config", "user.email", "t@example.com")
-    sh(remote, "config", "user.name", "t")
-    # file://, so the cache is a real blob-less clone, as from GitHub; a plain path
-    # makes git ignore --filter.
-    monkeypatch.setattr(sprint_state, "PIPELINE_URL", remote.as_uri())
-    monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
-
-    def commit(path):
-        file = remote / path
-        if not file.suffix:
-            file.mkdir(exist_ok=True)
-            file = file / "f.md"
-        file.write_text(file.read_text() + "x" if file.exists() else "x")
-        sh(remote, "add", "-A")
-        sh(remote, "commit", "-q", "-m", path)
-        out = subprocess.run(
-            ["git", "-C", str(remote), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return out.stdout.strip()
-
-    return commit
-
-
 def fake_github(monkeypatch, nodes):
     monkeypatch.setattr(sprint_state, "current_repo", lambda: "acme/widgets")
     monkeypatch.setattr(sprint_state, "open_issue_nodes", lambda repo, with_body: nodes)
     monkeypatch.setattr(sprint_state, "api", lambda path: {"default_branch": "main"})
 
 
-def shas(monkeypatch, capsys):
-    fake_github(monkeypatch, [node(1)])
-    sprint_state.main([])
-    result = json.loads(capsys.readouterr().out)
-    return result["pipeline_sha"], result["session_sha"]
-
-
-@pytest.mark.parametrize(
-    ("changed", "group"),
-    [("rules", 1), ("settings.json", 1), ("skills", 0), ("hooks", 0)],
-)
-def test_a_merge_moves_only_the_sha_of_its_group(
-    pipeline, monkeypatch, capsys, changed, group
-):
-    first = [pipeline("skills"), pipeline("CLAUDE.md")]
-    assert list(shas(monkeypatch, capsys)) == first
-
-    new = pipeline(changed)
-    second = list(shas(monkeypatch, capsys))
-    assert second[group] == new
-    assert second[1 - group] == first[1 - group]
-
-
-def test_a_merge_outside_both_groups_moves_neither(pipeline, monkeypatch, capsys):
-    """A one-commit clone would name this commit for both: the trap of ~/.claude."""
-    first = [pipeline("skills"), pipeline("rules")]
-    pipeline("README.md")
-    assert list(shas(monkeypatch, capsys)) == first
-
-
-def test_a_group_without_commits_is_null(pipeline, monkeypatch, capsys):
-    sha = pipeline("hooks")
-    assert shas(monkeypatch, capsys) == (sha, None)
-
-
-def test_a_failing_fetch_on_an_existing_cache_leaves_null_shas(
-    pipeline, tmp_path, monkeypatch, capsys
-):
-    pipeline("skills")
-    shas(monkeypatch, capsys)
-    shutil.rmtree(tmp_path / "remote")
-    sprint_state.main([])
-    out = capsys.readouterr()
-    result = json.loads(out.out)
-    assert result["pipeline_sha"] is None and result["session_sha"] is None
-    assert "pipeline-change check did not run" in out.err
-
-
-def test_a_broken_cache_is_cloned_again(pipeline, tmp_path, monkeypatch, capsys):
-    sha = pipeline("skills")
-    broken = tmp_path / "cache.git"
-    broken.mkdir()
-    (broken / "junk").write_text("x")
-    assert shas(monkeypatch, capsys) == (sha, None)
-
-
 def test_a_failing_git_leaves_null_shas_and_the_rest_of_the_state(
     tmp_path, monkeypatch, capsys
 ):
-    monkeypatch.setattr(sprint_state, "PIPELINE_URL", str(tmp_path / "missing"))
+    monkeypatch.setattr(pipeline_shas, "PIPELINE_URL", str(tmp_path / "missing"))
     monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
     fake_github(monkeypatch, [node(1), node(2)])
     sprint_state.main(["--claimed", "1"])
