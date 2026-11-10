@@ -18,7 +18,8 @@ an issue's weight is the number of open issues in the sprint that wait on it thr
 (`needs-repair`, when it is in --status) first, then every `bug` before any new task,
 then the order of --status (the tier), then `process` issues before the rest, then
 weight, highest first, then issue number (claude-config #202). Blocked issues stay in
-the list, because planning ignores blockers; Execute skips them itself.
+the list, marked `BLOCKED by`: they still carry weight, and each skill skips them
+itself, in planning and in Execute alike (claude-config #253).
 
 Issues labelled `costs-money` are on hold until Dolev approves the expense: they leave
 the ranking and are listed apart, unless --include-costs-money is given. They still add
