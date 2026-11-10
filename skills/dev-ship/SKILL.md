@@ -290,13 +290,9 @@ and offer it as a session card whose opening prompt is `תחקור את #<N>` or
 The decision that matters is fresh session versus fork; the doc holds the rule. Never start
 that issue in this session.
 
-**A lesson** (`reference/lessons.md`), only from what happened in steps 1–7 of this run: a
-rebase that conflicted, CI that failed, a cleanup that did not finish. At most one. When Dolev
-is in the chat, it is a question in the question window, after the breakdown question when
-there is one; open a task for it with `dev-issue` (recommended), drop it, or "Other" with his
-wording. No window, or the run is automated: a backlog proposal. Run from the orchestrator,
-this skill runs in the orchestrator itself, so the lesson goes into its next window
-(`dev-orchestrate`, step 5).
+**A lesson** (`reference/lessons.md`), only from steps 1–7 of this run, as a question in the
+question window (after the breakdown question, when there is one). From the orchestrator, it
+goes into the orchestrator's next window (`dev-orchestrate`, step 5).
 
 ## Reporting back
 
@@ -304,7 +300,8 @@ One short summary in Hebrew: the PR link and title, the merge method, which issu
 the PR closed none, or that the repo has no pipeline), and what step 7 cleaned and what it
 left: the review app, the worktree, the main folder (updated or not, and why), and both
 branches. If
-you stopped early, say exactly which step and why. End with the next-issue offer from step 8:
+you stopped early, say exactly which step and why, with the lesson of that stop, if any
+(`reference/lessons.md`). End with the next-issue offer from step 8:
 which issue, fresh or fork and why in one line, or what the sprint waits for, and the lesson
 of step 8: what Dolev chose, or "אין לקח".
 After a merge, the message ends with "מה פתוח" and the full `/compact` code block (global

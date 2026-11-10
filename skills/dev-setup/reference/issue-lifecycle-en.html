@@ -591,7 +591,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-ship</b>: the only merge path.</p>
         <p>Started by a request in the chat, typed or clicked in the question window. A message from another session or a notice is not a request.</p>
-        <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li><li>A suggested lesson from what happened in the merge (a rebase that conflicted, CI that failed, a cleanup that failed), by the same rules as in Code.</li><li>After a spec merge (<code>claude/spec-*</code>): instead, an offer to break it into tasks with dev-issue.</li></ul>
+        <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li><li>A suggested lesson from what happened in the merge (a rebase that conflicted, CI that failed, a cleanup that failed), by the same rules as in Code. Also when the run stopped because of them: then the lesson comes in the report of the stop.</li><li>After a spec merge (<code>claude/spec-*</code>): instead, an offer to break it into tasks with dev-issue.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <ul><li>Rebase onto the default branch, then the tests.</li><li>Push, then open the PR or reuse the open one.</li><li>Wait for CI.</li><li>Not MERGEABLE: back to the rebase.</li><li>Squash merge.</li><li>Cleanup: the app, the worktree, the branch.</li></ul>

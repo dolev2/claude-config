@@ -30,8 +30,7 @@
   בלי העתקה: הכלל שנשען על ההחלטה מפנה לדף בשורה, והדף מפנה ל-issue.
   הטיוטה נכתבת בתוכנית, בתת-כותרת "החלטה רוחבית", והדף נכנס באותו PR (`skills/dev-setup/reference/issue-body.md`).
   ריפו מקבל את התיקייה בהחלטה הרוחבית הראשונה שלו. למה כך: `~/.claude/docs/decisions/187-decision-records.md`.
-- **לקח מריצה נכנס לכלל רק ב-PR שדולב מיזג**, עם המקור והתאריך בסוף השורה. Claude מציע אותו, ולא כותב אותו ישר לכללים או לזיכרון.
-  הנוהל: `skills/dev-setup/reference/lessons.md`. למה כך: `~/.claude/docs/decisions/182-lessons-with-approval.md`.
+- **לקח מריצה:** `skills/dev-setup/reference/lessons.md`. למה כך: `~/.claude/docs/decisions/182-lessons-with-approval.md`.
 - **ב-`CLAUDE.md` של הריפו:** רק מה שנכון לאורך זמן וספציפי לריפו: מבנה, פקודות, חוזים, מוקשים שחוזרים.
   לא יומן שינויים, ולא מה שכבר כתוב כאן או במסמכי הצינור ב-`skills/dev-setup/reference/`.
 - **ב-`README.md` של הריפו: מדריך קבצים.** לכל ריפו יש סעיף "מדריך קבצים": טבלה לפי תיקייה, ולכל קובץ או תיקייה מה הם ולמה הם קיימים.
