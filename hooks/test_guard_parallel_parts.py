@@ -150,6 +150,14 @@ def test_path_that_does_not_start_with_a_prefix_is_blocked(monkeypatch, repo, re
     assert code == 2
 
 
+@pytest.mark.parametrize("blank", ["", " "])
+def test_blank_prefix_covers_nothing(monkeypatch, repo, blank):
+    data = {**PARTS, "parts": {**PARTS["parts"], "hook": ["hooks/", blank]}}
+    parts_file(repo).write_text(json.dumps(data))
+    code, _reason = run_hook(monkeypatch, edit(worktree(repo) / "settings.json"))
+    assert code == 2
+
+
 def test_other_agent_is_judged_by_its_own_part(monkeypatch, repo):
     other = worktree(repo, OTHER_AGENT)
     allowed = edit(other / "skills/dev-code/SKILL.md", agent=OTHER_AGENT)
@@ -232,7 +240,12 @@ def test_non_edit_tool_is_no_decision(monkeypatch, repo, tool):
 
 @pytest.mark.parametrize(
     "content",
-    ["{not json", "[]", '{"parts": ["hooks/"]}', '{"parts": {"hook": "hooks/"}}'],
+    [
+        "{not json",
+        "[]",
+        '{"parts": ["hooks/"]}',
+        '{"parts": {"hook": "hooks/"}}',
+    ],
 )
 def test_broken_parts_file_does_not_block(monkeypatch, repo, content):
     parts_file(repo).write_text(content)
