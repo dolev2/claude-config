@@ -435,7 +435,7 @@ def test_spec_gaps_of_all_open_issues():
     assert sprint_state.spec_gaps(nodes, SPEC_FILES) == [
         {"path": None, "line": None, "message": message}
         for message in [
-            "#2 has no spec line (אפיון: docs/specs/<topic>.md S-<n>.<m>)",
+            "#2 has no spec line (אפיון: docs/specs/<repo>.md S-<n>.<m>)",
             f"#3 points at {SPEC_PATH} S-1.7: no such part",
         ]
     ]
@@ -454,7 +454,7 @@ def test_main_spec_gaps_only_with_the_flag(flag, tmp_path, monkeypatch, capsys):
     sprint_state.main(flag)
     result = json.loads(capsys.readouterr().out)
     if flag:
-        no_line = "#1 has no spec line (אפיון: docs/specs/<topic>.md S-<n>.<m>)"
+        no_line = "#1 has no spec line (אפיון: docs/specs/<repo>.md S-<n>.<m>)"
         assert result["spec_gaps"] == [
             {"path": None, "line": None, "message": no_line},
             OPEN_PART,

@@ -16,13 +16,13 @@ VALID = """# Pipeline
 Free grouping, no part.
 
 ### S-1.1 · Read the spec
-Text.
+**מצב:** פתוח (#5)
 
 ### S-1.2 · Write the table
 **מצב:** Done (#12)
 
-### S-1.3 · Old idea
-**מצב:** מחוץ להיקף
+### S-1.3 · Two tasks
+**מצב:** פתוח (#7, #8)
 
 ```markdown
 ## S-1.1 · an example inside a code block is no part
@@ -46,10 +46,38 @@ def test_valid_spec_parts_and_statuses():
     parts, errors = spec_check.parse_spec(VALID)
     assert errors == []
     assert parts == [
-        Part("S-1.1", "Read the spec", 6),
+        Part("S-1.1", "Read the spec", 6, "open", open_issues=(5,)),
         Part("S-1.2", "Write the table", 9, "done", 12),
-        Part("S-1.3", "Old idea", 12, "out"),
+        Part("S-1.3", "Two tasks", 12, "open", open_issues=(7, 8)),
     ]
+
+
+@pytest.mark.parametrize(
+    "line, status, issues",
+    [
+        ("**מצב:** פתוח (#12)", "open", (12,)),
+        ("**מצב:** פתוח (#12, #13)", "open", (12, 13)),
+        ("**מצב:** פתוח (#12,#13)", "open", (12, 13)),
+        ("**status:** open (#4)", "open", (4,)),
+        ("**מצב:** מחוץ להיקף", "out", ()),
+    ],
+)
+def test_status_lines(line, status, issues):
+    parts, errors = spec_check.parse_spec(f"## S-1.1 · a\n{line}\n")
+    assert errors == []
+    assert (parts[0].status, parts[0].open_issues) == (status, issues)
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["**מצב:** פתוח #12", "**מצב:** פתוח ()", "**מצב:** פתוח", "**מצב:** פתוח (12)"],
+)
+def test_broken_open_line_is_an_error(line):
+    parts, errors = spec_check.parse_spec(f"## S-1.1 · a\n{line}\n")
+    assert [part.status for part in parts] == [None]
+    assert len(errors) == 1
+    assert "unknown status line" in errors[0][1]
+    assert "פתוח (#<N>)" in errors[0][1]
 
 
 def test_empty_spec_has_no_parts():
@@ -125,14 +153,82 @@ def test_backlog_issue_needs_no_spec_line():
     assert spec_check.issue_gaps(SPECS, issue(5, "", "status:backlog")) == []
 
 
+ALL_POINTING = [pointing(5, "S-1.1"), pointing(7, "S-1.3"), pointing(8, "S-1.3")]
+
+
 def test_open_part_without_an_issue_warns():
-    found = spec_check.gaps(SPECS, [])
+    specs = {SPEC: spec_check.parse_spec("## S-2.1 · a\nText.\n")[0]}
+    found = spec_check.gaps(specs, [])
+    assert [(gap.path, gap.line) for gap in found] == [(SPEC, 1)]
+    assert found[0].message == "S-2.1 is open, and no open issue points at it"
+
+
+def test_open_line_with_no_open_issue_warns_once_per_number():
+    found = spec_check.gaps(SPECS, ALL_POINTING[1:])
     assert [(gap.path, gap.line) for gap in found] == [(SPEC, 6)]
-    assert "S-1.1 is open" in found[0].message
+    assert "S-1.1 names #5" in found[0].message
+    assert "not an open issue" in found[0].message
 
 
 def test_pointed_part_is_no_gap():
-    assert spec_check.gaps(SPECS, [pointing(5, "S-1.1")]) == []
+    assert spec_check.gaps(SPECS, ALL_POINTING) == []
+
+
+def test_part_with_no_status_line_and_an_issue_is_no_gap():
+    specs = {SPEC: spec_check.parse_spec("## S-2.1 · a\nText.\n")[0]}
+    assert spec_check.gaps(specs, [pointing(5, "S-2.1")]) == []
+
+
+@pytest.mark.parametrize(
+    "issues, expected",
+    [
+        (
+            [pointing(5, "S-1.1"), pointing(7, "S-1.3")],
+            "S-1.3 names #8 in its status line: not an open issue",
+        ),
+        (
+            [pointing(5, "S-1.1"), pointing(7, "S-1.3"), pointing(8, "S-1.1")],
+            f"the spec line of #8 does not name {SPEC} S-1.3",
+        ),
+        (
+            [
+                pointing(5, "S-1.1"),
+                pointing(7, "S-1.3"),
+                issue(8, "### הקשר / קישורים\nאפיון: docs/specs/other.md S-1.3\n"),
+            ],
+            f"the spec line of #8 does not name {SPEC} S-1.3",
+        ),
+    ],
+)
+def test_open_line_names_one_issue_in_vain(issues, expected):
+    found = [gap for gap in spec_check.gaps(SPECS, issues) if gap.path == SPEC]
+    assert len(found) == 1
+    assert (found[0].line, expected in found[0].message) == (12, True)
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("## S-2.1 · a\nText.\n", "S-2.1 is open with no status line"),
+        ("## S-2.1 · a\n**מצב:** מחוץ להיקף\n", "S-2.1 is marked out of scope"),
+    ],
+)
+def test_part_warnings(text, expected):
+    found = spec_check.part_warnings(SPEC, spec_check.parse_spec(text)[0])
+    assert [(gap.path, gap.line) for gap in found] == [(SPEC, 1)]
+    assert expected in found[0].message
+
+
+def test_done_and_open_parts_need_no_warning():
+    assert spec_check.part_warnings(SPEC, SPECS[SPEC]) == []
+
+
+@pytest.mark.parametrize("count, warns", [(0, False), (1, False), (2, True)])
+def test_files_warning(count, warns):
+    found = spec_check.files_warning(count)
+    assert bool(found) == warns
+    if warns:
+        assert found[0].message.startswith("2 spec files in docs/specs/: one spec")
 
 
 def test_repo_without_specs_still_warns_on_issues():
@@ -160,22 +256,39 @@ def test_table_open_part(issues, expected):
 
 
 def test_table_done_and_out_of_scope():
+    out = {SPEC: spec_check.parse_spec("## S-1.3 · Old\n**מצב:** מחוץ להיקף\n")[0]}
     rows = spec_check.table(SPECS, []).splitlines()
     assert rows[0] == f"### {SPEC}"
     assert "| S-1.2 | Write the table | Done | #12 |" in rows
-    assert "| S-1.3 | Old idea | מחוץ להיקף |  |" in rows
+    assert "| S-1.3 | Old | מחוץ להיקף |  |" in spec_check.table(out, []).splitlines()
 
 
 def test_gaps_never_change_the_exit_code(tmp_path, monkeypatch, capsys):
     folder = tmp_path / "docs" / "specs"
     folder.mkdir(parents=True)
     (folder / "pipeline.md").write_text(spec_toc.write(VALID), encoding="utf-8")
-    monkeypatch.setattr(spec_check, "fetch_issues", lambda repo: [issue(5)])
+    found = [issue(5), *ALL_POINTING[1:]]
+    monkeypatch.setattr(spec_check, "fetch_issues", lambda repo: found)
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     assert spec_check.main(["--root", str(tmp_path), "--repo", "o/r"]) == 0
     out = capsys.readouterr().out
     assert "warning: #5 has no spec line" in out
     assert "0 errors, 2 warnings" in out
+
+
+def test_out_of_scope_and_many_files_only_warn(tmp_path, monkeypatch, capsys):
+    folder = tmp_path / "docs" / "specs"
+    folder.mkdir(parents=True)
+    out = "# B\n\n## S-1.1 · a\n**מצב:** מחוץ להיקף\n"
+    (folder / "a.md").write_text(spec_toc.write(VALID), encoding="utf-8")
+    (folder / "b.md").write_text(spec_toc.write(out), encoding="utf-8")
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    assert spec_check.main(["--root", str(tmp_path), "--no-issues"]) == 0
+    printed = capsys.readouterr().out
+    assert "warning: 2 spec files in docs/specs/: one spec per repo" in printed
+    assert "warning: docs/specs/b.md:" in printed
+    assert "S-1.1 is marked out of scope: delete the part" in printed
+    assert "0 errors, 2 warnings" in printed
 
 
 def test_unread_issues_only_warn(tmp_path, monkeypatch, capsys):

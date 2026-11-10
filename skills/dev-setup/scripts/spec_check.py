@@ -1,14 +1,18 @@
 """Checks the spec files in docs/specs/ and prints their status table (#226).
 
-A spec file (docs/specs/<topic>.md; the format is in docs/specs/README.md) splits a
-topic into parts. Each part is a ## to #### heading that starts with a fixed id,
-S-<n>.<m>, and an issue points at its parts on the "אפיון:" line of its context section.
+A repo has one spec, docs/specs/<repo>.md (the format is in docs/specs/README.md),
+whose chapters are its topics. Each part is a ## to #### heading that starts with a
+fixed id, S-<n>.<m>, and an issue points at its parts on the "אפיון:" line of its
+context section. Reading a file is spec_parse.py's.
 
 Two kinds of findings, by Dolev's answer on #226:
 - an error in a file (a duplicate id, a broken S- heading, an unknown status line):
   exit 1, so CI fails;
-- a gap between the issues and the specs (a line that points nowhere, an open issue
-  without a line, an open part without an issue): a warning only, never the exit code.
+- a warning, never the exit code: a gap between the issues and the specs (a line that
+  points nowhere, an open issue without a line, an open part without an issue, an
+  open line naming an issue that is not open or does not point back), and, from the
+  files alone (#242), an open part without its line, a part marked out of scope, and
+  more than one spec file in a repo not yet merged into one.
 
 A stale table of contents is an error, and a missing one a warning, so that a repo
 whose specs predate it keeps a green CI until `--toc` adds one (spec_toc.py).
@@ -20,7 +24,6 @@ Usage:
 
 import argparse
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -29,28 +32,12 @@ from typing import NamedTuple
 import gh_rest
 import issue_body
 import spec_toc
+from spec_parse import Part, parse_spec
 
 SPECS_DIR = "docs/specs"
-HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*$")
-PART_LEVELS = (2, 3, 4)
-PART_ID = re.compile(r"^S-(\d+)\.(\d+)(?:\s+(?:[·:–-]\s*)?(.*))?$")
-STATUS_LINE = re.compile(r"^\*\*(?:מצב|status):\*\*\s*(.*?)\s*$", re.IGNORECASE)
-STATUS_LIKE = re.compile(r"^\*\*\s*(?:מצב|status)\b", re.IGNORECASE)
-STATUS_FORMS = "**מצב:** Done (#<N>) or **מצב:** מחוץ להיקף"
-DONE = re.compile(r"^done\s*\(#(\d+)\)$", re.IGNORECASE)
-OUT_OF_SCOPE = ("מחוץ להיקף", "out of scope")
 NOT_STARTED = {"status:explore", "status:backlog"}
-EXAMPLE_LINE = "אפיון: docs/specs/<topic>.md S-<n>.<m>"
-
-
-class Part(NamedTuple):
-    """One part of a spec: its id, name, heading line, and status (done/out/None)."""
-
-    id: str
-    name: str
-    line: int
-    status: str | None = None
-    done_issue: int | None = None
+EXAMPLE_LINE = "אפיון: docs/specs/<repo>.md S-<n>.<m>"
+OPEN_FORM = "**מצב:** פתוח (#<N>)"
 
 
 class Finding(NamedTuple):
@@ -61,86 +48,35 @@ class Finding(NamedTuple):
     message: str
 
 
-def lines_outside_fences(text: str) -> list[tuple[int, str]]:
-    """(line number, line) for every line outside a ``` block: an example is no part."""
+def part_warnings(path: str, parts: list[Part]) -> list[Finding]:
+    """What a file's parts lack in themselves: an open part's line, a deleted part.
+
+    Read from the file alone, so they warn with --no-issues too (#242).
+    """
     found = []
-    in_fence = False
-    for number, line in enumerate(text.splitlines(), start=1):
-        if line.lstrip().startswith("```"):
-            in_fence = not in_fence
-        elif not in_fence:
-            found.append((number, line))
+    for part in parts:
+        if part.status is None:
+            message = f"{part.id} is open with no status line: write {OPEN_FORM}"
+        elif part.status == "out":
+            message = (
+                f"{part.id} is marked out of scope: delete the part "
+                "(its number never returns)"
+            )
+        else:
+            continue
+        found.append(Finding(path, part.line, message))
     return found
 
 
-def read_status(value: str) -> tuple[str, int | None] | None:
-    """("done", N) or ("out", None) from a status line's value, or None if unknown."""
-    done = DONE.match(value)
-    if done:
-        return "done", int(done.group(1))
-    if value.lower() in OUT_OF_SCOPE:
-        return "out", None
-    return None
-
-
-def heading_part(level: int, text: str, number: int) -> Part | str | None:
-    """The part a heading opens, an error message for a broken S- heading, or None."""
-    if not text.startswith("S-"):
-        return None
-    match = PART_ID.match(text)
-    if not match:
-        return f"broken part heading {text!r}: write S-<n>.<m> · <name>"
-    if level not in PART_LEVELS:
-        return f"part {text.split()[0]} is at level {level}: parts are ## to ####"
-    return Part(f"S-{match[1]}.{match[2]}", (match[3] or "").strip(), number)
-
-
-def status_of(part: Part, line: str) -> Part | str:
-    """The part with the status of its first line, or an error for a broken status line.
-
-    A line that starts like a status line ("**מצב", "**status") but is not a known
-    one is an error, so that "**מצב**: Done" never leaves a part open in silence.
-    """
-    status = STATUS_LINE.match(line)
-    if status:
-        value = read_status(status.group(1))
-        if value:
-            return part._replace(status=value[0], done_issue=value[1])
-    elif not STATUS_LIKE.match(line):
-        return part
-    return f"unknown status line {line!r} under {part.id}: write {STATUS_FORMS}"
-
-
-def parse_spec(text: str) -> tuple[list[Part], list[tuple[int, str]]]:
-    """The parts of one spec file, and its errors as (line, message)."""
-    parts: list[Part] = []
-    errors: list[tuple[int, str]] = []
-    first_line: dict[str, int] = {}
-    waiting: Part | None = None
-    for number, line in lines_outside_fences(text):
-        heading = HEADING.match(line)
-        if heading or (waiting and line.strip()):
-            if waiting:
-                found = waiting if heading else status_of(waiting, line.strip())
-                parts.append(waiting if isinstance(found, str) else found)
-                if isinstance(found, str):
-                    errors.append((number, found))
-            waiting = None
-        if not heading:
-            continue
-        found = heading_part(len(heading[1]), heading[2], number)
-        if isinstance(found, str):
-            errors.append((number, found))
-        elif found and found.id in first_line:
-            first = first_line[found.id]
-            message = f"duplicate id {found.id} (first at line {first})"
-            errors.append((number, f"{message}: give this part a new number"))
-        elif found:
-            first_line[found.id] = number
-            waiting = found
-    if waiting:
-        parts.append(waiting)
-    return parts, errors
+def files_warning(count: int) -> list[Finding]:
+    """One warning when docs/specs/ holds more than one spec: one spec per repo."""
+    if count <= 1:
+        return []
+    message = (
+        f"{count} spec files in {SPECS_DIR}/: one spec per repo, "
+        f"{SPECS_DIR}/<repo>.md (dev-setup step 8 merges them)"
+    )
+    return [Finding(None, None, message)]
 
 
 def is_spec(name: str) -> bool:
@@ -233,18 +169,44 @@ def issue_gaps(specs: dict[str, list[Part]], issue: dict) -> list[Finding]:
     ]
 
 
+def open_line_gaps(
+    path: str, part: Part, open_numbers: set[int], pointing: list[dict]
+) -> list[Finding]:
+    """What an open line names in vain: an issue not open, or one that points elsewhere.
+
+    `pointing` are the open issues whose spec line names this part (#242).
+    """
+    pointing_numbers = {issue["number"] for issue in pointing}
+    found = []
+    for number in part.open_issues:
+        if number not in open_numbers:
+            message = f"{part.id} names #{number} in its status line: not an open issue"
+        elif number not in pointing_numbers:
+            message = (
+                f"{part.id} names #{number} in its status line, but the spec line "
+                f"of #{number} does not name {path} {part.id}"
+            )
+        else:
+            continue
+        found.append(Finding(path, part.line, message))
+    return found
+
+
 def gaps(specs: dict[str, list[Part]], issues: list[dict]) -> list[Finding]:
     """Every gap between the open issues and the specs. Gaps warn; they never fail."""
     found = [gap for issue in issues for gap in issue_gaps(specs, issue)]
     pointed = pointers(issues)
+    open_numbers = {issue["number"] for issue in issues}
     for path, parts in specs.items():
-        found += [
-            Finding(
-                path, part.line, f"{part.id} is open, and no open issue points at it"
-            )
-            for part in parts
-            if part.status is None and (path, part.id) not in pointed
-        ]
+        for part in parts:
+            if part.status not in (None, "open"):
+                continue
+            pointing = pointed.get((path, part.id), [])
+            # An open line already names its issues; open_line_gaps says which fail.
+            if not pointing and not part.open_issues:
+                message = f"{part.id} is open, and no open issue points at it"
+                found.append(Finding(path, part.line, message))
+            found += open_line_gaps(path, part, open_numbers, pointing)
     return found
 
 
@@ -345,9 +307,11 @@ def read_specs(
     specs: dict[str, list[Part]] = {}
     errors: list[Finding] = []
     warnings: list[Finding] = []
+    warnings += files_warning(len(files))
     for path, text in files.items():
         specs[path], found = parse_spec(text)
         errors += [Finding(path, line, message) for line, message in found]
+        warnings += part_warnings(path, specs[path])
         toc_errors, toc_warnings = toc_findings(path, text)
         errors += toc_errors
         warnings += toc_warnings

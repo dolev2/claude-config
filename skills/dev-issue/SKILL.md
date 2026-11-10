@@ -74,7 +74,7 @@ heading. Use the heading level the repo's existing issues use: issue-form bodies
 
 <parent and source, with a link to the repo's source of truth from CLAUDE.md>
 תלוי ב: #A, #B.
-אפיון: docs/specs/<topic>.md S-<n>.<m>
+אפיון: docs/specs/<repo>.md S-<n>.<m>
 
 ---
 ### Plan

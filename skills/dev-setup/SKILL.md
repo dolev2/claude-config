@@ -258,16 +258,22 @@ grep -n "spec-check" .github/workflows/tests.yml
 python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py"
 ```
 
-No `spec-check` step in `tests.yml`, or warnings that an open issue has no spec line. Then, as
+No `spec-check` step in `tests.yml`, warnings that an open issue has no spec line, or the
+warning "N spec files" (a repo from before one spec per repo, #242). Then, as
 in every step here, **propose and wait for Dolev's yes**; the details are in
 `reference/specs.md`, "ריפו שהותקן לפני הסדר החדש":
 1. the `spec-check` step from the template's `tests.yml` (with `issues: read`), shown as a diff;
-2. the open topics, one line each, each to get its spec through `dev-spec`, one PR per topic,
-   on his request for each;
+2. the open topics, one line each, each to get its chapter in the repo's one spec,
+   `docs/specs/<repo>.md`, through `dev-spec`, one PR per topic, on his request for each;
 3. once a topic's spec is merged, a spec line in every open issue of it that is not in the
-   backlog, listed for him before any body is edited.
+   backlog, listed for him before any body is edited;
+4. **several spec files** ("N spec files"): merged into `docs/specs/<repo>.md` in one `dev-spec`
+   run and one PR, only on his request. Each topic becomes a chapter, so its ids take the
+   chapter's number; each open part gets its `**מצב:** פתוח (#N)` line and each part marked
+   "מחוץ להיקף" is deleted, in the same PR. After the merge, the spec line of every open issue
+   moves to the new ids, from a list (issue, old line, new line) shown to him first.
 The backlog stays as it is. The move is done when `spec_check.py` warns about no issue without
-a spec line; until then, step 7 lists what is left.
+a spec line and about no second spec file; until then, step 7 lists what is left.
 
 ## Golden rules
 
