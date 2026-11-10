@@ -11,12 +11,13 @@ Two kinds of findings, by Dolev's answer on #226:
   without a line, an open part without an issue): a warning only, never the exit code.
 
 Usage:
-    spec_check.py [--root DIR] [--repo owner/name] [--no-issues] [--table]
+    spec_check.py [--root DIR] [--repo owner/name] [--no-issues] [--table] [--ref REF]
 """
 
 import argparse
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import NamedTuple
@@ -137,6 +138,11 @@ def parse_spec(text: str) -> tuple[list[Part], list[tuple[int, str]]]:
     return parts, errors
 
 
+def is_spec(name: str) -> bool:
+    """A spec file's name: any .md in docs/specs/ but README.md."""
+    return name.endswith(".md") and name.lower() != "readme.md"
+
+
 def spec_files(root: Path) -> dict[str, str]:
     """{repo-relative path: text} of every spec file; README.md is no spec."""
     folder = root / SPECS_DIR
@@ -145,15 +151,47 @@ def spec_files(root: Path) -> dict[str, str]:
     return {
         f"{SPECS_DIR}/{path.name}": path.read_text(encoding="utf-8")
         for path in sorted(folder.glob("*.md"))
-        if path.name.lower() != "readme.md"
+        if is_spec(path.name)
+    }
+
+
+def git(root: Path, *args: str) -> str:
+    """The stdout of a git command in `root`; a failure raises ValueError."""
+    done = subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, encoding="utf-8"
+    )
+    if done.returncode != 0:
+        raise ValueError(f"git {' '.join(args)}: {done.stderr.strip()}")
+    return done.stdout
+
+
+def spec_files_at(root: Path, ref: str) -> dict[str, str]:
+    """spec_files(root), but read from the git `ref` and not from the disk.
+
+    The orchestrator's clone goes stale during a sprint while specs merge on GitHub,
+    so it reads origin/<default> (#227). A ref without docs/specs/ gives {}; a ref
+    git does not know is a ValueError.
+    """
+    # -z: without it git quotes a non-ASCII name, and `git show` cannot find it.
+    listed = git(root, "ls-tree", "-z", "--name-only", ref, f"{SPECS_DIR}/")
+    names = [name for name in listed.split("\0") if name]
+    return {
+        path: git(root, "show", f"{ref}:{path}")
+        for path in sorted(names)
+        if is_spec(path.rsplit("/", 1)[-1])
     }
 
 
 def issue_spec(issue: dict) -> tuple[str, list[str]] | None:
-    """The spec line of an issue's context section, as issue_body.spec_line reads it."""
+    """The spec line of an issue: its context section's, else its Plan's.
+
+    A bug has no context section (the bug form has none), so its short Plan's
+    "- **אפיון:**" line names the part it breaks (#227).
+    """
     parts = issue_body.sections(issue["body"])
     context = issue_body.section(parts, issue_body.CONTEXT_HEADINGS)
-    return issue_body.spec_line(context)
+    found = issue_body.spec_line(context)
+    return found or issue_body.spec_line(parts.get("plan", ""))
 
 
 def pointers(issues: list[dict]) -> dict[tuple[str, str], list[dict]]:
@@ -275,6 +313,23 @@ def summary(specs: dict[str, list[Part]], errors: int, warnings: int) -> str:
     )
 
 
+def read_specs(root: Path, ref: str | None) -> tuple[dict[str, list[Part]], list]:
+    """The parsed spec files, from the disk or from `ref`, and their errors.
+
+    `ref` serves a clone that may be behind GitHub, like dev-ship's main folder (#227).
+    """
+    try:
+        files = spec_files_at(root, ref) if ref else spec_files(root)
+    except ValueError as err:
+        sys.exit(f"spec files not read: {err}")
+    specs: dict[str, list[Part]] = {}
+    errors: list[Finding] = []
+    for path, text in files.items():
+        specs[path], found = parse_spec(text)
+        errors += [Finding(path, line, message) for line, message in found]
+    return specs, errors
+
+
 def main(argv: list[str] | None = None) -> int:
     """Check the specs; 1 if a file has an error, else 0 (gaps only warn)."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -282,15 +337,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo", help="owner/name (default: the origin remote)")
     parser.add_argument("--no-issues", action="store_true", help="files only, no gh")
     parser.add_argument("--table", action="store_true", help="print the status table")
+    parser.add_argument(
+        "--ref",
+        help="read the specs from this git ref (e.g. origin/main), not the disk",
+    )
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    specs: dict[str, list[Part]] = {}
-    errors: list[Finding] = []
-    for path, text in spec_files(Path(args.root)).items():
-        specs[path], found = parse_spec(text)
-        errors += [Finding(path, line, message) for line, message in found]
+    specs, errors = read_specs(Path(args.root), args.ref)
 
     issues = None
     warnings: list[Finding] = []

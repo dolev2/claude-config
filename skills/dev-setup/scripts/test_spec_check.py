@@ -107,6 +107,19 @@ def test_issue_gaps(found, expected):
     assert expected in messages[0]
 
 
+def test_a_bug_names_its_part_in_its_plan():
+    body = f"### מה קורה\nx\n\n### Plan\n- **אפיון:** {SPEC} S-1.1\n"
+    assert spec_check.issue_gaps(SPECS, issue(5, body, "bug")) == []
+
+
+def test_the_context_line_wins_over_the_plan_line():
+    body = (
+        f"### הקשר / קישורים\nאפיון: {SPEC} S-1.1\n\n"
+        f"### Plan\n- **אפיון:** {SPEC} S-9.9\n"
+    )
+    assert spec_check.issue_spec(issue(5, body)) == (SPEC, ["S-1.1"])
+
+
 def test_backlog_issue_needs_no_spec_line():
     assert spec_check.issue_gaps(SPECS, issue(5, "", "status:backlog")) == []
 
@@ -244,3 +257,66 @@ def test_annotation_has_no_second_place(monkeypatch, capsys):
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     spec_check.emit("error", spec_check.Finding(SPEC, 3, "bad"))
     assert capsys.readouterr().out == f"::error file={SPEC},line=3::bad\n"
+
+
+def run_git(root: Path, *args: str) -> None:
+    subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True)
+
+
+@pytest.fixture
+def repo(tmp_path):
+    """A git repo: the tag `before` has no docs/specs/, HEAD has two files there."""
+    run_git(tmp_path, "init", "-q")
+    run_git(tmp_path, "config", "user.email", "test@example.com")
+    run_git(tmp_path, "config", "user.name", "test")
+    run_git(tmp_path, "commit", "-q", "--allow-empty", "-m", "empty")
+    run_git(tmp_path, "tag", "before")
+    folder = tmp_path / "docs" / "specs"
+    folder.mkdir(parents=True)
+    (folder / "README.md").write_text("## S-1 broken on purpose\n", encoding="utf-8")
+    (folder / "pipeline.md").write_text(VALID, encoding="utf-8")
+    run_git(tmp_path, "add", ".")
+    run_git(tmp_path, "commit", "-q", "-m", "specs")
+    return tmp_path
+
+
+def test_spec_files_at_reads_the_ref_and_skips_readme(repo):
+    assert spec_check.spec_files_at(repo, "HEAD") == {SPEC: VALID}
+
+
+def test_spec_files_at_ref_without_specs_folder(repo):
+    assert spec_check.spec_files_at(repo, "before") == {}
+
+
+def test_spec_files_at_ignores_the_disk(repo):
+    folder = repo / "docs" / "specs"
+    (folder / "pipeline.md").write_text("# changed on disk\n", encoding="utf-8")
+    (folder / "new.md").write_text("## S-9.1 · disk only\n", encoding="utf-8")
+    assert spec_check.spec_files_at(repo, "HEAD") == {SPEC: VALID}
+
+
+def test_spec_files_at_unknown_ref_is_an_error(repo):
+    with pytest.raises(ValueError, match="no-such-ref"):
+        spec_check.spec_files_at(repo, "no-such-ref")
+
+
+def test_spec_files_at_reads_a_non_ascii_name(repo):
+    (repo / "docs" / "specs" / "אפיון.md").write_text(VALID, encoding="utf-8")
+    run_git(repo, "add", ".")
+    run_git(repo, "commit", "-q", "-m", "hebrew name")
+    assert "docs/specs/אפיון.md" in spec_check.spec_files_at(repo, "HEAD")
+
+
+@pytest.mark.parametrize(
+    "ref, expected", [("HEAD", "1 spec files"), ("before", "no spec")]
+)
+def test_main_ref_reads_the_specs_of_the_ref(repo, ref, expected, capsys):
+    (repo / "docs" / "specs" / "pipeline.md").unlink()
+    code = spec_check.main(["--root", str(repo), "--no-issues", "--ref", ref])
+    assert code == 0
+    assert expected in capsys.readouterr().out
+
+
+def test_main_unknown_ref_exits_with_the_reason(repo):
+    with pytest.raises(SystemExit, match="spec files not read"):
+        spec_check.main(["--root", str(repo), "--no-issues", "--ref", "nope"])

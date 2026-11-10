@@ -156,7 +156,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 <header>
   <span class="eyebrow">claude-config · the pipeline</span>
   <h1>Life of an issue</h1>
-  <p>From the form to the squash merge: who moves the issue at each stage, which skill runs, and what happens in git.</p>
+  <p>From the proposal to the squash merge: who moves the issue at each stage, which skill runs, and what happens in git.</p>
   <p>Labels are the source of truth. The board only mirrors them.</p>
   <div class="legend">
     <span><i class="dot human"></i>Dolev</span>
@@ -170,13 +170,40 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <h2 id="map-h">State map</h2>
   <p>Each box is a <code>status:*</code> label. The color shows whose turn it is.</p>
   <p>There is no owner label: the status alone says whose turn it is.</p>
+  <p>The top row is the spec, before planning: a proposal in the backlog, a spec as a PR, the merge, and the breakdown into tasks. It has no new label.</p>
   <div class="panel">
-    <svg viewBox="0 0 1180 300" role="img" aria-label="Transitions between an issue's status labels">
+    <svg viewBox="0 0 1180 420" role="img" aria-label="Transitions between an issue's status labels">
       <defs>
         <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0 0 L10 5 L0 10 z" class="arrowhead"/>
         </marker>
       </defs>
+
+      <!-- spec row: proposal > spec PR > merge > breakdown, before planning -->
+      <text x="20" y="20" class="zone-t">Before planning: the spec</text>
+      <rect x="20" y="30" width="180" height="62" rx="8" class="n-human"/>
+      <text x="110" y="56" text-anchor="middle" class="m">backlog</text>
+      <text x="110" y="76" text-anchor="middle" class="s">Dolev asks for a spec</text>
+      <line x1="202" y1="61" x2="256" y2="61" class="edge" marker-end="url(#ah)"/>
+      <rect x="260" y="30" width="200" height="62" rx="8" class="n-claude"/>
+      <text x="360" y="56" text-anchor="middle" class="m">dev-spec</text>
+      <text x="360" y="76" text-anchor="middle" class="s">Writes the spec file as a PR</text>
+      <line x1="462" y1="61" x2="516" y2="61" class="edge" marker-end="url(#ah)"/>
+      <rect x="520" y="30" width="200" height="62" rx="8" class="n-human"/>
+      <text x="620" y="56" text-anchor="middle" class="m">merge</text>
+      <text x="620" y="76" text-anchor="middle" class="s">The merge is the approval</text>
+      <line x1="722" y1="61" x2="776" y2="61" class="edge" marker-end="url(#ah)"/>
+      <rect x="780" y="30" width="220" height="62" rx="8" class="n-claude"/>
+      <text x="890" y="56" text-anchor="middle" class="m">dev-issue</text>
+      <text x="890" y="76" text-anchor="middle" class="s">An issue per spec part</text>
+      <line x1="1002" y1="61" x2="1046" y2="61" class="edge" marker-end="url(#ah)"/>
+      <rect x="1050" y="30" width="120" height="62" rx="8" class="n-auto"/>
+      <text x="1110" y="56" text-anchor="middle" class="m">closed</text>
+      <text x="1110" y="76" text-anchor="middle" class="s">Proposal closed</text>
+      <path d="M890 94 V114 H62 V144" class="edge" marker-end="url(#ah)"/>
+      <text x="476" y="107" text-anchor="middle" class="s">Each issue enters planning with a spec line</text>
+
+      <g transform="translate(0,120)">
 
       <rect x="24" y="28" width="76" height="28" rx="14" class="n-auto"/>
       <text x="62" y="47" text-anchor="middle" class="m">task</text>
@@ -245,6 +272,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="520" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-code</text>
       <path d="M860 196 V204 H1170 V196" class="bracket"/>
       <text x="1100" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-ship</text>
+      </g>
     </svg>
   </div>
 </section>
@@ -253,6 +281,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <h2 id="git-h">What happens in git</h2>
   <p>The branch is born on the remote during planning, written in a separate worktree, updated with rebase, and lands in main as a squash.</p>
   <p>The main folder never switches branches.</p>
+  <p>A spec has a branch of its own, <code>claude/spec-&lt;topic&gt;</code>, and takes the same path to the squash, without the planning stage. The PR of a proposal says <code>Refs #N</code>, so the merge does not close the proposal; a task whose deliverable is a spec says <code>Closes #N</code>, like any task.</p>
   <ul class="keys">
     <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="main-line"/></svg><span><b>main</b>: the repo's main line</span></li>
     <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="branch-line"/><circle cx="20" cy="7" r="4" class="c-branch"/></svg><span><b>branch</b>: a chain of commits. Each circle is a commit</span></li>
@@ -405,10 +434,12 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
         <div class="flowline"><span class="label">bug</span><span class="arrow">→</span><span class="label c">status:ready-to-execute</span></div>
         <div class="flowline"><span class="label">area:*</span></div>
+        <p>A proposal for a new topic:</p>
+        <div class="flowline"><span class="label h">status:backlog</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-issue</b>, or the <code>task.yml</code> / <code>bug.yml</code> form from <code>dolev2/.github</code>.</p>
-        <ul><li>The milestone is the sprint.</li><li>Bugs and <code>process</code> tasks always go into the current sprint.</li><li>Dependencies are recorded as Blocked by links.</li></ul>
+        <ul><li>The milestone is the sprint.</li><li>Bugs and <code>process</code> tasks always go into the current sprint.</li><li>Dependencies are recorded as Blocked by links.</li><li>A proposal waits in the backlog until Dolev asks for its spec.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>No branch yet.</p>
@@ -418,7 +449,33 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">Stage 2</span><h3>Pick</h3><span class="who claude">Claude</span></div>
+    <div class="stage-head"><span class="idx">Stage 2</span><h3>Spec and breakdown</h3><span class="who claude">Claude, when Dolev asks</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">Labels</span>
+        <p>No new label. The proposal stays until the breakdown:</p>
+        <div class="flowline"><span class="label h">status:backlog</span></div>
+        <p>Each open part of the spec becomes a task:</p>
+        <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
+        <p>The proposal closes as completed, with a pointer to the spec file.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Skill</span>
+        <p><b class="mono">dev-spec</b>: only when Dolev writes "write a spec for #N". The request is the approval of the proposal.</p>
+        <ul><li>Writes <code>docs/specs/&lt;topic&gt;.md</code>: what each part does, and what the user sees.</li><li>Runs <code>spec_check.py --no-issues</code>, and opens a PR.</li><li>Dolev reviews and asks to merge (<code>dev-ship</code>). The merge is the approval of the "what".</li></ul>
+        <p><b class="mono">dev-issue</b>: right after the merge, <code>dev-ship</code> offers the breakdown.</p>
+        <ul><li>An issue per open part. Its context section gets a spec line with the file and the ID: <code>docs/specs/&lt;topic&gt;.md S-&lt;n&gt;.&lt;m&gt;</code>.</li><li>Blocked by links follow the order in the spec.</li></ul>
+        <p>A repo installed before this order moves to it on its next <code>dev-setup</code> run, in a new migration step.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">Git</span>
+        <p>A branch of its own: <code>claude/spec-&lt;topic&gt;</code>, from <code>origin/main</code>.</p>
+        <p>The PR of a proposal says <code>Refs #N</code>, not <code>Closes</code>: the merge does not close the proposal.</p>
+        <p>Squash merge, like every PR.</p>
+      </div>
+    </div>
+    <div class="gate-row"><strong>Gate:</strong> a gap between a task and the spec only warns: in the PR, the status table and the orchestrator's summary. Only an error in a spec file itself fails CI.</div>
+  </article>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">Stage 3</span><h3>Pick</h3><span class="who claude">Claude</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <p>Unchanged.</p>
@@ -436,7 +493,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">Stage 3</span><h3>Plan</h3><span class="who claude">Claude</span></div>
+    <div class="stage-head"><span class="idx">Stage 4</span><h3>Plan</h3><span class="who claude">Claude</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
@@ -449,7 +506,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-plan</b>: up to 3 issues per run.</p>
-        <ul><li>Writes a Plan in the issue body: a short summary for the decision, a user-experience section for approval, technical detail for the build.</li><li>Questions are written as checkboxes.</li><li>Appends to a change log and never deletes it.</li><li>A small task gets a short plan, and a line of its own in the summary: "went straight to Execute".</li><li>A decision other tasks will follow (a tool, an architecture, a work rule): a draft under a "cross-task decision" sub-heading, which Dolev approves with the plan.</li></ul>
+        <ul><li>Reads the spec part first, by the issue's spec line.</li><li>Writes a short Plan in the issue body: a two-line summary (the spec part, and the decisions waiting for Dolev), then technical detail. No user-experience section: it lives in the spec part.</li><li>An issue opened from the form with no spec line, and not a bug: the full plan, plus a "new spec part" draft, which Dolev approves with the plan.</li><li>Questions are written as checkboxes.</li><li>Appends to a change log and never deletes it.</li><li>A small task gets a short plan, and a line of its own in the summary: "went straight to Execute".</li><li>A decision other tasks will follow (a tool, an architecture, a work rule): a draft under a "cross-task decision" sub-heading, which Dolev approves with the plan.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>Creates the branch on the remote, with no checkout.</p>
@@ -459,7 +516,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">Stage 4</span><h3>Questions and approval</h3><span class="who human">Dolev</span></div>
+    <div class="stage-head"><span class="idx">Stage 5</span><h3>Questions and approval</h3><span class="who human">Dolev</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <p>Answers a question:</p>
@@ -484,7 +541,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">Stage 5</span><h3>Code</h3><span class="who claude">Claude</span></div>
+    <div class="stage-head"><span class="idx">Stage 6</span><h3>Code</h3><span class="who claude">Claude</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
@@ -492,7 +549,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-code</b>: exactly one issue per run.</p>
-        <ul><li>Implements the plan and adds a test for every change.</li><li>The plan has a cross-task decision: writes it as a page in <code>docs/decisions/</code> in the same PR, and the rule that relies on it points there.</li><li>A bug without a Plan: writes a short plan first. A bug that changes a contract or deletes something goes back to planning.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user-experience section, at desktop and phone width. In a cloud session: with Playwright.</li><li>Hands over a PR with a link to the review app. In a cloud session: the app runs in the session.</li><li>In the hand-off: a link to the PR's changes at the top of the message, screenshots in the chat (desktop, plus phone in a cloud session), and a phone notification once the hand-off is ready. No screenshot: one line saying why.</li></ul>
+        <ul><li>Implements the plan and adds a test for every change.</li><li>In the same PR: a status line, <code>Done (#N)</code>, under the part's heading in the spec, and <code>spec_check.py --no-issues</code>.</li><li>A small task, and an issue with a "new spec part": the part is added to the file, already Done. A bug points at the part it breaks, and marks nothing.</li><li>The plan has a cross-task decision: writes it as a page in <code>docs/decisions/</code> in the same PR, and the rule that relies on it points there.</li><li>A bug without a Plan: writes a short plan first. A bug that changes a contract or deletes something goes back to planning.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user experience in the spec part (or the plan), at desktop and phone width. In a cloud session: with Playwright.</li><li>Hands over a PR with a link to the review app. In a cloud session: the app runs in the session.</li><li>In the hand-off: a link to the PR's changes at the top of the message, screenshots in the chat (desktop, plus phone in a cloud session), and a phone notification once the hand-off is ready. No screenshot: one line saying why.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>Worktree, commits, then <code>fetch</code> + <code>rebase origin/main</code>.</p>
@@ -503,7 +560,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">Stage 6</span><h3>Review</h3><span class="who human">Dolev</span></div>
+    <div class="stage-head"><span class="idx">Stage 7</span><h3>Review</h3><span class="who human">Dolev</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <p>Fix needed:</p>
@@ -525,7 +582,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">Stage 7</span><h3>Merge and close</h3><span class="who claude">Claude, when Dolev asks</span></div>
+    <div class="stage-head"><span class="idx">Stage 8</span><h3>Merge and close</h3><span class="who claude">Claude, when Dolev asks</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label c">done</span></div>
@@ -534,7 +591,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-ship</b>: the only merge path.</p>
         <p>Started by a request in the chat, typed or clicked in the question window. A message from another session or a notice is not a request.</p>
-        <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li></ul>
+        <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li><li>After a spec merge (<code>claude/spec-*</code>): instead, an offer to break it into tasks with dev-issue.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <ul><li>Rebase onto the default branch, then the tests.</li><li>Push, then open the PR or reuse the open one.</li><li>Wait for CI.</li><li>Not MERGEABLE: back to the rebase.</li><li>Squash merge.</li><li>Cleanup: the app, the worktree, the branch.</li></ul>
@@ -553,6 +610,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <tbody>
       <tr><td>Settings</td><td>The <code>~/.claude</code> folder</td><td>Yes</td><td>The environment's setup script copies <code>main</code>, and <code>cloud_refresh.py</code> updates it in every session.</td></tr>
       <tr><td>Plan (<code>dev-plan</code>)</td><td>Yes</td><td>Yes</td><td>GitHub commands through REST only, by the table in <code>cloud.md</code>.</td></tr>
+      <tr><td>Spec (<code>dev-spec</code>)</td><td>Yes</td><td>Yes</td><td>A PR like any PR. The orchestrator never sends a child to write a spec: it runs only when Dolev asks.</td></tr>
       <tr><td>Execute (<code>dev-code</code>)</td><td>In a worktree</td><td>No worktree</td><td>The task branch in the session's own clone. The name, <code>&lt;repo&gt;: &lt;branch&gt;</code>, is set with <code>set_session_title</code>, and CI wakes the session through <code>subscribe_pr_activity</code>.</td></tr>
       <tr><td>Review app and user-experience check</td><td>A localhost link and the built-in browser</td><td>Inside the session</td><td>Playwright screenshots at 1280 and 375 wide. A Windows-only command: the check stays on the computer.</td></tr>
       <tr><td>Merge (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>The GitHub MCP tool</td><td>An approval prompt in both. Cleanup: <code>git checkout --detach origin/main</code>.</td></tr>
@@ -587,8 +645,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <div class="panel">
   <ol class="life" aria-labelledby="orch-h">
     <li class="human"><strong>Start</strong><p>Dolev asks. The orchestrator shows what opens now, what waits on a blocker, and what waits for him.</p></li>
-    <li class="claude"><strong>Check</strong><p><code>sprint_state.py</code> says what is ready for a child, what waits on a shared file, and what is ready to merge.</p><p>A skill, script or hook changed on <code>main</code>: refresh <code>~/.claude</code> and read them again.</p><p>The global instructions, rules or settings changed, or the refresh failed: recommend a new orchestrator session to Dolev, and this orchestrator stops.</p></li>
-    <li class="claude"><strong>A child per free task</strong><p>Up to 3 at a time, tagged <code>issue:N</code>. One child plans, a separate one codes.</p></li>
+    <li class="claude"><strong>Check</strong><p><code>sprint_state.py</code> says what is ready for a child, what waits on a shared file, and what is ready to merge.</p><p>With <code>--spec</code> it also returns the gaps between the tasks and the spec (<code>spec_gaps</code>). Each gap is a warning line in the summary, and stops nothing.</p><p>A skill, script or hook changed on <code>main</code>: refresh <code>~/.claude</code> and read them again.</p><p>The global instructions, rules or settings changed, or the refresh failed: recommend a new orchestrator session to Dolev, and this orchestrator stops.</p></li>
+    <li class="claude"><strong>A child per free task</strong><p>Up to 3 at a time, tagged <code>issue:N</code>. One child plans, a separate one codes.</p><p>No child writes a spec: that happens only when Dolev asks.</p></li>
     <li class="gate"><strong>The child's contract</strong><p>It never asks Dolev, never touches links, never merges, and calls no session tools: no messages, no renaming its session (the service raises a prompt on each call). Its report is what it leaves on GitHub: the plan, the label, a comment and the PR.</p></li>
     <li class="claude"><strong>After a change</strong><p>A background watch (<code>watch_children.py</code>) wakes the orchestrator when a child's label moves or a comment lands. The orchestrator's own comments carry a hidden marker and do not wake it. The orchestrator checks GitHub: the plan, the PR and its CI, and no stray branch or label.</p><p>A child verified as done with its turn is archived in the same check: an answer, a send-back or a fix opens a new child.</p></li>
     <li class="human"><strong>One question window</strong><p>Plan answers, approvals, and one merge at a time. Only Dolev decides.</p><p>The merge question names the active children that touch the same files as the PR, by the files they already changed, not only by their plans.</p></li>

@@ -25,8 +25,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary and the rules every phase shares),
 `issue-body.md` (how to read the full context of an issue, the Plan format), `git-flow.md` (one
 issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`,
-`review-app.md`, `ux.md` (the user-experience check) and `chat-decisions.md` (the
-hand-off question). Read them before step 1, every run.
+`review-app.md`, `ux.md` (the user-experience check), `specs.md` (marking the part Done) and
+`chat-decisions.md` (the hand-off question). Read them before step 1, every run.
 Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 ## Execute
@@ -55,7 +55,12 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 3. **Read the whole thread before touching code**: body (including Plan), every comment,
    every sub-issue. A `needs-repair` issue carries the reason in the newest comments; a
    sub-issue labelled `bug` is part of the same work and is fixed on the same branch unless it
-   clearly stands alone. Also read what is already on the branch and in any open PR.
+   clearly stands alone. Also read what is already on the branch and in any open PR, and the
+   part the issue's `אפיון:` line names (`git show origin/<default>:<file>`): the approved
+   "what" the code delivers.
+
+   **A task whose deliverable is a spec** (its Plan says so, like claude-config #230): no code.
+   Run `dev-spec` on it from its step 2 (`reference/specs.md`); it opens the PR and hands off.
 
    **A manual task** (only Dolev can carry it out: Claude has no access) that reached Execute:
    stop before any code. Write what he must check or answer as unticked boxes in the
@@ -79,8 +84,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
       meaning, never transliterated.
    4. **Write the short plan for a bug** into the issue body (`reference/issue-body.md`,
       "תוכנית מקוצרת, לבאג"), with the body-editing rules there: a fresh read, the sections a
-      person wrote kept letter for letter, LF. It names the branch, so step 4 creates it on the
-      remote as for any Plan.
+      person wrote kept letter for letter, LF. It names the part the bug breaks (`- **אפיון:**`,
+      from the related task's spec line) and the branch, so step 4 creates it on the remote as
+      for any Plan.
 
 4. **Work in a worktree (in a cloud session: its own clone), never by switching branches in
    the shared working copy** (`reference/git-flow.md`). The branch is the one the Plan names, `claude/issue-<N>-<slug>`
@@ -108,6 +114,14 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    rule or doc that relies on the decision gets a one-line pointer to the page, never a copy of
    it. A page that replaces an older one: the new page gets the `**מחליף:**` line, and the old
    page's status line becomes `הוחלף ב-[<file>](<file>)`, the only edit an existing page ever gets.
+
+   **Then the spec, in the same PR** (`reference/specs.md`): under every id on the issue's
+   `אפיון:` line, the line `**מצב:** Done (#<N>)`, as the first non-empty line under the
+   part's heading. A Plan with "חלק חדש לאפיון" (a task without a spec, or a small task):
+   add that part to its file, already with the Done line, and add the `אפיון:` line to the
+   issue's "הקשר / קישורים". A bug marks nothing: its part is already Done. A repair round
+   finds the line already there. Before the push in step 9:
+   `python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --no-issues` passes.
 
    **While writing, run only the test files of what changed**, never a full suite; a failing
    test reruns alone (`reference/tests.md`). The full run comes once, in
@@ -151,7 +165,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     - **CI**, if the repo has checks: `gh pr checks <N> --watch --fail-fast`, in the background
       (`run_in_background`). No checks reported: say so.
     - **A review agent**: the `Agent` tool, no `isolation` (it reads this worktree) and no
-      cheaper `model`. Its brief holds the full Plan, `<sha>`, the diff command
+      cheaper `model`. Its brief holds the full Plan, the spec part, `<sha>`, the diff command
       `git diff origin/<default>...<sha>`, and pointers to the repo's `CLAUDE.md` and the rules
       in `~/.claude/rules/`. Its rules: read only; never edit a file or run a command that
       writes (commit, push, install, `gh issue edit`, `gh pr comment`); return a list of
@@ -167,7 +181,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
       here does not block the hand-off: say so in it.
 
     **Once the app is up, check the user experience yourself**, as `reference/ux.md` says: walk
-    the Plan's "חוויית משתמש" section in the built-in browser, at desktop and phone width; in a
+    the Plan's "חוויית משתמש" section (none in the Plan: what the spec part says the user
+    sees) in the built-in browser, at desktop and phone width; in a
     cloud session, in a headless Playwright script at 1280 and 375. In every environment, finish
     with the hand-off screenshots of the changed screen, as files (`reference/ux.md`,
     "צילומים למסירה"); step 11 sends them. A gap

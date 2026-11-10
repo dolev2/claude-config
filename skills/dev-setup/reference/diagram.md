@@ -7,6 +7,19 @@ config:
     wrappingWidth: 320
 ---
 flowchart TD
+    PROP(["דולב פותח הצעה בבקלוג<br/>status:backlog"]):::human
+    PROP --> SPASK(["דולב מבקש אפיון להצעה<br/>הבקשה היא האישור שלה"]):::human
+    SPASK --> SPEC
+
+    subgraph SG["שלב האפיון — לפני התכנון"]
+      SPEC["dev-spec<br/>docs/specs/topic.md<br/>branch claude/spec-topic<br/>spec_check.py --no-issues<br/>PR: Refs #N for a proposal"]:::routine
+      SPEC --> SREV(["דולב סוקר ומבקש מיזוג<br/>המיזוג הוא האישור של המה"]):::human
+      SREV --> SSHIP["dev-ship<br/>squash merge<br/>מציע את הפירוק"]:::routine
+      SSHIP --> SPLIT["dev-issue<br/>משימה לכל חלק פתוח<br/>שורת אפיון בכל משימה<br/>Blocked by<br/>לפי הסדר באפיון<br/>ההצעה נסגרת"]:::routine
+    end
+
+    SPLIT -- "status:explore" --> PLAN
+
     START(["דולב פותח משימה חדשה<br/>task.yml / bug.yml / dev-issue"]):::human
     START --> L0["התבנית מדביקה תוויות אוטומטית<br/>task → status:explore<br/>bug → status:ready-to-execute"]:::auto
 
@@ -15,7 +28,7 @@ flowchart TD
 
     subgraph PG["שלב התכנון — סשן מקומי או ענן"]
       PLAN["dev-plan<br/>עד 3 פריטים בכל ריצה<br/>לפי כמה משימות מחכות להם"]:::routine
-      PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>כולל סעיף חוויית משתמש<br/>חוץ ממשימה קטנה<br/>החלטה שחוצה משימות<br/>נכתבת כטיוטה בתוכנית<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
+      PLAN --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>קורא את החלק באפיון<br/>תוכנית מקוצרת<br/>בקצרה בשתי שורות<br/>ואז פירוט טכני<br/>בלי אפיון ולא באג<br/>תוכנית מלאה<br/>וטיוטה של חלק חדש לאפיון<br/>החלטה שחוצה משימות<br/>נכתבת כטיוטה בתוכנית<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
       PQ -- "לא" --> SZ{"משימה קטנה<br/>עד כ-3 קבצים, בלי שינוי שמשתמש רואה<br/>בלי מחיקה, בלי שינוי חוזה"}:::routine
     end
@@ -44,7 +57,7 @@ flowchart TD
       WIP -- "לא" --> SPRINT["סריקה רק בספרינט הנוכחי<br/>issue שנקבת בשמו גם מחוצה לו<br/>תיקון, אחריו באג, לפני משימה חדשה<br/>ואז לפי כמה משימות מחכות לה"]:::routine
       SPRINT --> BLK{"חסום ע״י issue פתוח<br/>Blocked by"}:::gate
       BLK -- "כן" --> BSKIP(["מדלג עליו ומדווח במה הוא חסום"]):::gate
-      BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי<br/>טיוטת החלטה רוחבית<br/>הופכת לדף החלטה באותו PR"]:::routine
+      BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי<br/>טיוטת החלטה רוחבית<br/>הופכת לדף החלטה באותו PR<br/>מסמן את החלק באפיון כגמור<br/>spec_check.py --no-issues<br/>משימה קטנה מוסיפה את החלק שלה<br/>באג לא מסמן"]:::routine
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
       RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>opens a PR that closes the issue"]:::routine
@@ -68,7 +81,7 @@ flowchart TD
     ORCGO(["דולב: תריץ את הספרינט<br/>רק בסשן ענן"]):::human --> ORC
 
     subgraph OG["המתזמר — סשן ענן אחד"]
-      ORC["dev-orchestrate<br/>sprint_state.py<br/>בונה את התמונה מחדש בכל בדיקה"]:::routine
+      ORC["dev-orchestrate<br/>sprint_state.py --spec<br/>בונה את התמונה מחדש בכל בדיקה<br/>פער מול האפיון: אזהרה בלבד<br/>לא שולח בן לכתוב אפיון"]:::routine
       ORC --> KID["סשן-בן לכל משימה שלא חסומה<br/>עד 3 במקביל<br/>חפיפת קבצים: אחת אחרי השנייה"]:::routine
       KID --> REPORT["הבן כותב ב-GitHub<br/>תווית, תגובה, PR<br/>המתזמר מתעורר מהבדיקה ברקע"]:::routine
       REPORT --> CHECK["המתזמר בודק את התוצאה<br/>ושואל את דולב בחלון אחד"]:::routine
@@ -87,6 +100,9 @@ flowchart TD
 
 **מקרא:** צהוב: פעולה של דולב · כחול: Claude, בסקיל · ירוק: אוטומציה ב-GitHub Actions ·
 אדום: שער שעוצר או מתריע.
+
+**שלב האפיון** (`dev-spec`, `specs.md`) בא לפני התכנון, בלי תווית חדשה: ההצעה נשארת `status:backlog`
+עד הפירוק. משימה שנפתחה מהטופס בלי אפיון נכנסת ישר לתכנון, כמו קודם.
 
 **המתזמר** (`dev-orchestrate`, `orchestrate.md`) לא מוסיף שלבים: הבנים שלו עוברים באותו צינור, והוא
 מרכז מול דולב את השאלות, האישורים והמיזוגים.

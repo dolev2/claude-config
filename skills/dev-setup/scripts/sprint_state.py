@@ -6,6 +6,7 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
     S="$HOME/.claude/skills/dev-setup/scripts"
     python "$S/sprint_state.py"                    # nothing claimed yet
     python "$S/sprint_state.py" --claimed 164,172  # issues that already have a session
+    python "$S/sprint_state.py" --spec             # plus spec_gaps (claude-config #227)
 
 The orchestrator (claude-config #150) keeps no memory between checks: every check runs
 this and rebuilds its picture from GitHub. Which issue already has a child session is
@@ -41,18 +42,25 @@ The keys:
                      loads once, at its start (pipeline_shas.py): when it moves, the
                      orchestrator asks for a new orchestrator session and stops
                      (orchestrate.md, "שינוי בצינור באמצע ספרינט")
+    spec_gaps        only with --spec: spec_check.py's gaps between ALL open issues and
+                     the specs on origin/<default>, as [{path, line, message}]. An
+                     error in a spec file is not here: that is CI's job (spec_check.py).
+                     Specs that could not be read are one gap that says so
 """
 
 import argparse
 import json
+import subprocess
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 from audit_sprint import SprintIssue, audit, is_local, is_shared_doc, sprint_issue
 from gh_rest import api, current_repo, open_issue_nodes
 from issue_body import plan_branch, sections
 from pipeline_shas import CACHE, pipeline_shas
 from rank_issues import Issue, current_sprint, parse_issue, rank
+from spec_check import gaps, git, parse_spec, spec_files_at
 from sprint_github import branch_files, pr_files, pr_status
 
 DISPATCH_ORDER = ["needs-repair", "ready-to-execute", "explore"]
@@ -241,6 +249,48 @@ def state(
     }
 
 
+def spec_gaps(nodes: list[dict], files: dict[str, str]) -> list[dict]:
+    """spec_check's gaps between the open issues `nodes` and the spec `files`.
+
+    Every open issue counts, not only the sprint's: a spec part is covered by any open
+    issue that points at it. The parse errors of a file are dropped (CI reports them).
+    """
+    specs = {path: parse_spec(text)[0] for path, text in files.items()}
+    issues = [
+        {
+            "number": n["number"],
+            "labels": {label["name"] for label in n["labels"]["nodes"]},
+            "body": n.get("body") or "",
+        }
+        for n in nodes
+    ]
+    return [finding._asdict() for finding in gaps(specs, issues)]
+
+
+def repo_specs(base: str) -> dict[str, str]:
+    """The spec files on origin/<base>: the local clone may be behind GitHub.
+
+    They are read from the clone of the current directory, which is the repo the
+    orchestrator runs in; --repo naming another repo does not move them.
+    """
+    root = Path(git(Path.cwd(), "rev-parse", "--show-toplevel").strip())
+    # Best effort: offline, the last fetched origin/<base> is still worth reading.
+    subprocess.run(["git", "-C", str(root), "fetch", "-q", "origin", base], timeout=120)
+    return spec_files_at(root, f"origin/{base}")
+
+
+def spec_gaps_or_warning(nodes: list[dict], base: str) -> list[dict]:
+    """spec_gaps, or one gap saying the specs were not read: the sprint check goes on.
+
+    Like spec_check.py's "issues not read", a gap only warns (Dolev's answer on #226).
+    """
+    try:
+        files = repo_specs(base)
+    except (ValueError, OSError, subprocess.TimeoutExpired) as err:
+        return [{"path": None, "line": None, "message": f"spec files not read: {err}"}]
+    return spec_gaps(nodes, files)
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--milestone", help="defaults to the current sprint")
@@ -252,6 +302,9 @@ def main(argv: list[str] | None = None) -> None:
         type=claimed_list,
         default=[],
         help="comma-separated issues that already have a child session",
+    )
+    parser.add_argument(
+        "--spec", action="store_true", help="add spec_gaps (the specs on origin)"
     )
     args = parser.parse_args(argv)
 
@@ -270,6 +323,8 @@ def main(argv: list[str] | None = None) -> None:
         lambda number: pr_files(repo, number),
     )
     result |= pipeline_shas(CACHE)
+    if args.spec:
+        result["spec_gaps"] = spec_gaps_or_warning(nodes, base)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

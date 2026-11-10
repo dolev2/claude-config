@@ -14,7 +14,10 @@ SUBHEADING = re.compile(r"^#{4,6}\s")
 DEPENDENCY_LINE = re.compile(r"^\s*(תלוי ב|depends on)\s*:(.*)$", re.IGNORECASE)
 ISSUE_REF = re.compile(r"(?<![\w/])#(\d+)\b")
 FIRST_CODE = re.compile(r"`([^`]+)`")
-SPEC_LINE = re.compile(r"^\s*(?:[-*]\s+)?(אפיון|spec)\s*:(.*)$", re.IGNORECASE)
+# The Plan writes the line bold, "- **אפיון:** ..." (#227); the context, plain.
+SPEC_LINE = re.compile(
+    r"^\s*(?:[-*]\s+)?(?:\*\*)?(אפיון|spec)\s*:(?:\*\*)?(.*)$", re.IGNORECASE
+)
 SPEC_PATH = re.compile(r"[^\s`\[\]()<>]+\.md\b")
 SPECS_DIR = "docs/specs/"
 SPEC_ID = re.compile(r"\bS-\d+\.\d+\b")

@@ -14,6 +14,7 @@ from issue_body import dependency_line, spec_line
         ),
         ("Spec: docs/specs/a.md S-2.1", ("docs/specs/a.md", ["S-2.1"])),
         ("- אפיון: docs/specs/a.md S-2.1", ("docs/specs/a.md", ["S-2.1"])),
+        ("- **אפיון:** docs/specs/a.md S-2.1", ("docs/specs/a.md", ["S-2.1"])),
         (
             "אפיון: [docs/specs/a.md](docs/specs/a.md) S-1.1",
             ("docs/specs/a.md", ["S-1.1"]),
