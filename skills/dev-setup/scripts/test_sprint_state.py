@@ -406,3 +406,58 @@ def test_claimed_that_is_not_numbers_is_a_usage_error(monkeypatch):
     with pytest.raises(SystemExit) as exit_info:
         sprint_state.main(["--claimed", "abc"])
     assert exit_info.value.code == 2
+
+
+SPEC_PATH = "docs/specs/pipeline.md"
+SPEC_FILES = {SPEC_PATH: "# Pipeline\n\n## S-1.1 · Read\nText.\n"}
+OPEN_PART = {
+    "path": SPEC_PATH,
+    "line": 3,
+    "message": "S-1.1 is open, and no open issue points at it",
+}
+
+
+def spec_node(number, line=None, labels=("task",), milestone="W1"):
+    """An open issue whose context section holds `line`, or no spec line at all."""
+    found = node(number, labels=labels, milestone=milestone)
+    if line:
+        found["body"] = found["body"].replace("context", f"context\n\nאפיון: {line}")
+    return found
+
+
+def test_spec_gaps_of_all_open_issues():
+    nodes = [
+        spec_node(1, f"{SPEC_PATH} S-1.1"),
+        spec_node(2),
+        spec_node(3, f"{SPEC_PATH} S-1.7", milestone="later"),
+        spec_node(4, labels=("status:backlog",)),
+    ]
+    assert sprint_state.spec_gaps(nodes, SPEC_FILES) == [
+        {"path": None, "line": None, "message": message}
+        for message in [
+            "#2 has no spec line (אפיון: docs/specs/<topic>.md S-<n>.<m>)",
+            f"#3 points at {SPEC_PATH} S-1.7: no such part",
+        ]
+    ]
+
+
+def test_spec_gaps_open_part_without_an_issue():
+    assert sprint_state.spec_gaps([], SPEC_FILES) == [OPEN_PART]
+
+
+@pytest.mark.parametrize("flag", [["--spec"], []])
+def test_main_spec_gaps_only_with_the_flag(flag, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(pipeline_shas, "PIPELINE_URL", str(tmp_path / "missing"))
+    monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
+    fake_github(monkeypatch, [spec_node(1)])
+    monkeypatch.setattr(sprint_state, "repo_specs", lambda base: SPEC_FILES)
+    sprint_state.main(flag)
+    result = json.loads(capsys.readouterr().out)
+    if flag:
+        no_line = "#1 has no spec line (אפיון: docs/specs/<topic>.md S-<n>.<m>)"
+        assert result["spec_gaps"] == [
+            {"path": None, "line": None, "message": no_line},
+            OPEN_PART,
+        ]
+    else:
+        assert "spec_gaps" not in result

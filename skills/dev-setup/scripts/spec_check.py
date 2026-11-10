@@ -17,6 +17,7 @@ Usage:
 import argparse
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import NamedTuple
@@ -137,6 +138,11 @@ def parse_spec(text: str) -> tuple[list[Part], list[tuple[int, str]]]:
     return parts, errors
 
 
+def is_spec(name: str) -> bool:
+    """A spec file's name: any .md in docs/specs/ but README.md."""
+    return name.endswith(".md") and name.lower() != "readme.md"
+
+
 def spec_files(root: Path) -> dict[str, str]:
     """{repo-relative path: text} of every spec file; README.md is no spec."""
     folder = root / SPECS_DIR
@@ -145,7 +151,32 @@ def spec_files(root: Path) -> dict[str, str]:
     return {
         f"{SPECS_DIR}/{path.name}": path.read_text(encoding="utf-8")
         for path in sorted(folder.glob("*.md"))
-        if path.name.lower() != "readme.md"
+        if is_spec(path.name)
+    }
+
+
+def git(root: Path, *args: str) -> str:
+    """The stdout of a git command in `root`; a failure raises ValueError."""
+    done = subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, encoding="utf-8"
+    )
+    if done.returncode != 0:
+        raise ValueError(f"git {' '.join(args)}: {done.stderr.strip()}")
+    return done.stdout
+
+
+def spec_files_at(root: Path, ref: str) -> dict[str, str]:
+    """spec_files(root), but read from the git `ref` and not from the disk.
+
+    The orchestrator's clone goes stale during a sprint while specs merge on GitHub,
+    so it reads origin/<default> (#227). A ref without docs/specs/ gives {}; a ref
+    git does not know is a ValueError.
+    """
+    names = git(root, "ls-tree", "--name-only", ref, f"{SPECS_DIR}/").splitlines()
+    return {
+        path: git(root, "show", f"{ref}:{path}")
+        for path in sorted(names)
+        if is_spec(path.rsplit("/", 1)[-1])
     }
 
 
