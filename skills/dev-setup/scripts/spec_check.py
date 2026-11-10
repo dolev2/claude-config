@@ -181,10 +181,15 @@ def spec_files_at(root: Path, ref: str) -> dict[str, str]:
 
 
 def issue_spec(issue: dict) -> tuple[str, list[str]] | None:
-    """The spec line of an issue's context section, as issue_body.spec_line reads it."""
+    """The spec line of an issue: its context section's, else its Plan's.
+
+    A bug has no context section (the bug form has none), so its short Plan's
+    "- **אפיון:**" line names the part it breaks (#227).
+    """
     parts = issue_body.sections(issue["body"])
     context = issue_body.section(parts, issue_body.CONTEXT_HEADINGS)
-    return issue_body.spec_line(context)
+    found = issue_body.spec_line(context)
+    return found or issue_body.spec_line(parts.get("plan", ""))
 
 
 def pointers(issues: list[dict]) -> dict[tuple[str, str], list[dict]]:

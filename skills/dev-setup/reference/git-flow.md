@@ -55,6 +55,7 @@
 ## מוסכמת branches ו-PR
 
 - branch: `claude/issue-<N>-<slug-אנגלי-קצר>`. גם `dev-ship` משתמש בשם הזה כשהעבודה שייכת ל-issue.
+  אפיון נכתב ב-`claude/spec-<topic>`, וה-PR שלו כתוב `Refs #<N>` ולא `Closes` (`specs.md`).
 - הקישור ל-issue נוצר דרך `Closes #<N>` בגוף ה-PR.
 - שם הסשן: `/rename <repo>: claude/issue-<N>-<slug>` כשמתחילים לעבוד על ה-branch. בסשן ענן: הסעיף הבא.
   `<repo>` הוא שם הריפו בלי הבעלים (החלק שאחרי `/` בשדה `repo` של `pipeline_info.py`),

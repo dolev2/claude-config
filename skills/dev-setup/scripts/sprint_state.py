@@ -44,7 +44,8 @@ The keys:
                      (orchestrate.md, "שינוי בצינור באמצע ספרינט")
     spec_gaps        only with --spec: spec_check.py's gaps between ALL open issues and
                      the specs on origin/<default>, as [{path, line, message}]. An
-                     error in a spec file is not here: that is CI's job (spec_check.py)
+                     error in a spec file is not here: that is CI's job (spec_check.py).
+                     Specs that could not be read are one gap that says so
 """
 
 import argparse
@@ -268,13 +269,22 @@ def spec_gaps(nodes: list[dict], files: dict[str, str]) -> list[dict]:
 
 def repo_specs(base: str) -> dict[str, str]:
     """The spec files on origin/<base>: the local clone may be behind GitHub."""
+    root = Path(git(Path.cwd(), "rev-parse", "--show-toplevel").strip())
+    # Best effort: offline, the last fetched origin/<base> is still worth reading.
+    subprocess.run(["git", "-C", str(root), "fetch", "-q", "origin", base])
+    return spec_files_at(root, f"origin/{base}")
+
+
+def spec_gaps_or_warning(nodes: list[dict], base: str) -> list[dict]:
+    """spec_gaps, or one gap saying the specs were not read: the sprint check goes on.
+
+    Like spec_check.py's "issues not read", a gap only warns (Dolev's answer on #226).
+    """
     try:
-        root = Path(git(Path.cwd(), "rev-parse", "--show-toplevel").strip())
-        # Best effort: offline, the last fetched origin/<base> is still worth reading.
-        subprocess.run(["git", "-C", str(root), "fetch", "-q", "origin", base])
-        return spec_files_at(root, f"origin/{base}")
+        files = repo_specs(base)
     except ValueError as err:
-        sys.exit(f"spec files not read: {err}")
+        return [{"path": None, "line": None, "message": f"spec files not read: {err}"}]
+    return spec_gaps(nodes, files)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -310,7 +320,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     result |= pipeline_shas(CACHE)
     if args.spec:
-        result["spec_gaps"] = spec_gaps(nodes, repo_specs(base))
+        result["spec_gaps"] = spec_gaps_or_warning(nodes, base)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

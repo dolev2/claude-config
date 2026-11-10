@@ -107,6 +107,19 @@ def test_issue_gaps(found, expected):
     assert expected in messages[0]
 
 
+def test_a_bug_names_its_part_in_its_plan():
+    body = f"### מה קורה\nx\n\n### Plan\n- **אפיון:** {SPEC} S-1.1\n"
+    assert spec_check.issue_gaps(SPECS, issue(5, body, "bug")) == []
+
+
+def test_the_context_line_wins_over_the_plan_line():
+    body = (
+        f"### הקשר / קישורים\nאפיון: {SPEC} S-1.1\n\n"
+        f"### Plan\n- **אפיון:** {SPEC} S-9.9\n"
+    )
+    assert spec_check.issue_spec(issue(5, body)) == (SPEC, ["S-1.1"])
+
+
 def test_backlog_issue_needs_no_spec_line():
     assert spec_check.issue_gaps(SPECS, issue(5, "", "status:backlog")) == []
 

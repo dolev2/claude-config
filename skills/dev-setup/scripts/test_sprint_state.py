@@ -461,3 +461,17 @@ def test_main_spec_gaps_only_with_the_flag(flag, tmp_path, monkeypatch, capsys):
         ]
     else:
         assert "spec_gaps" not in result
+
+
+def test_specs_not_read_is_one_gap_and_the_check_goes_on(monkeypatch):
+    def broken(base):
+        raise ValueError("unknown revision origin/main")
+
+    monkeypatch.setattr(sprint_state, "repo_specs", broken)
+    assert sprint_state.spec_gaps_or_warning([], "main") == [
+        {
+            "path": None,
+            "line": None,
+            "message": "spec files not read: unknown revision origin/main",
+        }
+    ]
