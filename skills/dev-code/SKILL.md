@@ -209,7 +209,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     after a fix: leave the status as it is, and comment on the PR with the exact error.
 
     **No hand-off**, for any reason: stop the app and delete the registry file (`reference/review-app.md`): there is nothing to review.
-    No "ready for review" notification and no screenshots either.
+    No screenshots either.
 
     Go on to step 11 only when the agent has returned, the user-experience check is done, and CI
     is green on the last push (no checks reported: the agent alone).
@@ -238,11 +238,6 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
        `reference/ux.md` is in the message instead. A task with no interface has neither.
     3. **The diff pane:** open it only if the session has a tool for it (`show_pane`); otherwise
        the link above is the way in, with no line about it.
-    4. **A phone notification:** `PushNotification`, in Hebrew, up to 200 characters:
-       `#<N> מוכן לסקירה: <כותרת קצרה>`. Only here, once the hand-off is real; never for a
-       step on the way. The tool may skip it while Dolev is active in the chat; that is fine.
-       No such tool (an automated run, or a CLI without it): skip it, with one line in the
-       message.
 
     **Then, when Dolev is in the chat, ask in the question window** (`AskUserQuestion`;
     `reference/chat-decisions.md`). The label is already `status:in-review`,
