@@ -157,10 +157,17 @@ ALL_POINTING = [pointing(5, "S-1.1"), pointing(7, "S-1.3"), pointing(8, "S-1.3")
 
 
 def test_open_part_without_an_issue_warns():
+    specs = {SPEC: spec_check.parse_spec("## S-2.1 · a\nText.\n")[0]}
+    found = spec_check.gaps(specs, [])
+    assert [(gap.path, gap.line) for gap in found] == [(SPEC, 1)]
+    assert found[0].message == "S-2.1 is open, and no open issue points at it"
+
+
+def test_open_line_with_no_open_issue_warns_once_per_number():
     found = spec_check.gaps(SPECS, ALL_POINTING[1:])
-    assert [(gap.path, gap.line) for gap in found] == [(SPEC, 6), (SPEC, 6)]
-    assert found[0].message == "S-1.1 is open, and no open issue points at it"
-    assert "#5" in found[1].message and "not an open issue" in found[1].message
+    assert [(gap.path, gap.line) for gap in found] == [(SPEC, 6)]
+    assert "S-1.1 names #5" in found[0].message
+    assert "not an open issue" in found[0].message
 
 
 def test_pointed_part_is_no_gap():
@@ -266,7 +273,7 @@ def test_gaps_never_change_the_exit_code(tmp_path, monkeypatch, capsys):
     assert spec_check.main(["--root", str(tmp_path), "--repo", "o/r"]) == 0
     out = capsys.readouterr().out
     assert "warning: #5 has no spec line" in out
-    assert "0 errors, 3 warnings" in out
+    assert "0 errors, 2 warnings" in out
 
 
 def test_out_of_scope_and_many_files_only_warn(tmp_path, monkeypatch, capsys):

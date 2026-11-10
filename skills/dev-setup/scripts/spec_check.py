@@ -202,7 +202,8 @@ def gaps(specs: dict[str, list[Part]], issues: list[dict]) -> list[Finding]:
             if part.status not in (None, "open"):
                 continue
             pointing = pointed.get((path, part.id), [])
-            if not pointing:
+            # An open line already names its issues; open_line_gaps says which fail.
+            if not pointing and not part.open_issues:
                 message = f"{part.id} is open, and no open issue points at it"
                 found.append(Finding(path, part.line, message))
             found += open_line_gaps(path, part, open_numbers, pointing)

@@ -121,7 +121,9 @@ every run.
    ```
    `--toc` rewrites the file's table of contents from its headings: **every spec PR runs it**,
    since a part added or renamed without it fails the check. Commit what it changed.
-   An error fails it: fix the file and run it again. Then the repo's lint and file-guide check
+   An error fails it: fix the file and run it again. A new part warns "is open with no status
+   line": expected, since it has no issue yet; the breakdown (`dev-issue`) writes its
+   `**מצב:** פתוח (#N)` line. Then the repo's lint and file-guide check
    (`reference/tests.md`). A conflict in the rebase: `git rebase --abort`, and stop and report.
 
 8. **Open the PR** against `<default>`:
