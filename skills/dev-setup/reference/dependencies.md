@@ -53,7 +53,8 @@ issue מחוץ לספרינט לא מוסיף משקל.
 
 את הדירוג מחשב `scripts/rank_issues.py`, וכל סקיל מריץ אותו עם הסינון שלו. סדר ה-`--status`
 הוא סדר הרמות. הסקריפט מסמן `BLOCKED by #N` ולא מסנן. בדיקות: `test_rank_issues.py` ליד הסקריפט.
-גם מטריה עם sub-issue פתוח נשארת ברשימה, מסומנת `UMBRELLA, open sub-issues #N`, ו-`dev-code` מדלג עליה (claude-config #250).
+גם מטריה עם sub-issue פתוח נשארת ברשימה, מסומנת `UMBRELLA, open sub-issues #N`,
+ו-`dev-code` מדלג עליה (claude-config #250).
 
 **משימות `costs-money` מושהות** (claude-config #43): הסקריפט מוציא אותן מהדירוג ומדפיס אותן
 בשורה אחרונה, `On hold, costs-money: ...`. הן עדיין מוסיפות משקל למה שהן מחכות לו, ומשימה
