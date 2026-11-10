@@ -108,7 +108,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
    on which issue. Any earlier child of the same issue that is not archived gets
    `archive_session` first: one child per issue.
-   **The WIP gate is checked here, not in the child** (`orchestrate.md`, "פתיחת בן"): before
+   **The WIP gate is checked here, not in the child** (the gate: `reference/git-flow.md`; `orchestrate.md`, "פתיחת בן"): before
    a coding child for a new issue (`ready-to-execute`; planning and `needs-repair` are
    exempt), count the repo's open issues in `status:in-review`, the whole repo as in
    `dev-code`, not only the sprint:
