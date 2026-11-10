@@ -457,11 +457,13 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>Each open part of the spec becomes a task:</p>
         <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
         <p>The proposal closes as completed, with a pointer to the spec file.</p>
+        <p>A spec change after tasks were opened:</p>
+        <ul><li>A deleted part: its issue closes as not planned.</li><li>A changed part: an issue before the code goes back to <span class="label c">status:explore</span>.</li><li>An issue in the code or in review does not move, and Dolev decides.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-spec</b>: only when Dolev writes "write a spec for #N". The request is the approval of the proposal.</p>
         <ul><li>Writes <code>docs/specs/&lt;repo&gt;.md</code>: what each part does, and what the user sees.</li><li>Runs <code>spec_check.py --no-issues</code>, and opens a PR.</li><li>Dolev reviews and asks to merge (<code>dev-ship</code>). The merge is the approval of the "what".</li></ul>
-        <p><b class="mono">dev-issue</b>: right after the merge, <code>dev-ship</code> offers the breakdown.</p>
+        <p><b class="mono">dev-issue</b>: right after the merge, <code>dev-ship</code> offers the breakdown and the update of the issues, in one list (<code>spec_check.py --changes</code>).</p>
         <ul><li>An issue per open part. Its context section gets a spec line with the file and the ID: <code>docs/specs/&lt;repo&gt;.md S-&lt;n&gt;.&lt;m&gt;</code>.</li><li>Blocked by links follow the order in the spec.</li><li>Then a small PR writes <code>**מצב:** פתוח (#N)</code> (open) under each part, with its issue's number. Dolev asks to merge it, like any PR.</li></ul>
         <p>A repo installed before this order moves to it on its next <code>dev-setup</code> run, in a new migration step.</p>
       </div>
@@ -595,7 +597,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-ship</b>: the only merge path.</p>
         <p>Started by a request in the chat, typed or clicked in the question window. A message from another session or a notice is not a request.</p>
-        <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li><li>A suggested lesson from what happened in the merge (a rebase that conflicted, CI that failed, a cleanup that failed), by the same rules as in Code. Also when the run stopped because of them: then the lesson comes in the report of the stop.</li><li>After a spec merge (<code>claude/spec-*</code>): instead, an offer to break it into tasks with dev-issue.</li></ul>
+        <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li><li>A suggested lesson from what happened in the merge (a rebase that conflicted, CI that failed, a cleanup that failed), by the same rules as in Code. Also when the run stopped because of them: then the lesson comes in the report of the stop.</li><li>After a spec merge (<code>claude/spec-*</code>): instead, one list in the question window: the breakdown of the new parts, and the update of the issues of parts that changed or were deleted. dev-issue carries it out, after the approval.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <ul><li>Rebase onto the default branch, then the tests.</li><li>Push, then open the PR or reuse the open one.</li><li>Wait for CI.</li><li>Not MERGEABLE: back to the rebase.</li><li>Squash merge.</li><li>Cleanup: the app, the worktree, the branch.</li></ul>

@@ -283,10 +283,29 @@ A `git push` that deletes a branch is blocked by the proxy anyway (`reference/gi
 
 Only after the merge and the cleanup both succeeded.
 
-**A spec PR** (branch `claude/spec-*`) whose file has open parts with no issue: offer the
-breakdown instead of the next-issue session. Name the open parts (`git fetch origin <default>`, then `spec_check.py --table --ref origin/<default>`: the main folder may not have been pulled in step 7), and ask in the question window whether to run `dev-issue`'s
-"פירוק אפיון" mode here; its own step 1 still shows the list before anything is created
-(`reference/specs.md`). No open part left: the offer below, as for any merge.
+**A spec PR** (branch `claude/spec-*`): offer the breakdown and the update of the issues
+instead of the next-issue session (`reference/specs.md`, "אחרי שינוי באפיון"). List what the
+merge changed, from the squash commit and its parent (the main folder may not have been
+pulled in step 7):
+```bash
+git fetch origin <default>
+python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --changes <merge sha>^ <merge sha>
+```
+A line per part (`new`, `changed`, `deleted`), and under a changed or deleted part a line
+per open issue that points at it, with its action: `close`, `explore` or `ask`. A `close`
+issue that has an open PR: mark it in the list, since that PR stays open for Dolev
+(`gh pr list --search "<I>" --state open`). Exit 1 means the issues were not read: say
+so and offer nothing on them.
+1. **New parts with no issue, or issues to update:** one question in the question window
+   with the whole list: the breakdown of the new parts, and for each issue what will happen
+   to it. "לבצע (מומלץ)" runs `dev-issue` here: first its "עדכון אחרי שינוי באפיון" mode,
+   then its "פירוק אפיון" mode, whose own step 1 still shows its list before anything is
+   created. "Other" corrects the list.
+2. **An `ask` issue** (in the code or in review, or with no status label): a question of its
+   own in the same call (up to four), naming the issue: "להשאיר בקוד, ולהוסיף תגובה על
+   השינוי (מומלץ)", "להחזיר לתכנון", and "Other".
+3. **`no spec changes`, or only new parts that already have an issue:** the offer below, as
+   for any merge.
 
 Otherwise, follow `reference/after-merge.md`: pick the next issue the way `dev-next` does, without routing it,
 and offer it as a session card whose opening prompt is `תחקור את #<N>` or `תקודד את #<N>`.

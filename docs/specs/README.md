@@ -77,3 +77,4 @@ python skills/dev-setup/scripts/spec_check.py --no-issues
 1. `--table`: טבלה לכל קובץ: מזהה, שם, מצב, issue. המצבים: Done, מחוץ להיקף, בעבודה, לא התחיל (ה-issue ב-`status:explore` או `status:backlog`), ואין issue.
 2. `--no-issues`: רק בדיקות הקובץ, בלי `gh` ובלי רשת.
 3. `--toc`: כותב מחדש את תוכן העניינים של כל קובץ, ולא בודק.
+4. `--changes <base> <head>`: החלקים שחדשים, שהשתנו או שנמחקו בין שני refs, ומתחת לכל אחד ה-issues הפתוחים שמצביעים עליו ומה יקרה להם. שורת המצב ו"שופר ב-" לא נחשבים שינוי (`skills/dev-setup/reference/specs.md`, "אחרי שינוי באפיון"). ה-issues לא נקראו: אזהרה וקוד יציאה 1.

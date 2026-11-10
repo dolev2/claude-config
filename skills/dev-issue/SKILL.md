@@ -1,6 +1,6 @@
 ---
 name: dev-issue
-description: Opens new GitHub issues in the current repo in Dolev's pipeline format — tasks, bugs, backlog ideas, and the sub-issues of a task being split up — with the right body sections, labels, milestone, sub-issue links and native "Blocked by" dependency links. Use in any of Dolev's repos whenever he asks to open, add, file or split a task or bug ("תפתח משימה", "תפרק את זה ל-issues", "תוסיף לבקלוג"), to break an issue into sub-issues, to put an idea in the backlog, or to break a merged spec into one issue per part ("תפרק את האפיון"). Works in any repo that has the pipeline labels; if the repo has its own repo-specific issue skill, use that instead. Pairs with dev-plan, which picks up what this skill creates.
+description: Opens new GitHub issues in the current repo in Dolev's pipeline format — tasks, bugs, backlog ideas, and the sub-issues of a task being split up — with the right body sections, labels, milestone, sub-issue links and native "Blocked by" dependency links. Use in any of Dolev's repos whenever he asks to open, add, file or split a task or bug ("תפתח משימה", "תפרק את זה ל-issues", "תוסיף לבקלוג"), to break an issue into sub-issues, to put an idea in the backlog, or to break a merged spec into one issue per part ("תפרק את האפיון"), and to update the issues of parts a merged spec change changed or deleted. Works in any repo that has the pipeline labels; if the repo has its own repo-specific issue skill, use that instead. Pairs with dev-plan, which picks up what this skill creates.
 ---
 
 # Open issues
@@ -25,7 +25,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 - **In `$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary, milestones),
   `issue-body.md` (editing a body), `dependencies.md` ("Blocked by" links) and `specs.md`
-  (the spec line, and the breakdown of a merged spec into issues).
+  (the spec line, the breakdown of a merged spec into issues, and the update after a spec
+  change).
 - **The repo's `CLAUDE.md`**: its sources of truth, and its rules about business data. Do
   not invent prices, values or business rules. What is missing goes into "שאלות פתוחות" as an
   unticked box, not into the text.
@@ -227,9 +228,31 @@ issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
 5. **The PR of the "פתוח" lines**, as step 4b.
 6. Report as in step 5, with the part id next to each new issue and the link to that PR.
 
+## Mode: update after a spec change (עדכון אחרי שינוי באפיון)
+
+Only after Dolev approved the list in `dev-ship` step 8, and only on that list. The rules:
+`reference/specs.md`, "אחרי שינוי באפיון". Comments from the orchestrator open with the
+`<!-- orchestrator -->` marker, like every `dev-ship` comment there (`reference/orchestrate.md`).
+
+1. **`close`** (the part was deleted): a comment that says the part was deleted from the spec,
+   in which PR, and, when the issue has an open PR, that the PR stays open for Dolev. Then:
+   ```bash
+   gh issue comment <N> --body-file <file>
+   gh api -X PATCH repos/{owner}/{repo}/issues/<N> -f state=closed -f state_reason=not_planned
+   ```
+2. **`explore`** (the part changed, the issue is before the code): a comment that says what
+   changed in the part, in a sentence or two, with the link to the spec PR. Then
+   `--add-label "status:explore"` and `--remove-label` its current status label. An issue
+   already in `status:explore` gets the comment only. `dev-plan` revises its plan from there.
+3. **`ask`** (in the code, in review, or no status label): what Dolev chose in step 8 for that
+   issue: the comment only, or the comment and the move to `status:explore`. Never without his
+   choice.
+4. **Report** a line per issue: what was done to it, with its link.
+
 ## Golden rules
 
-- Never create issues Dolev has not agreed to, and never delete one.
+- Never create issues Dolev has not agreed to, and never delete one. Close one only in the
+  "עדכון אחרי שינוי באפיון" mode, on the list he approved.
 - Never invent business data in an issue; missing data is an unticked open question.
 - Every `תלוי ב:` entry has a matching "Blocked by" link, and the other way round.
 - In a breakdown, a link comes only from a dependency written in the spec; never guess one.
