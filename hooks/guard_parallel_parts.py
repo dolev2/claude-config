@@ -138,13 +138,13 @@ def agent_worktree(agent_git_dir: Path) -> Path | None:
 
 
 def matches_part(relative: str, prefixes: list[str]) -> bool:
-    """True when the POSIX path matches a prefix: a folder ends in `/`, else a file."""
-    for prefix in prefixes:
-        if prefix.endswith("/") and relative.startswith(prefix):
-            return True
-        if relative == prefix:
-            return True
-    return False
+    """True when the POSIX path starts with one of the prefixes.
+
+    A prefix is the start of a path, as in dev-code's final `git diff --name-only`
+    check (claude-config#233): `reference/issue-lifecycle` covers both pages of it,
+    and a folder is written with a trailing `/` so that `hooks/` misses `hooks_old/`.
+    """
+    return any(relative.startswith(prefix) for prefix in prefixes)
 
 
 def judge_path(

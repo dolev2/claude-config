@@ -26,7 +26,7 @@ PARTS = {
     "branch": "claude/issue-82-parallel-prefix-guard",
     "start": "0" * 40,
     "parts": {
-        "hook": ["hooks/", "README.md"],
+        "hook": ["hooks/", "README.md", "skills/dev-setup/reference/issue-lifecycle"],
         "skills": ["skills/dev-code/"],
     },
 }
@@ -128,8 +128,24 @@ def test_edit_outside_prefixes_in_own_worktree_is_blocked(monkeypatch, repo, rel
     assert "`README.md`" in reason
 
 
-@pytest.mark.parametrize("relative", ["README.md.bak", "README.md/x", "docs/README.md"])
-def test_file_prefix_matches_only_that_exact_file(monkeypatch, repo, relative):
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "skills/dev-setup/reference/issue-lifecycle.html",
+        "skills/dev-setup/reference/issue-lifecycle-en.html",
+        "README.md.bak",
+    ],
+)
+def test_prefix_without_slash_covers_every_path_that_starts_with_it(
+    monkeypatch, repo, relative
+):
+    assert run_hook(monkeypatch, edit(worktree(repo) / relative, "Write")) == (0, "")
+
+
+@pytest.mark.parametrize(
+    "relative", ["docs/README.md", "skills/dev-setup/reference/diagram.md"]
+)
+def test_path_that_does_not_start_with_a_prefix_is_blocked(monkeypatch, repo, relative):
     code, _reason = run_hook(monkeypatch, edit(worktree(repo) / relative, "Write"))
     assert code == 2
 
