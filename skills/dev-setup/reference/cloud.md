@@ -96,7 +96,7 @@ REPO=https://github.com/dolev2/claude-config
 | `gh issue comment`, `gh pr comment` | `gh api -X POST R/issues/<N>/comments --input <file>` |
 | `gh issue list --milestone` | `rank_issues.py`. רשימה לפי תווית: `R/issues?state=open&labels=<l>`, בלי מה שיש לו `pull_request` |
 | `gh label list` / `create` / `edit` | `gh api R/labels`, `-X POST R/labels`, `-X PATCH R/labels/<l>` |
-| `gh repo view` | `pipeline_info.py`. `--json visibility`: `gh api R --jq .visibility` (`public` / `private`) |
+| `gh repo view` / `gh repo edit` | `pipeline_info.py`. `--json visibility`: `gh api R --jq .visibility` (`public` / `private`). `gh repo edit --delete-branch-on-merge`: `gh api -X PATCH R -F delete_branch_on_merge=true`, בכל סביבה. בענן לא נבדק (#251). חוזר 403 (כמו הכתיבה ל-rulesets): דולב מסמן ביד "Automatically delete head branches" ב-`https://github.com/<owner>/<repo>/settings` |
 | `gh pr create` / `gh pr edit` | `mcp__github__create_pull_request` / `mcp__github__update_pull_request` |
 | `gh pr view` (`--json state,headRefName,headRefOid,mergeable,mergeStateStatus`) | `gh api R/pulls/<N>`: `.state` ו-`.merged`, `.head.ref`, `.head.sha`, `.mergeable`, `.mergeable_state` (`clean`, `dirty`, `behind`, `blocked`, `unstable`). `MERGEABLE` הוא `.mergeable == true` |
 | `gh pr view --json closingIssuesReferences` | אין שדה כזה ב-REST: ה-issues מה-`Closes #<N>` ב-`.body` של `R/pulls/<N>` |
