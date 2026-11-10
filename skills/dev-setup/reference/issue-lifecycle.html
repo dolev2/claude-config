@@ -156,7 +156,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 <header>
   <span class="eyebrow">claude-config · צינור העבודה</span>
   <h1>חייו של issue</h1>
-  <p>מהטופס ועד ה-squash merge: מי מזיז את ה-issue בכל שלב, איזה סקיל רץ, ומה קורה ב-git.</p>
+  <p>מההצעה ועד ה-squash merge: מי מזיז את ה-issue בכל שלב, איזה סקיל רץ, ומה קורה ב-git.</p>
   <p>התוויות הן מקור האמת. הלוח רק משקף אותן.</p>
   <div class="legend">
     <span><i class="dot human"></i>דולב</span>
@@ -170,13 +170,40 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <h2 id="map-h">מפת המצבים</h2>
   <p>כל קופסה היא תווית <code>status:*</code>. הצבע אומר של מי התור.</p>
   <p>אין תווית בעלים: הסטטוס לבדו אומר של מי התור.</p>
+  <p>השורה העליונה היא האפיון, לפני התכנון: הצעה בבקלוג, אפיון כ-PR, מיזוג, ופירוק למשימות. אין לה תווית חדשה.</p>
   <div class="panel">
-    <svg viewBox="0 0 1180 300" role="img" aria-label="מפת מעברים בין תוויות הסטטוס של issue" style="direction:ltr">
+    <svg viewBox="0 0 1180 420" role="img" aria-label="מפת מעברים בין תוויות הסטטוס של issue" style="direction:ltr">
       <defs>
         <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0 0 L10 5 L0 10 z" class="arrowhead"/>
         </marker>
       </defs>
+
+      <!-- spec row: proposal > spec PR > merge > breakdown, before planning -->
+      <text x="20" y="20" class="zone-t">לפני התכנון: אפיון</text>
+      <rect x="20" y="30" width="180" height="62" rx="8" class="n-human"/>
+      <text x="110" y="56" text-anchor="middle" class="m">backlog</text>
+      <text x="110" y="76" text-anchor="middle" class="s">הצעה. דולב מבקש אפיון</text>
+      <line x1="202" y1="61" x2="256" y2="61" class="edge" marker-end="url(#ah)"/>
+      <rect x="260" y="30" width="200" height="62" rx="8" class="n-claude"/>
+      <text x="360" y="56" text-anchor="middle" class="m">dev-spec</text>
+      <text x="360" y="76" text-anchor="middle" class="s">כותב את קובץ האפיון</text>
+      <line x1="462" y1="61" x2="516" y2="61" class="edge" marker-end="url(#ah)"/>
+      <rect x="520" y="30" width="200" height="62" rx="8" class="n-human"/>
+      <text x="620" y="56" text-anchor="middle" class="m">merge</text>
+      <text x="620" y="76" text-anchor="middle" class="s">המיזוג הוא האישור</text>
+      <line x1="722" y1="61" x2="776" y2="61" class="edge" marker-end="url(#ah)"/>
+      <rect x="780" y="30" width="220" height="62" rx="8" class="n-claude"/>
+      <text x="890" y="56" text-anchor="middle" class="m">dev-issue</text>
+      <text x="890" y="76" text-anchor="middle" class="s">משימה לכל חלק באפיון</text>
+      <line x1="1002" y1="61" x2="1046" y2="61" class="edge" marker-end="url(#ah)"/>
+      <rect x="1050" y="30" width="120" height="62" rx="8" class="n-auto"/>
+      <text x="1110" y="56" text-anchor="middle" class="m">closed</text>
+      <text x="1110" y="76" text-anchor="middle" class="s">ההצעה נסגרת</text>
+      <path d="M890 94 V114 H62 V144" class="edge" marker-end="url(#ah)"/>
+      <text x="476" y="107" text-anchor="middle" class="s">כל משימה נכנסת לתכנון, עם שורת אפיון</text>
+
+      <g transform="translate(0,120)">
 
       <!-- entry pills -->
       <rect x="24" y="28" width="76" height="28" rx="14" class="n-auto"/>
@@ -252,6 +279,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="520" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-code</text>
       <path d="M860 196 V204 H1170 V196" class="bracket"/>
       <text x="1100" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-ship</text>
+      </g>
     </svg>
   </div>
 </section>
@@ -260,6 +288,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <h2 id="git-h">מה קורה ב-git</h2>
   <p>ה-branch נולד ב-remote בזמן התכנון, נכתב ב-worktree נפרד, מתעדכן ב-rebase, ונכנס ל-main ב-squash.</p>
   <p>התיקייה הראשית לא מחליפה branch אף פעם.</p>
+  <p>לאפיון יש branch משלו, <code>claude/spec-&lt;topic&gt;</code>, והוא עובר את אותו מסלול עד ה-squash, בלי שלב התכנון. ה-PR שלו כתוב <code>Refs #N</code>, ולכן המיזוג לא סוגר את ההצעה.</p>
   <ul class="keys">
     <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="main-line"/></svg><span><b>main</b>: הקו הראשי של הריפו</span></li>
     <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="branch-line"/><circle cx="20" cy="7" r="4" class="c-branch"/></svg><span><b>branch</b>: שרשרת commits. כל עיגול הוא commit</span></li>
@@ -426,10 +455,12 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
         <div class="flowline"><span class="label">bug</span><span class="arrow">→</span><span class="label c">status:ready-to-execute</span></div>
         <div class="flowline"><span class="label">area:*</span></div>
+        <p>הצעה לנושא חדש:</p>
+        <div class="flowline"><span class="label h">status:backlog</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-issue</b>, או טופס <code>task.yml</code> / <code>bug.yml</code> מ-<code>dolev2/.github</code>.</p>
-        <ul><li>milestone הוא הספרינט.</li><li>באג ומשימת <code>process</code> נכנסים תמיד לספרינט הנוכחי.</li><li>תלויות נרשמות כקישורי Blocked by.</li></ul>
+        <ul><li>milestone הוא הספרינט.</li><li>באג ומשימת <code>process</code> נכנסים תמיד לספרינט הנוכחי.</li><li>תלויות נרשמות כקישורי Blocked by.</li><li>הצעה מחכה בבקלוג עד שדולב מבקש לה אפיון.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>עוד אין branch.</p>
@@ -439,7 +470,33 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 2</span><h3>בחירה</h3><span class="who claude">Claude</span></div>
+    <div class="stage-head"><span class="idx">שלב 2</span><h3>אפיון ופירוק</h3><span class="who claude">Claude, כשדולב מבקש</span></div>
+    <div class="lanes">
+      <div class="lane-cell"><span class="eyebrow">תוויות</span>
+        <p>אין תווית חדשה. ההצעה נשארת עד הפירוק:</p>
+        <div class="flowline"><span class="label h">status:backlog</span></div>
+        <p>כל חלק פתוח באפיון הופך למשימה:</p>
+        <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
+        <p>ההצעה נסגרת כ-completed, עם הפניה לקובץ האפיון.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">סקיל</span>
+        <p><b class="mono">dev-spec</b>: רק כשדולב כותב "תכתוב אפיון ל-#N". הבקשה היא האישור של ההצעה.</p>
+        <ul><li>כותב את <code>docs/specs/&lt;topic&gt;.md</code>: מה כל חלק עושה, ומה המשתמש רואה.</li><li>מריץ <code>spec_check.py --no-issues</code>, ופותח PR.</li><li>דולב סוקר ומבקש מיזוג (<code>dev-ship</code>). המיזוג הוא האישור של ה"מה".</li></ul>
+        <p><b class="mono">dev-issue</b>: מיד אחרי המיזוג, <code>dev-ship</code> מציע את הפירוק.</p>
+        <ul><li>issue לכל חלק פתוח. בסעיף "הקשר / קישורים" שלו שורת "אפיון:", עם הקובץ והמזהה: <code>docs/specs/&lt;topic&gt;.md S-&lt;n&gt;.&lt;m&gt;</code>.</li><li>קישורי Blocked by לפי הסדר באפיון.</li></ul>
+        <p>ריפו שהותקן לפני הסדר הזה עובר אליו בריצה הבאה של <code>dev-setup</code>, בצעד העברה חדש.</p>
+      </div>
+      <div class="lane-cell"><span class="eyebrow">git</span>
+        <p>branch משלו: <code>claude/spec-&lt;topic&gt;</code>, מ-<code>origin/main</code>.</p>
+        <p>ה-PR כתוב <code>Refs #N</code>, לא <code>Closes</code>: המיזוג לא סוגר את ההצעה.</p>
+        <p>squash merge, כמו כל PR.</p>
+      </div>
+    </div>
+    <div class="gate-row"><strong>שער:</strong> פער בין משימה לאפיון רק מזהיר: ב-PR, בטבלת הסטטוס ובסיכום של המתזמר. רק שגיאה בקובץ האפיון עצמו מכשילה את ה-CI.</div>
+  </article>
+
+  <article class="stage">
+    <div class="stage-head"><span class="idx">שלב 3</span><h3>בחירה</h3><span class="who claude">Claude</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <p>לא משתנות.</p>
@@ -457,7 +514,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 3</span><h3>תכנון</h3><span class="who claude">Claude</span></div>
+    <div class="stage-head"><span class="idx">שלב 4</span><h3>תכנון</h3><span class="who claude">Claude</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
@@ -470,7 +527,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-plan</b>: עד 3 issues בריצה.</p>
-        <ul><li>כותב Plan בגוף ה-issue: "בקצרה" להחלטה, "חוויית משתמש" לאישור, "פירוט טכני" לביצוע.</li><li>שאלות נרשמות כתיבות סימון.</li><li>מוסיף יומן שינויים, ולא מוחק אותו.</li><li>משימה קטנה מקבלת תוכנית מקוצרת, ובסיכום שורה "עברו ישר לביצוע".</li><li>החלטה שמשימות אחרות ימשיכו לפיה (כלי, ארכיטקטורה, כלל עבודה): טיוטה בתת-כותרת "החלטה רוחבית", שדולב מאשר עם התוכנית.</li></ul>
+        <ul><li>קורא קודם את החלק באפיון, לפי שורת "אפיון:" של ה-issue.</li><li>כותב Plan מקוצר בגוף ה-issue: "בקצרה" בשתי שורות (החלק באפיון, וההחלטות שמחכות לדולב), ואחריהן "פירוט טכני". בלי "חוויית משתמש": היא כתובה בחלק באפיון.</li><li>issue שנפתח מהטופס בלי שורת אפיון, ואינו באג: התוכנית המלאה, ועוד טיוטה "חלק חדש לאפיון", שדולב מאשר עם התוכנית.</li><li>שאלות נרשמות כתיבות סימון.</li><li>מוסיף יומן שינויים, ולא מוחק אותו.</li><li>משימה קטנה מקבלת תוכנית מקוצרת, ובסיכום שורה "עברו ישר לביצוע".</li><li>החלטה שמשימות אחרות ימשיכו לפיה (כלי, ארכיטקטורה, כלל עבודה): טיוטה בתת-כותרת "החלטה רוחבית", שדולב מאשר עם התוכנית.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>יוצר את ה-branch ב-remote, בלי checkout.</p>
@@ -480,7 +537,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 4</span><h3>שאלות ואישור</h3><span class="who human">דולב</span></div>
+    <div class="stage-head"><span class="idx">שלב 5</span><h3>שאלות ואישור</h3><span class="who human">דולב</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <p>עונה על שאלה:</p>
@@ -505,7 +562,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 5</span><h3>קוד</h3><span class="who claude">Claude</span></div>
+    <div class="stage-head"><span class="idx">שלב 6</span><h3>קוד</h3><span class="who claude">Claude</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
@@ -513,7 +570,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-code</b>: issue אחד בדיוק בריצה.</p>
-        <ul><li>מממש את התוכנית ומוסיף טסט לכל שינוי.</li><li>יש בתוכנית "החלטה רוחבית": כותב ממנה דף ב-<code>docs/decisions/</code> באותו PR, והכלל שנשען עליה מפנה אליו.</li><li>באג בלי Plan: כותב קודם תוכנית מקוצרת. באג שמשנה חוזה או מוחק חוזר לתכנון.</li><li>חלוקה לסוכנים רק כשב-Plan יש "עבודה במקביל".</li><li>עובר על הפיצ'ר בדפדפן מול סעיף חוויית המשתמש, במחשב ובטלפון. בסשן ענן: ב-Playwright.</li><li>מוסר PR עם קישור לאפליקציית הסקירה. בסשן ענן: האפליקציה רצה בסשן.</li><li>במסירה: קישור לשינויים ב-PR בראש ההודעה, צילומי מסך בצ'אט (מחשב, ובסשן ענן גם טלפון), והתראה לטלפון כשהמסירה מוכנה. אין צילום: שורה שאומרת למה.</li></ul>
+        <ul><li>מממש את התוכנית ומוסיף טסט לכל שינוי.</li><li>באותו PR: שורת מצב <code>Done (#N)</code> מתחת לכותרת של החלק באפיון, ו-<code>spec_check.py --no-issues</code>.</li><li>משימה קטנה, ו-issue עם "חלק חדש לאפיון": מוסיפים את החלק לקובץ, כבר כ-Done. באג מצביע על החלק שהוא שובר, ולא מסמן כלום.</li><li>יש בתוכנית "החלטה רוחבית": כותב ממנה דף ב-<code>docs/decisions/</code> באותו PR, והכלל שנשען עליה מפנה אליו.</li><li>באג בלי Plan: כותב קודם תוכנית מקוצרת. באג שמשנה חוזה או מוחק חוזר לתכנון.</li><li>חלוקה לסוכנים רק כשב-Plan יש "עבודה במקביל".</li><li>עובר על הפיצ'ר בדפדפן מול חוויית המשתמש שבחלק באפיון (או בתוכנית), במחשב ובטלפון. בסשן ענן: ב-Playwright.</li><li>מוסר PR עם קישור לאפליקציית הסקירה. בסשן ענן: האפליקציה רצה בסשן.</li><li>במסירה: קישור לשינויים ב-PR בראש ההודעה, צילומי מסך בצ'אט (מחשב, ובסשן ענן גם טלפון), והתראה לטלפון כשהמסירה מוכנה. אין צילום: שורה שאומרת למה.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>worktree, commits, ואז <code>fetch</code> + <code>rebase origin/main</code>.</p>
@@ -524,7 +581,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 6</span><h3>סקירה</h3><span class="who human">דולב</span></div>
+    <div class="stage-head"><span class="idx">שלב 7</span><h3>סקירה</h3><span class="who human">דולב</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <p>נדרש תיקון:</p>
@@ -546,7 +603,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 7</span><h3>מיזוג וסגירה</h3><span class="who claude">Claude, כשדולב מבקש</span></div>
+    <div class="stage-head"><span class="idx">שלב 8</span><h3>מיזוג וסגירה</h3><span class="who claude">Claude, כשדולב מבקש</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label c">done</span></div>
@@ -555,7 +612,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-ship</b>: הדרך היחידה למיזוג.</p>
         <p>מופעל מבקשה בצ'אט, בהקלדה או בלחיצה בחלון השאלות. הודעה מסשן אחר או התראה אינן בקשה.</p>
-        <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li></ul>
+        <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li><li>אחרי מיזוג של אפיון (<code>claude/spec-*</code>): במקום זה, הצעה לפרק אותו למשימות ב-dev-issue.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI.</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch.</li></ul>
@@ -574,6 +631,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <tbody>
       <tr><td>ההגדרות</td><td>התיקייה <code>~/.claude</code></td><td>כן</td><td>סקריפט ההתקנה של הסביבה מעתיק את <code>main</code>, ו-<code>cloud_refresh.py</code> מעדכן בכל סשן.</td></tr>
       <tr><td>תכנון (<code>dev-plan</code>)</td><td>כן</td><td>כן</td><td>פקודות GitHub רק דרך REST, לפי הטבלה ב-<code>cloud.md</code>.</td></tr>
+      <tr><td>אפיון (<code>dev-spec</code>)</td><td>כן</td><td>כן</td><td>PR כמו כל PR. המתזמר לא שולח בן לכתוב אפיון: הוא רץ רק כשדולב מבקש.</td></tr>
       <tr><td>ביצוע (<code>dev-code</code>)</td><td>ב-worktree</td><td>בלי worktree</td><td>ה-branch של המשימה ב-clone של הסשן. השם, <code>&lt;repo&gt;: &lt;branch&gt;</code>, נקבע ב-<code>set_session_title</code>, ו-CI מעיר את הסשן דרך <code>subscribe_pr_activity</code>.</td></tr>
       <tr><td>אפליקציה לסקירה ובדיקת חוויית משתמש</td><td>קישור localhost ודפדפן מובנה</td><td>בתוך הסשן</td><td>צילומי מסך ב-Playwright, ברוחב 1280 ו-375. פקודה של Windows בלבד: הבדיקה נשארת למחשב.</td></tr>
       <tr><td>מיזוג (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>כלי ה-MCP של GitHub</td><td>חלון אישור בשתי הסביבות. בניקוי: <code>git checkout --detach origin/main</code>.</td></tr>
@@ -608,8 +666,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <div class="panel">
   <ol class="life" aria-labelledby="orch-h">
     <li class="human"><strong>פתיחה</strong><p>דולב מבקש. המתזמר מראה מה ייפתח עכשיו, מה מחכה לחוסם, ומה מחכה לו.</p></li>
-    <li class="claude"><strong>בדיקה</strong><p><code>sprint_state.py</code> אומר מה מוכן לבן, מה מחכה לחפיפת קבצים, ומה מוכן למיזוג.</p><p>סקיל, סקריפט או hook השתנו ב-<code>main</code>: מרעננים את <code>~/.claude</code> וקוראים אותם מחדש.</p><p>הנחיות, כללים או הגדרות השתנו, או שהרענון נכשל: ממליצים לדולב על סשן מתזמר חדש, והמתזמר הזה עוצר.</p></li>
-    <li class="claude"><strong>בן לכל משימה פנויה</strong><p>עד 3 במקביל, עם התגיות <code>issue:N</code>. בן לתכנון ובן נפרד לקוד.</p></li>
+    <li class="claude"><strong>בדיקה</strong><p><code>sprint_state.py</code> אומר מה מוכן לבן, מה מחכה לחפיפת קבצים, ומה מוכן למיזוג.</p><p>עם <code>--spec</code> הוא מחזיר גם את הפערים בין המשימות לאפיון (<code>spec_gaps</code>). כל פער הוא שורת אזהרה בסיכום, ולא עוצר כלום.</p><p>סקיל, סקריפט או hook השתנו ב-<code>main</code>: מרעננים את <code>~/.claude</code> וקוראים אותם מחדש.</p><p>הנחיות, כללים או הגדרות השתנו, או שהרענון נכשל: ממליצים לדולב על סשן מתזמר חדש, והמתזמר הזה עוצר.</p></li>
+    <li class="claude"><strong>בן לכל משימה פנויה</strong><p>עד 3 במקביל, עם התגיות <code>issue:N</code>. בן לתכנון ובן נפרד לקוד.</p><p>אף בן לא כותב אפיון: זה קורה רק כשדולב מבקש.</p></li>
     <li class="gate"><strong>החוזה של הבן</strong><p>לא שואל את דולב, לא נוגע בקישורים, לא ממזג, ולא קורא לכלי הסשנים: לא שולח הודעות ולא משנה את שם הסשן (השירות מקפיץ חלון על כל קריאה). הדיווח שלו הוא מה שב-GitHub: תוכנית, תווית, תגובה ו-PR.</p></li>
     <li class="claude"><strong>אחרי שינוי</strong><p>בדיקה ברקע (<code>watch_children.py</code>) מעירה את המתזמר כשתווית של בן זזה או שנוספה תגובה. התגובות של המתזמר עצמו נושאות סמן מוסתר, ולא מעירות אותו. המתזמר בודק ב-GitHub: את התוכנית, את ה-PR וה-CI, ושאין branch או תווית מיותרים.</p><p>בן שאומת שסיים את התור עובר לארכיון באותה בדיקה: תשובה, החזרה או תיקון פותחים בן חדש.</p></li>
     <li class="human"><strong>חלון שאלות אחד</strong><p>תשובות לתוכניות, אישורים, ומיזוג אחד בכל פעם. רק דולב מחליט.</p><p>שאלת המיזוג אומרת אילו בנים פעילים נוגעים באותם קבצים כמו ה-PR, לפי הקבצים שהם כבר שינו ולא רק לפי התוכנית.</p></li>
