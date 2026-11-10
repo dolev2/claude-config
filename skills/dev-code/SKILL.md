@@ -38,6 +38,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    **Three or more: do not start without asking.** List them for Dolev and ask whether to go
    ahead anyway. Continue only on an explicit yes.
 
+   **A child session of the orchestrator skips this step** (its contract is in the system
+   prompt): the orchestrator checked the gate before it opened the child, and asked Dolev when
+   it had to (`reference/orchestrate.md`, "פתיחת בן").
+
 2. Find the work. If Dolev named a specific issue, take that one, even outside the current
    sprint (say so; never assign it a milestone). Otherwise, **inside the current sprint
    only**, repair first, then bugs, then by weight:

@@ -104,6 +104,15 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
    on which issue. Any earlier child of the same issue that is not archived gets
    `archive_session` first: one child per issue.
+   **The WIP gate is checked here, not in the child** (`orchestrate.md`, "פתיחת בן"): before
+   a coding child for a new issue (`ready-to-execute`; planning and `needs-repair` are
+   exempt), count the repo's open issues in `status:in-review`, the whole repo as in
+   `dev-code`, not only the sprint:
+   `gh api "repos/<repo>/issues?state=open&labels=status:in-review&per_page=100" --paginate`,
+   leaving out what has `pull_request` (`cloud.md`). Three or more: that child does not
+   open, and the question goes into step 5's window. It opens only on Dolev's explicit yes
+   for that issue; with no answer, the next check asks again. The contract tells the child
+   to skip the gate (its item 9).
    `create_session` and `archive_session` always raise a permission prompt (`cloud.md`, "חלונות
    אישור בסשן-בן"): open the children of one check, and archive the ones step 3 verified as done,
    in one message, and say before it how many prompts are coming and that they are permission
@@ -118,8 +127,10 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
       warns. Only one merge question per window;
-   4. a child blocked on a permission prompt or failed: which session, which tool, and a link;
-   5. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### לקח מוצע`), or
+   4. a coding child held by the WIP gate (step 4): the issues in `status:in-review`, and
+      whether to open the child for #N anyway, with "wait" first;
+   5. a child blocked on a permission prompt or failed: which session, which tool, and a link;
+   6. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### לקח מוצע`), or
       from a `dev-ship` this session ran. Its four fields, with "open a task" first, right after
       its issue's merge question when there is one, otherwise last. **One lesson per window**,
       so with one merge they take at most 2 of the 4. Every lesson not yet asked, from a child
@@ -136,8 +147,10 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    line that this is a good moment for `/compact`, with the full command in a code block as the
    global `CLAUDE.md` says ("מה פתוח": `/compact` and the summary that must survive;
    `hooks/compact_after_merge.py` blocks the turn's end once without it). A fix:
-   `needs-repair`, a comment, and a coding child. Each of these new children opens through
-   step 4, so the old child is archived.
+   `needs-repair`, a comment, and a coding child. Open past the WIP gate: that coding child
+   opens right after his answer, in this check, as step 4 says but without counting the gate
+   again (a check keeps no memory, so the yes is not carried to the next one). Each of these
+   new children opens through step 4, so the old child is archived.
 6. **Close the check.** One summary line, always, ending with
    `since <now> expect <N>=<status>,... pipeline_sha <sha> session_sha <sha>`: the next check compares against it,
    and step 3 reads `since` and `expect` from it. The `spec_gaps` lines of step 2 come right
