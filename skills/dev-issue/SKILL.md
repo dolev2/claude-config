@@ -116,6 +116,7 @@ question in the body, not a "Blocked by" link to some other issue.
 | process (work management, rules, aligning with claude-config) | `process` added to the task's labels | always `current_sprint` |
 | manual task (only Dolev can do it: Claude has no access) | `task`, `area:*`, `status:plan-questions`, with what he must check or answer as unticked boxes in the open-questions section (`reference/pipeline.md`, the `status:plan-questions` row) | the sprint it belongs to |
 | backlog idea | `task`, `area:*`, `status:backlog` | none |
+| lesson (`reference/lessons.md`): the body's "מה רוצים" holds the lesson's four fields, "הקשר / קישורים" its source, and no `אפיון:` line | `task`, `process`, `area:*`, `status:explore`, in the repo where the lesson lives (`~/.claude`: dolev2/claude-config) | that repo's current sprint when Dolev chose "open a task" in the question window (that choice is the agreement of step 1); with nobody in the chat, `status:backlog` and none |
 | umbrella (parent split into sub-issues) | keeps `task`, `area:*`; becomes `status:backlog` | unchanged |
 | decision (only if the repo has a `decision` label) | `decision`, no `status:*` (Dolev's turn by its kind) | the sprint that waits on it |
 

@@ -17,8 +17,8 @@ session, and stop.
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md`, `orchestrate.md` (the child
 contract, the tags, what wakes a check and what to check after a change; below, `orchestrate.md` always means
 `reference/orchestrate.md`), `chat-decisions.md`, `cloud.md` (the `gh`
-table and "חלונות אישור בסשן-בן"), `dependencies.md`, `git-flow.md`, and `specs.md` (the spec
-gaps, and why spec writing is never a child's). Then the repo's
+table and "חלונות אישור בסשן-בן"), `dependencies.md`, `git-flow.md`, `specs.md` (the spec
+gaps, and why spec writing is never a child's), and `lessons.md` (step 5). Then the repo's
 `CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 2).
 
 ## Start
@@ -118,7 +118,14 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
       warns. Only one merge question per window;
-   4. a child blocked on a permission prompt or failed: which session, which tool, and a link.
+   4. a child blocked on a permission prompt or failed: which session, which tool, and a link;
+   5. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### לקח מוצע`), or
+      from a `dev-ship` this session ran. Its four fields, with "open a task" first, right after
+      its issue's merge question when there is one, otherwise last. **One lesson per window**,
+      so with one merge they take at most 2 of the 4. Every lesson not yet asked, from a child
+      or from `dev-ship`, waits for the next check and goes into the `/compact` summary. The
+      choice is written in a comment on the issue, so it is not asked again, and a task opens
+      through `dev-issue` (`reference/lessons.md`, the repo it opens in).
    The label moves first, the question after (`chat-decisions.md`, rule 2). Every comment the
    orchestrator writes in an issue, here or anywhere else, opens with the hidden marker
    `<!-- orchestrator -->` on its own line, so it does not wake the watch (`orchestrate.md`,
