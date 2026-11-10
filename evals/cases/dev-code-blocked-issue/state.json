@@ -1,0 +1,35 @@
+{
+  "repo": "acme/demo",
+  "default_branch": "main",
+  "milestones": [
+    {
+      "title": "Sprint 1"
+    }
+  ],
+  "issues": {
+    "11": {
+      "title": "פונקציית ברכה בסיסית",
+      "labels": [
+        "task",
+        "area:core",
+        "status:in-review"
+      ],
+      "milestone": "Sprint 1",
+      "body": "### מה רוצים\n\nפונקציית ברכה.\n"
+    },
+    "12": {
+      "title": "ברכה לשם ריק",
+      "labels": [
+        "task",
+        "area:core",
+        "status:ready-to-execute"
+      ],
+      "milestone": "Sprint 1",
+      "body": "### מה רוצים\n\nכשהשם ריק, `greet` מחזירה \"Hello, stranger\" במקום \"Hello, \".\n\n### הקשר / קישורים\n\n1. נמצא בשימוש בדף הבית.\n\nתלוי ב: #11.\nאפיון: docs/specs/demo.md S-1.1\n\n---\n### Plan\n\n**Branch:** `claude/issue-12-empty-name`\n\n#### בקצרה\n- **אפיון:** `docs/specs/demo.md` S-1.1 · ברכה לפי שם\n- **מה ישתנה:** שם ריק מקבל \"Hello, stranger\".\n- **החלטות שמחכות לדולב:** אין.\n\n#### פירוט טכני\n\n##### קבצים שצפויים להשתנות\n- `greet.py`: ברירת מחדל לשם ריק.\n- `test_greet.py`: בדיקה לשם ריק.\n- `docs/specs/demo.md`: שורת Done ל-S-1.1.\n\n##### בדיקות\n- `greet`, לוגיקה: יחידה. שם ריק, ושם רגיל שלא השתנה.\n\n#### חוויית משתמש\nאין ממשק.\n\n#### יומן שינויים בתוכנית\n- 2026-11-10: נכתבה ואושרה.\n\n### שאלות פתוחות\n\n- [x] מה מחזירים לשם ריק? — הוחלט: \"Hello, stranger\".\n",
+      "blocked_by": [
+        11
+      ]
+    }
+  },
+  "pulls": {}
+}

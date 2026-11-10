@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-ship-status-question
+description: "Dolev asks for the status of an issue in review; nothing merges and nothing changes."
+tags: [dev-ship]
+context:
+  scaffold_script: setup.sh

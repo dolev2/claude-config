@@ -5,6 +5,13 @@
 - **חבילות מותנות.** אם CLAUDE.md מגדיר חבילה שרצה רק כשנוגעים באזור מסוים (למשל `-m live`
   ב-WayOut כשנוגעים ב-`backend/data_sources/`), בודקים את ה-diff מול `origin/<default>`
   (`git diff --name-only origin/<default>...HEAD`) ומריצים אותה כשהשינוי נוגע באזור.
+- **תרחישי הסקילים (claude-config בלבד):** `python evals/run.py --model <המודל של הסשן>`, כשה-diff נוגע בסקיל מכוסה, ב-`skills/dev-setup/reference/` או ב-`evals/`.
+  היא בוחרת את התרחישים לפי ה-diff בעצמה, רצה פעם אחת אחרי ההרצה המלאה, ומדווחת שורה לכל סקיל עם העלות (`dev-code` שלב 7).
+  בענן וב-Linux בלבד: Bash בתרחיש רץ רק ב-sandbox, שצריך `bubblewrap` ו-`socat`. ב-Windows לא רצה, ואומרים את זה במסירה.
+  חסרים: מתקינים, עם `apt-get update` קודם (בלעדיו apt לא מוצא אותן), ומריצים שוב:
+  `(apt-get update -qq && apt-get install -y -qq bubblewrap socat) >/dev/null 2>&1`.
+  ההצעה להוסיף את השורה לסקריפט ההתקנה של סביבת הענן (`cloud.md`) מחכה לאישור של דולב.
+  למה כך: `~/.claude/docs/decisions/183-skill-evals.md`.
 - **repo בלי חבילה אוטומטית**, ש-CLAUDE.md שלו מגדיר בדיקה ידנית (למשל preview בדפדפן לאתר
   סטטי): הבדיקה הידנית היא הבדיקה. מריצים אותה ומתעדים מה נבדק, ולא מוסיפים חבילה.
   איך בודקים בדפדפן ומצלמים, בכל סביבה: `ux.md`.

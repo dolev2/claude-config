@@ -1,0 +1,4 @@
+# stub for the evals: the board sync does not run here
+name: sync
+on: workflow_dispatch
+jobs: {}

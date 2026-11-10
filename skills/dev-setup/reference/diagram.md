@@ -66,7 +66,7 @@ flowchart TD
       BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי<br/>טיוטת החלטה רוחבית<br/>הופכת לדף החלטה באותו PR<br/>מסמן את החלק באפיון כגמור<br/>חלק עם כמה משימות<br/>מוחק רק את המספר שלו<br/>spec_check.py --no-issues<br/>באג לא מסמן"]:::routine
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
-      RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>opens a PR that closes the issue"]:::routine
+      RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>שינוי בסקיל: גם תרחישי הסקיל<br/>opens a PR that closes the issue"]:::routine
       CODE --> WCI["CI checks run<br/>ובאותו זמן<br/>סוכן לקריאה בלבד סוקר את השינויים<br/>אפליקציית הסקירה עולה<br/>אחרי שהיא עולה<br/>בדיקת חוויית משתמש בדפדפן<br/>בשני רוחבים"]:::routine
       WCI --> HAND["מסירה: קישור לשינויים<br/>צילומי מסך בצ'אט<br/>טלפון רק בענן"]:::routine
     end

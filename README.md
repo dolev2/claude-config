@@ -25,6 +25,8 @@
 | `.github/workflows/tests.yml` | CI: lint והבדיקות על כל PR ועל כל push ל-`main` | אותן פקודות כמו בסעיף "בדיקות" ב-`.claude/CLAUDE.md` |
 | `.github/workflows/open-questions-gate.yml`, `sync-project.yml` | הצינור של הריפו הזה עצמו | המשימות של הריפו מנוהלות באותו צינור כמו כל פרויקט |
 | `.github/file_guide_check.py` | בודק שמדריך הקבצים הזה מונה כל קובץ, ורק קבצים שקיימים: עותק של `skills/dev-setup/templates/file_guide_check.py`, עם החריגים של הריפו מתחת לשורת `--- local ---` | רץ ב-CI. הריפו שמגדיר את הבדיקה לכל הריפואים עומד בה בעצמו (#89) |
+| `.github/holdout_check.py` | נכשל כש-PR משנה גם סקיל (`skills/*/SKILL.md`, `skills/dev-setup/reference/`) וגם את `evals/holdout/` (#183) | הסט השמור בצד נשאר מדד אמיתי: לא מכווננים אותו יחד עם הסקיל |
+| `evals/` | תרחישי הסקילים (#183). `run.py` בוחר את התרחישים לפי ה-diff, בונה plugin זמני מ-`skills/`, ומריץ `claude plugin eval` במודל של הסשן. `summary.py` מדפיס שורה לכל סקיל וסיבה לכל כישלון. `fake_gh.py` הוא `gh` מדומה (`bin/gh`), עם המצב ב-`fake_gh_state.py`, ה-REST ב-`fake_gh_rest.py` וה-GraphQL ב-`fake_gh_graphql.py`. `scaffold.sh` מכין לכל תרחיש ריפו דוגמה מ-`fixture/` עם remote מקומי. `cases/` הם התרחישים לכל סקיל, ו-`holdout/` הסט השמור בצד. `test_*.py` ו-`conftest.py` בודקים את העטיפה ואת ה-gh המדומה בלי מודל. `results/` לא נכנס ל-git | שינוי בטקסט של סקיל שמקלקל כלל נתפס לפני המיזוג. למה כך: `docs/decisions/183-skill-evals.md` |
 | `docs/decisions/*.md` | דף לכל החלטה שחוצה משימות: מצב, רקע, החלטה, חלופות שנדחו ומחיר. דף לא משנים: החלטה חדשה מחליפה אותו (#187) | הכלל ב-`rules/` אומר מה, והדף אומר למה ומה נדחה. סשן חדש מגיע אליו מההפניה בכלל, ולא מציע שוב את מה שנדחה |
 | `docs/specs/*.md` | האפיון של הריפו, `claude-config.md`: פרק לכל נושא, וחלק לכל מזהה `S-<n>.<m>`, עם שורת מצב. `README.md` שם הוא הפורמט: המזהים, שורות המצב, ושורת `אפיון:` ב-issue | האפיון הוא מקור האמת ל"מה" (#221, #226). הבדיקה `spec_check.py` מדלגת על `README.md`: הוא הסבר, לא אפיון |
 | `docs/retros/151-global-config.md` | רטרו חד-פעמי של הספרינט "Global config" עם המתזמר: איפה חיכו, עבודה כפולה, והצעות מדורגות לייעול (#151) | הבסיס להחלטה של דולב אילו הצעות נפתחות כ-issues. דוח ולא נוהל: שום סקיל לא קורא אותו |
@@ -146,6 +148,7 @@ git checkout -- .
 ruff check .
 ruff format --check .
 python .github/file_guide_check.py
-python -m pytest skills/dev-setup/scripts hooks
+python -m pytest skills/dev-setup/scripts hooks evals
+python .github/holdout_check.py
 ```
 בסביבה נקייה: קודם `pip install pytest ruff==0.17.2`.

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-ship-merge-on-request
+description: "Dolev asks to merge a green PR; it merges once and the issue moves to status:done."
+tags: [dev-ship]
+context:
+  scaffold_script: setup.sh
