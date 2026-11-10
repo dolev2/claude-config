@@ -55,7 +55,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from audit_sprint import SprintIssue, audit, is_local, is_shared_doc, sprint_issue
+from audit_sprint import SprintIssue, audit, is_shared_doc, sprint_issue
 from gh_rest import api, current_repo, open_issue_nodes
 from issue_body import plan_branch, sections
 from pipeline_shas import CACHE, pipeline_shas
@@ -79,24 +79,6 @@ def claimed_list(text: str) -> list[int]:
     except ValueError as err:
         message = f"not a list of issue numbers: {text}"
         raise argparse.ArgumentTypeError(message) from err
-
-
-def open_subs(node: dict) -> list[str]:
-    """The issue's open sub-issues: #N, or owner/name#N for another repo."""
-    subs = (node.get("subIssues") or {}).get("nodes") or []
-    return [
-        f"#{s['number']}" if is_local(s) else f"{s['repository']}#{s['number']}"
-        for s in subs
-        if s.get("state") == "OPEN"
-    ]
-
-
-def is_umbrella(node: dict) -> bool:
-    """An issue with an open sub-issue is not worked on itself (dependencies.md).
-
-    Once every sub-issue is closed, the issue is ordinary work again (#211).
-    """
-    return bool(open_subs(node))
 
 
 def shared_files(a: set[str], b: set[str]) -> list[str]:
@@ -201,7 +183,7 @@ def state(
         for i in claude_turn
         if not i.blocked and not i.costs_money and i.number not in claimed
     ]
-    umbrellas = [i for i in eligible if is_umbrella(by_number[i.number])]
+    umbrellas = [i for i in eligible if i.umbrella]
     candidates = [i for i in eligible if i not in umbrellas]
     # Bug-first is a rule for what Claude picks (#202); Dolev's lists keep the tier
     # first, so his questions come in the same order as before.
@@ -241,8 +223,7 @@ def state(
         ],
         "merge_queue": merge_queue,
         "umbrellas": [
-            {"number": i.number, "open_subs": open_subs(by_number[i.number])}
-            for i in umbrellas
+            {"number": i.number, "open_subs": i.open_subs} for i in umbrellas
         ],
         "on_hold": [i.number for i in claude_turn if i.costs_money],
         "findings": [f.as_dict() for f in audit(list(audited.values()))],

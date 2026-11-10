@@ -146,11 +146,16 @@ def to_node(repo: str, issue: dict, with_body: bool) -> dict:
         "blocking": links(
             repo, issue, deps.get("total_blocking"), "dependencies/blocking"
         ),
+        # Always read: an umbrella with an open sub-issue is not picked (#250).
+        "subIssues": links(
+            repo,
+            issue,
+            (issue.get("sub_issues_summary") or {}).get("total"),
+            "sub_issues",
+        ),
     }
     if with_body:
-        subs = (issue.get("sub_issues_summary") or {}).get("total")
         node["body"] = issue.get("body") or ""
-        node["subIssues"] = links(repo, issue, subs, "sub_issues")
         node["parent"] = parent_ref(repo, issue)
     return node
 
@@ -191,7 +196,7 @@ def parent_ref(repo: str, issue: dict) -> dict | None:
 def open_issue_nodes(repo: str, with_body: bool = False) -> list[dict]:
     """Every open issue of `repo` (pull requests left out), as GraphQL-shaped nodes.
 
-    With `with_body`, each node also carries `body`, `subIssues`, `parent`,
+    With `with_body`, each node also carries `body`, `parent`,
     `closedByPullRequestsReferences` (the fields audit_sprint.py reads) and
     `closingPullRequests` (the open PRs themselves, for sprint_state.py).
     """

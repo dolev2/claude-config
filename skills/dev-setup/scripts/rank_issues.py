@@ -19,7 +19,9 @@ an issue's weight is the number of open issues in the sprint that wait on it thr
 then the order of --status (the tier), then `process` issues before the rest, then
 weight, highest first, then issue number (claude-config #202). Blocked issues stay in
 the list, marked `BLOCKED by`: they still carry weight, and each skill skips them
-itself, in planning and in Execute alike (claude-config #253).
+itself, in planning and in Execute alike (claude-config #253). An umbrella, an issue
+with an open sub-issue, stays too, marked `UMBRELLA, open sub-issues`: it is not worked
+on itself until they close, and dev-code skips it (claude-config #250).
 
 Issues labelled `costs-money` are on hold until Dolev approves the expense: they leave
 the ranking and are listed apart, unless --include-costs-money is given. They still add
@@ -58,10 +60,19 @@ class Issue:
     blocking: list[int]
     waiting: list[int] = field(default_factory=list)
     outside_blockers: list[str] = field(default_factory=list)
+    open_subs: list[str] = field(default_factory=list)
 
     @property
     def blocked(self) -> bool:
         return bool(self.open_blockers or self.outside_blockers)
+
+    @property
+    def umbrella(self) -> bool:
+        """An issue with an open sub-issue is not worked on itself (dependencies.md).
+
+        Once every sub-issue is closed, the issue is ordinary work again (#211).
+        """
+        return bool(self.open_subs)
 
 
 def label_value(labels: Iterable[str], prefix: str) -> str | None:
@@ -87,6 +98,16 @@ def outside_ref(ref: dict) -> str:
     return f"{ref['repository']}#{ref['number']}"
 
 
+def open_subs(node: dict) -> list[str]:
+    """The issue's open sub-issues: #N, or owner/name#N for another repo."""
+    subs = (node.get("subIssues") or {}).get("nodes") or []
+    return [
+        f"#{s['number']}" if is_local(s) else outside_ref(s)
+        for s in subs
+        if s.get("state") == "OPEN"
+    ]
+
+
 def parse_issue(node: dict) -> Issue:
     """A GraphQL-shaped node as an Issue.
 
@@ -110,6 +131,7 @@ def parse_issue(node: dict) -> Issue:
             for b in node["blockedBy"]["nodes"]
             if b["state"] == "OPEN" and not is_local(b)
         ),
+        open_subs=open_subs(node),
     )
 
 
@@ -219,6 +241,7 @@ def main(argv: list[str] | None = None) -> None:
                 "waiting": i.waiting,
                 "open_blockers": i.open_blockers,
                 "outside_blockers": i.outside_blockers,
+                "open_subs": i.open_subs,
             }
             for i in ranked
         ]
@@ -243,10 +266,15 @@ def print_ranking(
     for i in ranked:
         blockers = [f"#{n}" for n in i.open_blockers] + i.outside_blockers
         blocked = f"  BLOCKED by {', '.join(blockers)}" if i.blocked else ""
+        umbrella = (
+            f"  UMBRELLA, open sub-issues {', '.join(i.open_subs)}"
+            if i.umbrella
+            else ""
+        )
         print(
             f"#{i.number:<4} {len(i.waiting):>2} waiting  "
             f"{i.status or '-':<24} {i.kind or '-':<7} "
-            f"{i.title}{blocked}"
+            f"{i.title}{blocked}{umbrella}"
         )
     if on_hold:
         held = ", ".join(f"#{i.number} {i.title}" for i in on_hold)

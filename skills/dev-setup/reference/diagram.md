@@ -58,8 +58,8 @@ flowchart TD
       EXEC --> WIP{"שלושה או יותר ממתינים<br/>status:in-review"}:::gate
       WIP -- "כן" --> STOP(["שואל את דולב אם להמשיך<br/>תיקונים פטורים מהשער"]):::gate
       WIP -- "לא" --> SPRINT["סריקה רק בספרינט הנוכחי<br/>issue שנקבת בשמו גם מחוצה לו<br/>תיקון, אחריו באג, לפני משימה חדשה<br/>ואז לפי כמה משימות מחכות לה"]:::routine
-      SPRINT --> BLK{"חסום ע״י issue פתוח<br/>Blocked by"}:::gate
-      BLK -- "כן" --> BSKIP(["מדלג עליו ומדווח במה הוא חסום"]):::gate
+      SPRINT --> BLK{"חסום ע״י issue פתוח<br/>Blocked by<br/>או מטריה עם sub-issue פתוח"}:::gate
+      BLK -- "כן" --> BSKIP(["מדלג עליו ומדווח במה הוא חסום<br/>או אילו sub-issues פתוחים"]):::gate
       BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי<br/>טיוטת החלטה רוחבית<br/>הופכת לדף החלטה באותו PR<br/>מסמן את החלק באפיון כגמור<br/>spec_check.py --no-issues<br/>משימה קטנה מוסיפה את החלק שלה<br/>באג לא מסמן"]:::routine
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate

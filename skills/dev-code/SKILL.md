@@ -50,9 +50,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    ```
    An empty list means the sprint is clear. Say so and stop; never reach outside the milestone.
 
-   **Skip blocked issues**, named or not. Take the first row, top down, without `BLOCKED by`.
-   Name each row you skipped, with its open blockers, in the run summary. Do not relabel it.
-   If every row is blocked, say so and stop.
+   **Skip blocked issues and umbrellas**, named or not. Take the first row, top down, without
+   `BLOCKED by` and without `UMBRELLA` (an issue with an open sub-issue is not worked on
+   itself, `reference/dependencies.md`). Name each row you skipped, with its open blockers or
+   sub-issues, in the run summary. Do not relabel it. If every row is skipped, say so and stop.
 
    **Take exactly one issue per run.**
 

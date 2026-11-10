@@ -164,7 +164,21 @@ def test_issue_becomes_the_graphql_node(monkeypatch):
         "milestone": {"title": "W1", "number": 1, "state": "OPEN"},
         "blockedBy": {"nodes": []},
         "blocking": {"nodes": []},
+        "subIssues": {"nodes": []},
     }
+
+
+def test_sub_issues_are_read_without_body_mode(monkeypatch):
+    # rank_issues.py reads them to mark an umbrella (#250); only where counted.
+    asked = fake_github(
+        monkeypatch,
+        [rest_issue(5, subs=1), rest_issue(6)],
+        {f"repos/{REPO}/issues/5/sub_issues": [{"number": 7, "state": "open"}]},
+    )
+    five, six = gh_rest.open_issue_nodes(REPO)
+    assert five["subIssues"] == {"nodes": [{"number": 7, "state": "OPEN"}]}
+    assert six["subIssues"] == {"nodes": []}
+    assert not any("/issues/6/" in path for path in asked)
 
 
 def test_pull_requests_are_left_out(monkeypatch):
@@ -195,7 +209,7 @@ def test_links_are_fetched_only_where_the_summary_counts_them(monkeypatch):
     assert not any("/issues/6/" in path for path in asked)
 
 
-def test_body_mode_adds_sub_issues_parent_and_closing_prs(monkeypatch):
+def test_body_mode_adds_body_parent_and_closing_prs(monkeypatch):
     fake_github(
         monkeypatch,
         [
