@@ -460,7 +460,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-issue</b>, או טופס <code>task.yml</code> / <code>bug.yml</code> מ-<code>dolev2/.github</code>.</p>
-        <ul><li>milestone הוא הספרינט.</li><li>באג ומשימת <code>process</code> נכנסים תמיד לספרינט הנוכחי.</li><li>תלויות נרשמות כקישורי Blocked by.</li><li>הצעה מחכה בבקלוג עד שדולב מבקש לה אפיון.</li></ul>
+        <ul><li>milestone הוא הספרינט.</li><li>באג ומשימת <code>process</code> נכנסים תמיד לספרינט הנוכחי.</li><li>תלויות נרשמות כקישורי Blocked by.</li><li>משימה נפתחת רק עם שורת "אפיון:" לחלק פתוח. אין חלק כזה: היא נפתחת כהצעה בבקלוג.</li><li>הצעה מחכה בבקלוג עד שדולב מבקש לה אפיון.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>עוד אין branch.</p>
@@ -483,13 +483,14 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p><b class="mono">dev-spec</b>: רק כשדולב כותב "תכתוב אפיון ל-#N". הבקשה היא האישור של ההצעה.</p>
         <ul><li>כותב את <code>docs/specs/&lt;repo&gt;.md</code>: מה כל חלק עושה, ומה המשתמש רואה.</li><li>מריץ <code>spec_check.py --no-issues</code>, ופותח PR.</li><li>דולב סוקר ומבקש מיזוג (<code>dev-ship</code>). המיזוג הוא האישור של ה"מה".</li></ul>
         <p><b class="mono">dev-issue</b>: מיד אחרי המיזוג, <code>dev-ship</code> מציע את הפירוק.</p>
-        <ul><li>issue לכל חלק פתוח. בסעיף "הקשר / קישורים" שלו שורת "אפיון:", עם הקובץ והמזהה: <code>docs/specs/&lt;repo&gt;.md S-&lt;n&gt;.&lt;m&gt;</code>.</li><li>קישורי Blocked by לפי הסדר באפיון.</li></ul>
+        <ul><li>issue לכל חלק פתוח. בסעיף "הקשר / קישורים" שלו שורת "אפיון:", עם הקובץ והמזהה: <code>docs/specs/&lt;repo&gt;.md S-&lt;n&gt;.&lt;m&gt;</code>.</li><li>קישורי Blocked by לפי הסדר באפיון.</li><li>אחר כך PR קטן כותב בכל חלק <code>**מצב:** פתוח (#N)</code>, עם מספר ה-issue שלו. דולב מבקש מיזוג, כמו בכל PR.</li></ul>
         <p>ריפו שהותקן לפני הסדר הזה עובר אליו בריצה הבאה של <code>dev-setup</code>, בצעד העברה חדש.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>branch משלו: <code>claude/spec-&lt;slug&gt;</code>, מ-<code>origin/main</code>.</p>
         <p>ה-PR של הצעה כתוב <code>Refs #N</code>, לא <code>Closes</code>: המיזוג לא סוגר את ההצעה.</p>
         <p>squash merge, כמו כל PR.</p>
+        <p>ה-PR של שורות "פתוח": branch <code>claude/spec-open-lines-&lt;slug&gt;</code>, בלי <code>Closes</code>.</p>
       </div>
     </div>
     <div class="gate-row"><strong>שער:</strong> פער בין משימה לאפיון רק מזהיר: ב-PR, בטבלת הסטטוס ובסיכום של המתזמר. רק שגיאה בקובץ האפיון עצמו מכשילה את ה-CI.</div>
@@ -524,17 +525,19 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>או, למשימה קטנה (עד כ-3 קבצים, בלי שינוי שמשתמש רואה, בלי מחיקה, בלי שינוי חוזה):</p>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
         <p>עם התווית <code>size:small</code>, ובלי אישור תוכנית.</p>
+        <p>או, למשימה בלי חלק פתוח באפיון:</p>
+        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">backlog</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-plan</b>: עד 3 issues בריצה.</p>
-        <ul><li>קורא קודם את החלק באפיון, לפי שורת "אפיון:" של ה-issue.</li><li>כותב Plan מקוצר בגוף ה-issue: "בקצרה" בשלוש שורות (החלק באפיון, הסבר קצר על איפה הוא יושב באפיון, וההחלטות שמחכות לדולב), ואחריהן "פירוט טכני". בלי "חוויית משתמש": היא כתובה בחלק באפיון.</li><li>issue שנפתח מהטופס בלי שורת אפיון, ואינו באג: התוכנית המלאה, ועוד טיוטה "חלק חדש לאפיון", שדולב מאשר עם התוכנית.</li><li>שאלות נרשמות כתיבות סימון.</li><li>מוסיף יומן שינויים, ולא מוחק אותו.</li><li>משימה קטנה מקבלת תוכנית מקוצרת, ובסיכום שורה "עברו ישר לביצוע".</li><li>החלטה שמשימות אחרות ימשיכו לפיה (כלי, ארכיטקטורה, כלל עבודה): טיוטה בתת-כותרת "החלטה רוחבית", שדולב מאשר עם התוכנית.</li></ul>
+        <ul><li>קורא קודם את החלק באפיון, לפי שורת "אפיון:" של ה-issue.</li><li>כותב Plan מקוצר בגוף ה-issue: "בקצרה" בשלוש שורות (החלק באפיון, הסבר קצר על איפה הוא יושב באפיון, וההחלטות שמחכות לדולב), ואחריהן "פירוט טכני". בלי "חוויית משתמש": היא כתובה בחלק באפיון.</li><li>issue בלי חלק פתוח באפיון, ואינו באג: לא מקבל תוכנית, וחוזר לבקלוג כהצעה ("תכתוב אפיון ל-#N").</li><li>באג שחזר לתכנון (מוחק או משנה חוזה): התוכנית המלאה.</li><li>שאלות נרשמות כתיבות סימון.</li><li>מוסיף יומן שינויים, ולא מוחק אותו.</li><li>משימה קטנה מקבלת תוכנית מקוצרת, ובסיכום שורה "עברו ישר לביצוע".</li><li>החלטה שמשימות אחרות ימשיכו לפיה (כלי, ארכיטקטורה, כלל עבודה): טיוטה בתת-כותרת "החלטה רוחבית", שדולב מאשר עם התוכנית.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>יוצר את ה-branch ב-remote, בלי checkout.</p>
         <p>קורא קוד ישר מ-<code>origin/main</code>: <code>git show</code>, <code>git grep</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> issue חסום ב-Blocked by לא מתוכנן: dev-plan מדלג עליו ומדווח במה הוא חסום. החלטה בחוסם יכולה לשנות את מבנה הקבצים, והתוכנית מתיישנת. issue שדולב נקב בשמו מתוכנן רק בבקשה מפורשת שלו.</div>
+    <div class="gate-row"><strong>שער:</strong> issue חסום ב-Blocked by לא מתוכנן: dev-plan מדלג עליו ומדווח במה הוא חסום. החלטה בחוסם יכולה לשנות את מבנה הקבצים, והתוכנית מתיישנת. issue שדולב נקב בשמו מתוכנן רק בבקשה מפורשת שלו. משימה בלי חלק פתוח באפיון לא מתוכננת: היא חוזרת לבקלוג.</div>
   </article>
 
   <article class="stage">
@@ -547,7 +550,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">explore</span></div>
         <p>מאשר:</p>
         <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
-        <p>עוצר משימה קטנה לפני שנכתב קוד, ומסיר את <code>size:small</code>. dev-plan כותב תוכנית מלאה:</p>
+        <p>עוצר משימה קטנה לפני שנכתב קוד, ומסיר את <code>size:small</code>. dev-plan כותב תוכנית למסלול הרגיל:</p>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label c">explore</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
@@ -571,7 +574,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-code</b>: issue אחד בדיוק בריצה.</p>
-        <ul><li>מממש את התוכנית ומוסיף טסט לכל שינוי.</li><li>באותו PR: שורת מצב <code>Done (#N)</code> מתחת לכותרת של החלק באפיון, ו-<code>spec_check.py --no-issues</code>.</li><li>משימה קטנה, ו-issue עם "חלק חדש לאפיון": מוסיפים את החלק לקובץ, כבר כ-Done. באג מצביע על החלק שהוא שובר, ולא מסמן כלום.</li><li>יש בתוכנית "החלטה רוחבית": כותב ממנה דף ב-<code>docs/decisions/</code> באותו PR, והכלל שנשען עליה מפנה אליו.</li><li>באג בלי Plan: כותב קודם תוכנית מקוצרת. באג שמשנה חוזה או מוחק חוזר לתכנון.</li><li>חלוקה לסוכנים רק כשב-Plan יש "עבודה במקביל".</li><li>עובר על הפיצ'ר בדפדפן מול חוויית המשתמש שבחלק באפיון (או בתוכנית), במחשב ובטלפון. בסשן ענן: ב-Playwright.</li><li>מוסר PR עם קישור לאפליקציית הסקירה. בסשן ענן: האפליקציה רצה בסשן.</li><li>במסירה: קישור לשינויים ב-PR בראש ההודעה, צילומי מסך בצ'אט (מחשב, ובסשן ענן גם טלפון). אין צילום: שורה שאומרת למה.</li><li>לקח מוצע, רק אם היה: אחד לכל היותר, ממה שקרה בקוד ובבדיקות, עם מקור. שאלה שנייה בחלון השאלות, אחרי שאלת המיזוג. אישור פותח לו משימה, ושום כלל לא משתנה עד שה-PR שלה ממוזג. בלי אדם בצ'אט: הצעה בבקלוג.</li></ul>
+        <ul><li>מממש את התוכנית ומוסיף טסט לכל שינוי.</li><li>באותו PR: שורת מצב <code>Done (#N)</code> מתחת לכותרת של החלק באפיון, ו-<code>spec_check.py --no-issues</code>.</li><li>חלק עם כמה משימות (<code>פתוח (#12, #13)</code>): המשימה מוחקת רק את המספר שלה, והאחרונה כותבת Done. באג מצביע על החלק שהוא שובר, ולא מסמן כלום.</li><li>יש בתוכנית "החלטה רוחבית": כותב ממנה דף ב-<code>docs/decisions/</code> באותו PR, והכלל שנשען עליה מפנה אליו.</li><li>באג בלי Plan: כותב קודם תוכנית מקוצרת. באג שמשנה חוזה או מוחק חוזר לתכנון.</li><li>חלוקה לסוכנים רק כשב-Plan יש "עבודה במקביל".</li><li>עובר על הפיצ'ר בדפדפן מול חוויית המשתמש שבחלק באפיון (או בתוכנית), במחשב ובטלפון. בסשן ענן: ב-Playwright.</li><li>מוסר PR עם קישור לאפליקציית הסקירה. בסשן ענן: האפליקציה רצה בסשן.</li><li>במסירה: קישור לשינויים ב-PR בראש ההודעה, צילומי מסך בצ'אט (מחשב, ובסשן ענן גם טלפון). אין צילום: שורה שאומרת למה.</li><li>לקח מוצע, רק אם היה: אחד לכל היותר, ממה שקרה בקוד ובבדיקות, עם מקור. שאלה שנייה בחלון השאלות, אחרי שאלת המיזוג. אישור פותח לו משימה, ושום כלל לא משתנה עד שה-PR שלה ממוזג. בלי אדם בצ'אט: הצעה בבקלוג.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>worktree, commits, ואז <code>fetch</code> + <code>rebase origin/main</code>.</p>

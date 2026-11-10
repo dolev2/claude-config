@@ -15,7 +15,7 @@ flowchart TD
       SPEC["dev-spec<br/>docs/specs/repo.md<br/>branch claude/spec-slug<br/>spec_check.py --no-issues<br/>PR: Refs #N for a proposal"]:::routine
       SPEC --> SREV(["דולב סוקר ומבקש מיזוג<br/>המיזוג הוא האישור של המה"]):::human
       SREV --> SSHIP["dev-ship<br/>squash merge<br/>מציע את הפירוק"]:::routine
-      SSHIP --> SPLIT["dev-issue<br/>משימה לכל חלק פתוח<br/>שורת אפיון בכל משימה<br/>Blocked by<br/>לפי הסדר באפיון<br/>ההצעה נסגרת"]:::routine
+      SSHIP --> SPLIT["dev-issue<br/>משימה לכל חלק פתוח<br/>שורת אפיון בכל משימה<br/>Blocked by<br/>לפי הסדר באפיון<br/>ההצעה נסגרת<br/>שורת פתוח בכל חלק<br/>small PR, Dolev merges it"]:::routine
     end
 
     SPLIT -- "status:explore" --> PLAN
@@ -30,7 +30,9 @@ flowchart TD
       PLAN["dev-plan<br/>עד 3 פריטים בכל ריצה<br/>לפי כמה משימות מחכות להם"]:::routine
       PLAN --> PBLK{"חסום ע״י issue פתוח<br/>Blocked by"}:::gate
       PBLK -- "כן" --> PBSKIP(["מדלג עליו ומדווח במה הוא חסום"]):::gate
-      PBLK -- "לא" --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>קורא את החלק באפיון<br/>תוכנית מקוצרת<br/>בקצרה בשלוש שורות<br/>ואז פירוט טכני<br/>בלי אפיון ולא באג<br/>תוכנית מלאה<br/>וטיוטה של חלק חדש לאפיון<br/>החלטה שחוצה משימות<br/>נכתבת כטיוטה בתוכנית<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
+      PBLK -- "לא" --> PSPEC{"יש חלק פתוח באפיון<br/>או שזה באג"}:::gate
+      PSPEC -- "לא" --> PBACK(["חוזר לבקלוג כהצעה<br/>status:backlog<br/>תכתוב אפיון ל-#N"]):::gate
+      PSPEC -- "כן" --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>קורא את החלק באפיון<br/>תוכנית מקוצרת<br/>בקצרה בשלוש שורות<br/>ואז פירוט טכני<br/>באג שחזר לתכנון<br/>תוכנית מלאה<br/>החלטה שחוצה משימות<br/>נכתבת כטיוטה בתוכנית<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
       PBLK -. "דולב נקב בשמו<br/>וביקש במפורש" .-> PW
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
       PQ -- "לא" --> SZ{"משימה קטנה<br/>עד כ-3 קבצים, בלי שינוי שמשתמש רואה<br/>בלי מחיקה, בלי שינוי חוזה"}:::routine
@@ -44,6 +46,7 @@ flowchart TD
     QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore<br/>או עונה בחלון השאלות בצ'אט<br/>והתכנון ממשיך באותה ריצה"]):::human
     ANS --> BACK["status:explore<br/>התור של Claude<br/>יש כבר תוכנית: Claude מעדכן אותה"]:::routine
     BACK --> PLAN
+    PBACK -. "דולב מבקש אפיון" .-> SPASK
 
     WAIT --> APP(["דולב קורא את התוכנית"]):::human
     APP -- "מאשר ב-GitHub" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
@@ -60,7 +63,7 @@ flowchart TD
       WIP -- "לא" --> SPRINT["סריקה רק בספרינט הנוכחי<br/>issue שנקבת בשמו גם מחוצה לו<br/>תיקון, אחריו באג, לפני משימה חדשה<br/>ואז לפי כמה משימות מחכות לה"]:::routine
       SPRINT --> BLK{"חסום ע״י issue פתוח<br/>Blocked by<br/>או מטריה עם sub-issue פתוח"}:::gate
       BLK -- "כן" --> BSKIP(["מדלג עליו ומדווח במה הוא חסום<br/>או אילו sub-issues פתוחים"]):::gate
-      BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי<br/>טיוטת החלטה רוחבית<br/>הופכת לדף החלטה באותו PR<br/>מסמן את החלק באפיון כגמור<br/>spec_check.py --no-issues<br/>משימה קטנה מוסיפה את החלק שלה<br/>באג לא מסמן"]:::routine
+      BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי<br/>טיוטת החלטה רוחבית<br/>הופכת לדף החלטה באותו PR<br/>מסמן את החלק באפיון כגמור<br/>חלק עם כמה משימות<br/>מוחק רק את המספר שלו<br/>spec_check.py --no-issues<br/>באג לא מסמן"]:::routine
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
       RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>opens a PR that closes the issue"]:::routine
@@ -107,7 +110,8 @@ flowchart TD
 אדום: שער שעוצר או מתריע.
 
 **שלב האפיון** (`dev-spec`, `specs.md`) בא לפני התכנון, בלי תווית חדשה: ההצעה נשארת `status:backlog`
-עד הפירוק. משימה שנפתחה מהטופס בלי אפיון נכנסת ישר לתכנון, כמו קודם.
+עד הפירוק. משימה נפתחת רק מחלק פתוח: משימה בלי חלק, או שמשנה חלק גמור, חוזרת מהתכנון לבקלוג כהצעה
+(`dev-plan`, claude-config #243). אחרי הפירוק, PR קטן כותב בכל חלק את שורת "פתוח" עם מספר ה-issue.
 
 **לקח מוצע** (`lessons.md`) לא מוסיף תווית: `dev-code` במסירה ו-`dev-ship` אחרי המיזוג מציעים לקח אחד לכל היותר,
 ואישור של דולב פותח לו משימה רגילה.

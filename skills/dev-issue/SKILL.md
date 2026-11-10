@@ -44,7 +44,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 Opening issues writes to the board Dolev works from, and deleting an issue is not something
 this pipeline does. So first show Dolev, in chat, the issues you intend to open: title, one
-line of scope, kind (task / bug / backlog), milestone, parent, and blockers. Create them only
+line of scope, kind (a task shows its part, "משימה (S-x.y)"; a bug; a backlog idea; a task with
+no open part shows "הצעה בבקלוג: אין חלק", step 2), milestone, parent, and blockers. Create them only
 after he agrees. When he has already dictated the exact list, that is the agreement.
 
 How to split a task, when that is the request:
@@ -87,10 +88,19 @@ _אין שאלות פתוחות._
 ```
 
 **The `אפיון:` line** names the part the task implements (the format:
-`$HOME/.claude/docs/specs/README.md`). Write it when the topic is already in a spec: read the files in
-`docs/specs/` on `origin/<default>` and find the part. No part fits: leave the line out, and
-`dev-plan` drafts a new part with the plan (`reference/specs.md`). A backlog idea gets no line:
-it is a proposal, and gets its spec when Dolev asks for one (`dev-spec`).
+`$HOME/.claude/docs/specs/README.md`). **A task opens only with this line, to an open part**
+(`reference/specs.md`, "מתי נכתב אפיון"): read the spec in `docs/specs/` on `origin/<default>`
+and find the part. This holds for every task, a manual task and a lesson's included; a bug, a
+backlog idea, an umbrella and a decision are not tasks here.
+1. **An open part fits:** the line names it, and the task opens as in step 3.
+2. **No open part fits, or the task changes a part that is already Done:** it opens as a
+   backlog idea instead (`status:backlog`, no milestone, no `אפיון:` line), and the report of
+   step 5 offers "תכתוב אפיון ל-#N". A change to a Done part is first a change to the spec.
+
+Step 1 already shows which of the two each item is: "משימה (S-x.y)", or "הצעה בבקלוג: אין חלק".
+`dev-plan` sends a task without an open part back to the backlog, so a task opened without
+the line only waits there.
+A backlog idea gets no line: it is a proposal, and gets its spec when Dolev asks for one (`dev-spec`).
 
 For a bug, follow `bug.yml` instead (with the standard template: משימה קשורה / מה קורה / מה
 היה אמור לקרות / Plan / שאלות פתוחות).
@@ -111,12 +121,12 @@ question in the body, not a "Blocked by" link to some other issue.
 
 | kind | labels | milestone |
 |---|---|---|
-| task | `task`, `area:*`, `status:explore` | the sprint it belongs to |
+| task, with the `אפיון:` line to an open part (step 2) | `task`, `area:*`, `status:explore` | the sprint it belongs to |
 | bug | `bug`, `area:*`, `status:ready-to-execute` | always `current_sprint` |
 | process (work management, rules, aligning with claude-config) | `process` added to the task's labels | always `current_sprint` |
 | manual task (only Dolev can do it: Claude has no access) | `task`, `area:*`, `status:plan-questions`, with what he must check or answer as unticked boxes in the open-questions section (`reference/pipeline.md`, the `status:plan-questions` row) | the sprint it belongs to |
-| backlog idea | `task`, `area:*`, `status:backlog` | none |
-| lesson (`reference/lessons.md`): the body's "מה רוצים" holds the lesson's four fields, "הקשר / קישורים" its source, and no `אפיון:` line | `task`, `process`, `area:*`, `status:explore`, in the repo where the lesson lives (`~/.claude`: dolev2/claude-config) | that repo's current sprint when Dolev chose "open a task" in the question window (that choice is the agreement of step 1); with nobody in the chat, `status:backlog` and none |
+| backlog idea, and a task with no open part to point at (step 2) | `task`, `area:*`, `status:backlog` | none |
+| lesson (`reference/lessons.md`): the body's "מה רוצים" holds the lesson's four fields, "הקשר / קישורים" its source and the `אפיון:` line (step 2; no open part fits: a backlog idea, as above) | `task`, `process`, `area:*`, `status:explore`, in the repo where the lesson lives (`~/.claude`: dolev2/claude-config) | that repo's current sprint when Dolev chose "open a task" in the question window (that choice is the agreement of step 1); with nobody in the chat, `status:backlog` and none |
 | umbrella (parent split into sub-issues) | keeps `task`, `area:*`; becomes `status:backlog` | unchanged |
 | decision (only if the repo has a `decision` label) | `decision`, no `status:*` (Dolev's turn by its kind) | the sprint that waits on it |
 
@@ -152,7 +162,26 @@ parent's numbering (`13א.`, `13ב.`), so the board reads in order.
    issue it is about to start.
 3. **The parent's body**: when splitting, rewrite the parent's "מה רוצים" as an umbrella: a
    checklist of the sub-issues (`- [ ] #29 ...`) and what stayed out of scope. Then relabel
-   it as an umbrella (labels only).
+   it as an umbrella (labels only). Each sub-issue carries the parent's `אפיון:` line in its
+   own "הקשר / קישורים".
+
+## Step 4b: The PR of the "פתוח" lines
+
+Whenever this run opened a task whose part does not name it yet (a breakdown, a split, or one
+task for an open part), a small PR writes the status lines, after step 4. The rules:
+`reference/specs.md`, "הפירוק ל-issues", item 6.
+1. `git fetch origin <default>`, and the branch `claude/spec-open-lines-<slug>` from
+   `origin/<default>`, never by switching branches in the shared working copy
+   (`reference/git-flow.md`; in a cloud session, the session's own clone). `<slug>`: the change,
+   2–5 English words, as in `dev-spec`.
+2. Under the heading of each part: `**מצב:** פתוח (#N)`, or the number added to the line
+   already there (`פתוח (#12, #13)`). In a split, the parent's number is replaced by the
+   sub-issues' numbers.
+3. `spec_check.py --no-issues` passes, and `spec_check.py --table` shows each part with its
+   issue (no "is open with no status line" on these parts).
+4. A PR against `<default>` with no `Closes` (no issue closes in it), and a small table in its
+   body: part, issue. The merge is `dev-ship`'s, on Dolev's request, as always.
+The report (step 5, or item 6 of a breakdown) carries the PR's link.
 
 ## Step 5: Verify and report
 
@@ -162,7 +191,9 @@ gh api repos/{owner}/{repo}/issues/<N>/dependencies/blocked_by --jq '[.[].number
 gh issue view <N> --json labels,milestone --jq '[.labels[].name], .milestone.title'
 ```
 
-Report each new issue to Dolev, in Hebrew, as a link with its title, milestone and blockers. If the repo has
+Report each new issue to Dolev, in Hebrew, as a link with its title, milestone and blockers.
+A task that opened as a backlog idea for lack of an open part gets the offer "תכתוב אפיון ל-#N"
+(step 2), and the PR of the "פתוח" lines, when step 4b opened one, gets its link. If the repo has
 `sync-project.yml`, a board column that has not updated yet catches up within a few hours.
 
 ## Mode: breaking down a spec (פירוק אפיון)
@@ -193,7 +224,8 @@ issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
    gh api -X PATCH repos/{owner}/{repo}/issues/<proposal> -f state=closed -f state_reason=completed
    ```
    A spec written for a task (like claude-config #230) has no proposal: nothing to close.
-5. Report as in step 5, with the part id next to each new issue.
+5. **The PR of the "פתוח" lines**, as step 4b.
+6. Report as in step 5, with the part id next to each new issue and the link to that PR.
 
 ## Golden rules
 
@@ -201,5 +233,6 @@ issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
 - Never invent business data in an issue; missing data is an unticked open question.
 - Every `תלוי ב:` entry has a matching "Blocked by" link, and the other way round.
 - In a breakdown, a link comes only from a dependency written in the spec; never guess one.
+- A task opens only with an `אפיון:` line to an open part; without one, it is a backlog idea.
 - Never assign a milestone on your own judgement, except `current_sprint` for a bug or a
   `process` issue.

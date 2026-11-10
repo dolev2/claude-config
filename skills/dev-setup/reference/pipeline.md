@@ -12,7 +12,7 @@
 | `tests.md` | אילו בדיקות רצות, ומתי |
 | `review-app.md` | הרמת האפליקציה של ה-PR לסקירה, ועצירתה |
 | `ux.md` | סעיף חוויית המשתמש בחלק באפיון או בתוכנית, והבדיקה מולו בקידוד |
-| `specs.md` | שלב האפיון: מתי `dev-spec` רץ, ה-PR שלו, הפירוק ל-issues, סימון Done, באג, משימה קטנה, issue בלי אפיון, וההעברה בריפו ישן |
+| `specs.md` | שלב האפיון: מתי `dev-spec` רץ, ה-PR שלו, הפירוק ל-issues וה-PR של שורות "פתוח", סימון Done, באג, משימה קטנה, השער של issue בלי אפיון, וההעברה בריפו ישן |
 | `after-merge.md` | ההצעה לסשן של המשימה הבאה |
 | `setup.md` | מה ש-`dev-setup` מתקין ולמה: הסנכרון עם הלוח, הטפסים, השער, Netlify, lint |
 | `board.md` | לוח ה-Project בהתקנה: יצירה וקישור, `EXPECTED_BOARDS`, שדה Status, ה-token בשתי גרסאות, והתצוגות |
@@ -107,7 +107,7 @@ gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:e
 
 ספק באחד מהם: המסלול הרגיל. משימה קטנה מקבלת `size:small`, תוכנית מקוצרת (`issue-body.md`), ועוברת
 ישר ל-`status:ready-to-execute`. דולב רואה אותה בסיכום של `dev-plan` וב-PR.
-**ביטול:** דולב מעביר אותה ל-`status:explore` ומסיר את `size:small`. `dev-plan` כותב תוכנית מלאה, והיא במסלול הרגיל.
+**ביטול:** דולב מעביר אותה ל-`status:explore` ומסיר את `size:small`. `dev-plan` כותב לה תוכנית למסלול הרגיל, והיא עוברת בו.
 משימה שגדלה בביצוע מעבר לתנאים: `dev-code` עוצר, מסיר את `size:small` ומחזיר אותה ל-`status:explore`.
 `size:small` לא ברשימת התוויות החובה של `pipeline_info.py`: `dev-plan` יוצר אותה כשהיא חסרה.
 
