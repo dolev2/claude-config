@@ -266,11 +266,11 @@ the folder the work happened in, and never in the shared folder unless item 4 al
    `origin/*` refs, so without this item the local branch stays forever.
 6. **Check the branch is gone on GitHub:** `git ls-remote --heads origin <branch>` prints
    nothing. Output means the repo's "Automatically delete head branches" setting is off:
-   report it and offer to turn it on
-   (`gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true`, REST, so it also
-   runs in a cloud session; a 403 there: give Dolev the settings link, `reference/cloud.md`,
-   the `gh repo edit` row). Never delete
-   the remote branch by hand, with `git push` or otherwise.
+   report it and offer to turn it on with
+   `gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true` (REST, not GraphQL;
+   untested in a cloud session). If it returns 403, give Dolev the settings page instead,
+   `https://github.com/<owner>/<repo>/settings`, where he ticks "Automatically delete head
+   branches". Never delete the remote branch by hand, with `git push` or otherwise.
 
 **In a cloud session** there is no worktree, and the clone is the session's own. Items 1, 3,
 5 and 6 apply; in place of items 2 and 4, after the fetch, run
