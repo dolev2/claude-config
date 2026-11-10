@@ -12,7 +12,7 @@ flowchart TD
     SPASK --> SPEC
 
     subgraph SG["שלב האפיון — לפני התכנון"]
-      SPEC["dev-spec<br/>docs/specs/topic.md<br/>branch claude/spec-topic<br/>spec_check.py --no-issues<br/>PR: Refs #N for a proposal"]:::routine
+      SPEC["dev-spec<br/>docs/specs/repo.md<br/>branch claude/spec-slug<br/>spec_check.py --no-issues<br/>PR: Refs #N for a proposal"]:::routine
       SPEC --> SREV(["דולב סוקר ומבקש מיזוג<br/>המיזוג הוא האישור של המה"]):::human
       SREV --> SSHIP["dev-ship<br/>squash merge<br/>מציע את הפירוק"]:::routine
       SSHIP --> SPLIT["dev-issue<br/>משימה לכל חלק פתוח<br/>שורת אפיון בכל משימה<br/>Blocked by<br/>לפי הסדר באפיון<br/>ההצעה נסגרת"]:::routine

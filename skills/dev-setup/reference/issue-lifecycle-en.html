@@ -281,7 +281,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <h2 id="git-h">What happens in git</h2>
   <p>The branch is born on the remote during planning, written in a separate worktree, updated with rebase, and lands in main as a squash.</p>
   <p>The main folder never switches branches.</p>
-  <p>A spec has a branch of its own, <code>claude/spec-&lt;topic&gt;</code>, and takes the same path to the squash, without the planning stage. The PR of a proposal says <code>Refs #N</code>, so the merge does not close the proposal; a task whose deliverable is a spec says <code>Closes #N</code>, like any task.</p>
+  <p>A spec has a branch of its own, <code>claude/spec-&lt;slug&gt;</code>, and takes the same path to the squash, without the planning stage. The PR of a proposal says <code>Refs #N</code>, so the merge does not close the proposal; a task whose deliverable is a spec says <code>Closes #N</code>, like any task.</p>
   <ul class="keys">
     <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="main-line"/></svg><span><b>main</b>: the repo's main line</span></li>
     <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="branch-line"/><circle cx="20" cy="7" r="4" class="c-branch"/></svg><span><b>branch</b>: a chain of commits. Each circle is a commit</span></li>
@@ -460,13 +460,13 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-spec</b>: only when Dolev writes "write a spec for #N". The request is the approval of the proposal.</p>
-        <ul><li>Writes <code>docs/specs/&lt;topic&gt;.md</code>: what each part does, and what the user sees.</li><li>Runs <code>spec_check.py --no-issues</code>, and opens a PR.</li><li>Dolev reviews and asks to merge (<code>dev-ship</code>). The merge is the approval of the "what".</li></ul>
+        <ul><li>Writes <code>docs/specs/&lt;repo&gt;.md</code>: what each part does, and what the user sees.</li><li>Runs <code>spec_check.py --no-issues</code>, and opens a PR.</li><li>Dolev reviews and asks to merge (<code>dev-ship</code>). The merge is the approval of the "what".</li></ul>
         <p><b class="mono">dev-issue</b>: right after the merge, <code>dev-ship</code> offers the breakdown.</p>
-        <ul><li>An issue per open part. Its context section gets a spec line with the file and the ID: <code>docs/specs/&lt;topic&gt;.md S-&lt;n&gt;.&lt;m&gt;</code>.</li><li>Blocked by links follow the order in the spec.</li></ul>
+        <ul><li>An issue per open part. Its context section gets a spec line with the file and the ID: <code>docs/specs/&lt;repo&gt;.md S-&lt;n&gt;.&lt;m&gt;</code>.</li><li>Blocked by links follow the order in the spec.</li></ul>
         <p>A repo installed before this order moves to it on its next <code>dev-setup</code> run, in a new migration step.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
-        <p>A branch of its own: <code>claude/spec-&lt;topic&gt;</code>, from <code>origin/main</code>.</p>
+        <p>A branch of its own: <code>claude/spec-&lt;slug&gt;</code>, from <code>origin/main</code>.</p>
         <p>The PR of a proposal says <code>Refs #N</code>, not <code>Closes</code>: the merge does not close the proposal.</p>
         <p>Squash merge, like every PR.</p>
       </div>

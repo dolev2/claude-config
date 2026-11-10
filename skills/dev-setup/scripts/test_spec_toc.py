@@ -10,9 +10,10 @@ Opening line.
 ## Stage one
 
 ### S-1.1 · Read the spec
-Text.
+**מצב:** פתוח (#5)
 
 ### S-1.2 · `/compact` after a merge
+**מצב:** Done (#6)
 
 ```markdown
 ## S-9.9 · an example inside a code block is no heading

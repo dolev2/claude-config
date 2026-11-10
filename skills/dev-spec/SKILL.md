@@ -1,6 +1,6 @@
 ---
 name: dev-spec
-description: Writes the spec of a topic in Dolev's pipeline as a PR — a docs/specs/<topic>.md file with a fixed id per part (S-<n>.<m>), what each part does, for whom, what the user sees in each state, and what is out — for a backlog proposal Dolev approves by asking for its spec, or for an approved task whose deliverable is a spec. The merge of that PR is the approval of the "what"; dev-issue then breaks it into issues. Use in any of Dolev's repos whenever he says "תכתוב אפיון ל-#N", "תאפיין את #N", "write a spec for #N", or asks to add parts to a topic's spec. Never merges (dev-ship does, on his request) and never runs on its own initiative. Works in any repo that has the pipeline labels; if the repo has its own repo-specific spec skill, use that instead.
+description: Writes the spec of a topic in Dolev's pipeline as a PR — a chapter in the repo's one spec, docs/specs/<repo>.md, with a fixed id per part (S-<n>.<m>), what each part does, for whom, what the user sees in each state, and what is out — for a backlog proposal Dolev approves by asking for its spec, or for an approved task whose deliverable is a spec. The merge of that PR is the approval of the "what"; dev-issue then breaks it into issues. Use in any of Dolev's repos whenever he says "תכתוב אפיון ל-#N", "תאפיין את #N", "write a spec for #N", or asks to add parts to a topic's spec. Never merges (dev-ship does, on his request) and never runs on its own initiative. Works in any repo that has the pipeline labels; if the repo has its own repo-specific spec skill, use that instead.
 ---
 
 # Write a spec
@@ -52,23 +52,29 @@ every run.
    ```bash
    git fetch origin <default>
    git ls-tree --name-only origin/<default> docs/specs/
-   git show origin/<default>:docs/specs/<topic>.md
+   git show origin/<default>:docs/specs/<repo>.md
    ```
    Follow `CLAUDE.md` to the requirements sources, and check the open issues of the same topic,
    so a part never repeats what an open issue already owns.
 
-3. **Pick the file.** One file per topic, `docs/specs/<topic>.md`, its name short and in English.
-   - **The topic already has a file:** add parts to it. Each new part takes the next number
-     never used in that file, including in its history (a number that was used never returns).
-     The ids ever used in a part heading, by group (a mention such as "תלוי ב-S-1.2" is no use):
+3. **Pick the chapter.** A repo has one spec, `docs/specs/<repo>.md` (`<repo>` without the
+   owner), and each topic is a chapter in it, `## פרק <n> · <name>`; `<n>` is the first number
+   of every id in the chapter.
+   - **The topic already has a chapter:** add parts to it. Each new part takes the next number
+     never used in that chapter, including in the file's history (a number that was used never
+     returns). The ids ever used in a part heading (a mention such as "תלוי ב-S-1.2" is no use):
      ```bash
-     git log -p --format= origin/<default> -- docs/specs/<topic>.md | grep -oE '^[+-]#{2,4} S-[0-9]+\.[0-9]+' | grep -oE 'S-[0-9]+\.[0-9]+' | sort -uV
+     git log -p --format= origin/<default> -- docs/specs/<repo>.md | grep -oE '^[+-]#{2,4} S-[0-9]+\.[0-9]+' | grep -oE 'S-[0-9]+\.[0-9]+' | sort -uV
      ```
-     A new part in group `<n>` takes the highest `<m>` of that group plus one; a new group, the
-     highest `<n>` plus one.
-   - **A new topic:** a new file from `templates/spec.md`. The repo's first spec creates
-     `docs/specs/`, and the file guide in `README.md` gets a `docs/specs/*.md` row.
-   A part that is dropped gets `**מצב:** מחוץ להיקף`; it is never deleted.
+     A new part in chapter `<n>` takes the highest `<m>` of that chapter plus one.
+   - **A new topic:** a new chapter, numbered the highest `<n>` ever used plus one.
+   - **The repo's first spec:** the file from `templates/spec.md`. It creates `docs/specs/`,
+     and the file guide in `README.md` gets a `docs/specs/*.md` row.
+   - **More than one spec file** (`spec_check.py` warns "N spec files"): a repo from before
+     #242. Write into the file of the topic as it is, and say in the PR that the repo waits
+     for the merge of its specs (`dev-setup`, step 8), on Dolev's request.
+   A part that is dropped is deleted from the file, and its number never returns: its history
+   is in git. "מחוץ להיקף" is no longer in the format.
 
 4. **Write each part**, in Hebrew (or the repo's language), in the format of that README:
    - **what it does, and for whom**, in the business language and glossary of the repo;
@@ -97,10 +103,12 @@ every run.
    branches in the shared working copy (`reference/git-flow.md`):
    ```bash
    git fetch origin <default>
-   git push origin origin/<default>:refs/heads/claude/spec-<topic>
+   git push origin origin/<default>:refs/heads/claude/spec-<slug>
    ```
-   Then check it out as `reference/git-flow.md` says for an issue branch, and name the session
-   `<repo>: claude/spec-<topic>` (`<repo>` without the owner). A spec PR already open from an
+   `<slug>` names the change, not the file (there is one): 2–5 kebab-case words in English,
+   from the topic or the parts it adds. Then check it out as `reference/git-flow.md` says for
+   an issue branch, and name the session
+   `<repo>: claude/spec-<slug>` (`<repo>` without the owner). A spec PR already open from an
    earlier run (a revision Dolev asked for): use its branch.
 
 7. **Check before the push.** Commit the file (and the file-guide row, if step 3 added one),
@@ -118,7 +126,7 @@ every run.
 
 8. **Open the PR** against `<default>`:
    ```bash
-   git push -u origin claude/spec-<topic>
+   git push -u origin claude/spec-<slug>
    gh pr create --base <default> --title "אפיון: <the topic, in words>" --body-file <file>
    ```
    In a cloud session: `mcp__github__create_pull_request`. The body, in Hebrew: the topic in one
@@ -151,8 +159,9 @@ every run.
 - Never merge here. The merge is `dev-ship`'s, on his request, and it is the approval.
 - Never invent a requirement or business data; a gap is an open question in the PR body.
 - No file, function or endpoint names in a spec: the "how" belongs to the Plan.
-- A part's id never changes and a used number never returns; a dropped part is marked
-  "מחוץ להיקף", never deleted.
+- One spec per repo, `docs/specs/<repo>.md`; a topic is a chapter in it, never a new file.
+- A part's id never changes and a used number never returns; a dropped part is deleted,
+  never marked "מחוץ להיקף".
 - A dependency between parts is written in the spec, never guessed later.
 - A proposal's PR says `Refs #N`, never `Closes`.
 - No issues are opened here: the breakdown is `dev-issue`'s, after the merge.
