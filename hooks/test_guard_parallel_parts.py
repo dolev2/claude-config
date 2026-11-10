@@ -188,8 +188,15 @@ def test_edit_in_another_worktree_is_blocked(monkeypatch, repo, folder):
     assert "בקשה לסשן הראשי" in reason
 
 
-@pytest.mark.parametrize("place", ["outside_part", "git_dir", "other_worktree"])
-def test_every_block_forbids_a_bypass(monkeypatch, repo, place):
+@pytest.mark.parametrize(
+    ("place", "marker"),
+    [
+        ("outside_part", "מחוץ לחלק"),
+        ("git_dir", "בתיקיית ה-git המשותפת"),
+        ("other_worktree", "בעותק אחר של הריפו"),
+    ],
+)
+def test_every_block_forbids_a_bypass(monkeypatch, repo, place, marker):
     targets = {
         "outside_part": worktree(repo) / "settings.json",
         "git_dir": parts_file(repo),
@@ -197,6 +204,7 @@ def test_every_block_forbids_a_bypass(monkeypatch, repo, place):
     }
     code, reason = run_hook(monkeypatch, edit(targets[place], "Write"))
     assert code == 2
+    assert marker in reason
     assert "בקשה לסשן הראשי" in reason
     assert "לא עוקפים את החסימה" in reason
     assert "גם כשהיא נראית לך שגויה" in reason
