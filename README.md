@@ -44,7 +44,8 @@
 ### `skills/`: הסקילים של צינור העבודה
 | סקיל | מה עושה |
 |---|---|
-| `dev-issue` | פותח issues ומפרק משימות |
+| `dev-spec` | כותב אפיון לנושא כ-PR, על בקשה של דולב. המיזוג הוא האישור של ה"מה" (#227) |
+| `dev-issue` | פותח issues ומפרק משימות, וגם מפרק אפיון שמוזג ל-issue לכל חלק |
 | `dev-next` | בוחר את המשימה הבאה בספרינט |
 | `dev-plan` | שלב התכנון |
 | `dev-code` | שלב הביצוע, עד PR ב-`status:in-review`. המיזוג ב-`dev-ship` |
@@ -61,6 +62,7 @@
 | `reference/git-flow.md` | issue אחד בריצה ושער ה-WIP, עותק העבודה בכל שלב, branch ו-PR, rebase ו-CI לפני merge | `dev-plan`, `dev-code`, `dev-ship` |
 | `reference/tests.md` | אילו בדיקות רצות, ומתי: ממוקד בפיתוח, מלא פעם אחת אחרי ה-rebase | `dev-code`, `dev-ship`, `dev-setup` |
 | `reference/review-app.md` | הרמת האפליקציה של ה-PR לסקירה, קובץ הרישום, ועצירה | `dev-code`, `dev-ship`, `dev-setup` |
+| `reference/specs.md` | שלב האפיון: מתי `dev-spec` רץ, הפירוק ל-issues, סימון Done, באג, משימה קטנה, issue בלי אפיון, וההעברה בריפו שהותקן לפני הסדר החדש | `dev-spec`, `dev-issue`, `dev-plan`, `dev-code`, `dev-ship`, `dev-setup`. יצא לקובץ משלו כי `pipeline.md` ו-`issue-body.md` בתקרה של 150 שורות (#227) |
 | `reference/ux.md` | רשימת הבדיקה של חוויית משתמש: הסעיף בתוכנית, והמעבר על הפיצ'ר בדפדפן לפני המסירה | `dev-plan`, `dev-code` |
 | `reference/after-merge.md` | ההצעה לסשן של המשימה הבאה אחרי מיזוג | `dev-ship` |
 | `reference/setup.md` | מה ש-`dev-setup` מתקין ולמה: הסנכרון עם הלוח, הטפסים, השער, Netlify, lint | `dev-setup` בלבד, כדי ששאר הסקילים לא יקראו אותו |
