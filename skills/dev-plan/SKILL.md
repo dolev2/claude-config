@@ -98,10 +98,10 @@ keeps them: edit it in the headings it already has.
    human-written sections byte-identical, write the file with LF line endings, then
    `gh issue edit <N> --body-file <file>` and verify.
 
-   **An issue with a spec line gets the short Plan** (`reference/issue-body.md`): "בקצרה" in two
-   lines, `- **אפיון:**` with the file, the id and the part's name, and "החלטות שמחכות לדולב";
-   then "פירוט טכני" as below. No "חוויית משתמש": the part holds it, and `dev-code` checks
-   against it there. The full plan below is for an issue without a spec line.
+   **An issue with a spec line gets the short Plan** (`reference/issue-body.md`): "בקצרה" in three
+   lines, `- **אפיון:**` with the file, the id and the part's name, `- **איפה באפיון:**`, and
+   "החלטות שמחכות לדולב"; then "פירוט טכני" as below. No "חוויית משתמש": the part holds it,
+   and `dev-code` checks against it there. The full plan below is for an issue without a spec line.
 
    **An issue without a spec line, not a bug**, gets the full plan below, and "פירוט טכני" opens
    with `##### חלק חדש לאפיון`: the spec file (the topic's, or a new one), the next id never used
@@ -110,7 +110,7 @@ keeps them: edit it in the headings it already has.
 
    **The full plan has two levels: the decision, then the execution.** It opens with "בקצרה",
    written for Dolev's decision: the problem, what will change for the users, what is left out
-   and which issue has it, and what waits for him. Business language only, no file or function
+   and which issue has it, where the task sits in the spec, and what waits for him. Business language only, no file or function
    names, at most 8 lines. Then "חוויית משתמש", also for the decision: the user, the flow, and
    what they see in each state, from the checklist in `reference/ux.md`. Every full plan has it
    (not the short Plan of an issue with a spec line, nor the short plan of a small task, step 7);
@@ -118,6 +118,15 @@ keeps them: edit it in the headings it already has.
    for the execution. No sections outside the format; a boundary with another issue is a line
    in "בקצרה", not a section of its own (`reference/issue-body.md`).
    An issue coming back for a revision whose plan predates this format gets it in the same edit.
+
+   **Every plan except a bug's tells Dolev where the task sits in the spec**: the line
+   `- **איפה באפיון:**`, right under `- **אפיון:**`; in a full plan, which has no spec line,
+   it comes before "החלטות שמחכות לדולב" and describes where its new part will go. One or two
+   sentences, in business language: the chapter and the group the part sits in, what the part
+   does there and why it matters, and what depends on it or what it depends on, when there is any
+   (the spec's "תלוי ב-S-x.y" lines and the issue's Blocked by). The short plan of a small task
+   has it when it has a spec line or a new part. A bug does not: it points at a Done part it
+   breaks (`reference/issue-body.md`).
 
    **The "בדיקות" sub-heading follows the table in `~/.claude/rules/code-tests.md`**: one line
    per change in the plan, with the kind of test its row requires, the cases, and the test file.
