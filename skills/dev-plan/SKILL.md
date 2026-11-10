@@ -23,7 +23,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ## Read first
 
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary, the sprint), `issue-body.md` (how
-to read the full context of an issue, the Plan format, body editing), `dependencies.md`,
+to read the full context of an issue, the Plan format, body editing), `specs.md` (the spec
+stage: the part an issue implements, the short Plan, an issue without a spec), `dependencies.md`,
 `git-flow.md` (the working copy), `ux.md` (the user-experience section) and `chat-decisions.md`
 (asking Dolev in the question window). Everything mechanical lives there. Read them before step 1,
 every run.
@@ -54,7 +55,10 @@ keeps them: edit it in the headings it already has.
 
 2. For each issue, **read the whole thread first**: body, every comment, sub-issues, linked
    PR, and its "Blocked by" links. Read the blockers too, at least their goal and Plan: the
-   plan you write builds on what they deliver. An open blocker does **not** stop planning. Two
+   plan you write builds on what they deliver. **Read the issue's part in the spec**: the
+   `אפיון:` line in "הקשר / קישורים" names the file and the ids (`issue_body.spec_line` reads
+   it), and the part itself comes from `git show origin/<default>:<file>`. That part is the
+   approved "what" and "why"; the plan is the "how". An open blocker does **not** stop planning. Two
    situations look alike but are not:
    - **a fresh issue**: no Plan content yet. Plan it from scratch.
    - **an issue with a Plan already**: Dolev answered or sent it back; revise the plan in place
@@ -94,12 +98,22 @@ keeps them: edit it in the headings it already has.
    human-written sections byte-identical, write the file with LF line endings, then
    `gh issue edit <N> --body-file <file>` and verify.
 
-   **Two levels, always: the decision, then the execution.** The plan opens with "בקצרה",
+   **An issue with a spec line gets the short Plan** (`reference/issue-body.md`): "בקצרה" in two
+   lines, `- **אפיון:**` with the file, the id and the part's name, and "החלטות שמחכות לדולב";
+   then "פירוט טכני" as below. No "חוויית משתמש": the part holds it, and `dev-code` checks
+   against it there. The full plan below is for an issue without a spec line.
+
+   **An issue without a spec line, not a bug**, gets the full plan below, and "פירוט טכני" opens
+   with `##### חלק חדש לאפיון`: the spec file (the topic's, or a new one), the next id never used
+   in it, and the part's text in the spec format (`reference/specs.md`). Dolev approves the part
+   with the plan, and `dev-code` adds it to the file in the same PR.
+
+   **The full plan has two levels: the decision, then the execution.** It opens with "בקצרה",
    written for Dolev's decision: the problem, what will change for the users, what is left out
    and which issue has it, and what waits for him. Business language only, no file or function
    names, at most 8 lines. Then "חוויית משתמש", also for the decision: the user, the flow, and
-   what they see in each state, from the checklist in `reference/ux.md`. Every plan has it, except
-   the short plan of a small task (step 7);
+   what they see in each state, from the checklist in `reference/ux.md`. Every full plan has it
+   (not the short Plan of an issue with a spec line, nor the short plan of a small task, step 7);
    work with nothing a user sees or touches gets one line saying so and why. Then "פירוט טכני"
    for the execution. No sections outside the format; a boundary with another issue is a line
    in "בקצרה", not a section of its own (`reference/issue-body.md`).
@@ -121,7 +135,10 @@ keeps them: edit it in the headings it already has.
    the same PR. If it replaces an existing page in `docs/decisions/`, name that page. A choice
    that holds for this task alone stays in "הגישה".
 
-   **Check the scope before writing the plan.** Three questions, every issue:
+   **Check the scope before writing the plan.** These questions, every issue:
+   - **Wider than its part?** The request goes beyond the part on the spec line (another screen,
+     another rule): propose to Dolev to update the spec first, through `dev-spec`, and do not
+     widen the plan past the part.
    - **Too big?** If the issue holds more than one PR that can be reviewed on its own, propose a
      split in chat: each sub-issue's title, one line of scope, and the blockers between them.
      On Dolev's OK, split it with `dev-issue`, which holds the split rules; then plan the parts
@@ -166,7 +183,8 @@ keeps them: edit it in the headings it already has.
    **Small path**: the task meets all four conditions of "המסלול הקטן" in `reference/pipeline.md`
    (about 3 files at most; nothing a user sees, except a text fix; no deletion; no change to a
    contract or a new dependency). Any doubt: the normal path. The plan is the short plan from
-   `reference/issue-body.md`, and the task goes straight to Execute, without Dolev's approval:
+   `reference/issue-body.md` (without a spec line, it carries the "חלק חדש לאפיון" draft), and
+   the task goes straight to Execute, without Dolev's approval:
    ```bash
    gh label create "size:small" --color c5def5 --description "משימה קטנה: עוברת לביצוע בלי אישור תוכנית" 2>/dev/null || true
    gh issue edit <N> --add-label "size:small,status:ready-to-execute" --remove-label "status:explore"
@@ -226,6 +244,8 @@ keeps them: edit it in the headings it already has.
 - Never write feature code in this phase, and never `git checkout` in the shared working copy.
 - A dependency the plan relies on is a "Blocked by" link, not only a sentence in the plan.
 - Never guess on an unclear issue; take the question path.
+- The spec part is the approved "what": the plan never widens it. A wider request is a spec
+  update first (`dev-spec`).
 - The small path only when all four conditions hold; any doubt is the normal path.
 - Never touch an issue whose status is not Claude's turn, unless Dolev named it or chose it in
   the question window.

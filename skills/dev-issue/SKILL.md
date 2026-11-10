@@ -1,6 +1,6 @@
 ---
 name: dev-issue
-description: Opens new GitHub issues in the current repo in Dolev's pipeline format — tasks, bugs, backlog ideas, and the sub-issues of a task being split up — with the right body sections, labels, milestone, sub-issue links and native "Blocked by" dependency links. Use in any of Dolev's repos whenever he asks to open, add, file or split a task or bug ("תפתח משימה", "תפרק את זה ל-issues", "תוסיף לבקלוג"), to break an issue into sub-issues, or to put an idea in the backlog. Works in any repo that has the pipeline labels; if the repo has its own repo-specific issue skill, use that instead. Pairs with dev-plan, which picks up what this skill creates.
+description: Opens new GitHub issues in the current repo in Dolev's pipeline format — tasks, bugs, backlog ideas, and the sub-issues of a task being split up — with the right body sections, labels, milestone, sub-issue links and native "Blocked by" dependency links. Use in any of Dolev's repos whenever he asks to open, add, file or split a task or bug ("תפתח משימה", "תפרק את זה ל-issues", "תוסיף לבקלוג"), to break an issue into sub-issues, to put an idea in the backlog, or to break a merged spec into one issue per part ("תפרק את האפיון"). Works in any repo that has the pipeline labels; if the repo has its own repo-specific issue skill, use that instead. Pairs with dev-plan, which picks up what this skill creates.
 ---
 
 # Open issues
@@ -24,7 +24,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ## Read first
 
 - **In `$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary, milestones),
-  `issue-body.md` (editing a body) and `dependencies.md` ("Blocked by" links).
+  `issue-body.md` (editing a body), `dependencies.md` ("Blocked by" links) and `specs.md`
+  (the spec line, and the breakdown of a merged spec into issues).
 - **The repo's `CLAUDE.md`**: its sources of truth, and its rules about business data. Do
   not invent prices, values or business rules. What is missing goes into "שאלות פתוחות" as an
   unticked box, not into the text.
@@ -73,6 +74,7 @@ heading. Use the heading level the repo's existing issues use: issue-form bodies
 
 <parent and source, with a link to the repo's source of truth from CLAUDE.md>
 תלוי ב: #A, #B.
+אפיון: docs/specs/<topic>.md S-<n>.<m>
 
 ---
 ### Plan
@@ -83,6 +85,12 @@ _טרם נכתבה תוכנית._
 
 _אין שאלות פתוחות._
 ```
+
+**The `אפיון:` line** names the part the task implements (the format:
+`$HOME/.claude/docs/specs/README.md`). Write it when the topic is already in a spec: read the files in
+`docs/specs/` on `origin/<default>` and find the part. No part fits: leave the line out, and
+`dev-plan` drafts a new part with the plan (`reference/specs.md`). A backlog idea gets no line:
+it is a proposal, and gets its spec when Dolev asks for one (`dev-spec`).
 
 For a bug, follow `bug.yml` instead (with the standard template: משימה קשורה / מה קורה / מה
 היה אמור לקרות / Plan / שאלות פתוחות).
@@ -156,10 +164,41 @@ gh issue view <N> --json labels,milestone --jq '[.labels[].name], .milestone.tit
 Report each new issue to Dolev, in Hebrew, as a link with its title, milestone and blockers. If the repo has
 `sync-project.yml`, a board column that has not updated yet catches up within a few hours.
 
+## Mode: breaking down a spec (פירוק אפיון)
+
+After a spec PR merges (`dev-ship` offers it, step 8), or when Dolev asks to break a spec into
+issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
+
+1. **Read the merged file** from `origin/<default>` (`git fetch` first), and list its open parts
+   that no open issue points at:
+   ```bash
+   python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --table
+   ```
+   The rows in state "אין issue" are the parts to open.
+2. **Step 1 of this skill, unchanged:** show Dolev the list before creating anything, one issue
+   per part: the title (the part's name), the part's id, the milestone (his call, as always),
+   and the blockers. A blocker comes **only** from a dependency written in the spec ("תלוי
+   ב-S-1.2": blocked by the issue of S-1.2, new or existing). A dependency that seems missing is
+   a question to him, never a guessed link; if he agrees, the spec is updated first
+   (`dev-spec`).
+3. **Each body** follows step 2: "מה רוצים" says in a line or two which part it implements and
+   how Dolev will know it works, without copying the part; "הקשר / קישורים" links the proposal
+   and holds the `תלוי ב:` and `אפיון:` lines. Labels and milestone as step 3 (a task); links
+   as step 4.
+4. **Close the proposal** once every issue exists and is linked: a comment that points at the
+   spec file and lists the new issues, then closed as completed:
+   ```bash
+   gh issue comment <proposal> --body-file <file>
+   gh api -X PATCH repos/{owner}/{repo}/issues/<proposal> -f state=closed -f state_reason=completed
+   ```
+   A spec written for a task (like claude-config #230) has no proposal: nothing to close.
+5. Report as in step 5, with the part id next to each new issue.
+
 ## Golden rules
 
 - Never create issues Dolev has not agreed to, and never delete one.
 - Never invent business data in an issue; missing data is an unticked open question.
 - Every `תלוי ב:` entry has a matching "Blocked by" link, and the other way round.
+- In a breakdown, a link comes only from a dependency written in the spec; never guess one.
 - Never assign a milestone on your own judgement, except `current_sprint` for a bug or a
   `process` issue.

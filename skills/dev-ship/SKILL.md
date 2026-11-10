@@ -24,7 +24,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md`, `git-flow.md` and `review-app.md`
 (step 7 stops the branch's review app, if one runs). If the pipeline is installed, also
 `pipeline.md` (the label vocabulary and the exclusivity rule), which step 6 depends on,
-`issue-body.md` (the open-questions section, step 4c), and `after-merge.md` (step 8).
+`issue-body.md` (the open-questions section, step 4c), `after-merge.md` (step 8), and
+`specs.md` (a spec PR, steps 0b, 4c and 8).
 
 ## Relationship to dev-code
 
@@ -48,7 +49,10 @@ When Dolev names an issue rather than a branch:
      gh pr view "$P" --json number,state,headRefName --jq 'select(.state=="OPEN")'
    done
    ```
-   None: say so and stop; there is nothing to merge. More than one: list them and ask which.
+   None, and the issue is a backlog proposal: its spec PR says `Refs #<I>`, not `Closes`
+   (`reference/specs.md`). Look for an open PR from a `claude/spec-*` branch that mentions it:
+   `gh pr list --search "<I>" --state open --json number,headRefName`.
+   None at all: say so and stop; there is nothing to merge. More than one: list them and ask which.
    The issue is normally in `status:in-review`; another status is not a reason to stop, since
    Dolev asked by name, but say so in the summary.
 2. Work on the PR's branch (`headRefName`) in a worktree, never by switching branches in the
@@ -151,7 +155,8 @@ the issue or the branch:
 gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
 ```
 
-For each issue, read its "שאלות פתוחות" section (`issue-body.md`). A box still unticked: list
+For each issue, read its "שאלות פתוחות" section (`issue-body.md`). A spec PR (branch
+`claude/spec-*`) also has that section in its own body: read it there too. A box still unticked: list
 it and ask Dolev whether to merge anyway; stop until he answers. Do not tick boxes on his
 behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
 this is the last look before the merge.
@@ -207,7 +212,8 @@ here makes the board right at once.
 gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
 ```
 
-Empty output: the PR closes no issue. Say so and move on. Otherwise, for each issue, swap the
+Empty output: the PR closes no issue. Say so and move on. A spec PR of a backlog proposal
+(`Refs`) is that case: the proposal stays `status:backlog` until the breakdown closes it. Otherwise, for each issue, swap the
 status label in a single command (`status:*` is exclusive):
 
 ```bash
@@ -272,7 +278,14 @@ A `git push` that deletes a branch is blocked by the proxy anyway (`reference/gi
 
 ## Step 8: Offer a session for the next issue (pipeline repos only)
 
-Only after the merge and the cleanup both succeeded. Follow `reference/after-merge.md`: pick the next issue the way `dev-next` does, without routing it,
+Only after the merge and the cleanup both succeeded.
+
+**A spec PR** (branch `claude/spec-*`) whose file has open parts with no issue: offer the
+breakdown instead of the next-issue session. Name the open parts (`spec_check.py --table`), and ask in the question window whether to run `dev-issue`'s
+"פירוק אפיון" mode here; its own step 1 still shows the list before anything is created
+(`reference/specs.md`). No open part left: the offer below, as for any merge.
+
+Otherwise, follow `reference/after-merge.md`: pick the next issue the way `dev-next` does, without routing it,
 and offer it as a session card whose opening prompt is `תחקור את #<N>` or `תקודד את #<N>`.
 The decision that matters is fresh session versus fork; the doc holds the rule. Never start
 that issue in this session.

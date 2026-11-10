@@ -79,10 +79,13 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    | `waiting-approval` | Dolev | his approval of the plan |
    | `plan-questions` | Dolev | his answers, in the issue's "שאלות פתוחות"; then it goes back to `status:explore` |
    | `in-review` | Dolev | his review of the PR, then a fix (`needs-repair`) or his request in the chat to merge it (dev-ship) |
-   | `backlog` | Dolev | handing it over: writing it up and moving it to `status:explore` |
+   | `backlog` | Dolev | his "תכתוב אפיון ל-#N", which runs **dev-spec** (`reference/specs.md`) |
 
    Before routing, tell Dolev in Hebrew, in one or two lines, which issue you picked and why: whether it
-   is a bug (say "באג: נבחר לפני משימה חדשה") or a `process` issue, how many issues wait on it, and the next one or two below it. Then invoke the phase skill with the
+   is a bug (say "באג: נבחר לפני משימה חדשה") or a `process` issue, how many issues wait on it, and the next one or two below it.
+   Next to the issue, its part in the spec: the id and the part's name, from the `אפיון:` line
+   of its body (`gh issue view <N> --json body`) and the heading in that file on
+   `origin/<default>`; no line: "בלי אפיון". The ranking does not change for it. Then invoke the phase skill with the
    issue number. Both phase skills take the issue Dolev named over their own ranking, and
    still apply every gate of their own (the WIP gate, the blocked check, the sprint).
 

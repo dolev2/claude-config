@@ -17,7 +17,8 @@ session, and stop.
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md`, `orchestrate.md` (the child
 contract, the tags, what wakes a check and what to check after a change; below, `orchestrate.md` always means
 `reference/orchestrate.md`), `chat-decisions.md`, `cloud.md` (the `gh`
-table and "חלונות אישור בסשן-בן"), `dependencies.md`, and `git-flow.md`. Then the repo's
+table and "חלונות אישור בסשן-בן"), `dependencies.md`, `git-flow.md`, and `specs.md` (the spec
+gaps, and why spec writing is never a child's). Then the repo's
 `CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 2).
 
 ## Start
@@ -60,8 +61,12 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    The active ones' `issue:<N>` tags are the claimed list, and only they count toward the 3.
 2. **The sprint.**
    ```bash
-   python "$HOME/.claude/skills/dev-setup/scripts/sprint_state.py" --claimed <N,...>
+   python "$HOME/.claude/skills/dev-setup/scripts/sprint_state.py" --spec --claimed <N,...>
    ```
+   `--spec` adds `spec_gaps`: the gaps between the sprint's issues and the specs, each
+   `{path, line, message}` (`path` and `line` are `null` for a gap in no file). Each one is a
+   line in this check's summary (step 6), like the `findings` of `audit_sprint.py`. A gap never
+   holds back a child or a merge (`reference/specs.md`, "אזהרות במתזמר").
    Compare its two shas with the last check's (every check ends with a line that carries them,
    step 6), in this order (`orchestrate.md`, "שינוי בצינור באמצע ספרינט"):
    1. A sha is `null` (git failed, with a warning on stderr): tell Dolev in one line that the
@@ -127,7 +132,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    step 4, so the old child is archived.
 6. **Close the check.** One summary line, always, ending with
    `since <now> expect <N>=<status>,... pipeline_sha <sha> session_sha <sha>`: the next check compares against it,
-   and step 3 reads `since` and `expect` from it. Nothing to open and nothing to ask: the line says what the sprint waits
+   and step 3 reads `since` and `expect` from it. The `spec_gaps` lines of step 2 come right
+   above it, one per gap. Nothing to open and nothing to ask: the line says what the sprint waits
    for. Then, when any child is active, start the background watch: stop the previous one if
    it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
    ```bash
@@ -157,6 +163,8 @@ the sprint), and the stray branches of closed issues for Dolev to delete by hand
   upgrade or service.
 - "Blocked by" links on GitHub are the only source of what may start. A child never edits
   them; the orchestrator does, as `orchestrate.md` says.
+- Never send spec writing to a child: `dev-spec` runs only when Dolev asks for it, in a
+  session of its own. A backlog proposal is never dispatched.
 - Never open a child for an issue that is claimed, blocked, an umbrella (a sub-issue still
   open), or `costs-money`: `sprint_state.py` already leaves those out of `dispatch`, and the
   check never adds them back. Umbrellas are listed apart in `umbrellas`, with their open

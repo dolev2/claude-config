@@ -1,6 +1,6 @@
 ---
 name: dev-setup
-description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label→board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-plan, dev-code and dev-ship work there. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference files and scripts the other dev-* skills use.
+description: Installs Dolev's GitHub × Claude Code issue pipeline in the current repo — the status:/area: labels, a check that the shared task and bug issue forms reach the repo, the label→board sync workflow, the open-questions gate, sprint milestones, a linked Project board, and a pointer in CLAUDE.md — so that dev-issue, dev-next, dev-spec, dev-plan, dev-code and dev-ship work there — and moves a repo installed before the spec-first order onto it. Use whenever Dolev asks to set up, install, bootstrap or add "the pipeline" / "הצינור" / "the workflow from CRM" to a repo, starts a new project and wants the same flow, or when another dev-* skill reports the pipeline is missing. Also holds the shared reference files and scripts the other dev-* skills use.
 ---
 
 # Set up the pipeline in a repo
@@ -12,7 +12,8 @@ templates. What each file is, and why it exists: the file guide in the repo's `R
 Read `reference/pipeline.md`, `reference/setup.md`, `reference/review-app.md` and
 `reference/tests.md` (how the test commands in `CLAUDE.md` are read) before step 1,
 so you know what each piece is for. `reference/board.md` (steps 4–5) and
-`reference/repo-files.md` (steps 3 and 6) hold the details of those steps.
+`reference/repo-files.md` (steps 3 and 6) hold the details of those steps, and
+`reference/specs.md` the move to the spec-first order (step 8).
 
 ## Step 0: What is already there
 
@@ -20,7 +21,8 @@ so you know what each piece is for. `reference/board.md` (steps 4–5) and
 python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 ```
 
-`ready: True`, `missing_files: []`, `lint: []` and `netlify: []` means it is installed. Say so and stop.
+`ready: True`, `missing_files: []`, `lint: []` and `netlify: []` means it is installed: only
+step 8 (the spec-first order) may be left. Check it there, and otherwise say so and stop.
 Otherwise note what is missing; only that gets added. A repo that has the pipeline but a
 non-empty `lint` goes through the lint parts of steps 1, 3 and 6 only. Never overwrite an existing workflow, script or
 issue form: show the diff against the template and ask.
@@ -204,7 +206,8 @@ Add a short section to the repo's `CLAUDE.md` (create the file only if Dolev agr
 ## צינור העבודה
 משימות מנוהלות כ-issues ב-<owner/repo>, עם תוויות `status:*`<, ולוח Project מס' N>.
 ה-milestones הם הספרינטים. המנגנון: הסקילים `dev-issue`, `dev-next`, `dev-plan`, `dev-code`,
-`dev-ship` (ב-`~/.claude/skills/`), והמסמך `dev-setup/reference/pipeline.md`.
+`dev-ship`, ולפניהם `dev-spec` לאפיון (ב-`~/.claude/skills/`), והמסמך `dev-setup/reference/pipeline.md`.
+האפיונים ב-`docs/specs/`.
 ```
 
 Then the "הרמה לסקירה" section, in the format of `reference/review-app.md`: ask Dolev
@@ -244,6 +247,27 @@ or by hand in Settings → Rules → Rulesets, with the
 rules the template holds. A private repo gets one line instead, with nothing for him to do: the
 default branch has no ruleset, because a private repo on a free account cannot have one,
 and the hooks guard it.
+
+## Step 8: Move to the spec-first order (a repo installed before it)
+
+The order is proposal → spec → issue → code (`reference/specs.md`). A repo installed before it
+is found by either sign:
+
+```bash
+grep -n "spec-check" .github/workflows/tests.yml
+python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py"
+```
+
+No `spec-check` step in `tests.yml`, or warnings that an open issue has no spec line. Then, as
+in every step here, **propose and wait for Dolev's yes**; the details are in
+`reference/specs.md`, "ריפו שהותקן לפני הסדר החדש":
+1. the `spec-check` step from the template's `tests.yml` (with `issues: read`), shown as a diff;
+2. the open topics, one line each, each to get its spec through `dev-spec`, one PR per topic,
+   on his request for each;
+3. once a topic's spec is merged, a spec line in every open issue of it that is not in the
+   backlog, listed for him before any body is edited.
+The backlog stays as it is. The move is done when `spec_check.py` warns about no issue without
+a spec line; until then, step 7 lists what is left.
 
 ## Golden rules
 
