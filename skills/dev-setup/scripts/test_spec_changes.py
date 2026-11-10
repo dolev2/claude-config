@@ -71,13 +71,27 @@ def test_the_change_carries_the_new_name():
         ("**מצב:** פתוח (#7)\n", ""),
         ("Reads the spec.", "Reads the spec (שופר ב-#242)."),
         ("Reads the spec.", "Reads the spec, שופר ב-#242, #243."),
+        ("Reads the spec.", "Reads the spec (שופר ב-#5 ו-#6)."),
         ("Reads the spec.", "Reads the spec.   "),
         ("Reads the spec.", "\n\nReads the spec.\n\n"),
     ],
-    ids=["status", "status removed", "improved", "improved bare", "spaces", "blanks"],
+    ids=[
+        "status",
+        "status removed",
+        "improved",
+        "improved bare",
+        "improved and",
+        "spaces",
+        "blanks",
+    ],
 )
 def test_what_does_not_count(old, new):
     assert changed(BASE, BASE.replace(old, new)) == []
+
+
+def test_a_level_five_id_heading_belongs_to_its_part():
+    new = BASE.replace("##### A detail", "##### S-1.9 · A detail")
+    assert changed(BASE, new) == [Change("changed", SPEC, "S-1.2", "Write the table")]
 
 
 def test_new_and_deleted_parts():

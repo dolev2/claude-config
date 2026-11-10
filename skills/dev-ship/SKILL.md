@@ -294,16 +294,20 @@ python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --changes <merge s
 A line per part (`new`, `changed`, `deleted`), and under a changed or deleted part a line
 per open issue that points at it, with its action: `close`, `explore` or `ask`. A `close`
 issue that has an open PR: mark it in the list, since that PR stays open for Dolev
-(`gh pr list --search "<I>" --state open`). Exit 1 means the issues were not read: say
-so and offer nothing on them.
+(`gh pr list --search "Closes #<I>" --state open`). Exit 1 means the issues were not read: say
+so and offer nothing, neither the update nor the breakdown, until they are.
+**A spec PR that merges several spec files into one** (`dev-setup`, step 8, item 5): every
+part reads as deleted from the old file and new in the new one. Offer no update and no
+breakdown: `dev-setup` moves the `אפיון:` lines itself.
 1. **New parts with no issue, or issues to update:** one question in the question window
    with the whole list: the breakdown of the new parts, and for each issue what will happen
    to it. "לבצע (מומלץ)" runs `dev-issue` here: first its "עדכון אחרי שינוי באפיון" mode,
    then its "פירוק אפיון" mode, whose own step 1 still shows its list before anything is
    created. "Other" corrects the list.
 2. **An `ask` issue** (in the code or in review, or with no status label): a question of its
-   own in the same call (up to four), naming the issue: "להשאיר בקוד, ולהוסיף תגובה על
-   השינוי (מומלץ)", "להחזיר לתכנון", and "Other".
+   own in the same call (up to three, after the list question: the window takes four), naming the issue: "להשאיר בקוד, ולהוסיף תגובה על
+   השינוי (מומלץ)", "להחזיר לתכנון", and "Other". More than three: the rest are asked in
+   the next window, and stay untouched until then.
 3. **`no spec changes`, or only new parts that already have an issue:** the offer below, as
    for any merge.
 

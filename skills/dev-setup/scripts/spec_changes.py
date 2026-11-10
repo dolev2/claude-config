@@ -13,9 +13,9 @@ count: they say who built the part, not what it is.
 import re
 from typing import NamedTuple
 
-from spec_parse import HEADING, PART_ID, STATUS_LIKE
+from spec_parse import HEADING, PART_ID, PART_LEVELS, STATUS_LIKE
 
-IMPROVED = r"שופר ב-#\d+(?:\s*,\s*#\d+)*"
+IMPROVED = r"שופר ב-#\d+(?:\s*(?:,|ו-)\s*#\d+)*"
 IMPROVED_IN_PARENS = re.compile(r"\s*\(" + IMPROVED + r"\)")
 IMPROVED_BARE = re.compile(r"[,;]?\s*" + IMPROVED)
 BEFORE_CODE = {
@@ -51,7 +51,7 @@ def part_texts(text: str) -> dict[str, tuple[str, list[str]]]:
         heading = None if in_fence else HEADING.match(line)
         if heading:
             depth, title = len(heading[1]), heading[2]
-            part = PART_ID.match(title)
+            part = PART_ID.match(title) if depth in PART_LEVELS else None
             if part or depth <= level:
                 current, level = None, 0
             if part and f"S-{part[1]}.{part[2]}" not in found:
