@@ -96,7 +96,7 @@ REPO=https://github.com/dolev2/claude-config
 | `gh issue comment`, `gh pr comment` | `gh api -X POST R/issues/<N>/comments --input <file>` |
 | `gh issue list --milestone` | `rank_issues.py`. רשימה לפי תווית: `R/issues?state=open&labels=<l>`, בלי מה שיש לו `pull_request` |
 | `gh label list` / `create` / `edit` | `gh api R/labels`, `-X POST R/labels`, `-X PATCH R/labels/<l>` |
-| `gh repo view` / `gh repo edit` | `pipeline_info.py`. `--json visibility`: `gh api R --jq .visibility` (`public` / `private`). `gh repo edit --delete-branch-on-merge`: `gh api -X PATCH R -F delete_branch_on_merge=true`, בכל סביבה. בענן לא נבדק (#251). אם חוזר 403, דולב מסמן ביד "Automatically delete head branches" ב-`https://github.com/<owner>/<repo>/settings` |
+| `gh repo view` / `gh repo edit` | `pipeline_info.py`. `--json visibility`: `gh api R --jq .visibility` (`public` / `private`). `gh repo edit --delete-branch-on-merge`: `gh api -X PATCH R -F delete_branch_on_merge=true`. מה עושים כשהוא חוזר 403: `git-flow.md` |
 | `gh pr create` / `gh pr edit` | `mcp__github__create_pull_request` / `mcp__github__update_pull_request` |
 | `gh pr view` (`--json state,headRefName,headRefOid,mergeable,mergeStateStatus`) | `gh api R/pulls/<N>`: `.state` ו-`.merged`, `.head.ref`, `.head.sha`, `.mergeable`, `.mergeable_state` (`clean`, `dirty`, `behind`, `blocked`, `unstable`). `MERGEABLE` הוא `.mergeable == true` |
 | `gh pr view --json closingIssuesReferences` | אין שדה כזה ב-REST: ה-issues מה-`Closes #<N>` ב-`.body` של `R/pulls/<N>` |
@@ -141,10 +141,9 @@ REPO=https://github.com/dolev2/claude-config
    בסשן-בן, `set_session_title` מקפיץ חלון למרות שהוא ב-`permissions.allow` (נבדק ב-8.11.2026, #184). לכן החוזה אוסר על הבן כל כלי של `claude-code-remote` (`orchestrate.md`, סעיף 8).
 
 ## מה עוד שונה בסשן ענן
-GraphQL חסום: הסקריפטים קוראים רק דרך REST (claude-config #138), והסקילים עובדים דרך הטבלה בסעיף "פקודות GitHub בסשן ענן".
+GraphQL חסום (עובדות הסביבה: `rules/env-cloud.md`): הסקריפטים קוראים רק דרך REST (claude-config #138), והסקילים עובדים דרך הטבלה בסעיף "פקודות GitHub בסשן ענן".
 
-ה-branch, ה-worktree ושם הסשן: `git-flow.md`, הסעיף "בסשן ענן" (claude-config #134).
-בקצרה: תמיד ה-branch של המשימה, בלי worktree, והשם, `<repo>: <branch>`, נקבע ב-`set_session_title` ולא ב-`/rename`.
+ה-branch, ה-worktree, הניקוי אחרי מיזוג ושם הסשן: `git-flow.md`, הסעיף "בסשן ענן" (claude-config #134).
 
 כללי Windows ב-`rules/env-windows.md` לא חלים בענן, חוץ מהסעיף "מה חייב לעבוד גם מחוץ ל-Windows". מה מותקן בענן, ומה נשאר למחשב: `rules/env-cloud.md` (claude-config #136).
 הבדיקה הוויזואלית בענן היא צילומי מסך ב-Playwright (`ux.md`), והאפליקציה לסקירה עולה בתוך הסשן (`review-app.md`).

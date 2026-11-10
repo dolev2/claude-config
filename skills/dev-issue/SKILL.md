@@ -145,8 +145,8 @@ gh issue create --title "<title>" --body-file <file> \
 ```
 
 The milestone is Dolev's call: use the one he named or the one the parent carries, and ask
-when neither exists. The exception is a bug or a `process` issue: it always goes into
-`current_sprint`, without asking (agreed in claude-config #38). If the repo numbers its tasks in titles, sub-issues continue the
+when neither exists. A bug or a `process` issue goes into `current_sprint`, without asking
+(the sprint rule: `reference/pipeline.md`). If the repo numbers its tasks in titles, sub-issues continue the
 parent's numbering (`13א.`, `13ב.`), so the board reads in order.
 
 ## Step 4: Link

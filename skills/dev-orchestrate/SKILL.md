@@ -195,7 +195,7 @@ the sprint), and the stray branches of closed issues for Dolev to delete by hand
 - Never send spec writing to a child: `dev-spec` runs only when Dolev asks for it, in a
   session of its own. A backlog proposal is never dispatched.
 - Never open a child for an issue that is claimed, blocked, an umbrella (a sub-issue still
-  open), or `costs-money`: `sprint_state.py` already leaves those out of `dispatch`, and the
+  open), or `costs-money` (`reference/pipeline.md`): `sprint_state.py` already leaves those out of `dispatch`, and the
   check never adds them back. Umbrellas are listed apart in `umbrellas`, with their open
   sub-issues.
 - A child is checked on GitHub after every change the watch or a PR event shows: the plan in

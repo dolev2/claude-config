@@ -39,9 +39,8 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    `bug` issues come first, then `process` issues, each group by weight. Each row is `#N`, how many
    sprint issues wait on it, its status, its kind (`process`, `bug` or `-`), its title, and
    `BLOCKED by #…` if it has an open blocker. The first line names the sprint. Issues
-   labelled `costs-money` are on hold until Dolev approves the expense: they are not ranked,
-   and the last line lists them (`On hold, costs-money: …`). Never pick one, and never
-   remove the label; only Dolev lifts the hold. A line `Active, no sprint: …` lists open
+   labelled `costs-money` are not ranked, and the last line lists them
+   (`On hold, costs-money: …`). Never pick one (the label: `reference/pipeline.md`). A line `Active, no sprint: …` lists open
    issues in the pipeline (past backlog, short of done) that have no milestone at all: no
    scan reaches them, so step 6 reports them.
 
@@ -68,7 +67,7 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    what stops that work, and lifting it is Dolev's call.
 
    No row left means nothing in the sprint can move. Say so, show the ranking, and stop.
-   Never reach outside the milestone.
+   Never reach outside the milestone (`reference/pipeline.md`).
 
 3. Route it by status. The status alone says whose turn it is (`reference/pipeline.md`):
 
@@ -134,7 +133,7 @@ On Dolev's request only, instead of the steps above. It picks no issue.
 
 ## Golden rules
 
-- One issue per run of this skill, handed to one phase.
+- One issue per run of this skill, handed to one phase (`reference/git-flow.md`).
 - Never pick a blocked issue (not for planning either), an issue outside the current sprint, or one without a milestone.
 - Never take Dolev's step for him because it is the bottleneck. Report it, or ask him in the
   question window and do only what he chose there.
