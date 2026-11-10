@@ -111,8 +111,10 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `gh api "repos/<repo>/issues?state=open&labels=status:in-review&per_page=100" --paginate`,
    leaving out what has `pull_request` (`cloud.md`). Three or more: that child does not
    open, and the question goes into step 5's window. It opens only on Dolev's explicit yes
-   for that issue; with no answer, the next check asks again. The contract tells the child
-   to skip the gate (its item 9).
+   for that issue; with no answer, the next check asks again. "Wait" is written in a
+   comment on the issue (with the marker), and while the gate stays closed later checks do
+   not ask about that issue again; once fewer than three wait, it opens as usual. The
+   contract tells the child to skip the gate (its item 9).
    `create_session` and `archive_session` always raise a permission prompt (`cloud.md`, "חלונות
    אישור בסשן-בן"): open the children of one check, and archive the ones step 3 verified as done,
    in one message, and say before it how many prompts are coming and that they are permission
@@ -127,8 +129,9 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
       warns. Only one merge question per window;
-   4. a coding child held by the WIP gate (step 4): the issues in `status:in-review`, and
-      whether to open the child for #N anyway, with "wait" first;
+   4. the coding children held by the WIP gate (step 4): one question, the issues in
+      `status:in-review`, and which held issues to open anyway (`multiSelect`, one option
+      per issue), with "wait" first;
    5. a child blocked on a permission prompt or failed: which session, which tool, and a link;
    6. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### לקח מוצע`), or
       from a `dev-ship` this session ran. Its four fields, with "open a task" first, right after
@@ -149,7 +152,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `hooks/compact_after_merge.py` blocks the turn's end once without it). A fix:
    `needs-repair`, a comment, and a coding child. Open past the WIP gate: that coding child
    opens right after his answer, in this check, as step 4 says but without counting the gate
-   again (a check keeps no memory, so the yes is not carried to the next one). Each of these
+   again (a check keeps no memory, so the yes is not carried to the next one), with the line
+   before it on how many permission prompts are coming. Each of these
    new children opens through step 4, so the old child is archived.
 6. **Close the check.** One summary line, always, ending with
    `since <now> expect <N>=<status>,... pipeline_sha <sha> session_sha <sha>`: the next check compares against it,

@@ -290,7 +290,7 @@ of step 11 does the same in this session.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
   `needs-repair`), except for what Dolev chose in the question window of step 11.
 - One issue per run, and never a new one while three or more sit in `status:in-review` unless
-  Dolev said yes to that.
+  Dolev said yes to that, or this is an orchestrator child (the orchestrator checked the gate).
 - Never start an issue that has an open "Blocked by" link.
 - A scan never reaches outside the current milestone; an issue Dolev named may. Never assign a
   milestone yourself.
