@@ -65,6 +65,7 @@ flowchart TD
       WCI --> HAND["מסירה: קישור לשינויים<br/>צילומי מסך בצ'אט<br/>טלפון רק בענן"]:::routine
     end
 
+    HAND --> LESS(["לקח מוצע, רק אם היה<br/>אחד לכל היותר, עם מקור<br/>שאלה שנייה בחלון השאלות<br/>אישור פותח משימה<br/>בלי אדם: הצעה בבקלוג<br/>בן: בהערת המסירה<br/>כלל משתנה רק במיזוג שלה"]):::human
     HAND --> REV["status:in-review<br/>התור של דולב"]:::human
     REV -.-> GATE["open-questions-gate.yml<br/>shared action in claude-config<br/>בודק את סעיף השאלות הפתוחות"]:::auto
     GATE -.-> WARN["נשארה תיבה לא מסומנת<br/>תגובה ותווית אזהרה<br/>הפלת ריצה שולחת מייל"]:::gate
@@ -76,6 +77,7 @@ flowchart TD
 
     ASK --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
     SHIP --> MERGE["rebase onto the default branch<br/>runs the tests<br/>push, then opens or reuses the PR<br/>waits for CI checks<br/>בודק את השאלות הפתוחות<br/>not MERGEABLE: back to the rebase<br/>squash merge"]:::routine
+    MERGE -. "ממה שקרה במיזוג" .-> LESS
     MERGE --> DONE(["dev-ship sets status:done<br/>status:done = merged<br/>Closes #N closes the issue<br/>the card lands in Done<br/>ניקוי: אפליקציה, worktree, branch מקומי"]):::routine
 
     ORCGO(["דולב: תריץ את הספרינט<br/>רק בסשן ענן"]):::human --> ORC
@@ -103,6 +105,9 @@ flowchart TD
 
 **שלב האפיון** (`dev-spec`, `specs.md`) בא לפני התכנון, בלי תווית חדשה: ההצעה נשארת `status:backlog`
 עד הפירוק. משימה שנפתחה מהטופס בלי אפיון נכנסת ישר לתכנון, כמו קודם.
+
+**לקח מוצע** (`lessons.md`) לא מוסיף תווית: `dev-code` במסירה ו-`dev-ship` אחרי המיזוג מציעים לקח אחד לכל היותר,
+ואישור של דולב פותח לו משימה רגילה.
 
 **המתזמר** (`dev-orchestrate`, `orchestrate.md`) לא מוסיף שלבים: הבנים שלו עוברים באותו צינור, והוא
 מרכז מול דולב את השאלות, האישורים והמיזוגים.

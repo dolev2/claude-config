@@ -24,8 +24,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md`, `git-flow.md` and `review-app.md`
 (step 7 stops the branch's review app, if one runs). If the pipeline is installed, also
 `pipeline.md` (the label vocabulary and the exclusivity rule), which step 6 depends on,
-`issue-body.md` (the open-questions section, step 4c), `after-merge.md` (step 8), and
-`specs.md` (a spec PR, steps 0b, 4c and 8).
+`issue-body.md` (the open-questions section, step 4c), `after-merge.md` (step 8),
+`specs.md` (a spec PR, steps 0b, 4c and 8), and `lessons.md` (the lesson of step 8).
 
 ## Relationship to dev-code
 
@@ -290,6 +290,14 @@ and offer it as a session card whose opening prompt is `תחקור את #<N>` or
 The decision that matters is fresh session versus fork; the doc holds the rule. Never start
 that issue in this session.
 
+**A lesson** (`reference/lessons.md`), only from what happened in steps 1–7 of this run: a
+rebase that conflicted, CI that failed, a cleanup that did not finish. At most one. When Dolev
+is in the chat, it is a question in the question window, after the breakdown question when
+there is one; open a task for it with `dev-issue` (recommended), drop it, or "Other" with his
+wording. No window, or the run is automated: a backlog proposal. Run from the orchestrator,
+this skill runs in the orchestrator itself, so the lesson goes into its next window
+(`dev-orchestrate`, step 5).
+
 ## Reporting back
 
 One short summary in Hebrew: the PR link and title, the merge method, which issue moved to `status:done` (or that
@@ -297,6 +305,7 @@ the PR closed none, or that the repo has no pipeline), and what step 7 cleaned a
 left: the review app, the worktree, the main folder (updated or not, and why), and both
 branches. If
 you stopped early, say exactly which step and why. End with the next-issue offer from step 8:
-which issue, fresh or fork and why in one line, or what the sprint waits for.
+which issue, fresh or fork and why in one line, or what the sprint waits for, and the lesson
+of step 8: what Dolev chose, or "אין לקח".
 After a merge, the message ends with "מה פתוח" and the full `/compact` code block (global
 `CLAUDE.md`). `hooks/compact_after_merge.py` blocks the turn's end once when it is missing.

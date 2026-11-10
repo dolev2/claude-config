@@ -17,8 +17,8 @@ session, and stop.
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md`, `orchestrate.md` (the child
 contract, the tags, what wakes a check and what to check after a change; below, `orchestrate.md` always means
 `reference/orchestrate.md`), `chat-decisions.md`, `cloud.md` (the `gh`
-table and "חלונות אישור בסשן-בן"), `dependencies.md`, `git-flow.md`, and `specs.md` (the spec
-gaps, and why spec writing is never a child's). Then the repo's
+table and "חלונות אישור בסשן-בן"), `dependencies.md`, `git-flow.md`, `specs.md` (the spec
+gaps, and why spec writing is never a child's), and `lessons.md` (step 5). Then the repo's
 `CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 2).
 
 ## Start
@@ -118,7 +118,13 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
       warns. Only one merge question per window;
-   4. a child blocked on a permission prompt or failed: which session, which tool, and a link.
+   4. a child blocked on a permission prompt or failed: which session, which tool, and a link;
+   5. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### לקח מוצע`), or
+      from a `dev-ship` this session ran. Its four fields, with "open a task" first. It goes
+      right after its issue's merge question, in the same call. One merge and one lesson per
+      issue keep it to 2 of the 4; a lesson that does not fit waits for the next check and goes
+      into the `/compact` summary. The choice is written in a comment on the issue, so the
+      lesson is not asked again. A task for it opens through `dev-issue` in the current sprint.
    The label moves first, the question after (`chat-decisions.md`, rule 2). Every comment the
    orchestrator writes in an issue, here or anywhere else, opens with the hidden marker
    `<!-- orchestrator -->` on its own line, so it does not wake the watch (`orchestrate.md`,

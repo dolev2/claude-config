@@ -25,8 +25,9 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary and the rules every phase shares),
 `issue-body.md` (how to read the full context of an issue, the Plan format), `git-flow.md` (one
 issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`,
-`review-app.md`, `ux.md` (the user-experience check), `specs.md` (marking the part Done) and
-`chat-decisions.md` (the hand-off question). Read them before step 1, every run.
+`review-app.md`, `ux.md` (the user-experience check), `specs.md` (marking the part Done),
+`chat-decisions.md` (the hand-off question) and `lessons.md` (the lesson offered at the hand-off).
+Read them before step 1, every run.
 Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 ## Execute
@@ -224,7 +225,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
     was not checked and why. The app's outcome from step 10 goes into that comment and into the
-    chat message, with one line on what to open in it. Both end with the next step, in one
+    chat message, with one line on what to open in it. It also has a lesson line, from what
+    happened in this run's code, tests, review and user-experience check (`reference/lessons.md`):
+    "לקח מוצע: <the rule>", or "אין לקח". At most one; a child of the orchestrator writes it
+    under `#### לקח מוצע`, in the doc's four fields. Both end with the next step, in one
     line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
     `status:needs-repair` with a comment.
 
@@ -248,8 +252,14 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     3. "Other" with what to fix: move the issue `status:in-review` → `status:needs-repair`,
        comment on it with his words quoted, and start the repair round in this session (no WIP
        gate, like every repair).
+    **A lesson** (`reference/lessons.md`) is a second question in the same call, after the merge
+    question: open a task for it (recommended), drop it, or "Other" with his wording. Choosing
+    the merge does not cancel it: both answers come back together, and the task is opened with
+    `dev-issue` before `dev-ship` runs.
     After the choice, one line in the chat on what changed. No window available, or the run is
-    automated: the comment and chat message above are the hand-off, as before.
+    automated: the comment and chat message above are the hand-off, as before, and a lesson is
+    opened as a backlog proposal (`reference/lessons.md`), unless this is a child of the
+    orchestrator.
 
 12. **Unless he chose the merge, keep the worktree until it**: the review app runs from it.
     If you entered it with
