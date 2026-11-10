@@ -67,8 +67,7 @@
 
 שינוי שהתעורר עליו הוא אות, לא החלטה (`chat-decisions.md`, כלל 3). גם תגובה של בן נבדקת, לא נלקחת כמו שהיא.
 אחרי כל שינוי המתזמר בודק ב-GitHub:
-1. **תוכנית:** ה-Plan בגוף ה-issue, וה-status (`waiting-approval`, `plan-questions`, או `ready-to-execute` ב-`size:small`).
-   מצב סיום שלישי: `status:backlog`, בלי Plan, עם התגובה של השער (`dev-plan`, צעד 2: אין חלק פתוח באפיון). הוא שורה בסיכום, עם ההצעה "תכתוב אפיון ל-#N".
+1. **תוכנית:** ה-Plan בגוף ה-issue, וה-status (`waiting-approval`, `plan-questions`, או `ready-to-execute` ב-`size:small`). מצב סיום שלישי: `status:backlog` בלי Plan, עם התגובה של השער (`dev-plan`, צעד 2: אין חלק פתוח באפיון), שורה בסיכום עם ההצעה "תכתוב אפיון ל-#N".
 2. **PR:** הקבצים מול "קבצים שצפויים להשתנות", ה-CI על ה-head, `mergeable_state`, ו-`status:in-review` ב-issue.
    בן לא תמיד גמר כשה-CI ירוק: הוא יכול להיות עוד בסבב התיקונים של הסקירה. הסימן: `status:in-review` והערת המסירה ב-issue.
 3. **מה שלא אמור להיות:** branch נוסף מלבד זה של ה-Plan, תווית שלא קיימת בריפו, issue אחר שהבן נגע בו.
