@@ -5,7 +5,8 @@ name: Tests
 #
 # Fill in before committing: the default branch, the folders, and each `# <...>` line.
 # Delete the job of a side the repo does not have. The `files` job stays in every repo,
-# a static site too: it checks that the file guide in README.md is complete (#89).
+# a static site too: it checks that the file guide in README.md is complete (#89), and
+# the spec files in docs/specs/ (claude-config #226).
 #
 # Lint runs before the tests in the same job: it is fast and fails first, and the job's
 # install step already serves both.
@@ -20,6 +21,7 @@ on:
 
 permissions:
   contents: read
+  issues: read # the spec check reads the open issues (claude-config #226)
 
 concurrency:
   group: tests-${{ github.ref }}
@@ -36,6 +38,10 @@ jobs:
           python-version: "3.13"
 
       - run: python .github/file_guide_check.py
+
+      # The specs in docs/specs/: an error in a file fails, a gap against the issues
+      # only warns. A repo with no spec yet only warns (claude-config #226).
+      - uses: dolev2/claude-config/skills/dev-setup/actions/spec-check@main
 
   backend:
     runs-on: ubuntu-latest
