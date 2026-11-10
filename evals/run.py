@@ -225,7 +225,9 @@ def main(argv: list[str] | None = None) -> int:
     if not result.exists():
         print(f"לא הורץ: claude plugin eval יצא ב-{code} בלי תוצאה.")
         return 2
-    lines, failed = summarize(json.loads(result.read_text(encoding="utf-8")), SKILLS)
+    lines, failed = summarize(
+        json.loads(result.read_text(encoding="utf-8")), SKILLS, plugin
+    )
     print("\n".join(lines))
     print(f"הדוח המלא: {result}")
     if code == 2:

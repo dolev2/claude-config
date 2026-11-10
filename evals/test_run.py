@@ -147,14 +147,15 @@ def test_summary_one_line_per_skill():
 
 
 def test_summary_failure_names_the_rule(tmp_path):
-    graders = tmp_path / "graders"
-    graders.mkdir()
+    """The result's dir is relative to the plugin, as claude plugin eval writes it."""
+    graders = tmp_path / "evals" / "dev-ship-status" / "graders"
+    graders.mkdir(parents=True)
     (graders / "no-merge.md").write_text(
         "---\ntype: regex\n---\nנקרא מיזוג בלי בקשה.\n"
     )
     failing = {"name": "no-merge", "passed": False, "scored": True, "explanation": "x"}
-    result = {"cases": [case("dev-ship-status", 0, [failing], str(tmp_path))]}
-    lines, failed = summarize(result, run.SKILLS)
+    result = {"cases": [case("dev-ship-status", 0, [failing], "evals/dev-ship-status")]}
+    lines, failed = summarize(result, run.SKILLS, tmp_path)
     assert failed
     assert "נכשל: dev-ship-status" in lines
     assert "  נקרא מיזוג בלי בקשה." in lines

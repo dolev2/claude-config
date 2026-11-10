@@ -16,9 +16,9 @@ def skill_of(case: str, skills: tuple[str, ...]) -> str:
     return max(found, key=len) if found else "other"
 
 
-def rule_text(case_dir: str, grader: str) -> str | None:
+def rule_text(case_dir: Path, grader: str) -> str | None:
     """The rule a grader checks: the first non-empty body line of its file."""
-    path = Path(case_dir) / "graders" / f"{grader}.md"
+    path = case_dir / "graders" / f"{grader}.md"
     if not path.exists():
         return None
     text = path.read_text(encoding="utf-8")
@@ -38,8 +38,12 @@ def case_cost(case: dict) -> float:
     )
 
 
-def failures(case: dict) -> list[str]:
-    """Why a case failed: each failing grader's rule, and each run error, once."""
+def failures(case: dict, plugin: Path) -> list[str]:
+    """Why a case failed: each failing grader's rule, and each run error, once.
+
+    The result's `dir` is relative to the plugin folder.
+    """
+    case_dir = plugin / case.get("dir", "")
     reasons: list[str] = []
     for run in runs_of(case):
         if run.get("error"):
@@ -47,7 +51,7 @@ def failures(case: dict) -> list[str]:
         for grader in run.get("graders", []):
             if grader.get("passed") or not grader.get("scored", True):
                 continue
-            rule = rule_text(case.get("dir", ""), grader["name"])
+            rule = rule_text(case_dir, grader["name"])
             reasons.append(rule or f"{grader['name']}: {grader.get('explanation', '')}")
     return list(dict.fromkeys(reasons))
 
@@ -65,8 +69,10 @@ def model_of(case: dict) -> str | None:
     return None
 
 
-def summarize(result: dict, skills: tuple[str, ...]) -> tuple[list[str], bool]:
-    """Printed lines, and whether any case that ran failed."""
+def summarize(
+    result: dict, skills: tuple[str, ...], plugin: Path = Path()
+) -> tuple[list[str], bool]:
+    """Printed lines, and whether any case that ran failed; plugin: the built plugin."""
     threshold = result.get("suite", {}).get("threshold", 1)
     by_skill: dict[str, list[dict]] = {}
     for case in result.get("cases", []):
@@ -84,7 +90,7 @@ def summarize(result: dict, skills: tuple[str, ...]) -> tuple[list[str], bool]:
         for case in ran:
             if case not in passed:
                 failed_lines.append(f"נכשל: {case['name']}")
-                failed_lines += [f"  {reason}" for reason in failures(case)]
+                failed_lines += [f"  {reason}" for reason in failures(case, plugin)]
     lines += failed_lines
     if result.get("partial"):
         reason = result.get("partialReason")
