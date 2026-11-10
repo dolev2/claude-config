@@ -108,8 +108,11 @@ every run.
    ```bash
    git fetch origin <default>
    git rebase origin/<default>
+   python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --toc
    python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --no-issues
    ```
+   `--toc` rewrites the file's table of contents from its headings: **every spec PR runs it**,
+   since a part added or renamed without it fails the check. Commit what it changed.
    An error fails it: fix the file and run it again. Then the repo's lint and file-guide check
    (`reference/tests.md`). A conflict in the rebase: `git rebase --abort`, and stop and report.
 
