@@ -44,8 +44,8 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 Opening issues writes to the board Dolev works from, and deleting an issue is not something
 this pipeline does. So first show Dolev, in chat, the issues you intend to open: title, one
-line of scope, kind (task with its part, "משימה (S-x.y)" / bug / backlog, "הצעה בבקלוג: אין חלק"
-for a task with no open part, step 2), milestone, parent, and blockers. Create them only
+line of scope, kind (a task shows its part, "משימה (S-x.y)"; a bug; a backlog idea; a task with
+no open part shows "הצעה בבקלוג: אין חלק", step 2), milestone, parent, and blockers. Create them only
 after he agrees. When he has already dictated the exact list, that is the agreement.
 
 How to split a task, when that is the request:
@@ -181,7 +181,7 @@ task for an open part), a small PR writes the status lines, after step 4. The ru
    issue (no "is open with no status line" on these parts).
 4. A PR against `<default>` with no `Closes` (no issue closes in it), and a small table in its
    body: part, issue. The merge is `dev-ship`'s, on Dolev's request, as always.
-The report of step 5 carries the PR's link.
+The report (step 5, or item 6 of a breakdown) carries the PR's link.
 
 ## Step 5: Verify and report
 
@@ -191,7 +191,9 @@ gh api repos/{owner}/{repo}/issues/<N>/dependencies/blocked_by --jq '[.[].number
 gh issue view <N> --json labels,milestone --jq '[.labels[].name], .milestone.title'
 ```
 
-Report each new issue to Dolev, in Hebrew, as a link with its title, milestone and blockers. If the repo has
+Report each new issue to Dolev, in Hebrew, as a link with its title, milestone and blockers.
+A task that opened as a backlog idea for lack of an open part gets the offer "תכתוב אפיון ל-#N"
+(step 2), and the PR of the "פתוח" lines, when step 4b opened one, gets its link. If the repo has
 `sync-project.yml`, a board column that has not updated yet catches up within a few hours.
 
 ## Mode: breaking down a spec (פירוק אפיון)
