@@ -24,7 +24,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label vocabulary, the sprint), `issue-body.md` (how
 to read the full context of an issue, the Plan format, body editing), `specs.md` (the spec
-stage: the part an issue implements, the short Plan, an issue without a spec), `dependencies.md`,
+stage: the part an issue implements, the short Plan, the gate for an issue without a spec), `dependencies.md`,
 `git-flow.md` (the working copy), `ux.md` (the user-experience section) and `chat-decisions.md`
 (asking Dolev in the question window). Everything mechanical lives there. Read them before step 1,
 every run.
@@ -64,8 +64,18 @@ keeps them: edit it in the headings it already has.
    plan you write builds on what they deliver. **Read the issue's part in the spec**: the
    `אפיון:` line in "הקשר / קישורים" names the file and the ids (`issue_body.spec_line` reads
    it), and the part itself comes from `git show origin/<default>:<file>`. That part is the
-   approved "what" and "why"; the plan is the "how". Two
-   situations look alike but are not:
+   approved "what" and "why"; the plan is the "how".
+
+   **The gate: no open part, no plan** (`reference/specs.md`, "issue בלי אפיון"; claude-config
+   #243). Before any code is read: an issue that is not a bug, and whose `אפיון:` line is
+   missing or names a part that is already Done, gets no plan and no branch. Move it
+   `status:explore` → `status:backlog` and comment: it has no open part in the spec, so it goes
+   back to the backlog as a proposal, "תכתוב אפיון ל-#N" (a Done part: the change is first a
+   change to that part). Its milestone stays, since it is Dolev's, and the comment says so. It
+   does not count toward the three issues of the run, and it is none of the three hand-off
+   paths of step 7: the summary gives it a line of its own (step 8).
+
+   Two situations look alike but are not:
    - **a fresh issue**: no Plan content yet. Plan it from scratch.
    - **an issue with a Plan already**: Dolev answered or sent it back; revise the plan in place
      and add a line to the plan log saying what changed and why, citing where it came from: the
@@ -114,12 +124,11 @@ keeps them: edit it in the headings it already has.
    **An issue with a spec line gets the short Plan** (`reference/issue-body.md`): "בקצרה" in three
    lines, `- **אפיון:**` with the file, the id and the part's name, `- **איפה באפיון:**`, and
    "החלטות שמחכות לדולב"; then "פירוט טכני" as below. No "חוויית משתמש": the part holds it,
-   and `dev-code` checks against it there. The full plan below is for an issue without a spec line.
+   and `dev-code` checks against it there.
 
-   **An issue without a spec line, not a bug**, gets the full plan below, and "פירוט טכני" opens
-   with `##### חלק חדש לאפיון`: the spec file (the topic's, or a new one), the next id never used
-   in it, and the part's text in the spec format (`reference/specs.md`). Dolev approves the part
-   with the plan, and `dev-code` adds it to the file in the same PR.
+   **The full plan below is only for a bug back in planning**: `dev-code` sends a bug that
+   deletes something or changes a contract to `status:explore` (`reference/specs.md`, "issue
+   בלי אפיון"). A task without an open part never gets here: the gate of step 2 sent it back.
 
    **The full plan has two levels: the decision, then the execution.** It opens with "בקצרה",
    written for Dolev's decision: the problem, what will change for the users, what is left out
@@ -132,14 +141,14 @@ keeps them: edit it in the headings it already has.
    in "בקצרה", not a section of its own (`reference/issue-body.md`).
    An issue coming back for a revision whose plan predates this format gets it in the same edit.
 
-   **Every plan except a bug's tells Dolev where the task sits in the spec**: the line
-   `- **איפה באפיון:**`, right under `- **אפיון:**`; in a full plan, which has no spec line,
-   it comes before "החלטות שמחכות לדולב" and describes where its new part will go. One or two
+   **Every plan tells Dolev where the task sits in the spec**: the line
+   `- **איפה באפיון:**`, right under `- **אפיון:**`; in the full plan of a bug, it comes before
+   "החלטות שמחכות לדולב" and names the Done part the bug breaks. One or two
    sentences, in business language: the chapter and the group the part sits in, what the part
    does there and why it matters, and what depends on it or what it depends on, when there is any
    (the spec's "תלוי ב-S-x.y" lines and the issue's Blocked by). The short plan of a small task
-   has it when it has a spec line or a new part. A bug does not: it points at a Done part it
-   breaks (`reference/issue-body.md`).
+   has it too. The short plan of a bug (written by `dev-code`) does not: it points at a Done part
+   it breaks (`reference/issue-body.md`).
 
    **The "בדיקות" sub-heading follows the table in `~/.claude/rules/code-tests.md`**: one line
    per change in the plan, with the kind of test its row requires, the cases, and the test file.
@@ -207,15 +216,15 @@ keeps them: edit it in the headings it already has.
    **Small path**: the task meets all four conditions of "המסלול הקטן" in `reference/pipeline.md`
    (about 3 files at most; nothing a user sees, except a text fix; no deletion; no change to a
    contract or a new dependency). Any doubt: the normal path. The plan is the short plan from
-   `reference/issue-body.md` (without a spec line, it carries the "חלק חדש לאפיון" draft), and
-   the task goes straight to Execute, without Dolev's approval:
+   `reference/issue-body.md`, and the task goes straight to Execute, without Dolev's approval:
    ```bash
    gh label create "size:small" --color c5def5 --description "משימה קטנה: עוברת לביצוע בלי אישור תוכנית" 2>/dev/null || true
    gh issue edit <N> --add-label "size:small,status:ready-to-execute" --remove-label "status:explore"
    ```
    The label is created only when missing (without `--force`, so an existing description stays).
    A short plan back at `status:explore` without `size:small` is a task Dolev stopped: write the
-   full plan and take the normal path. Never small-path it again.
+   Plan of the normal path (with its spec line, the short Plan above) and take that path. Never
+   small-path it again.
 
    **Normal path**: the plan stands on its own:
    ```bash
@@ -242,10 +251,12 @@ keeps them: edit it in the headings it already has.
 
 8. End the run with a summary in Hebrew: which issues moved to `status:waiting-approval` with
    their branch, and which moved to `status:plan-questions` and what was asked. Blocked issues
-   get a line of their own, "דולגו, חסומות", each with its open blockers (step 1). Small-path
+   get a line of their own, "דולגו, חסומות", each with its open blockers (step 1). Issues the
+   gate sent back get a line of their own, "חזרו לבקלוג: אין חלק באפיון", each with "תכתוב
+   אפיון ל-#N" (step 2). Small-path
    issues get a line of their own, "עברו ישר לביצוע (קטנות)", each with its link and the reason
    it is small, so Dolev can stop one before code is written: he moves it to
-   `status:explore` and removes `size:small`, and the next run writes the full plan. Confirm with
+   `status:explore` and removes `size:small`, and the next run writes the normal plan. Confirm with
    `git status --short --branch` that the working copy is exactly as you found it.
 
    **Then ask for the approval in the question window**, when Dolev is in the chat
@@ -269,6 +280,7 @@ keeps them: edit it in the headings it already has.
 - Never write feature code in this phase, and never `git checkout` in the shared working copy.
 - A dependency the plan relies on is a "Blocked by" link, not only a sentence in the plan.
 - Never plan an issue with an open "Blocked by" link, unless Dolev named it and explicitly asked.
+- A task without a spec part gets no plan: it goes back to the backlog (step 2).
 - Never guess on an unclear issue; take the question path.
 - The spec part is the approved "what": the plan never widens it. A wider request is a spec
   update first (`dev-spec`).

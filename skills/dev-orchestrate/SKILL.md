@@ -94,11 +94,15 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `--expect` holds the status the previous check saw, from its summary line. Each issue it
    names, or whose status moved since the last check, is checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
    התקדם"). An issue now in `status:in-review` with an open PR: `subscribe_pr_activity` on it.
-   A child the check verified as done with its turn (the plan in the body and Dolev's status, or
+   A child the check verified as done with its turn (the plan in the body and Dolev's status, a
+   planning child that moved its issue to `status:backlog` with the gate's comment, or
    a PR with `status:in-review` and the hand-off comment) gets `archive_session` in this check,
    in step 4's message, or in a message of its own when step 4 opens nobody: it never works again, since an answer, a send-back or a fix opens a new
    child (`orchestrate.md`, "בן שסיים").
    A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
+   An issue a planning child sent to `status:backlog` (no open spec part, `dev-plan` step 2) is
+   a line in the summary of step 6, "חזר לבקלוג: אין חלק באפיון", with "תכתוב אפיון ל-#N". It
+   is not a question in the window: writing a spec is never sent to a child.
 4. **Dispatch.** While fewer than 3 of this repo's children are active and nobody is in overage
    (any child, or this session's own `get_session`: overage is per account): one child per
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
