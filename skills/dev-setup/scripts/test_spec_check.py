@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import spec_check
+import spec_toc
 from spec_check import Part
 
 SCRIPT = Path(__file__).resolve().parent / "spec_check.py"
@@ -168,7 +169,7 @@ def test_table_done_and_out_of_scope():
 def test_gaps_never_change_the_exit_code(tmp_path, monkeypatch, capsys):
     folder = tmp_path / "docs" / "specs"
     folder.mkdir(parents=True)
-    (folder / "pipeline.md").write_text(VALID, encoding="utf-8")
+    (folder / "pipeline.md").write_text(spec_toc.write(VALID), encoding="utf-8")
     monkeypatch.setattr(spec_check, "fetch_issues", lambda repo: [issue(5)])
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     assert spec_check.main(["--root", str(tmp_path), "--repo", "o/r"]) == 0

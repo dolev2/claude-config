@@ -120,7 +120,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    part's heading. A Plan with "חלק חדש לאפיון" (a task without a spec, or a small task):
    add that part to its file, already with the Done line, and add the `אפיון:` line to the
    issue's "הקשר / קישורים". A bug marks nothing: its part is already Done. A repair round
-   finds the line already there. Before the push in step 9:
+   finds the line already there. A part added: run `spec_check.py --toc` first, so the table of
+   contents lists it. Before the push in step 9:
    `python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --no-issues` passes.
 
    **While writing, run only the test files of what changed**, never a full suite; a failing

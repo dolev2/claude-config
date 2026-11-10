@@ -10,8 +10,12 @@ Two kinds of findings, by Dolev's answer on #226:
 - a gap between the issues and the specs (a line that points nowhere, an open issue
   without a line, an open part without an issue): a warning only, never the exit code.
 
+A stale table of contents is an error, and a missing one a warning, so that a repo
+whose specs predate it keeps a green CI until `--toc` adds one (spec_toc.py).
+
 Usage:
     spec_check.py [--root DIR] [--repo owner/name] [--no-issues] [--table] [--ref REF]
+    spec_check.py --toc [--root DIR]
 """
 
 import argparse
@@ -24,6 +28,7 @@ from typing import NamedTuple
 
 import gh_rest
 import issue_body
+import spec_toc
 
 SPECS_DIR = "docs/specs"
 HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*$")
@@ -296,10 +301,12 @@ def annotation(text: str) -> str:
 def emit(kind: str, finding: Finding) -> None:
     """Print a finding; in GitHub Actions as an annotation, so it shows on the PR."""
     if os.environ.get("GITHUB_ACTIONS") == "true":
-        where = f" file={finding.path},line={finding.line}" if finding.path else ""
+        where = f" file={finding.path}" if finding.path else ""
+        where += f",line={finding.line}" if finding.path and finding.line else ""
         print(f"::{kind}{where}::{annotation(finding.message)}")
     else:
-        place = f"{finding.path}:{finding.line}: " if finding.path else ""
+        line = f":{finding.line}" if finding.line else ""
+        place = f"{finding.path}{line}: " if finding.path else ""
         print(f"{kind}: {place}{finding.message}")
 
 
@@ -313,8 +320,21 @@ def summary(specs: dict[str, list[Part]], errors: int, warnings: int) -> str:
     )
 
 
-def read_specs(root: Path, ref: str | None) -> tuple[dict[str, list[Part]], list]:
-    """The parsed spec files, from the disk or from `ref`, and their errors.
+def toc_findings(path: str, text: str) -> tuple[list[Finding], list[Finding]]:
+    """(errors, warnings) of a file's table of contents: stale fails, missing warns."""
+    found = spec_toc.check(text)
+    if found is None:
+        return [], []
+    line, message = found
+    if line == 0:
+        return [], [Finding(path, None, message)]
+    return [Finding(path, line, message)], []
+
+
+def read_specs(
+    root: Path, ref: str | None
+) -> tuple[dict[str, list[Part]], list[Finding], list[Finding]]:
+    """The parsed spec files, from the disk or from `ref`, their errors and warnings.
 
     `ref` serves a clone that may be behind GitHub, like dev-ship's main folder (#227).
     """
@@ -324,10 +344,24 @@ def read_specs(root: Path, ref: str | None) -> tuple[dict[str, list[Part]], list
         sys.exit(f"spec files not read: {err}")
     specs: dict[str, list[Part]] = {}
     errors: list[Finding] = []
+    warnings: list[Finding] = []
     for path, text in files.items():
         specs[path], found = parse_spec(text)
         errors += [Finding(path, line, message) for line, message in found]
-    return specs, errors
+        toc_errors, toc_warnings = toc_findings(path, text)
+        errors += toc_errors
+        warnings += toc_warnings
+    return specs, errors, warnings
+
+
+def write_tocs(root: Path) -> int:
+    """Rebuild the table of contents of each spec file on disk; print what changed."""
+    for path, text in spec_files(root).items():
+        new = spec_toc.write(text)
+        if new != text:
+            (root / path).write_text(new, encoding="utf-8")
+            print(f"table of contents written: {path}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -341,14 +375,18 @@ def main(argv: list[str] | None = None) -> int:
         "--ref",
         help="read the specs from this git ref (e.g. origin/main), not the disk",
     )
+    parser.add_argument(
+        "--toc", action="store_true", help="write the table of contents of each file"
+    )
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    specs, errors = read_specs(Path(args.root), args.ref)
+    if args.toc:
+        return write_tocs(Path(args.root))
+    specs, errors, warnings = read_specs(Path(args.root), args.ref)
 
     issues = None
-    warnings: list[Finding] = []
     if not args.no_issues:
         try:
             issues = fetch_issues(args.repo)
@@ -357,7 +395,7 @@ def main(argv: list[str] | None = None) -> int:
             # file, so it may not fail CI either (Dolev's answer on #226).
             warnings.append(Finding(None, None, f"issues not read: {stop.code}"))
         else:
-            warnings = gaps(specs, issues)
+            warnings += gaps(specs, issues)
 
     for finding in errors:
         emit("error", finding)
