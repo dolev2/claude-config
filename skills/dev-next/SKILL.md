@@ -55,8 +55,10 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    full review below, on his request. `(no findings)`: say nothing.
 
 2. Pick the first row, top down, that:
-   - has no `BLOCKED by`. A blocked issue is never the next one; what blocks it ranks above
-     it anyway, since it carries at least the same weight plus one. A blocker of another
+   - has no `BLOCKED by`. A blocked issue is never the next one, and is never routed to
+     `dev-plan` either: planning skips blocked issues too (`reference/dependencies.md`,
+     claude-config #253). What blocks it ranks above it anyway, since it carries at least the
+     same weight plus one. A blocker of another
      repo (`owner/name#N`) is not in the ranking at all: the issue waits on that repo;
    - is not `status:backlog` with `0 waiting`. That is a sprint umbrella or an idea nobody
      waits on, not work to pick up;
@@ -134,7 +136,7 @@ On Dolev's request only, instead of the steps above. It picks no issue.
 ## Golden rules
 
 - One issue per run of this skill, handed to one phase.
-- Never pick a blocked issue, an issue outside the current sprint, or one without a milestone.
+- Never pick a blocked issue, for planning or for code, an issue outside the current sprint, or one without a milestone.
 - Never take Dolev's step for him because it is the bottleneck. Report it, or ask him in the
   question window and do only what he chose there.
 - The ranking lives in `rank_issues.py`. Do not re-derive it by hand.

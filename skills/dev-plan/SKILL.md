@@ -44,9 +44,15 @@ keeps them: edit it in the headings it already has.
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --status explore
    ```
    The first line names the sprint. An empty list means the sprint has nothing left to plan.
-   Say so and stop; never reach outside the milestone. `BLOCKED by` does not skip a row here.
+   Say so and stop; never reach outside the milestone.
 
-   **Up to three issues per run**: the top three rows. The fourth would be planned in a
+   **Skip blocked issues** (`reference/dependencies.md`, claude-config #253): a decision in a
+   blocker can change the file layout and leave a plan stale. Take rows top down, without
+   `BLOCKED by`, and name each row you skipped, with its open blockers, in the summary. Do not
+   relabel it. If every row is blocked, say so and stop. An issue Dolev named that is blocked:
+   say it is blocked and by what, and plan it only when he explicitly asks for that.
+
+   **Up to three issues per run**: the top three unblocked rows. The fourth would be planned in a
    compacted context. The WIP gate applies to Execute, not here.
 
    `status:plan-questions` is Dolev's turn, never scanned here. When he answers, or sends a
@@ -58,7 +64,7 @@ keeps them: edit it in the headings it already has.
    plan you write builds on what they deliver. **Read the issue's part in the spec**: the
    `אפיון:` line in "הקשר / קישורים" names the file and the ids (`issue_body.spec_line` reads
    it), and the part itself comes from `git show origin/<default>:<file>`. That part is the
-   approved "what" and "why"; the plan is the "how". An open blocker does **not** stop planning. Two
+   approved "what" and "why"; the plan is the "how". Two
    situations look alike but are not:
    - **a fresh issue**: no Plan content yet. Plan it from scratch.
    - **an issue with a Plan already**: Dolev answered or sent it back; revise the plan in place
@@ -172,8 +178,9 @@ keeps them: edit it in the headings it already has.
    **Keep the dependencies true.** If exploration shows the issue needs something another issue
    delivers and no link says so, add the "Blocked by" link and the `#B` on the dependency line
    (both, in the same run). If a listed dependency is not needed, remove both and say why in the
-   plan log. A business detail a person still owes is an open question, not a link. Where the
-   plan assumes something about a blocker that has no plan yet, write the assumption down.
+   plan log. A business detail a person still owes is an open question, not a link. A link you
+   add to a blocker that is still open stops the planning of this issue, as in step 1: write no
+   Plan, leave its status as it is, and name it in the summary with that blocker.
 
    **Content that belongs to another issue goes into that issue's body, never a comment.** A
    decision another task relies on is a line in its Plan section, for whoever plans it to build
@@ -226,7 +233,8 @@ keeps them: edit it in the headings it already has.
    step 8 asks for the approval.
 
 8. End the run with a summary in Hebrew: which issues moved to `status:waiting-approval` with
-   their branch, and which moved to `status:plan-questions` and what was asked. Small-path
+   their branch, and which moved to `status:plan-questions` and what was asked. Blocked issues
+   get a line of their own, "דולגו, חסומות", each with its open blockers (step 1). Small-path
    issues get a line of their own, "עברו ישר לביצוע (קטנות)", each with its link and the reason
    it is small, so Dolev can stop one before code is written: he moves it to
    `status:explore` and removes `size:small`, and the next run writes the full plan. Confirm with
@@ -252,6 +260,7 @@ keeps them: edit it in the headings it already has.
 
 - Never write feature code in this phase, and never `git checkout` in the shared working copy.
 - A dependency the plan relies on is a "Blocked by" link, not only a sentence in the plan.
+- Never plan an issue with an open "Blocked by" link, unless Dolev named it and explicitly asked.
 - Never guess on an unclear issue; take the question path.
 - The spec part is the approved "what": the plan never widens it. A wider request is a spec
   update first (`dev-spec`).
