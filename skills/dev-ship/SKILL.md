@@ -51,7 +51,7 @@ When Dolev names an issue rather than a branch:
    ```
    None, and the issue is a backlog proposal: its spec PR says `Refs #<I>`, not `Closes`
    (`reference/specs.md`). Look for an open PR from a `claude/spec-*` branch that mentions it:
-   `gh pr list --search "<I>" --state open --json number,headRefName`.
+   `gh pr list --search "<I>" --state open --json number,headRefName --jq '.[] | select(.headRefName | startswith("claude/spec-"))'`.
    None at all: say so and stop; there is nothing to merge. More than one: list them and ask which.
    The issue is normally in `status:in-review`; another status is not a reason to stop, since
    Dolev asked by name, but say so in the summary.
@@ -281,7 +281,7 @@ A `git push` that deletes a branch is blocked by the proxy anyway (`reference/gi
 Only after the merge and the cleanup both succeeded.
 
 **A spec PR** (branch `claude/spec-*`) whose file has open parts with no issue: offer the
-breakdown instead of the next-issue session. Name the open parts (`spec_check.py --table`), and ask in the question window whether to run `dev-issue`'s
+breakdown instead of the next-issue session. Name the open parts (`git fetch origin <default>`, then `spec_check.py --table --ref origin/<default>`: the main folder may not have been pulled in step 7), and ask in the question window whether to run `dev-issue`'s
 "פירוק אפיון" mode here; its own step 1 still shows the list before anything is created
 (`reference/specs.md`). No open part left: the offer below, as for any merge.
 

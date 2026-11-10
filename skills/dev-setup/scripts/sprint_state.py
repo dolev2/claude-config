@@ -268,10 +268,14 @@ def spec_gaps(nodes: list[dict], files: dict[str, str]) -> list[dict]:
 
 
 def repo_specs(base: str) -> dict[str, str]:
-    """The spec files on origin/<base>: the local clone may be behind GitHub."""
+    """The spec files on origin/<base>: the local clone may be behind GitHub.
+
+    They are read from the clone of the current directory, which is the repo the
+    orchestrator runs in; --repo naming another repo does not move them.
+    """
     root = Path(git(Path.cwd(), "rev-parse", "--show-toplevel").strip())
     # Best effort: offline, the last fetched origin/<base> is still worth reading.
-    subprocess.run(["git", "-C", str(root), "fetch", "-q", "origin", base])
+    subprocess.run(["git", "-C", str(root), "fetch", "-q", "origin", base], timeout=120)
     return spec_files_at(root, f"origin/{base}")
 
 
@@ -282,7 +286,7 @@ def spec_gaps_or_warning(nodes: list[dict], base: str) -> list[dict]:
     """
     try:
         files = repo_specs(base)
-    except ValueError as err:
+    except (ValueError, OSError, subprocess.TimeoutExpired) as err:
         return [{"path": None, "line": None, "message": f"spec files not read: {err}"}]
     return spec_gaps(nodes, files)
 

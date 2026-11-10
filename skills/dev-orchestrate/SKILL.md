@@ -63,7 +63,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/sprint_state.py" --spec --claimed <N,...>
    ```
-   `--spec` adds `spec_gaps`: the gaps between the sprint's issues and the specs, each
+   `--spec` adds `spec_gaps`: the gaps between all open issues (not only the sprint's) and the specs, each
    `{path, line, message}` (`path` and `line` are `null` for a gap in no file). Each one is a
    line in this check's summary (step 6), like the `findings` of `audit_sprint.py`. A gap never
    holds back a child or a merge (`reference/specs.md`, "אזהרות במתזמר").

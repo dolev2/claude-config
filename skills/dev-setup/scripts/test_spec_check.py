@@ -298,3 +298,25 @@ def test_spec_files_at_ignores_the_disk(repo):
 def test_spec_files_at_unknown_ref_is_an_error(repo):
     with pytest.raises(ValueError, match="no-such-ref"):
         spec_check.spec_files_at(repo, "no-such-ref")
+
+
+def test_spec_files_at_reads_a_non_ascii_name(repo):
+    (repo / "docs" / "specs" / "אפיון.md").write_text(VALID, encoding="utf-8")
+    run_git(repo, "add", ".")
+    run_git(repo, "commit", "-q", "-m", "hebrew name")
+    assert "docs/specs/אפיון.md" in spec_check.spec_files_at(repo, "HEAD")
+
+
+@pytest.mark.parametrize(
+    "ref, expected", [("HEAD", "1 spec files"), ("before", "no spec")]
+)
+def test_main_ref_reads_the_specs_of_the_ref(repo, ref, expected, capsys):
+    (repo / "docs" / "specs" / "pipeline.md").unlink()
+    code = spec_check.main(["--root", str(repo), "--no-issues", "--ref", ref])
+    assert code == 0
+    assert expected in capsys.readouterr().out
+
+
+def test_main_unknown_ref_exits_with_the_reason(repo):
+    with pytest.raises(SystemExit, match="spec files not read"):
+        spec_check.main(["--root", str(repo), "--no-issues", "--ref", "nope"])

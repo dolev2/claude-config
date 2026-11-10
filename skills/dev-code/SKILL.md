@@ -59,6 +59,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    part the issue's `אפיון:` line names (`git show origin/<default>:<file>`): the approved
    "what" the code delivers.
 
+   **A task whose deliverable is a spec** (its Plan says so, like claude-config #230): no code.
+   Run `dev-spec` on it from its step 2 (`reference/specs.md`); it opens the PR and hands off.
+
    **A manual task** (only Dolev can carry it out: Claude has no access) that reached Execute:
    stop before any code. Write what he must check or answer as unticked boxes in the
    open-questions section, move it to `status:plan-questions` with a comment, and open no PR

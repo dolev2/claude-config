@@ -172,7 +172,7 @@ issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
 1. **Read the merged file** from `origin/<default>` (`git fetch` first), and list its open parts
    that no open issue points at:
    ```bash
-   python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --table
+   python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --table --ref origin/<default>
    ```
    The rows in state "אין issue" are the parts to open.
 2. **Step 1 of this skill, unchanged:** show Dolev the list before creating anything, one issue

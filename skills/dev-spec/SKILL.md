@@ -42,8 +42,9 @@ every run.
      `status:ready-to-execute` or `status:needs-repair`, with a Plan that says so.
    Anything else stops here, with one line on why: a `bug` (it points at the part it breaks,
    and gets no new spec), a task that only needs code (`dev-plan` or `dev-code`), an issue in
-   Dolev's turn. Never start on your own initiative, and never as a child of the orchestrator:
-   the orchestrator does not dispatch spec writing.
+   Dolev's turn. Never start on your own initiative. A proposal is never written by a child of
+   the orchestrator: it has no label the orchestrator dispatches. A task like #230 is ordinary
+   work: `dev-code` hands it here, also in a child session.
 
 2. **Read the whole thread first** (`reference/issue-body.md`): body, every comment, sub-issues,
    linked PRs, and the issues it mentions. Then the code and the existing specs, against an
@@ -58,10 +59,13 @@ every run.
 
 3. **Pick the file.** One file per topic, `docs/specs/<topic>.md`, its name short and in English.
    - **The topic already has a file:** add parts to it. Each new part takes the next number
-     never used in that file, including in its history (a number that was used never returns):
+     never used in that file, including in its history (a number that was used never returns).
+     The ids ever used in a part heading, by group (a mention such as "תלוי ב-S-1.2" is no use):
      ```bash
-     git log -p --format= origin/<default> -- docs/specs/<topic>.md | grep -oE 'S-[0-9]+\.[0-9]+' | sort -uV | tail -1
+     git log -p --format= origin/<default> -- docs/specs/<topic>.md | grep -oE '^[+-]#{2,4} S-[0-9]+\.[0-9]+' | grep -oE 'S-[0-9]+\.[0-9]+' | sort -uV
      ```
+     A new part in group `<n>` takes the highest `<m>` of that group plus one; a new group, the
+     highest `<n>` plus one.
    - **A new topic:** a new file from `templates/spec.md`. The repo's first spec creates
      `docs/specs/`, and the file guide in `README.md` gets a `docs/specs/*.md` row.
    A part that is dropped gets `**מצב:** מחוץ להיקף`; it is never deleted.
@@ -127,6 +131,7 @@ every run.
    `dev-code`:
    ```bash
    gh issue edit <N> --add-label "status:in-review" --remove-label "status:ready-to-execute"
+   # (or --remove-label "status:needs-repair" on a repair round)
    ```
    A proposal keeps `status:backlog`; the `Refs` line already links the PR to it. Then the chat
    message, in Hebrew: the link to the PR's changes first, the parts it adds, the open questions
@@ -139,6 +144,7 @@ every run.
 ## Golden rules
 
 - Only on Dolev's request for that issue; his "תכתוב אפיון ל-#N" is the approval of a proposal.
+  A task like #230 comes from `dev-code` instead, like any approved task.
 - Never merge here. The merge is `dev-ship`'s, on his request, and it is the approval.
 - Never invent a requirement or business data; a gap is an open question in the PR body.
 - No file, function or endpoint names in a spec: the "how" belongs to the Plan.

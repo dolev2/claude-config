@@ -288,7 +288,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <h2 id="git-h">מה קורה ב-git</h2>
   <p>ה-branch נולד ב-remote בזמן התכנון, נכתב ב-worktree נפרד, מתעדכן ב-rebase, ונכנס ל-main ב-squash.</p>
   <p>התיקייה הראשית לא מחליפה branch אף פעם.</p>
-  <p>לאפיון יש branch משלו, <code>claude/spec-&lt;topic&gt;</code>, והוא עובר את אותו מסלול עד ה-squash, בלי שלב התכנון. ה-PR שלו כתוב <code>Refs #N</code>, ולכן המיזוג לא סוגר את ההצעה.</p>
+  <p>לאפיון יש branch משלו, <code>claude/spec-&lt;topic&gt;</code>, והוא עובר את אותו מסלול עד ה-squash, בלי שלב התכנון. ה-PR של הצעה כתוב <code>Refs #N</code>, ולכן המיזוג לא סוגר את ההצעה. משימה שהתוצר שלה הוא אפיון כותבת <code>Closes #N</code>, כמו כל משימה.</p>
   <ul class="keys">
     <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="main-line"/></svg><span><b>main</b>: הקו הראשי של הריפו</span></li>
     <li><svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="2" y1="7" x2="38" y2="7" class="branch-line"/><circle cx="20" cy="7" r="4" class="c-branch"/></svg><span><b>branch</b>: שרשרת commits. כל עיגול הוא commit</span></li>
@@ -488,7 +488,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>branch משלו: <code>claude/spec-&lt;topic&gt;</code>, מ-<code>origin/main</code>.</p>
-        <p>ה-PR כתוב <code>Refs #N</code>, לא <code>Closes</code>: המיזוג לא סוגר את ההצעה.</p>
+        <p>ה-PR של הצעה כתוב <code>Refs #N</code>, לא <code>Closes</code>: המיזוג לא סוגר את ההצעה.</p>
         <p>squash merge, כמו כל PR.</p>
       </div>
     </div>
