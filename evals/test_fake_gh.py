@@ -263,3 +263,38 @@ def test_the_gh_wrapper_runs_it(folder, tmp_path):
         [str(wrapper), "nope"], capture_output=True, text=True, env=env, check=False
     )
     assert bad.returncode == 1
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["issue", "edit", "--add-label", "status:done", "12"],
+        ["issue", "edit", "-R", "acme/demo", "12", "--add-label", "status:done"],
+    ],
+)
+def test_flags_before_the_number(folder, capsys, argv):
+    assert gh(capsys, *argv)[0] == 0
+    assert "status:done" in (folder / "issues" / "12.labels").read_text()
+
+
+def test_rest_body_from_input(folder, capsys, tmp_path, monkeypatch):
+    body = tmp_path / "patch.json"
+    body.write_text(json.dumps({"body": "גוף חדש"}), encoding="utf-8")
+    path = "repos/acme/demo/issues/12"
+    assert gh(capsys, "api", "-X", "PATCH", path, "--input", str(body))[0] == 0
+    assert (folder / "issues" / "12.body.md").read_text(encoding="utf-8") == "גוף חדש"
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["api", "-X", "POST", "repos/acme/demo/issues", "-f", "title=x"],
+        ["api", "repos/acme/demo/issues/12", "-f", "body=new"],
+        ["api", "-X", "PATCH", "repos/acme/demo/pulls/13", "-f", "title=x"],
+    ],
+)
+def test_rest_write_that_is_not_modelled_fails(folder, capsys, argv):
+    code, _, err = gh(capsys, *argv)
+    assert code == 1
+    assert "unsupported" in err
+    assert not (folder / "issues" / "12.body.md").exists()

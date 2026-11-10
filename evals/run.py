@@ -35,14 +35,21 @@ DEFAULT_CEILING_USD = 10.0
 RUNS = 2
 
 
+class BaseMissingError(Exception):
+    """The base to diff against does not exist here (no fetch, or a shallow clone)."""
+
+
 def changed_files(base: str) -> list[str]:
-    """Files changed against base, committed or not."""
-    committed = subprocess.run(
+    """Files changed against base, committed or not; raises when base is unknown."""
+    diff = subprocess.run(
         ["git", "-C", str(ROOT), "diff", "--name-only", f"{base}...HEAD"],
         capture_output=True,
         text=True,
         check=False,
-    ).stdout.split()
+    )
+    if diff.returncode:
+        raise BaseMissingError(base)
+    committed = diff.stdout.split()
     status = subprocess.run(
         ["git", "-C", str(ROOT), "status", "--porcelain"],
         capture_output=True,
@@ -192,9 +199,15 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     """Pick the cases, run them, and print one line per skill."""
     args = parse_args(argv)
-    tags = (
-        list(SKILLS) if args.all or args.holdout else tags_for(changed_files(args.base))
-    )
+    try:
+        tags = (
+            list(SKILLS)
+            if args.all or args.holdout
+            else tags_for(changed_files(args.base))
+        )
+    except BaseMissingError:
+        print(f"לא הורץ: אין {args.base} להשוואה. הריצו git fetch, או --all.")
+        return 2
     if not tags:
         print("אין סקיל מכוסה בשינוי: התרחישים לא הורצו.")
         return 0
@@ -230,9 +243,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     print("\n".join(lines))
     print(f"הדוח המלא: {result}")
-    if code == 2:
-        return 2
-    return 1 if failed or code else 0
+    if failed:
+        return 1
+    return 2 if code == 2 else (1 if code else 0)
 
 
 if __name__ == "__main__":

@@ -89,9 +89,28 @@ def body_arg(args: list[str]) -> str | None:
     return body
 
 
+VALUE_FLAGS = {"--add-label", "--remove-label", "--body", "-b", "--body-file", "-F"}
+VALUE_FLAGS |= {"--title", "-t", "--repo", "-R", "--json", "--jq", "-q", "--label"}
+VALUE_FLAGS |= {"-l", "--milestone", "-m", "--base", "-B", "--head", "-H", "--state"}
+VALUE_FLAGS |= {"-s", "--subject", "--match-head-commit", "--assignee", "-a"}
+
+
+def positionals(args: list[str]) -> list[str]:
+    """The arguments that are not a flag or a flag's value, in order."""
+    found, skip = [], False
+    for arg in args:
+        if skip:
+            skip = False
+        elif arg in VALUE_FLAGS:
+            skip = True
+        elif not arg.startswith("-"):
+            found.append(arg)
+    return found
+
+
 def number_arg(args: list[str], state: State, kind: str) -> int:
     """The issue or PR number from the first positional argument (or `#N`, a URL)."""
-    positional = [a for a in args if not a.startswith("-")]
+    positional = positionals(args)
     if not positional:
         if kind == "pr":
             return state.pr_for_branch(state.current_branch())

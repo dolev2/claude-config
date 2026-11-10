@@ -142,10 +142,17 @@ def pulls_list(state: State, query: dict) -> list[dict]:
     ]
 
 
+def read_only(method: str, answer: Callable[[], object]) -> object:
+    """A GET-only route: any other method is not modelled, so it fails loudly."""
+    if method != "GET":
+        raise GhError(f"fake gh: unsupported: {method} here", unsupported=True)
+    return answer()
+
+
 def issue_update(state: State, number: int, method: str, body: dict) -> dict:
-    """PATCH issues/N: body, title, state, labels."""
+    """GET or PATCH issues/N: body, title, state, labels."""
     if method != "PATCH":
-        return issue_rest(state, number)
+        return read_only(method, lambda: issue_rest(state, number))
     issue = state.issue(number)
     for key in ("title", "body", "state"):
         if key in body:
@@ -208,9 +215,14 @@ def routes(state: State, method: str, body: dict) -> list[tuple[str, Callable]]:
     i = int
     return [
         (r"", lambda m, q: repo_info(state, method, body)),
-        (r"/labels", lambda m, q: [{"name": x} for x in state.data["labels"]]),
-        (r"/milestones", lambda m, q: milestones(state)),
-        (r"/issues", lambda m, q: issues_list(state, q)),
+        (
+            r"/labels",
+            lambda m, q: read_only(
+                method, lambda: [{"name": x} for x in state.data["labels"]]
+            ),
+        ),
+        (r"/milestones", lambda m, q: read_only(method, lambda: milestones(state))),
+        (r"/issues", lambda m, q: read_only(method, lambda: issues_list(state, q))),
         (r"/issues/(\d+)", lambda m, q: issue_update(state, i(m[1]), method, body)),
         (
             r"/issues/(\d+)/labels",
@@ -237,8 +249,11 @@ def routes(state: State, method: str, body: dict) -> list[tuple[str, Callable]]:
             lambda m, q: [issue_rest(state, n) for n in state.blocking(i(m[1]))],
         ),
         (r"/issues/(\d+)/timeline", lambda m, q: timeline(state, i(m[1]))),
-        (r"/pulls", lambda m, q: pulls_list(state, q)),
-        (r"/pulls/(\d+)", lambda m, q: pull_rest(state, i(m[1]))),
+        (r"/pulls", lambda m, q: read_only(method, lambda: pulls_list(state, q))),
+        (
+            r"/pulls/(\d+)",
+            lambda m, q: read_only(method, lambda: pull_rest(state, i(m[1]))),
+        ),
         (r"/pulls/(\d+)/merge", lambda m, q: merge_route(state, i(m[1]), method)),
         (r"/commits/([0-9a-f]+)/check-runs", lambda m, q: check_runs(state, m[1])),
         (

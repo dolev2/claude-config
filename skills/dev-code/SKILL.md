@@ -154,9 +154,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    **The skill evals**, in a repo that has `evals/run.py` (claude-config), when the diff
    touches a skill, `skills/dev-setup/reference/` or `evals/` (`reference/tests.md`):
    `python evals/run.py --model <the model id this session runs on>`, once, after the full
-   run. It picks the cases from the diff itself, and prints one line per skill. It exits 2
-   with "לא הורץ: חסר ..." when `bubblewrap` or `socat` is missing: install them
-   (the command in `reference/tests.md`) and run it again. A failed case is a
+   run. It picks the cases from the diff itself, and prints one line per skill. Exit 1 is a
+   failed case. Exit 2 is "not run", and the "לא הורץ" line says why: `bubblewrap` or
+   `socat` missing (install them, the command in `reference/tests.md`, and run it again),
+   no `origin/<default>` to diff against (fetch it), or no result. A failed case is a
    failing test: fix the skill, or the case when the rule changed on purpose (never a case
    in `evals/holdout/`), and run that case again (`--case <name>`). A stop at the cost
    ceiling is not a failure: say what ran. On Windows it does not run: say so in the

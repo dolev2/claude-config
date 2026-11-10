@@ -5,6 +5,7 @@ results.
 """
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -171,3 +172,47 @@ def test_summary_cost_ceiling_is_not_a_failure():
     assert not failed
     assert "נעצר בתקרת העלות. לא הספיקו לרוץ: dev-code-b." in lines
     assert "dev-code: 0 מתוך 0 עברו, עלות 0.00 דולר" in lines
+
+
+def test_missing_base_is_not_run(ready, monkeypatch):
+    def missing(base):
+        raise run.BaseMissingError(base)
+
+    monkeypatch.setattr(run, "changed_files", missing)
+    code, out = ready()
+    assert code == 2
+    assert "לא הורץ: אין origin/main" in out
+
+
+def test_changed_files_unknown_base_raises():
+    with pytest.raises(run.BaseMissingError):
+        run.changed_files("no-such-ref-183")
+
+
+def fake_eval(monkeypatch, exit_code, result=None):
+    """A stand-in `claude plugin eval`: writes result.json, exits with exit_code."""
+
+    def fake(command, **kwargs):
+        if result is not None:
+            target = Path(command[command.index("--json") + 1])
+            target.write_text(json.dumps(result), encoding="utf-8")
+        return subprocess.CompletedProcess(command, exit_code)
+
+    monkeypatch.setattr(run.subprocess, "run", fake)
+
+
+@pytest.mark.parametrize(
+    ("exit_code", "score", "expected"),
+    [(0, 1, 0), (1, 0, 1), (2, 1, 2), (2, 0, 1)],
+)
+def test_exit_code_after_the_run(ready, monkeypatch, exit_code, score, expected):
+    """A failed case is 1 even when the run stopped (2), say at the cost ceiling."""
+    fake_eval(monkeypatch, exit_code, {"cases": [case("dev-ship-a", score)]})
+    assert ready()[0] == expected
+
+
+def test_no_result_is_not_run(ready, monkeypatch):
+    fake_eval(monkeypatch, 1)
+    code, out = ready()
+    assert code == 2
+    assert "בלי תוצאה" in out
