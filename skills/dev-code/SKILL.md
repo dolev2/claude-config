@@ -38,6 +38,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    **Three or more: do not start without asking.** List them for Dolev and ask whether to go
    ahead anyway. Continue only on an explicit yes.
 
+   **A child session of the orchestrator skips this step** (its contract is in the system
+   prompt): the orchestrator checked the gate before it opened the child, and asked Dolev when
+   it had to (`reference/orchestrate.md`, "פתיחת בן").
+
 2. Find the work. If Dolev named a specific issue, take that one, even outside the current
    sprint (say so; never assign it a milestone). Otherwise, **inside the current sprint
    only**, repair first, then bugs, then by weight:
@@ -286,7 +290,7 @@ of step 11 does the same in this session.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
   `needs-repair`), except for what Dolev chose in the question window of step 11.
 - One issue per run, and never a new one while three or more sit in `status:in-review` unless
-  Dolev said yes to that.
+  Dolev said yes to that, or this is an orchestrator child (the orchestrator checked the gate).
 - Never start an issue that has an open "Blocked by" link.
 - A scan never reaches outside the current milestone; an issue Dolev named may. Never assign a
   milestone yourself.
