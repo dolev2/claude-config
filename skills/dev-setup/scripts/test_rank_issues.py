@@ -1,6 +1,7 @@
 """rank_issues.py: the ranking dev-plan, dev-code and dev-next pick issues by."""
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,7 @@ def node(
     blocked_by=(),
     blocking=(),
     labels=("task",),
+    subs=(),
 ):
     names = [f"status:{status}", *labels]
     return {
@@ -29,6 +31,7 @@ def node(
         else None,
         "blockedBy": {"nodes": [{"number": n, "state": s} for n, s in blocked_by]},
         "blocking": {"nodes": [{"number": n, "state": "OPEN"} for n in blocking]},
+        "subIssues": {"nodes": [dict(sub) for sub in subs]},
     }
 
 
@@ -327,3 +330,50 @@ def test_a_blocked_bug_stays_listed_and_the_free_task_is_the_first_unblocked():
     assert numbers(ranked) == [1, 2, 3]
     assert ranked[0].blocked
     assert next(i for i in ranked if not i.blocked).number == 2
+
+
+def test_an_umbrella_with_an_open_sub_issue_is_marked(capsys):
+    # The bug of #250: dev-code took the first unblocked row, umbrella or not.
+    [umbrella] = issues(
+        node(1, status="ready-to-execute", subs=[{"number": 2, "state": "OPEN"}])
+    )
+    assert umbrella.umbrella
+    assert not umbrella.blocked
+    rank_issues.print_ranking("W1", [umbrella], [], [])
+    row = capsys.readouterr().out.splitlines()[1]
+    assert row.endswith("issue 1  UMBRELLA, open sub-issues #2")
+
+
+@pytest.mark.parametrize(
+    "subs, expected",
+    [
+        ([], []),
+        ([{"number": 2, "state": "CLOSED"}], []),
+        (
+            [
+                {"number": 2, "state": "CLOSED"},
+                {"number": 3, "state": "OPEN"},
+                {"number": 4, "state": "OPEN", "repository": "o/other"},
+            ],
+            ["#3", "o/other#4"],
+        ),
+    ],
+)
+def test_only_open_sub_issues_make_an_umbrella(subs, expected):
+    [issue] = issues(node(1, subs=subs))
+    assert issue.open_subs == expected
+    assert issue.umbrella == bool(expected)
+
+
+def test_a_node_without_sub_issues_is_no_umbrella():
+    bare = node(1)
+    del bare["subIssues"]
+    assert rank_issues.parse_issue(bare).open_subs == []
+
+
+def test_the_json_output_carries_the_open_sub_issues(monkeypatch, capsys):
+    nodes = [node(1, subs=[{"number": 2, "state": "OPEN"}]), node(2)]
+    monkeypatch.setattr(rank_issues, "open_issue_nodes", lambda repo: nodes)
+    rank_issues.main(["--repo", "o/r", "--json"])
+    rows = json.loads(capsys.readouterr().out)["issues"]
+    assert {row["number"]: row["open_subs"] for row in rows} == {1: ["#2"], 2: []}
