@@ -153,8 +153,7 @@ The views come after the milestones, at the end of step 5: the sprint view filte
 
 ```bash
 gh api repos/{owner}/{repo}/milestones -f title="<name>" -f description="<נושא בעברית>"
-gh repo edit --delete-branch-on-merge
-gh api -X PATCH repos/{owner}/{repo} -f squash_merge_commit_title=PR_TITLE   -f squash_merge_commit_message=COMMIT_MESSAGES
+gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true   -f squash_merge_commit_title=PR_TITLE   -f squash_merge_commit_message=COMMIT_MESSAGES
 ```
 
 The default title setting (`COMMIT_OR_PR_TITLE`) gives a one-commit PR its commit's title, not

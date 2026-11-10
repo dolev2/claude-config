@@ -70,7 +70,8 @@ def test_reference_file_stays_small(doc):
     assert lines <= MAX_LINES, f"{doc.name}: {lines} lines; split it or cut it"
 
 
-GH_COMMAND = re.compile(r"\bgh (issue|pr) ([a-z][a-z-]*)")
+# gh repo too: gh repo edit runs over GraphQL, which is blocked in the cloud (#251).
+GH_COMMAND = re.compile(r"\bgh (issue|pr|repo) ([a-z][a-z-]*)")
 
 
 def cloud_table() -> str:
@@ -87,7 +88,7 @@ def gh_sources() -> list[Path]:
     return [path for path in paths if path.name != "cloud.md"]
 
 
-def test_cloud_table_covers_every_gh_issue_and_pr_command():
+def test_cloud_table_covers_every_gh_command():
     used = {
         f"gh {group} {verb}"
         for path in gh_sources()
