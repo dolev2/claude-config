@@ -91,6 +91,13 @@ keeps them: edit it in the headings it already has.
    and check the open questions of the sprint umbrella and related issues before asking
    something that may already be recorded.
 
+   **A blocker found here stops this issue before step 4.** Exploration shows the issue needs
+   something an issue still open delivers, and no link says so: add the "Blocked by" link and
+   the `#B` on the dependency line now (step 5, "Keep the dependencies true"), then stop. No
+   branch, no Plan, the status stays as it is, and the summary names it with that blocker, as
+   in step 1. The one exception is the one of step 1: Dolev named the issue and explicitly
+   asked to plan it anyway.
+
 4. Create the branch **on the remote**, off `origin/<default>`, without a checkout. If the
    issue's Plan already names a branch, use that name:
    ```bash
@@ -178,9 +185,10 @@ keeps them: edit it in the headings it already has.
    **Keep the dependencies true.** If exploration shows the issue needs something another issue
    delivers and no link says so, add the "Blocked by" link and the `#B` on the dependency line
    (both, in the same run). If a listed dependency is not needed, remove both and say why in the
-   plan log. A business detail a person still owes is an open question, not a link. A link you
-   add to a blocker that is still open stops the planning of this issue, as in step 1: write no
-   Plan, leave its status as it is, and name it in the summary with that blocker.
+   plan log. A business detail a person still owes is an open question, not a link. A new link
+   to a blocker that is still open was already found in step 3, which stopped there. When Dolev
+   explicitly asked to plan a blocked issue, write down what the plan assumes about a blocker
+   that has no plan yet.
 
    **Content that belongs to another issue goes into that issue's body, never a comment.** A
    decision another task relies on is a line in its Plan section, for whoever plans it to build
