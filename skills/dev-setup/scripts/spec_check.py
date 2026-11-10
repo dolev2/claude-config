@@ -20,6 +20,7 @@ whose specs predate it keeps a green CI until `--toc` adds one (spec_toc.py).
 Usage:
     spec_check.py [--root DIR] [--repo owner/name] [--no-issues] [--table] [--ref REF]
     spec_check.py --toc [--root DIR]
+    spec_check.py --changes BASE HEAD [--root DIR] [--repo owner/name] [--no-issues]
 """
 
 import argparse
@@ -31,6 +32,7 @@ from typing import NamedTuple
 
 import gh_rest
 import issue_body
+import spec_changes
 import spec_toc
 from spec_parse import Part, parse_spec
 
@@ -328,6 +330,31 @@ def write_tocs(root: Path) -> int:
     return 0
 
 
+def print_changes(args: argparse.Namespace) -> int:
+    """`--changes`: the parts that differ between two refs, with their open issues.
+
+    1 when the issues were not read (#244): without them there is nothing to offer.
+    """
+    root = Path(args.root)
+    base, head = args.changes
+    try:
+        changes = spec_changes.compare(
+            spec_files_at(root, base), spec_files_at(root, head)
+        )
+    except ValueError as err:
+        sys.exit(f"spec files not read: {err}")
+    pointed = None
+    code = 0
+    if not args.no_issues:
+        try:
+            pointed = pointers(fetch_issues(args.repo))
+        except SystemExit as stop:
+            emit("warning", Finding(None, None, f"issues not read: {stop.code}"))
+            code = 1
+    print("\n".join(spec_changes.report(changes, pointed)))
+    return code
+
+
 def main(argv: list[str] | None = None) -> int:
     """Check the specs; 1 if a file has an error, else 0 (gaps only warn)."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -342,12 +369,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--toc", action="store_true", help="write the table of contents of each file"
     )
+    parser.add_argument(
+        "--changes",
+        nargs=2,
+        metavar=("BASE", "HEAD"),
+        help="list the parts new, changed or deleted between two refs",
+    )
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
     if args.toc:
         return write_tocs(Path(args.root))
+    if args.changes:
+        return print_changes(args)
     specs, errors, warnings = read_specs(Path(args.root), args.ref)
 
     issues = None

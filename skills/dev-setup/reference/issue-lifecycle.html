@@ -478,11 +478,13 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>כל חלק פתוח באפיון הופך למשימה:</p>
         <div class="flowline"><span class="label">task</span><span class="arrow">→</span><span class="label c">status:explore</span></div>
         <p>ההצעה נסגרת כ-completed, עם הפניה לקובץ האפיון.</p>
+        <p>שינוי באפיון אחרי שכבר נפתחו משימות:</p>
+        <ul><li>חלק שנמחק: ה-issue שלו נסגר כ-not planned.</li><li>חלק שהשתנה: issue שלפני הקוד חוזר ל-<span class="label c">status:explore</span>.</li><li>משימה בקוד או בסקירה לא זזה, ודולב מחליט.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-spec</b>: רק כשדולב כותב "תכתוב אפיון ל-#N". הבקשה היא האישור של ההצעה.</p>
         <ul><li>כותב את <code>docs/specs/&lt;repo&gt;.md</code>: מה כל חלק עושה, ומה המשתמש רואה.</li><li>מריץ <code>spec_check.py --no-issues</code>, ופותח PR.</li><li>דולב סוקר ומבקש מיזוג (<code>dev-ship</code>). המיזוג הוא האישור של ה"מה".</li></ul>
-        <p><b class="mono">dev-issue</b>: מיד אחרי המיזוג, <code>dev-ship</code> מציע את הפירוק.</p>
+        <p><b class="mono">dev-issue</b>: מיד אחרי המיזוג, <code>dev-ship</code> מציע את הפירוק ואת העדכון של ה-issues, ברשימה אחת (<code>spec_check.py --changes</code>).</p>
         <ul><li>issue לכל חלק פתוח. בסעיף "הקשר / קישורים" שלו שורת "אפיון:", עם הקובץ והמזהה: <code>docs/specs/&lt;repo&gt;.md S-&lt;n&gt;.&lt;m&gt;</code>.</li><li>קישורי Blocked by לפי הסדר באפיון.</li><li>אחר כך PR קטן כותב בכל חלק <code>**מצב:** פתוח (#N)</code>, עם מספר ה-issue שלו. דולב מבקש מיזוג, כמו בכל PR.</li></ul>
         <p>ריפו שהותקן לפני הסדר הזה עובר אליו בריצה הבאה של <code>dev-setup</code>, בצעד העברה חדש.</p>
       </div>
@@ -616,7 +618,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-ship</b>: הדרך היחידה למיזוג.</p>
         <p>מופעל מבקשה בצ'אט, בהקלדה או בלחיצה בחלון השאלות. הודעה מסשן אחר או התראה אינן בקשה.</p>
-        <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li><li>לקח מוצע ממה שקרה במיזוג (rebase שהתנגש, CI שנפל, ניקוי שנכשל), באותם כללים כמו בקוד. גם כשהריצה נעצרה בגללם: אז הלקח בא בדיווח על העצירה.</li><li>אחרי מיזוג של אפיון (<code>claude/spec-*</code>): במקום זה, הצעה לפרק אותו למשימות ב-dev-issue.</li></ul>
+        <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li><li>לקח מוצע ממה שקרה במיזוג (rebase שהתנגש, CI שנפל, ניקוי שנכשל), באותם כללים כמו בקוד. גם כשהריצה נעצרה בגללם: אז הלקח בא בדיווח על העצירה.</li><li>אחרי מיזוג של אפיון (<code>claude/spec-*</code>): במקום זה, רשימה אחת בחלון השאלות: הפירוק של החלקים החדשים, והעדכון של ה-issues של חלקים שהשתנו או נמחקו. מבצע <code>dev-issue</code>, אחרי האישור.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI.</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch.</li></ul>

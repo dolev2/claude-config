@@ -14,7 +14,7 @@ flowchart TD
     subgraph SG["שלב האפיון — לפני התכנון"]
       SPEC["dev-spec<br/>docs/specs/repo.md<br/>branch claude/spec-slug<br/>spec_check.py --no-issues<br/>PR: Refs #N for a proposal"]:::routine
       SPEC --> SREV(["דולב סוקר ומבקש מיזוג<br/>המיזוג הוא האישור של המה"]):::human
-      SREV --> SSHIP["dev-ship<br/>squash merge<br/>מציע את הפירוק"]:::routine
+      SREV --> SSHIP["dev-ship<br/>squash merge<br/>מציע את הפירוק<br/>ואת העדכון של ה-issues"]:::routine
       SSHIP --> SPLIT["dev-issue<br/>משימה לכל חלק פתוח<br/>שורת אפיון בכל משימה<br/>Blocked by<br/>לפי הסדר באפיון<br/>ההצעה נסגרת<br/>שורת פתוח בכל חלק<br/>small PR, Dolev merges it"]:::routine
     end
 
@@ -112,6 +112,8 @@ flowchart TD
 **שלב האפיון** (`dev-spec`, `specs.md`) בא לפני התכנון, בלי תווית חדשה: ההצעה נשארת `status:backlog`
 עד הפירוק. משימה נפתחת רק מחלק פתוח: משימה בלי חלק, או שמשנה חלק גמור, חוזרת מהתכנון לבקלוג כהצעה
 (`dev-plan`, claude-config #243). אחרי הפירוק, PR קטן כותב בכל חלק את שורת "פתוח" עם מספר ה-issue.
+שינוי באפיון אחרי שכבר נפתחו משימות: חלק שנמחק סוגר את ה-issue שלו כ-not planned, חלק שהשתנה מחזיר
+issue שלפני הקוד ל-`status:explore`, ו-issue בקוד או בסקירה לא זז, ודולב מחליט (`dev-ship` צעד 8, claude-config #244).
 
 **לקח מוצע** (`lessons.md`) לא מוסיף תווית: `dev-code` במסירה ו-`dev-ship` אחרי המיזוג מציעים לקח אחד לכל היותר,
 ואישור של דולב פותח לו משימה רגילה.

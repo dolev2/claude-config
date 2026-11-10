@@ -85,6 +85,10 @@ keeps them: edit it in the headings it already has.
      - **Dolev answered your questions** (it came from `status:plan-questions`).
      - **Dolev read a plan at `status:waiting-approval` and sent it back** with an objection.
        Treat no part of the plan as settled. Address the objection itself.
+     - **The part it builds changed in the spec** (`dev-issue`, "עדכון אחרי שינוי באפיון";
+       claude-config #244): the newest comment says so and links the spec PR. Read the part
+       again from `origin/<default>`, treat no part of the plan as settled, and cite that PR in
+       the plan log line.
      **Tick the questions he answered** in the open-questions section (`- [x]`, with the
      decision next to each). Never delete them. A question he did not address stays unticked.
 
