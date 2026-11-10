@@ -1,4 +1,4 @@
-"""issue_body.py: the "אפיון:" line (claude-config #226)."""
+"""issue_body.py: the "אפיון:" line (claude-config #226, #238)."""
 
 import pytest
 from issue_body import dependency_line, spec_line
@@ -26,6 +26,7 @@ from issue_body import dependency_line, spec_line
         ("אפיון: S-2.1", ("", ["S-2.1"])),
         ("אפיון: docs/specs/a.md", ("docs/specs/a.md", [])),
         ("תלוי ב: #4\nשום דבר על אפיון כאן", None),
+        ('- **איפה באפיון:** פרק 1, בקבוצה "השלבים", ליד S-1.15', None),
         ("", None),
     ],
 )
