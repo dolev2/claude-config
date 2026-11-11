@@ -52,7 +52,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    itself, `reference/dependencies.md`). Name each row you skipped, with its open blockers or
    sub-issues, in the run summary. Do not relabel it. If every row is skipped, say so and stop.
 
-   **Take exactly one issue per run** (`reference/git-flow.md`).
+   **Take exactly one issue per run** (`reference/git-flow.md`; plans approved together run
+   one after the other, each a run of its own: the exception there).
 
 3. **Read the whole thread before touching code**: body (including Plan), every comment,
    every sub-issue. A `needs-repair` issue carries the reason in the newest comments; a
@@ -297,10 +298,9 @@ of step 11 does the same in this session.
   plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
   `needs-repair`), except for what Dolev chose in the question window of step 11.
-- One issue per run, and the WIP gate before a new one (`reference/git-flow.md`). The one
-  exception: plans Dolev approved together in `dev-plan`'s window run one after the other, each
-  a full run with its own PR and hand-off, and the WIP gate before each
-  (`reference/chat-decisions.md`, rule 5).
+- One issue per run, and the WIP gate before a new one (`reference/git-flow.md`). Plans
+  Dolev approved together are several runs in one session, one after the other (the
+  exception there).
 - Never start an issue that has an open "Blocked by" link.
 - The sprint scope holds: a scan stays in the current milestone, and Claude never assigns
   one (`reference/pipeline.md`).

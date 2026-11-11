@@ -24,7 +24,8 @@
 | פרסום מחדש של עמוד Artifact אחרי מיזוג: קריאה, השוואה, `publish` בלי `icon` ובלי `force`, השלד | `after-merge.md`, "פרסום מחדש של עמוד Artifact" | `.claude/CLAUDE.md` של claude-config (העמודים והקישורים), `~/.claude/rules/erd.md`, `dev-ship` |
 | אות המיזוג: בקשה אחת של דולב בצ'אט, על ה-issue הספציפי | `pipeline.md`, "הכללים שלא משתנים" | `chat-decisions.md` כלל 7, `dev-code`, `dev-ship` |
 | ארבעת התנאים של משימה קטנה | `pipeline.md`, "המסלול הקטן" | `dev-plan` שלב 7, `dev-code` שלב 8 |
-| issue אחד בכל ריצת קוד | `git-flow.md`, "כמה issues בריצה אחת" | `dev-code`, `dev-next`, `after-merge.md` |
+| issue אחד בכל ריצת קוד, והחריג של תוכניות שאושרו יחד | `git-flow.md`, "כמה issues בריצה אחת" | `dev-code`, `dev-next`, `after-merge.md`, `chat-decisions.md` כלל 5 |
+| אישור תוכנית בצ'אט מתחיל קידוד באותו סשן | `chat-decisions.md` כלל 5 | `dev-plan` שלב 8, `dev-code`, `dev-next` שלב 4, `pipeline.md`, התרשים ושני העמודים |
 | מחיקת branch אחרי מיזוג: ההגדרה של GitHub, בלי `--delete-branch`, ומה עושים כשהיא כבויה | `git-flow.md`, "מוסכמת branches ו-PR" | `dev-ship`, `dev-setup`, `cloud.md` (רק הפקודה ב-REST), `~/.claude/rules/env-cloud.md` |
 | `costs-money`: מה היא עושה, מי מוסיף ומי מסיר | `pipeline.md`, אוצר המילים | `dependencies.md` (רק ההשפעה על הדירוג), `dev-plan`, `dev-next`, `dev-orchestrate`, `dev-setup` |
 | `paused`: מה היא עושה, ושרק דולב שם ומסיר | `pipeline.md`, אוצר המילים | `dependencies.md` (רק ההשפעה על הדירוג), `dev-next`, `dev-orchestrate`, `dev-setup` |

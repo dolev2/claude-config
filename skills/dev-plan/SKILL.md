@@ -275,7 +275,8 @@ keeps them: edit it in the headings it already has.
    1. "מאשר, תתחיל לקודד (מומלץ)": move it to `status:ready-to-execute`
       (`--remove-label "status:waiting-approval"`) and add a line to its plan log, reading the
       body fresh first. The wording, for a click and for free text: `reference/chat-decisions.md`.
-      An approval Dolev types in the chat ("מאשר", "תקודד") counts the same.
+      An approval Dolev types in the chat, or writes in "Other" ("מאשר", "תקודד"), counts the
+      same; only an objection takes item 3.
    2. "אקרא ב-GitHub ואחזור": change nothing; the issue waits for approval as before.
    3. "Other" with an objection: the plan is sent back (`status:waiting-approval` →
       `status:explore`). Revise it in place in this run, add a line to the plan log quoting his
