@@ -188,10 +188,12 @@ In a cloud session `gh pr merge` does not run (`reference/cloud.md`). Merge with
 `mcp__github__merge_pull_request`: `merge_method: "squash"`, `expectedHeadSha` set to the head
 that steps 3–4b checked, and no `commit_title` (a hook blocks it, like `--subject`).
 
-Either way, this pops an approval window for Dolev: an `ask` rule in `~/.claude/settings.json`
-for `gh pr merge`, and `hooks/ask_before_merge.py` for every other way to merge. That is
-expected. If he declines it, stop and report which step you stopped at; never merge another
-way.
+Either way, `hooks/ask_before_merge.py` reads Dolev's last message in the session: when it
+asks to merge this PR or the issue it closes ("תמזג את #N", typed or chosen in the question
+window), the merge passes with no second window (S-3.11). A request with no number: ask once
+in the question window, "תמזג את #<N>", with the number, before this step. Otherwise an
+approval window opens. If he declines it, stop and report which step you stopped at; never
+merge another way.
 
 If the merge is blocked (required reviews, protection, conflicts), stop and report the exact
 reason `gh` or the MCP tool gives. Do not retry blindly and do not force anything.

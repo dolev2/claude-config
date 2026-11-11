@@ -15,10 +15,10 @@
 - **branch שכבר נדחף מתעדכן ב-`git push --force-with-lease`**, לעולם לא `--force`.
   `--force` דורס בשקט commits שמישהו אחר דחף בינתיים.
   hook ב-`~/.claude/hooks/block_force_push.py` חוסם את `--force`, `-f` ו-refspec עם `+`.
-- **merge של PR רק באישור מפורש של דולב.** חלון אישור קופץ לפני כל מיזוג, בכל דרך:
-  1. `gh pr merge`: כלל `ask` ב-`~/.claude/settings.json`.
-  2. כל דרך אחרת (`gh api ... pulls/<N>/merge`, GraphQL, וכלי ה-MCP של GitHub, כולל מיזוג אוטומטי): hook ב-`~/.claude/hooks/ask_before_merge.py`.
-  דולב דחה את החלון: עוצרים ומדווחים, ולא ממזגים בדרך אחרת.
+- **merge של PR רק באישור מפורש של דולב.** האישור הוא הבקשה שלו בצ'אט, עם המספר ("תמזג את #N", בהקלדה או בחלון השאלות).
+  1. **ביקש בהודעה האחרונה שלו:** המיזוג עובר בלי חלון נוסף. hook ב-`~/.claude/hooks/ask_before_merge.py` קורא את ההודעה בתמליל.
+  2. **לא ביקש, או ביקש מספר אחר:** חלון אישור קופץ, בכל דרך (`gh pr merge`, `gh api ... pulls/<N>/merge`, GraphQL, וכלי ה-MCP של GitHub, כולל מיזוג אוטומטי). אותו hook.
+  דולב דחה את החלון: עוצרים ומדווחים, ולא ממזגים בדרך אחרת. למה כך: `~/.claude/docs/decisions/301-merge-request-skips-window.md`.
 - **התנגשות היא עצירה ושאלה, לא משימה.** `git rebase --abort`, ודיווח על הקבצים שמתנגשים.
   לא פותרים אותה בלקיחת צד אחד בשלמותו.
 
