@@ -74,6 +74,15 @@ def test_no_open_sprint_still_shows_the_other_tables():
     assert section(text, "מה מחכה לדולב").rstrip().endswith(work_status.EMPTY)
 
 
+def test_blocked_issue_that_costs_money_gets_one_row():
+    nodes = [
+        node(1, status="ready-to-execute"),
+        node(2, blocked_by=[(1, "OPEN")], labels=("task", "costs-money")),
+    ]
+    held = section(work_status.render(REPO, nodes, []), "מה חסום")
+    assert held.count("[#2]") == 1 and "| מחכה ל-#1, ועולה כסף |" in held
+
+
 def test_blocker_in_another_repo_is_named():
     entry = {"number": 2, "blocked_by": [1], "outside_blockers": ["acme/other#7"]}
     assert work_status.blocked_status(entry) == "מחכה ל-#1, acme/other#7"
@@ -96,7 +105,7 @@ def test_repo_without_pipeline_prints_one_sentence(monkeypatch, capsys):
     monkeypatch.setattr(work_status, "api_list", lambda path: [{"name": "bug"}])
     work_status.main(["--repo", REPO])
     out = capsys.readouterr().out
-    assert "הצינור לא מותקן" in out and "dev-setup" in out and "###" not in out
+    assert out.strip() == work_status.NO_PIPELINE.format(repo=REPO)
 
 
 def test_github_not_answering_exits_1_without_tables(monkeypatch, capsys):

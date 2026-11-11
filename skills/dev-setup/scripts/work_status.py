@@ -36,10 +36,8 @@ STATUS_HE = {
     "backlog": "בקלוג",
     "done": "Done",
 }
-NO_PIPELINE = (
-    "הצינור לא מותקן בריפו {repo}, ולכן אין סקירה. "
-    "כדי להתקין אותו: dev-setup (חסרות התוויות: {labels})."
-)
+NO_PIPELINE = "הצינור לא מותקן בריפו {repo}, ואפשר להתקין אותו ב-dev-setup."
+COSTS_MONEY = "עולה כסף, מחכה לאישור"
 NOT_READ = "הסקירה לא הוצגה: GitHub לא ענה, ולא נקראו {what}.\n{error}"
 
 
@@ -82,13 +80,24 @@ def sprint_rows(nodes: list[dict], sprint: str) -> list[tuple[int, str, str]]:
 
 
 def held_rows(nodes: list[dict], picture: dict) -> list[tuple[int, str, str]]:
-    """The blocked issues with what they wait on, then those that cost money."""
+    """The blocked issues with what they wait on, then those that cost money.
+
+    An issue can be both: it gets one row, with both reasons.
+    """
     titles = {n["number"]: n["title"] for n in nodes}
+    costs = set(picture["on_hold"])
     rows = [
-        (b["number"], titles[b["number"]], blocked_status(b))
+        (
+            b["number"],
+            titles[b["number"]],
+            blocked_status(b) + (", ועולה כסף" if b["number"] in costs else ""),
+        )
         for b in picture["blocked"]
     ]
-    rows += [(n, titles[n], "עולה כסף, מחכה לאישור") for n in picture["on_hold"]]
+    blocked = {b["number"] for b in picture["blocked"]}
+    rows += [
+        (n, titles[n], COSTS_MONEY) for n in picture["on_hold"] if n not in blocked
+    ]
     return rows
 
 
@@ -122,21 +131,23 @@ def missing_labels(repo: str) -> list[str]:
     return [name for name in REQUIRED_LABELS if name not in names]
 
 
-def read(repo: str) -> tuple[list[str], list[dict], list[dict]]:
-    """(missing labels, open issues, last merged), or exits 1 with what was not read.
+def read(repo: str | None) -> tuple[str, list[str], list[dict], list[dict]]:
+    """(repo, missing labels, open issues, last merged), or exits 1 with what failed.
 
     gh_rest exits with gh's error on a failed call; that exit is turned into a
     message saying which part was not read, instead of a half-built picture.
     """
-    what = "התוויות"
+    what = "פרטי הריפו"
     try:
+        repo = repo or current_repo()
+        what = "התוויות"
         missing = missing_labels(repo)
         if missing:
-            return missing, [], []
+            return repo, missing, [], []
         what = "המשימות הפתוחות"
         nodes = open_issue_nodes(repo, with_body=True)
         what = "המשימות שמוזגו"
-        return [], nodes, recent_done(repo)
+        return repo, [], nodes, recent_done(repo)
     except SystemExit as failure:
         print(NOT_READ.format(what=what, error=failure.code or ""))
         sys.exit(1)
@@ -149,10 +160,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = parser.parse_args(argv)
 
-    repo = args.repo or current_repo()
-    missing, nodes, done = read(repo)
+    repo, missing, nodes, done = read(args.repo)
     if missing:
-        print(NO_PIPELINE.format(repo=repo, labels=", ".join(missing)))
+        print(NO_PIPELINE.format(repo=repo))
         return
     print(render(repo, nodes, done))
 

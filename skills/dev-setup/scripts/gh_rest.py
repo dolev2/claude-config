@@ -108,7 +108,7 @@ def recent_done(repo: str, count: int = 5) -> list[dict]:
     """The last `count` issues that reached status:done, newest first (S-1.41)."""
     page = api(
         f"repos/{repo}/issues?state=closed&labels=status:done"
-        "&sort=updated&direction=desc&per_page=30"
+        "&sort=updated&direction=desc&per_page=100"
     )
     return latest_done(page, count)
 
