@@ -119,6 +119,9 @@ svg .branch-t { font-family: var(--font-mono); font-size: 11px; fill: var(--clau
 .rule { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; min-width: 0; }
 .rule .enf { font-size: 12px; color: var(--muted); }
 .rule .enf.hook { color: var(--gate); }
+.owner { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; margin-inline-start: 6px; max-width: 100%; }
+.owner code { word-break: break-word; }
+.rule .owner { justify-self: start; margin-inline-start: 0; }
 
 @media (max-width: 860px) {
   .stage { grid-template-columns: 1fr; }
@@ -495,7 +498,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>ה-PR של שורות "פתוח": branch <code>claude/spec-open-lines-&lt;slug&gt;</code>, בלי <code>Closes</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> פער בין משימה לאפיון רק מזהיר: ב-PR, בטבלת הסטטוס ובסיכום של המתזמר. רק שגיאה בקובץ האפיון עצמו מכשילה את ה-CI.</div>
+    <div class="gate-row"><strong>שער:</strong> פער בין משימה לאפיון רק מזהיר: ב-PR, בטבלת הסטטוס ובסיכום של המתזמר. רק שגיאה בקובץ האפיון עצמו מכשילה את ה-CI. <span class="owner">הכלל המלא: <code>specs.md</code>, "אזהרות במתזמר"</span></div>
   </article>
 
   <article class="stage">
@@ -507,7 +510,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-next</b>: "מה הבא?"</p>
-        <ul><li>קודם <code>bug</code>, אחר כך <code>process</code>.</li><li>אחר כך מה שהכי הרבה משימות מחכות לו (<code>rank_issues.py</code>).</li><li>מנתב ל-dev-plan או ל-dev-code, או אומר שזה אצל דולב.</li></ul>
+        <ul><li>קודם <code>bug</code>, אחר כך <code>process</code>.</li><li>אחר כך מה שהכי הרבה משימות מחכות לו (<code>rank_issues.py</code>).</li><li>בלי רמות סטטוס, על כל הספרינט. ב-dev-code הסדר כולל גם את רמת הסטטוס (שלב 6).</li><li>משימה עם <code>costs-money</code> לא מוצעת, חוץ ממשימה שדולב נקב בשמה.</li><li>מנתב ל-dev-plan או ל-dev-code, או אומר שזה אצל דולב.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>אין פעולה.</p>
@@ -529,6 +532,9 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>עם התווית <code>size:small</code>, ובלי אישור תוכנית.</p>
         <p>או, למשימה בלי חלק פתוח באפיון:</p>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">backlog</span></div>
+        <p>תוכנית שדורשת הוצאה כספית (שירות ענן, API בתשלום, מנוי) מקבלת גם:</p>
+        <div class="flowline"><span class="label h">costs-money</span></div>
+        <p>המשימה מושהית: היא יוצאת מהדירוג של כל הסריקות, עד שדולב מסיר את התווית.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-plan</b>: עד 3 issues בריצה.</p>
@@ -539,7 +545,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>קורא קוד ישר מ-<code>origin/main</code>: <code>git show</code>, <code>git grep</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> issue חסום ב-Blocked by לא מתוכנן: dev-plan מדלג עליו ומדווח במה הוא חסום. החלטה בחוסם יכולה לשנות את מבנה הקבצים, והתוכנית מתיישנת. issue שדולב נקב בשמו מתוכנן רק בבקשה מפורשת שלו. משימה בלי חלק פתוח באפיון לא מתוכננת: היא חוזרת לבקלוג.</div>
+    <div class="gate-row"><strong>שער:</strong> issue חסום ב-Blocked by לא מתוכנן: dev-plan מדלג עליו ומדווח במה הוא חסום. החלטה בחוסם יכולה לשנות את מבנה הקבצים, והתוכנית מתיישנת. issue שדולב נקב בשמו מתוכנן רק בבקשה מפורשת שלו. משימה בלי חלק פתוח באפיון לא מתוכננת: היא חוזרת לבקלוג. <span class="owner">הכלל המלא: <code>dependencies.md</code>, "תלויות" · <code>specs.md</code>, "issue בלי אפיון"</span></div>
   </article>
 
   <article class="stage">
@@ -564,7 +570,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>ה-branch מחכה ב-remote, ריק.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> שום קוד לא נכתב על תוכנית שדולב לא אישר, חוץ ממשימה קטנה (<code>size:small</code>) ומבאג.</div>
+    <div class="gate-row"><strong>שער:</strong> שום קוד לא נכתב על תוכנית שדולב לא אישר, חוץ ממשימה קטנה (<code>size:small</code>) ומבאג. <span class="owner">הכלל המלא: <code>pipeline.md</code>, "המסלול הקטן"</span></div>
   </article>
 
   <article class="stage">
@@ -573,6 +579,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
         <p>תיקון (<code>needs-repair</code>), ואחריו באג, נלקחים לפני משימה חדשה.</p>
+        <p>אחר כך רמת הסטטוס: תוכנית מאושרת לפני תוכנית לכתוב. בתוך הרמה קודם <code>process</code>, ואז לפי כמה משימות מחכות לה.</p>
+        <p>משימה עם <code>costs-money</code> יוצאת מהדירוג, חוץ ממשימה שדולב נקב בשמה.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-code</b>: issue אחד בדיוק בריצה.</p>
@@ -583,7 +591,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>רק אחרי ה-rebase: lint וכל הבדיקות, push ו-PR.</p><p>שינוי בסקיל (ב-claude-config): גם תרחישי הסקיל, <code>evals/run.py</code>, במודל של הסשן.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שערים:</strong> 3 PRים או יותר ממתינים לסקירה, או issue חסום ב-Blocked by, או משימת מטריה עם sub-issue פתוח, או התנגשות ב-rebase: עוצרים ומדווחים.</div>
+    <div class="gate-row"><strong>שערים:</strong> 3 PRים או יותר ממתינים לסקירה, או issue חסום ב-Blocked by, או משימת מטריה עם sub-issue פתוח, או התנגשות ב-rebase: עוצרים ומדווחים. גם PR שדולב כבר סקר ועוד לא ביקש למזג נספר בשער ה-3. תיקון פטור ממנו, ובן של המתזמר מדלג עליו: המתזמר בודק לפניו. <span class="owner">הכלל המלא: <code>git-flow.md</code>, "כמה issues בריצה אחת" · <code>dependencies.md</code>, "תלויות" · <code>rules/git.md</code>, "לפני push או PR"</span></div>
   </article>
 
   <article class="stage">
@@ -605,7 +613,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>rebase, ואז <code>git push --force-with-lease</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> <code>open-questions-gate.yml</code> רץ במעבר ל-<code>status:in-review</code>, לפני המיזוג. שאלה לא מסומנת: תגובה, תווית <code>has-open-questions</code>, ומייל.</div>
+    <div class="gate-row"><strong>שער:</strong> <code>open-questions-gate.yml</code> רץ במעבר ל-<code>status:in-review</code>, לפני המיזוג. שאלה לא מסומנת: תגובה, תווית <code>has-open-questions</code>, ומייל. <span class="owner">הכלל המלא: <code>issue-body.md</code>, "שאלות פתוחות"</span></div>
   </article>
 
   <article class="stage">
@@ -621,7 +629,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li><li>לקח מוצע ממה שקרה במיזוג (rebase שהתנגש, CI שנפל, ניקוי שנכשל), באותם כללים כמו בקוד. גם כשהריצה נעצרה בגללם: אז הלקח בא בדיווח על העצירה.</li><li>אחרי מיזוג של אפיון (<code>claude/spec-*</code>): במקום זה, רשימה אחת בחלון השאלות: הפירוק של החלקים החדשים, והעדכון של ה-issues של חלקים שהשתנו או נמחקו. מבצע <code>dev-issue</code>, אחרי האישור.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
-        <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI.</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch.</li></ul>
+        <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI.</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch המקומי.</li><li>ה-branch ב-GitHub נמחק בהגדרה Automatically delete head branches. כבויה: מציעים <code>gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true</code>, וב-403 נותנים לדולב את דף ההגדרות.</li></ul>
+        <span class="owner">הכלל המלא: <code>git-flow.md</code>, "מוסכמת branches ו-PR"</span>
       </div>
     </div>
   </article>
@@ -630,7 +639,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 <section aria-labelledby="where-h">
   <h2 id="where-h">מחשב או ענן</h2>
   <p>כל שלב רץ גם במחשב של דולב וגם בסשן ענן. הטבלה אומרת מה שונה בענן, ומה נשאר למחשב.</p>
-  <p>הכללים המלאים: <code>rules/env-cloud.md</code> ו-<code>reference/cloud.md</code>.</p>
+  <p><span class="owner">הכללים המלאים: <code>rules/env-cloud.md</code> · <code>cloud.md</code> · <code>git-flow.md</code>, "בסשן ענן"</span></p>
   <div class="panel">
   <table class="where">
     <thead><tr><th>שלב</th><th>במחשב</th><th>בענן</th><th>מה שונה בענן</th></tr></thead>
@@ -667,18 +676,18 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </div>
   </div>
   <h3 id="orch-h">המתזמר: ספרינט שלם מסשן אחד</h3>
-  <p>רק בסשן ענן, ורק כשדולב כותב "תריץ את הספרינט". הסקיל: <code>dev-orchestrate</code>. החוזה: <code>reference/orchestrate.md</code>.</p>
+  <p>רק בסשן ענן, ורק כשדולב כותב "תריץ את הספרינט". הסקיל: <code>dev-orchestrate</code>. <span class="owner">החוזה המלא: <code>orchestrate.md</code></span></p>
   <p>הבנים עוברים באותו צינור שלמעלה. המתזמר לא זוכר כלום בין בדיקות: כל בדיקה בונה את התמונה מחדש מ-GitHub ומהתגיות של הסשנים.</p>
   <div class="panel">
   <ol class="life" aria-labelledby="orch-h">
     <li class="human"><strong>פתיחה</strong><p>דולב מבקש. המתזמר מראה מה ייפתח עכשיו, מה מחכה לחוסם, ומה מחכה לו.</p></li>
     <li class="claude"><strong>בדיקה</strong><p><code>sprint_state.py</code> אומר מה מוכן לבן, מה מחכה לחפיפת קבצים, ומה מוכן למיזוג.</p><p>עם <code>--spec</code> הוא מחזיר גם את הפערים בין המשימות לאפיון (<code>spec_gaps</code>). כל פער הוא שורת אזהרה בסיכום, ולא עוצר כלום.</p><p>סקיל, סקריפט או hook השתנו ב-<code>main</code>: מרעננים את <code>~/.claude</code> וקוראים אותם מחדש.</p><p>הנחיות, כללים או הגדרות השתנו, או שהרענון נכשל: ממליצים לדולב על סשן מתזמר חדש, והמתזמר הזה עוצר.</p></li>
-    <li class="claude"><strong>בן לכל משימה פנויה</strong><p>עד 3 במקביל, עם התגיות <code>issue:N</code>. בן לתכנון ובן נפרד לקוד.</p><p>אף בן לא כותב אפיון: זה קורה רק כשדולב מבקש.</p><p>שער ה-WIP נבדק במתזמר, לפני בן קוד למשימה חדשה: שלוש ומעלה ממתינות לסקירה, והבן נפתח רק כשדולב עונה "כן" בחלון. הבן עצמו מדלג על השער.</p></li>
+    <li class="claude"><strong>בן לכל משימה פנויה</strong><p>עד 3 בנים פעילים לכל ריפו, עם התגיות <code>repo:&lt;owner&gt;/&lt;name&gt;</code> ו-<code>issue:N</code>. בן לתכנון ובן נפרד לקוד.</p><p>שני מתזמרים בשני ריפואים מריצים יחד עד 6: התגית <code>repo:</code> אומרת של מי כל בן.</p><p>אף בן לא כותב אפיון: זה קורה רק כשדולב מבקש.</p><p>שער ה-WIP נבדק במתזמר, לפני בן קוד למשימה חדשה: שלוש ומעלה ממתינות לסקירה, והבן נפתח רק כשדולב עונה "כן" בחלון. הבן עצמו מדלג על השער.</p></li>
     <li class="gate"><strong>החוזה של הבן</strong><p>לא שואל את דולב, לא נוגע בקישורים, לא ממזג, ולא קורא לכלי הסשנים: לא שולח הודעות ולא משנה את שם הסשן (השירות מקפיץ חלון על כל קריאה). הדיווח שלו הוא מה שב-GitHub: תוכנית, תווית, תגובה ו-PR. לקח שלו נכתב בהערת המסירה, תחת "לקח מוצע".</p></li>
     <li class="claude"><strong>אחרי שינוי</strong><p>בדיקה ברקע (<code>watch_children.py</code>) מעירה את המתזמר כשתווית של בן זזה או שנוספה תגובה. התגובות של המתזמר עצמו נושאות סמן מוסתר, ולא מעירות אותו. המתזמר בודק ב-GitHub: את התוכנית, את ה-PR וה-CI, ושאין branch או תווית מיותרים.</p><p>בן שאומת שסיים את התור עובר לארכיון באותה בדיקה: תשובה, החזרה או תיקון פותחים בן חדש.</p></li>
     <li class="human"><strong>חלון שאלות אחד</strong><p>תשובות לתוכניות, אישורים, ומיזוג אחד בכל פעם. רק דולב מחליט.</p><p>לקח מוצע של בן נכנס אחרי שאלת המיזוג של אותו issue, באותו חלון.</p><p>שאלת המיזוג אומרת אילו בנים פעילים נוגעים באותם קבצים כמו ה-PR, לפי הקבצים שהם כבר שינו ולא רק לפי התוכנית.</p></li>
     <li class="gate"><strong>באג או מכסה</strong><p>באג שפוגע באחרים: issue, Blocked by, עצירת הבנים שנפגעים, ובן שמתקן.</p><p>מכסה בחריגה: לא נפתח בן חדש, ושואלים את דולב.</p></li>
-    <li class="auto"><strong>סוף הספרינט</strong><p>אין מה לפתוח, לשאול או למזג: בן שעוד לא בארכיון עובר לארכיון, ואז סיכום, והלולאה נעצרת.</p><p>בסיכום: ה-branches של משימות סגורות שנשארו ב-GitHub, כדי שדולב ימחק אותם ביד. מהענן אי אפשר למחוק branch.</p></li>
+    <li class="auto"><strong>סוף הספרינט</strong><p>אין מה לפתוח, לשאול או למזג: בן שעוד לא בארכיון עובר לארכיון, ואז סיכום, והלולאה נעצרת.</p><p>ה-branch של משימה ממוזגת נמחק ב-GitHub בהגדרה Automatically delete head branches. בסיכום: ה-branches של משימות סגורות שנשארו בכל זאת. ההגדרה כבויה: מציעים להפעיל אותה ב-<code>gh api -X PATCH</code>, וב-403 נותנים את דף ההגדרות. מהענן אי אפשר למחוק branch ב-<code>git push</code>.</p></li>
   </ol>
   </div>
 </section>
@@ -687,14 +696,14 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <h2 id="rules-h">כללי git שחלים תמיד</h2>
   <p>מ-<code>rules/git.md</code>. חלים בכל ריפו, גם כשאף סקיל לא רץ.</p>
   <div class="rules">
-    <div class="rule"><h3>חותכים מ-origin</h3><p>branch נחתך מ-<code>origin/main</code> אחרי <code>git fetch</code>.</p><p>ה-main המקומי יכול להיות כמה merges מאחור.</p><span class="enf">נוהל</span></div>
-    <div class="rule"><h3>rebase לפני הבדיקות</h3><p>קודם rebase, ואז הבדיקות.</p><p>כך נתפסת התנגשות סמויה: שני שינויים תקינים ששוברים יחד.</p><span class="enf">נוהל</span></div>
-    <div class="rule"><h3>rebase, לא merge</h3><p>ההיסטוריה לינארית.</p><p>כל PR נסגר ב-squash.</p><span class="enf">נוהל</span></div>
-    <div class="rule"><h3>רק force-with-lease</h3><p><code>--force</code> דורס בשקט commits של אחרים.</p><span class="enf hook">נאכף: block_force_push.py</span></div>
-    <div class="rule"><h3>merge רק באישור</h3><p>חלון אישור קופץ לפני כל מיזוג: <code>gh pr merge</code>, <code>gh api</code> או כלי ה-MCP.</p><p>דולב דחה: עוצרים, ולא עוקפים.</p><span class="enf hook">נאכף: כלל ask ו-hook</span></div>
-    <div class="rule"><h3>אחרי מיזוג: הצעה ל-<code>/compact</code></h3><p>ההודעה האחרונה של התור נגמרת ב"מה פתוח" עם בלוק <code>/compact</code> מלא.</p><p>שכח: עוד הודעה אחת עם הבלוק. ההחלטה לדחוס נשארת של דולב.</p><span class="enf hook">נאכף: compact_after_merge.py</span></div>
-    <div class="rule"><h3>התנגשות היא עצירה</h3><p><code>git rebase --abort</code>, ודיווח על הקבצים.</p><p>לא פותרים בלקיחת צד אחד.</p><span class="enf">נוהל</span></div>
-    <div class="rule"><h3>לא מחליפים branch בתיקייה הראשית</h3><p>סשן אחר או דולב עובדים בה.</p><p>עובדים ב-worktree.</p><span class="enf hook">נאכף ב-~/.claude: guard_main_folder.py</span></div>
+    <div class="rule"><h3>חותכים מ-origin</h3><p>branch נחתך מ-<code>origin/main</code> אחרי <code>git fetch</code>.</p><p>ה-main המקומי יכול להיות כמה merges מאחור.</p><span class="enf">נוהל</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "מאיפה מתחילים"</span></div>
+    <div class="rule"><h3>rebase לפני הבדיקות</h3><p>קודם rebase, ואז הבדיקות.</p><p>כך נתפסת התנגשות סמויה: שני שינויים תקינים ששוברים יחד.</p><span class="enf">נוהל</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
+    <div class="rule"><h3>rebase, לא merge</h3><p>ההיסטוריה לינארית.</p><p>כל PR נסגר ב-squash.</p><span class="enf">נוהל</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
+    <div class="rule"><h3>רק force-with-lease</h3><p><code>--force</code> דורס בשקט commits של אחרים.</p><span class="enf hook">נאכף: block_force_push.py</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
+    <div class="rule"><h3>merge רק באישור</h3><p>חלון אישור קופץ לפני כל מיזוג: <code>gh pr merge</code>, <code>gh api</code> או כלי ה-MCP.</p><p>דולב דחה: עוצרים, ולא עוקפים.</p><span class="enf hook">נאכף: כלל ask ו-hook</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
+    <div class="rule"><h3>אחרי מיזוג: הצעה ל-<code>/compact</code></h3><p>ההודעה האחרונה של התור נגמרת ב"מה פתוח" עם בלוק <code>/compact</code> מלא.</p><p>שכח: עוד הודעה אחת עם הבלוק. ההחלטה לדחוס נשארת של דולב.</p><span class="enf hook">נאכף: compact_after_merge.py</span><span class="owner">הכלל המלא: <code>CLAUDE.md</code>, "סוף כל תשובה"</span></div>
+    <div class="rule"><h3>התנגשות היא עצירה</h3><p><code>git rebase --abort</code>, ודיווח על הקבצים.</p><p>לא פותרים בלקיחת צד אחד.</p><span class="enf">נוהל</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
+    <div class="rule"><h3>לא מחליפים branch בתיקייה הראשית</h3><p>סשן אחר או דולב עובדים בה.</p><p>עובדים ב-worktree.</p><span class="enf hook">נאכף ב-~/.claude: guard_main_folder.py</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "התיקייה המשותפת"</span></div>
   </div>
 </section>
 
