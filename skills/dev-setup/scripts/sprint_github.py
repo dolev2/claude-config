@@ -7,9 +7,10 @@ takes these readers as functions (claude-config #203).
 import json
 from urllib.parse import quote
 
-from gh_rest import api, api_list, gh_api
+from gh_rest import api, api_list, gh_api, other_repo
 from gh_rest import run as run_command
 
+SPEC_BRANCH = "claude/spec-"
 FAILED = {"failure", "timed_out", "cancelled", "action_required", "startup_failure"}
 
 
@@ -60,3 +61,45 @@ def branch_files(repo: str, base: str, branch: str) -> set[str]:
         return set()
     diff = json.loads(out) if code == 0 else json.loads(gh_api(path))
     return {f["filename"] for f in diff.get("files", [])}
+
+
+def referencing_prs(repo: str, number: int) -> list[int]:
+    """The PRs of `repo` that mention issue `number`, from its timeline (REST).
+
+    `Refs #N` in a PR body leaves a `cross-referenced` event on the issue; a PR of
+    another repo is left out, since its number is not this repo's.
+    """
+    events = api_list(f"repos/{repo}/issues/{number}/timeline?per_page=100")
+    found = set()
+    for event in events:
+        source = (event.get("source") or {}).get("issue") or {}
+        if event.get("event") != "cross-referenced" or "pull_request" not in source:
+            continue
+        if other_repo(repo, source.get("repository_url")) is None:
+            found.add(source["number"])
+    return sorted(found)
+
+
+def spec_prs(repo: str, number: int) -> list[dict]:
+    """The spec PRs (`claude/spec-*`) that reference issue `number`.
+
+    Each is {number, state, branch, body, headSha}; state is "open", "merged" or
+    "closed" (closed without a merge). sprint_proposals.py reads the stage from them.
+    """
+    found = []
+    for pr_number in referencing_prs(repo, number):
+        pull = api(f"repos/{repo}/pulls/{pr_number}")
+        branch = pull["head"]["ref"]
+        if not branch.startswith(SPEC_BRANCH):
+            continue
+        merged = pull.get("merged_at") is not None
+        found.append(
+            {
+                "number": pr_number,
+                "state": "merged" if merged else pull["state"],
+                "branch": branch,
+                "body": pull.get("body") or "",
+                "headSha": pull["head"]["sha"],
+            }
+        )
+    return found

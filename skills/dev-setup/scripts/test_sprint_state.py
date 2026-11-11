@@ -60,13 +60,24 @@ def node(
     }
 
 
+SPEC = "docs/specs/r.md"
+
+
 def no_pr_status(pr):
     raise AssertionError(f"PR {pr['number']} should not be read")
 
 
-def run(*nodes, claimed=(), status_of=no_pr_status, branches=None, pr_files=None):
+def run(
+    *nodes,
+    claimed=(),
+    status_of=no_pr_status,
+    branches=None,
+    pr_files=None,
+    spec_prs=None,
+):
     branches = branches or {}
     pr_files = pr_files or {}
+    spec_prs = spec_prs or {}
     return sprint_state.state(
         list(nodes),
         "W1",
@@ -74,6 +85,8 @@ def run(*nodes, claimed=(), status_of=no_pr_status, branches=None, pr_files=None
         status_of,
         lambda branch: set(branches.get(branch, ())),
         lambda number: set(pr_files.get(number, ())),
+        lambda number: spec_prs.get(number, []),
+        SPEC,
     )
 
 
@@ -132,11 +145,11 @@ def test_dolev_turn_keeps_the_tier_first_even_for_a_bug():
         node(1, blocked_by=[(9, "OPEN")]),
         node(1, labels=("task", "costs-money")),
         node(1, subs=[5]),
-        node(1, "backlog"),
+        node(1, "backlog", labels=("bug",)),
         node(1, "done"),
         node(1, "waiting-approval"),
     ],
-    ids=["blocked", "costs-money", "umbrella", "backlog", "done", "dolev-turn"],
+    ids=["blocked", "costs-money", "umbrella", "backlog-bug", "done", "dolev-turn"],
 )
 def test_what_is_never_dispatched(issue):
     assert run(issue)["dispatch"] == []
@@ -518,3 +531,86 @@ def test_an_issue_both_paused_and_costing_money_is_only_paused():
     result = run(node(1, labels=("task", "paused", "costs-money")))
     assert result["paused"] == [1]
     assert result["on_hold"] == []
+
+
+def spec_pr(number, state="open", questions="_אין._"):
+    return {
+        "number": number,
+        "state": state,
+        "branch": f"claude/spec-{number}",
+        "body": f"Refs #1\n\n### שאלות פתוחות\n{questions}\n",
+        "headSha": f"sha{number}",
+    }
+
+
+def test_a_proposal_gets_a_spec_child_before_a_repair_and_a_bug():
+    result = run(
+        node(1, "needs-repair"),
+        node(2, "ready-to-execute", labels=("bug",)),
+        node(3, "backlog"),
+    )
+    assert numbers(result["dispatch"]) == [3, 1, 2]
+    spec = result["dispatch"][0]
+    assert spec["status"] == "spec"
+    assert spec["prompt"] == "תכתוב אפיון ל-#3"
+    assert result["proposals"] == [
+        {"number": 3, "title": "issue 3", "stage": "waiting", "pr": None}
+    ]
+
+
+def test_a_second_proposal_waits_for_the_spec_child_with_the_spec_file():
+    result = run(node(3, "backlog"), node(4, "backlog"))
+    assert numbers(result["dispatch"]) == [3]
+    assert result["held_by_overlap"] == [{"number": 4, "with": [3], "files": [SPEC]}]
+
+
+def test_a_proposal_a_child_writes_holds_the_next_one():
+    result = run(node(3, "backlog"), node(4, "backlog"), claimed=[3])
+    assert result["dispatch"] == []
+    assert result["held_by_overlap"] == [{"number": 4, "with": [3], "files": [SPEC]}]
+    assert [p["stage"] for p in result["proposals"]] == ["writing", "waiting"]
+
+
+def test_a_spec_pr_ready_for_review_is_in_the_merge_queue():
+    result = run(
+        node(3, "backlog"),
+        node(4, "backlog"),
+        status_of=clean,
+        spec_prs={3: [spec_pr(40)], 4: [spec_pr(41, questions="- [ ] which?")]},
+    )
+    assert [p["stage"] for p in result["proposals"]] == ["review", "questions"]
+    assert result["dispatch"] == []
+    assert result["merge_queue"] == [
+        {
+            "number": 3,
+            "pr": 40,
+            "head_sha": "sha40",
+            "kind": "spec",
+            "mergeable_state": "clean",
+            "ci": "success",
+            "overlaps": [{"number": 4, "files": [SPEC]}],
+        }
+    ]
+
+
+def test_a_merged_spec_waits_for_its_breakdown():
+    result = run(node(3, "backlog"), spec_prs={3: [spec_pr(40, "merged")]})
+    assert result["proposals"][0]["stage"] == "breakdown"
+    assert result["dispatch"] == [] and result["merge_queue"] == []
+
+
+def test_a_task_that_touches_only_the_spec_file_is_not_held():
+    result = run(
+        node(1, "ready-to-execute", files=[SPEC, "a.py"]),
+        node(2, "ready-to-execute", files=[SPEC, "b.py"]),
+        node(3, "backlog"),
+    )
+    assert numbers(result["dispatch"]) == [3, 1, 2]
+    assert result["held_by_overlap"] == []
+
+
+def test_a_sprint_with_no_proposal_has_the_same_dispatch_as_before():
+    nodes = [node(1, "needs-repair"), node(2, "explore", files=["a.py"])]
+    before = sprint_state.state(nodes, "W1", [], no_pr_status)
+    assert before["proposals"] == []
+    assert run(*nodes) == before
