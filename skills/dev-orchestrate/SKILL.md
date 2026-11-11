@@ -1,6 +1,6 @@
 ---
 name: dev-orchestrate
-description: Runs the whole current sprint from one cloud session — opens a child session per issue that is no longer blocked (up to 3 at a time), plans and codes through dev-plan and dev-code in those children, follows them on GitHub through a background watch of their issues, PR events and a fallback check, and brings every question, plan approval and merge to Dolev in one question window. Use only in a cloud session (CLAUDE_CODE_REMOTE=true) in one of Dolev's repos, when he says "תריץ את הספרינט", "run the sprint", "תתזמר את הספרינט", or asks to orchestrate the sprint. It never merges without his request for that specific issue. Not for a single issue: that is dev-next, dev-plan or dev-code.
+description: Runs the whole current sprint from one cloud session — opens a child session per issue that is no longer blocked (up to 3 at a time), writes the specs of the backlog proposals Dolev put in the sprint first (one spec child at a time), plans and codes through dev-plan and dev-code in those children, follows them on GitHub through a background watch of their issues, PR events and a fallback check, and brings every question, plan approval and merge to Dolev in one question window. Use only in a cloud session (CLAUDE_CODE_REMOTE=true) in one of Dolev's repos, when he says "תריץ את הספרינט", "run the sprint", "תתזמר את הספרינט", or asks to orchestrate the sprint. It never merges without his request for that specific issue. Not for a single issue: that is dev-next, dev-plan or dev-code.
 ---
 
 # The sprint orchestrator
@@ -95,11 +95,13 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    ```
    `--expect` holds the status the previous check saw, from its summary line. Each issue it
    names, or whose status moved since the last check, is checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
-   התקדם"). An issue now in `status:in-review` with an open PR: `subscribe_pr_activity` on it.
+   התקדם"). An issue now in `status:in-review` with an open PR, or a proposal with an open spec PR
+   (`proposals`): `subscribe_pr_activity` on it. A spec PR with red CI gets a new spec child
+   on its branch (`reference/orchestrate-spec.md`).
    A child the check verified as done with its turn (the plan in the body and Dolev's status, a
    planning child that moved its issue to `status:backlog` with the gate's comment,
    a PR with `status:in-review` and the hand-off comment, or a spec child with a green PR
-   from `claude/spec-*` that says `Refs #N`, or its questions in a comment on the issue) gets `archive_session` in this check,
+   from `claude/spec-*` that says `Refs #N` and a comment on the issue) gets `archive_session` in this check,
    in step 4's message, or in a message of its own when step 4 opens nobody: it never works again, since an answer, a send-back or a fix opens a new
    child (`orchestrate.md`, "בן שסיים").
    A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
@@ -164,7 +166,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    next check. Send back or answer: `status:explore`, his words quoted in a comment, and a new
    planning child. An answer to a spec PR's question: its box is ticked with the decision in
    the PR body, his words go in a comment on the issue, and a new spec child opens in this
-   check (as step 4 says) to write the answer into the file on the same branch (`dev-spec`,
+   check (as step 4 says, still one spec at a time: the other proposals stay held while this
+   PR is open) to write the answer into the file on the same branch (`dev-spec`,
    step 8, a revision). Breakdown approved: `dev-issue` breaks the spec down here ("פירוק
    אפיון"), the new tasks in the proposal's milestone, and closes the proposal. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
    line that this is a good moment for `/compact`, with the full command in a code block as the
@@ -186,7 +189,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
      --expect <N>=<status>,... --since <now>
    ```
    `--expect` holds the issue of each active child, including the ones step 4 opened now,
-   with its status as this check last saw it. `<now>` is from step 3, so a comment written
+   with its status as this check last saw it (a spec child: `backlog`, its proposal's
+   label). `<now>` is from step 3, so a comment written
    during this check still wakes the next one. Its exit wakes
    the next check. Last, `ScheduleWakeup` of 1200–1800 seconds as a fallback; the watch and PR
    events wake it sooner.

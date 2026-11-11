@@ -27,6 +27,8 @@ from sprint_github import SPEC_BRANCH
 BACKLOG = "backlog"
 SPEC_PROMPT = "תכתוב אפיון ל-#{}"
 QUESTION_HEADINGS = ("שאלות פתוחות", "open questions")
+# A spec in these stages is being written: its open PR, or a child, holds the file.
+IN_FLIGHT = ("writing", "questions", "review")
 UNTICKED = re.compile(r"^\s*[-*+]\s*\[\s\]", re.MULTILINE)
 
 
@@ -100,10 +102,11 @@ def proposals(
 def spec_split(found: list[dict], spec_file: str) -> tuple[list[dict], list[dict]]:
     """(dispatch, held_by_overlap) of the proposals waiting for a spec child.
 
-    One spec child at a time: two would write the same file and table of contents and
-    meet in a rebase conflict. While one is writing, every waiting one is held.
+    One spec at a time: two would write the same file and table of contents and meet
+    in a rebase conflict. While one is in flight (a child writing it, or its PR still
+    open), every waiting one is held.
     """
-    writing = [p["number"] for p in found if p["stage"] == "writing"]
+    writing = [p["number"] for p in found if p["stage"] in IN_FLIGHT]
     dispatch, held = [], []
     for proposal in (p for p in found if p["stage"] == "waiting"):
         if writing:
@@ -134,7 +137,7 @@ def spec_merge_queue(
     or an open spec PR): they write the same file. A code task never counts, since its
     PR changes only the status line of its own part (S-2.14).
     """
-    in_flight = [p for p in found if p["stage"] in ("writing", "questions", "review")]
+    in_flight = [p for p in found if p["stage"] in IN_FLIGHT]
     return [
         {
             "number": p["number"],

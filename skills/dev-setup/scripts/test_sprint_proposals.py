@@ -129,6 +129,17 @@ def test_spec_split_sends_one_spec_child():
     assert held == [{"number": 4, "with": [3], "files": ["docs/specs/r.md"]}]
 
 
+@pytest.mark.parametrize("in_flight", ["writing", "questions", "review"])
+def test_an_open_spec_holds_the_next_proposal(in_flight):
+    found = [
+        {"number": 3, "title": "a", "stage": in_flight},
+        {"number": 4, "title": "b", "stage": "waiting"},
+    ]
+    dispatch, held = sprint_proposals.spec_split(found, "f")
+    assert dispatch == []
+    assert held == [{"number": 4, "with": [3], "files": ["f"]}]
+
+
 def test_spec_split_with_nothing_waiting_is_empty():
     found = [{"number": 3, "title": "a", "stage": "breakdown"}]
     assert sprint_proposals.spec_split(found, "f") == ([], [])

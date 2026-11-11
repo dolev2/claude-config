@@ -1,6 +1,6 @@
 ---
 name: dev-spec
-description: Writes the spec of a topic in Dolev's pipeline as a PR — a chapter in the repo's one spec, docs/specs/<repo>.md, with a fixed id per part (S-<n>.<m>), what each part does, for whom, what the user sees in each state, and what is out — for a backlog proposal Dolev approves by asking for its spec, or for an approved task whose deliverable is a spec. The merge of that PR is the approval of the "what"; dev-issue then breaks it into issues. Use in any of Dolev's repos whenever he says "תכתוב אפיון ל-#N", "תאפיין את #N", "write a spec for #N", or asks to add parts to a topic's spec. Never merges (dev-ship does, on his request) and never runs on its own initiative. Works in any repo that has the pipeline labels; if the repo has its own repo-specific spec skill, use that instead.
+description: Writes the spec of a topic in Dolev's pipeline as a PR — a chapter in the repo's one spec, docs/specs/<repo>.md, with a fixed id per part (S-<n>.<m>), what each part does, for whom, what the user sees in each state, and what is out — for a backlog proposal Dolev approves by asking for its spec (or by putting it in the sprint's milestone, when the orchestrator sends a child), or for an approved task whose deliverable is a spec. The merge of that PR is the approval of the "what"; dev-issue then breaks it into issues. Use in any of Dolev's repos whenever he says "תכתוב אפיון ל-#N", "תאפיין את #N", "write a spec for #N", or asks to add parts to a topic's spec. Never merges (dev-ship does, on his request) and never runs on its own initiative. Works in any repo that has the pipeline labels; if the repo has its own repo-specific spec skill, use that instead.
 ---
 
 # Write a spec
@@ -99,7 +99,9 @@ every run.
    question each, at most four per call, your recommendation first with "(מומלץ)". His answer
    goes into the file, and its box is ticked with the decision. No window (an automated run):
    the PR body is where he reads them. A child session of an orchestrator never opens the
-   window: it writes the questions in a comment on the issue and ends its turn.
+   window: it still opens the PR (steps 6–8) with the unticked boxes in its body, then writes
+   the questions in a comment on the issue and ends its turn. The orchestrator reads them from
+   the PR body (`reference/orchestrate-spec.md`).
 
 6. **The branch**, in a worktree (in a cloud session: its own clone), never by switching
    branches in the shared working copy (`reference/git-flow.md`):
