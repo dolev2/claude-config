@@ -17,7 +17,7 @@ session, and stop.
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md`, `orchestrate.md` (the child
 contract, the tags, what wakes a check and what to check after a change; below, `orchestrate.md` always means
 `reference/orchestrate.md`), `chat-decisions.md`, `cloud.md` (the `gh`
-table and "חלונות אישור בסשן-בן"), `dependencies.md`, `git-flow.md`, `specs.md` (the spec
+table and "חלונות אישור בסשן-בן"), `orchestrate-spec.md` (the spec child, S-2.14), `dependencies.md`, `git-flow.md`, `specs.md` (the spec
 gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5). Then the repo's
 `CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 2).
 
@@ -111,7 +111,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    (any child, or this session's own `get_session`: overage is per account): one child per
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
    on which issue. A spec child (`status: "spec"`, always first, one at a time) opens as
-   `orchestrate.md`, "בן אפיון" says: its own branch name and the spec version of the
+   `reference/orchestrate-spec.md` says: its own branch name and the spec version of the
    contract's items 1 and 5. It is exempt from the WIP gate, like planning. Any earlier child of the same issue that is not archived gets
    `archive_session` first: one child per issue.
    **The WIP gate is checked here, not in the child** (the gate: `reference/git-flow.md`; `orchestrate.md`, "פתיחת בן"): before

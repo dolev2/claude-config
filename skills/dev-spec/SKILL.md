@@ -44,8 +44,7 @@ every run.
    and gets no new spec), a task that only needs code (`dev-plan` or `dev-code`), an issue in
    Dolev's turn. Never start on your own initiative. **A child of the orchestrator writes a
    proposal Dolev put in the sprint's milestone** (S-2.14): that milestone is the approval, and
-   the orchestrator's "תכתוב אפיון ל-#N" is the request (`reference/orchestrate.md`, "בן
-   אפיון"). It stops after a green PR with `Refs #N`, and asks no question in the window
+   the orchestrator's "תכתוב אפיון ל-#N" is the request (`reference/orchestrate-spec.md`). It stops after a green PR with `Refs #N`, and asks no question in the window
    (step 5). A proposal with no milestone, or in another one, is never a child's. A task like
    #230 is ordinary work: `dev-code` hands it here, also in a child session.
 
