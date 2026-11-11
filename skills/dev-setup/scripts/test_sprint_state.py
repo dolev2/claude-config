@@ -179,7 +179,7 @@ def test_blocked_and_on_hold_are_listed_apart():
         node(1, blocked_by=[(9, "OPEN")]), node(2, labels=("task", "costs-money"))
     )
     assert result["blocked"] == [
-        {"number": 1, "blocked_by": [9], "outside_blockers": []}
+        {"number": 1, "blocked_by": [9], "outside_blockers": [], "paused_blockers": []}
     ]
     assert result["on_hold"] == [2]
 
@@ -475,3 +475,46 @@ def test_specs_not_read_is_one_gap_and_the_check_goes_on(monkeypatch):
             "message": "spec files not read: unknown revision origin/main",
         }
     ]
+
+
+# S-1.42 (#295): paused issues, and the new order of dispatch.
+
+
+def test_a_paused_issue_is_not_dispatched_and_is_listed_apart():
+    result = run(
+        node(1, labels=("task", "paused")),
+        node(2, labels=("task", "costs-money")),
+        node(3),
+    )
+    assert numbers(result["dispatch"]) == [3]
+    assert result["paused"] == [1]
+    assert result["on_hold"] == [2]
+
+
+def test_what_waits_on_a_paused_issue_names_it():
+    result = run(
+        node(1, labels=("task", "paused"), blocking=[2]),
+        node(2, blocked_by=[(1, "OPEN")]),
+    )
+    assert result["blocked"] == [
+        {"number": 2, "blocked_by": [1], "outside_blockers": [], "paused_blockers": [1]}
+    ]
+
+
+def test_dispatch_follows_the_new_order():
+    """A sub-issue of a started umbrella first, then fewest waiting."""
+    result = run(
+        node(1, blocking=[4, 5]),
+        node(2),
+        node(3),
+        node(4, blocked_by=[(1, "OPEN")]),
+        node(5, blocked_by=[(1, "OPEN")]),
+        node(10, status="explore", subs=[3], closed_subs=[9]),
+    )
+    assert numbers(result["dispatch"]) == [3, 2, 1]
+
+
+def test_an_issue_both_paused_and_costing_money_is_only_paused():
+    result = run(node(1, labels=("task", "paused", "costs-money")))
+    assert result["paused"] == [1]
+    assert result["on_hold"] == []

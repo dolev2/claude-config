@@ -80,6 +80,7 @@ L "task"                    0052cc "משימה"
 L "bug"                     d73a4a "באג"
 L "process"                 c2e0c6 "ניהול עבודה, נהלים ויישור קו עם claude-config"
 L "costs-money"             fbca04 "דורש הוצאה כספית; מושהה עד שדולב מאשר"
+L "paused"                  cfd3d7 "מושהה בידי דולב; רק דולב שם ומסיר"
 L "size:small"              c5def5 "משימה קטנה: עוברת לביצוע בלי אישור תוכנית"
 L "has-open-questions"      d93f0b "עבר לסקירה עם שאלה שלא נסגרה"
 L "area:backend"            1d76db "צד שרת"
@@ -88,7 +89,7 @@ L "area:both"               5319e7 "גם וגם"
 L "area:infra"              006b75 "תשתית/כלים"
 ```
 
-Use the `area:*` list Dolev agreed to, not necessarily these four. What each label means (`costs-money`, `size:small`, `process`): the vocabulary in `reference/pipeline.md`.
+Use the `area:*` list Dolev agreed to, not necessarily these four. What each label means (`costs-money`, `paused`, `size:small`, `process`): the vocabulary in `reference/pipeline.md`.
 
 ## Step 3: Files
 

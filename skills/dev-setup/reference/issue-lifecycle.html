@@ -510,7 +510,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-next</b>: "מה הבא?"</p>
-        <ul><li>קודם <code>bug</code>, אחר כך <code>process</code>.</li><li>אחר כך מה שהכי הרבה משימות מחכות לו (<code>rank_issues.py</code>).</li><li>בלי רמות סטטוס, על כל הספרינט. ב-dev-code הסדר כולל גם את רמת הסטטוס (שלב 6).</li><li>משימה עם <code>costs-money</code> לא מוצעת, חוץ ממשימה שדולב נקב בשמה.</li><li>מנתב ל-dev-plan או ל-dev-code, או אומר שזה אצל דולב.</li></ul>
+        <ul><li>קודם <code>bug</code>, אחר כך <code>process</code>.</li><li>אחר כך משימה ממטרייה שהתחילה, ובכל קבוצה מה שהכי פחות משימות מחכות לו (<code>rank_issues.py</code>). ליד הבחירה: למה נבחרה.</li><li>בלי רמות סטטוס, על כל הספרינט. ב-dev-code הסדר כולל גם את רמת הסטטוס (שלב 6).</li><li>משימה עם <code>costs-money</code> או <code>paused</code> לא מוצעת, חוץ ממשימה שדולב נקב בשמה.</li><li>מנתב ל-dev-plan או ל-dev-code, או אומר שזה אצל דולב.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>אין פעולה.</p>
@@ -579,8 +579,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
         <p>תיקון (<code>needs-repair</code>), ואחריו באג, נלקחים לפני משימה חדשה.</p>
-        <p>אחר כך רמת הסטטוס: תוכנית מאושרת לפני תוכנית לכתוב. בתוך הרמה קודם <code>process</code>, ואז לפי כמה משימות מחכות לה.</p>
-        <p>משימה עם <code>costs-money</code> יוצאת מהדירוג, חוץ ממשימה שדולב נקב בשמה.</p>
+        <p>אחר כך רמת הסטטוס: תוכנית מאושרת לפני תוכנית לכתוב. בתוך הרמה קודם <code>process</code>, ואז משימה ממטרייה שהתחילה, ובכל קבוצה מה שהכי פחות משימות מחכות לו.</p>
+        <p>משימה עם <code>costs-money</code> או <code>paused</code> יוצאת מהדירוג, חוץ ממשימה שדולב נקב בשמה. את <code>paused</code> רק דולב שם ומסיר.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-code</b>: issue אחד בדיוק בריצה.</p>

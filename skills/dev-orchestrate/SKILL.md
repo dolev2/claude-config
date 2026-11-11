@@ -179,8 +179,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
 
 `dispatch`, `held_by_overlap`, `waiting_dolev` and `merge_queue` are empty, and no child is
 active: first, `archive_session` for every child of this repo that is not archived yet (one
-message, the number of prompts said before it), the backup for any child step 3 missed; then a summary of what merged and what is still open and why (blocked, costs-money, outside
-the sprint), and the stray branches of closed issues for Dolev to delete by hand (`orchestrate.md`,
+message, the number of prompts said before it), the backup for any child step 3 missed; then a summary of what merged and what is still open and why (blocked, costs-money, paused, outside
+the sprint; a `blocked` entry with `paused_blockers` reads "מחכה למשימה מושהית #N"), and the stray branches of closed issues for Dolev to delete by hand (`orchestrate.md`,
 "branches יתומים"; deleting a branch is blocked in the cloud), then `ScheduleWakeup` with `stop`.
 
 ## Golden rules
@@ -195,8 +195,8 @@ the sprint), and the stray branches of closed issues for Dolev to delete by hand
 - Never send spec writing to a child: `dev-spec` runs only when Dolev asks for it, in a
   session of its own. A backlog proposal is never dispatched.
 - Never open a child for an issue that is claimed, blocked, an umbrella (a sub-issue still
-  open), or `costs-money` (`reference/pipeline.md`): `sprint_state.py` already leaves those out of `dispatch`, and the
+  open), `costs-money` or `paused` (`reference/pipeline.md`): `sprint_state.py` already leaves those out of `dispatch`, and the
   check never adds them back. Umbrellas are listed apart in `umbrellas`, with their open
-  sub-issues.
+  sub-issues, and paused issues in `paused`. `dispatch` is in the sprint order (S-1.42), so children open in it.
 - A child is checked on GitHub after every change the watch or a PR event shows: the plan in
   the body, the PR's files and CI, the status label, and no stray branch or label.

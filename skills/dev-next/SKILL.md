@@ -1,6 +1,6 @@
 ---
 name: dev-next
-description: Picks the next issue to work on in the current repo — the open issue in the current sprint (milestone) that the most other sprint issues wait on through "Blocked by" links — and routes it to dev-plan or dev-code by its status, or says plainly when it is waiting for Dolev. Use in any of Dolev's repos whenever he says "let's work on the next task", "בוא נעבוד על המשימה הבאה", "מה הבא", "what's next", or asks what is blocking the sprint. Also use it when he asks to review or fix the order of the sprint ("תבדוק את סדר הספרינט", "review the sprint order"): a full review of the sprint's "Blocked by" links that proposes links to add or remove and issues to merge. Works in any repo that has the pipeline labels; if the repo has its own repo-specific next-issue skill, use that instead.
+description: Picks the next issue to work on in the current repo — the first open issue of the current sprint (milestone) in its order (bugs, process tasks, the sub-issues of an umbrella that has started, then the rest; in each group the one fewest sprint issues wait on through "Blocked by" links), never one Dolev paused — and routes it to dev-plan or dev-code by its status, or says plainly when it is waiting for Dolev. Use in any of Dolev's repos whenever he says "let's work on the next task", "בוא נעבוד על המשימה הבאה", "מה הבא", "what's next", or asks what is blocking the sprint. Also use it when he asks to review or fix the order of the sprint ("תבדוק את סדר הספרינט", "review the sprint order"): a full review of the sprint's "Blocked by" links that proposes links to add or remove and issues to merge. Works in any repo that has the pipeline labels; if the repo has its own repo-specific next-issue skill, use that instead.
 ---
 
 # The next issue
@@ -24,8 +24,9 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the labels, the sprint) and `dependencies.md`: the
 ranking rule and why this skill ranks without status tiers, while the phases put the status
-tier first. In both, a `bug` comes before any new task, then `process` issues, then weight decides
-(a repair, `needs-repair`, stays first in the phases).
+tier first. In both, a `bug` comes before any new task, then `process` issues, then the sub-issues
+of an umbrella that has started, then the rest, and in each group the lowest weight comes first
+(a repair, `needs-repair`, stays first in the phases). Why: a topic is finished before the next (S-1.42).
 Its sub-section "בדיקת הסדר" holds what the audit below finds, and the rule for merging.
 The review of the sprint order edits issue bodies, so it also reads `issue-body.md` there.
 Asking Dolev for his step in the question window (step 4) follows `chat-decisions.md`.
@@ -36,11 +37,15 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py"
    ```
-   `bug` issues come first, then `process` issues, each group by weight. Each row is `#N`, how many
-   sprint issues wait on it, its status, its kind (`process`, `bug` or `-`), its title, and
-   `BLOCKED by #…` if it has an open blocker. The first line names the sprint. Issues
-   labelled `costs-money` are not ranked, and the last line lists them
-   (`On hold, costs-money: …`). Never pick one (the label: `reference/pipeline.md`). A line `Active, no sprint: …` lists open
+   `bug` issues come first, then `process` issues, then the sub-issues of an umbrella that has
+   started, then the rest; in each group, the fewest waiting first. Each row is `#N`, how many
+   sprint issues wait on it, its status, its kind (`process`, `bug` or `-`), its title,
+   `FROM STARTED UMBRELLA #U` for a sub-issue of a started umbrella, and
+   `BLOCKED by #…` if it has an open blocker (`#M (paused)` for a blocker Dolev paused). The first line names the sprint. Issues
+   labelled `costs-money` are not ranked, and a line lists them
+   (`On hold, costs-money: …`). Issues labelled `paused` are not ranked either, and the line
+   `Paused by Dolev: …` lists them. Never pick one of either (the labels: `reference/pipeline.md`); an issue
+   Dolev names works as usual, and its label stays. A line `Active, no sprint: …` lists open
    issues in the pipeline (past backlog, short of done) that have no milestone at all: no
    scan reaches them, so step 6 reports them.
 
@@ -54,8 +59,10 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    full review below, on his request. `(no findings)`: say nothing.
 
 2. Pick the first row, top down, that:
-   - has no `BLOCKED by`. A blocked issue is never the next one; what blocks it ranks above
-     it anyway, since it carries at least the same weight plus one. This holds for planning
+   - has no `BLOCKED by`. A blocked issue is never the next one. What blocks it can stand
+     below it, since it carries more weight; the pick is still the first row that is not
+     blocked. The head of a chain is in the ranking, unless it is paused, costs money, or
+     sits in another repo: then the chain waits, and step 2 says on what. This holds for planning
      too: a blocked issue is not routed to `dev-plan` (`reference/dependencies.md`, #253). A blocker of another
      repo (`owner/name#N`) is not in the ranking at all: the issue waits on that repo;
    - is not `status:backlog` with `0 waiting`. That is a sprint umbrella or an idea nobody
@@ -63,8 +70,12 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    - is not a `decision` issue (no status) with `0 waiting`, unless nothing
      else is left. A decision that others wait on is a real bottleneck and stays a candidate.
 
+   Next to the pick, say why it was picked, from its row: "באג", "process", "ממטרייה #U שהתחילה"
+   (`FROM STARTED UMBRELLA #U`), or "הכי פחות חוסמת" (none of these).
+
    When the bottleneck is an issue on hold (a row is `BLOCKED by` one), say so: the hold is
-   what stops that work, and lifting it is Dolev's call.
+   what stops that work, and lifting it is Dolev's call. A blocker marked `(paused)`: say
+   "מחכה למשימה מושהית #M".
 
    No row left means nothing in the sprint can move. Say so, show the ranking, and stop.
    Never reach outside the milestone (`reference/pipeline.md`).
