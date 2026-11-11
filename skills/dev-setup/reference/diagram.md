@@ -8,7 +8,7 @@ config:
 ---
 flowchart TD
     PROP(["דולב פותח הצעה בבקלוג<br/>status:backlog"]):::human
-    PROP --> SPASK(["דולב מבקש אפיון להצעה<br/>הבקשה היא האישור שלה"]):::human
+    PROP --> SPASK(["דולב מבקש אפיון להצעה<br/>או משייך אותה ל-milestone של הספרינט<br/>ואז בן של המתזמר כותב אותו<br/>זה האישור שלה"]):::human
     SPASK --> SPEC
 
     subgraph SG["שלב האפיון — לפני התכנון"]
@@ -31,7 +31,7 @@ flowchart TD
       PLAN --> PBLK{"חסום ע״י issue פתוח<br/>Blocked by"}:::gate
       PBLK -- "כן" --> PBSKIP(["מדלג עליו ומדווח במה הוא חסום"]):::gate
       PBLK -- "לא" --> PSPEC{"יש חלק פתוח באפיון<br/>או שזה באג"}:::gate
-      PSPEC -- "לא" --> PBACK(["חוזר לבקלוג כהצעה<br/>status:backlog<br/>תכתוב אפיון ל-#N"]):::gate
+      PSPEC -- "לא" --> PBACK(["חוזר לבקלוג כהצעה<br/>status:backlog<br/>בספרינט: המתזמר כותב לו אפיון<br/>אחרת: תכתוב אפיון ל-#N"]):::gate
       PSPEC -- "כן" --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>קורא את החלק באפיון<br/>תוכנית מקוצרת<br/>בקצרה בשלוש שורות<br/>ואז פירוט טכני<br/>באג שחזר לתכנון<br/>תוכנית מלאה<br/>החלטה שחוצה משימות<br/>נכתבת כטיוטה בתוכנית<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
       PBLK -. "דולב נקב בשמו<br/>וביקש במפורש" .-> PW
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
@@ -47,7 +47,7 @@ flowchart TD
     QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore<br/>או עונה בחלון השאלות בצ'אט<br/>והתכנון ממשיך באותה ריצה"]):::human
     ANS --> BACK["status:explore<br/>התור של Claude<br/>יש כבר תוכנית: Claude מעדכן אותה"]:::routine
     BACK --> PLAN
-    PBACK -. "דולב מבקש אפיון" .-> SPASK
+    PBACK -. "דולב מבקש אפיון<br/>או milestone של הספרינט" .-> SPASK
 
     WAIT --> APP(["דולב קורא את התוכנית"]):::human
     APP -- "מאשר ב-GitHub" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
@@ -90,7 +90,7 @@ flowchart TD
     ORCGO(["דולב: תריץ את הספרינט<br/>רק בסשן ענן"]):::human --> ORC
 
     subgraph OG["המתזמר — סשן ענן אחד"]
-      ORC["dev-orchestrate<br/>sprint_state.py --spec<br/>בונה את התמונה מחדש בכל בדיקה<br/>פער מול האפיון: אזהרה בלבד<br/>לא שולח בן לכתוב אפיון"]:::routine
+      ORC["dev-orchestrate<br/>sprint_state.py --spec<br/>בונה את התמונה מחדש בכל בדיקה<br/>פער מול האפיון: אזהרה בלבד<br/>הצעה בבקלוג עם milestone של הספרינט: בן אפיון ראשון, אחד בכל פעם<br/>מיזוג האפיון והפירוק: בחלון"]:::routine
       ORC --> KID["סשן-בן לכל משימה שלא חסומה<br/>עד 3 במקביל, לכל ריפו<br/>tags: repo:owner/name, issue:N<br/>חפיפת קבצים: אחת אחרי השנייה<br/>שער WIP לפני בן קוד למשימה חדשה: המתזמר שואל, הבן מדלג"]:::routine
       KID --> REPORT["הבן כותב ב-GitHub<br/>תווית, תגובה, PR<br/>המתזמר מתעורר מהבדיקה ברקע"]:::routine
       REPORT --> CHECK["המתזמר בודק את התוצאה<br/>ושואל את דולב בחלון אחד"]:::routine

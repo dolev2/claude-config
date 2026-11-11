@@ -18,7 +18,7 @@ In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md`, `orchestrate.
 contract, the tags, what wakes a check and what to check after a change; below, `orchestrate.md` always means
 `reference/orchestrate.md`), `chat-decisions.md`, `cloud.md` (the `gh`
 table and "חלונות אישור בסשן-בן"), `dependencies.md`, `git-flow.md`, `specs.md` (the spec
-gaps, and why spec writing is never a child's), and `lessons.md` (step 5). Then the repo's
+gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5). Then the repo's
 `CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 2).
 
 ## Start
@@ -32,7 +32,9 @@ gaps, and why spec writing is never a child's), and `lessons.md` (step 5). Then 
    parameters, and `set_session_title` only when the title is not that already. The orchestrator
    is a session Dolev opened, not a child, so the call is allowed. The tool is missing: go on.
 4. The first check shows Dolev the opening picture: what opens now, what waits on a blocker or
-   on a shared file, and what waits for him.
+   on a shared file, and what waits for him. Then one line per approved proposal (`proposals`,
+   S-2.14), with its stage in words: `waiting` "מחכה לבן אפיון", `writing` "בכתיבה",
+   `questions` "שאלות", `review` "אפיון לסקירה", `breakdown` "פירוק לאישור".
 
 ## Each check
 
@@ -95,18 +97,22 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    names, or whose status moved since the last check, is checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
    התקדם"). An issue now in `status:in-review` with an open PR: `subscribe_pr_activity` on it.
    A child the check verified as done with its turn (the plan in the body and Dolev's status, a
-   planning child that moved its issue to `status:backlog` with the gate's comment, or
-   a PR with `status:in-review` and the hand-off comment) gets `archive_session` in this check,
+   planning child that moved its issue to `status:backlog` with the gate's comment,
+   a PR with `status:in-review` and the hand-off comment, or a spec child with a green PR
+   from `claude/spec-*` that says `Refs #N`, or its questions in a comment on the issue) gets `archive_session` in this check,
    in step 4's message, or in a message of its own when step 4 opens nobody: it never works again, since an answer, a send-back or a fix opens a new
    child (`orchestrate.md`, "בן שסיים").
    A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
    An issue a planning child sent to `status:backlog` (no open spec part, `dev-plan` step 2) is
-   a line in the summary of step 6, "חזר לבקלוג: אין חלק באפיון", with "תכתוב אפיון ל-#N". It
-   is not a question in the window: writing a spec is never sent to a child.
+   a line in the summary of step 6, "חזר לבקלוג: אין חלק באפיון". Its milestone stays, so
+   `sprint_state.py` already lists it in `proposals`, and it gets a spec child through step 4
+   like any approved proposal (S-2.14). It is not a question in the window.
 4. **Dispatch.** While fewer than 3 of this repo's children are active and nobody is in overage
    (any child, or this session's own `get_session`: overage is per account): one child per
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
-   on which issue. Any earlier child of the same issue that is not archived gets
+   on which issue. A spec child (`status: "spec"`, always first, one at a time) opens as
+   `orchestrate.md`, "בן אפיון" says: its own branch name and the spec version of the
+   contract's items 1 and 5. It is exempt from the WIP gate, like planning. Any earlier child of the same issue that is not archived gets
    `archive_session` first: one child per issue.
    **The WIP gate is checked here, not in the child** (the gate: `reference/git-flow.md`; `orchestrate.md`, "פתיחת בן"): before
    a coding child for a new issue (`ready-to-execute`; planning and `needs-repair` are
@@ -125,19 +131,25 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    prompts, not questions.
 5. **Dolev's window.** Everything that waits for him goes into one `AskUserQuestion` call, up to 4
    questions, most important first (`chat-decisions.md`):
-   1. a plan's open questions: the questions themselves;
+   1. a plan's open questions: the questions themselves. A spec PR's open questions
+      (`proposals`, stage `questions`: its unticked boxes) are asked the same way;
    2. a plan to approve: its "בקצרה", with approve first. Its "איפה באפיון" line goes into the
       question as it is, even when the rest is shortened for the phone (#238);
    3. a PR ready to merge (`merge_queue`, CI `success`, `mergeable_state` neither `dirty` nor
       `unknown`; `unknown` is asked again next check): a change
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
-      warns. Only one merge question per window;
-   4. the coding children held by the WIP gate (step 4): one question, the issues in
+      warns. Only one merge question per window. A spec PR (`kind: "spec"`) is an ordinary
+      merge question: its merge is the approval of the "what", and its `dev-ship` offers the
+      breakdown;
+   4. a breakdown to approve (`proposals`, stage `breakdown`): the list of issues `dev-issue`
+      would open, with the proposal's milestone (S-2.14). It is asked again every check until
+      Dolev answers, since a check keeps no memory;
+   5. the coding children held by the WIP gate (step 4): one question, the issues in
       `status:in-review`, and which held issues to open anyway (`multiSelect`, one option
       per issue), with "wait" first;
-   5. a child blocked on a permission prompt or failed: which session, which tool, and a link;
-   6. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### לקח מוצע`), or
+   6. a child blocked on a permission prompt or failed: which session, which tool, and a link;
+   7. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### לקח מוצע`), or
       from a `dev-ship` this session ran. Its four fields, with "open a task" first, right after
       its issue's merge question when there is one, otherwise last. **One lesson per window**,
       so with one merge they take at most 2 of the 4. Every lesson not yet asked, from a child
@@ -150,7 +162,11 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    "איך המתזמר יודע שבן התקדם"). After his choice:
    approve: `waiting-approval` → `ready-to-execute`, a plan-log line, and the coding child opens
    next check. Send back or answer: `status:explore`, his words quoted in a comment, and a new
-   planning child. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
+   planning child. An answer to a spec PR's question: its box is ticked with the decision in
+   the PR body, his words go in a comment on the issue, and a new spec child opens in this
+   check (as step 4 says) to write the answer into the file on the same branch (`dev-spec`,
+   step 8, a revision). Breakdown approved: `dev-issue` breaks the spec down here ("פירוק
+   אפיון"), the new tasks in the proposal's milestone, and closes the proposal. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
    line that this is a good moment for `/compact`, with the full command in a code block as the
    global `CLAUDE.md` says ("מה פתוח": `/compact` and the summary that must survive;
    `hooks/compact_after_merge.py` blocks the turn's end once without it). A fix:
@@ -163,7 +179,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `since <now> expect <N>=<status>,... pipeline_sha <sha> session_sha <sha>`: the next check compares against it,
    and step 3 reads `since` and `expect` from it. The `spec_gaps` lines of step 2 come right
    above it, one per gap. Nothing to open and nothing to ask: the line says what the sprint waits
-   for. Then, when any child is active, start the background watch: stop the previous one if
+   for, including a spec ("מחכה לאפיון של #N") or a breakdown ("מחכה לפירוק של #N"). Then, when any child is active, start the background watch: stop the previous one if
    it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/watch_children.py" \
@@ -177,7 +193,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
 
 ## The end
 
-`dispatch`, `held_by_overlap`, `waiting_dolev` and `merge_queue` are empty, and no child is
+`dispatch`, `held_by_overlap`, `waiting_dolev`, `merge_queue` and `proposals` are empty, and no child is
 active: first, `archive_session` for every child of this repo that is not archived yet (one
 message, the number of prompts said before it), the backup for any child step 3 missed; then a summary of what merged and what is still open and why (blocked, costs-money, paused, outside
 the sprint; a `blocked` entry with `paused_blockers` reads "מחכה למשימה מושהית #N"), and the stray branches of closed issues for Dolev to delete by hand (`orchestrate.md`,
@@ -192,8 +208,9 @@ the sprint; a `blocked` entry with `paused_blockers` reads "מחכה למשימ�
   upgrade or service.
 - "Blocked by" links on GitHub are the only source of what may start. A child never edits
   them; the orchestrator does, as `orchestrate.md` says.
-- Never send spec writing to a child: `dev-spec` runs only when Dolev asks for it, in a
-  session of its own. A backlog proposal is never dispatched.
+- A spec child only for an approved proposal, a backlog issue Dolev put in the sprint's
+  milestone (S-2.14), first in `dispatch` and one at a time. A proposal with no milestone is
+  never touched; a bug and a small task get no spec.
 - Never open a child for an issue that is claimed, blocked, an umbrella (a sub-issue still
   open), `costs-money` or `paused` (`reference/pipeline.md`): `sprint_state.py` already leaves those out of `dispatch`, and the
   check never adds them back. Umbrellas are listed apart in `umbrellas`, with their open

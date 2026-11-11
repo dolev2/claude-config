@@ -70,8 +70,14 @@ keeps them: edit it in the headings it already has.
    #243). Before any code is read: an issue that is not a bug, and whose `אפיון:` line is
    missing or names a part that is already Done, gets no plan and no branch. Move it
    `status:explore` → `status:backlog` and comment: it has no open part in the spec, so it goes
-   back to the backlog as a proposal, "תכתוב אפיון ל-#N" (a Done part: the change is first a
-   change to that part). Its milestone stays, since it is Dolev's, and the comment says so. It
+   back to the backlog as a proposal (a Done part: the change is first a change to that part).
+   Its milestone stays, since it is Dolev's, and the comment says so, with what comes next by
+   that milestone (`reference/specs.md`, "issue בלי אפיון", item 2):
+   - **the current sprint's milestone** (`current_sprint` of step 0): it is now an approved
+     proposal, so the orchestrator writes its spec in its next check (S-2.14); whoever does not
+     want that removes the milestone;
+   - **no milestone, or another one:** "תכתוב אפיון ל-#N", as before.
+   It
    does not count toward the three issues of the run, and it is none of the three hand-off
    paths of step 7: the summary gives it a line of its own (step 8).
 
@@ -255,8 +261,9 @@ keeps them: edit it in the headings it already has.
 8. End the run with a summary in Hebrew: which issues moved to `status:waiting-approval` with
    their branch, and which moved to `status:plan-questions` and what was asked. Blocked issues
    get a line of their own, "דולגו, חסומות", each with its open blockers (step 1). Issues the
-   gate sent back get a line of their own, "חזרו לבקלוג: אין חלק באפיון", each with "תכתוב
-   אפיון ל-#N" (step 2). Small-path
+   gate sent back get a line of their own, "חזרו לבקלוג: אין חלק באפיון", each with what comes
+   next as its comment says (step 2): "המתזמר יכתוב לה אפיון" in the current sprint, otherwise
+   "תכתוב אפיון ל-#N". Small-path
    issues get a line of their own, "עברו ישר לביצוע (קטנות)", each with its link and the reason
    it is small, so Dolev can stop one before code is written: he moves it to
    `status:explore` and removes `size:small`, and the next run writes the normal plan. Confirm with

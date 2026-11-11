@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: dev-plan-gate-in-sprint
+description: "An issue in the current sprint whose spec part is Done: no plan, back to the backlog, and the comment says the orchestrator writes its spec (S-2.14)."
+tags: [dev-plan]
+context:
+  scaffold_script: setup.sh
+---
+max_turns: 60
+timeout_seconds: 1200
+allowed_tools: [Skill, Read, Glob, Grep, Bash, Write, Edit, Agent]
+---
