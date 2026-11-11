@@ -570,7 +570,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>ה-branch מחכה ב-remote, ריק.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> שום קוד לא נכתב על תוכנית שדולב לא אישר, חוץ ממשימה קטנה (<code>size:small</code>) ומבאג. <span class="owner">הכלל המלא: <code>pipeline.md</code>, "המסלול הקטן"</span></div>
+    <div class="gate-row"><strong>שער:</strong> שום קוד לא נכתב על תוכנית שדולב לא אישר, חוץ ממשימה קטנה (<code>size:small</code>) ומבאג. <span class="owner">הכלל המלא: <code>pipeline.md</code>, "המסלול הקטן" · <code>specs.md</code>, "באג"</span></div>
   </article>
 
   <article class="stage">
@@ -629,7 +629,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li><li>לקח מוצע ממה שקרה במיזוג (rebase שהתנגש, CI שנפל, ניקוי שנכשל), באותם כללים כמו בקוד. גם כשהריצה נעצרה בגללם: אז הלקח בא בדיווח על העצירה.</li><li>אחרי מיזוג של אפיון (<code>claude/spec-*</code>): במקום זה, רשימה אחת בחלון השאלות: הפירוק של החלקים החדשים, והעדכון של ה-issues של חלקים שהשתנו או נמחקו. מבצע <code>dev-issue</code>, אחרי האישור.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
-        <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI.</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch המקומי.</li><li>ה-branch ב-GitHub נמחק בהגדרה Automatically delete head branches. כבויה: מציעים <code>gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true</code>, וב-403 נותנים לדולב את דף ההגדרות.</li></ul>
+        <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI.</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch המקומי.</li><li>ה-branch ב-GitHub נמחק בהגדרה Automatically delete head branches. כבויה: מציעים <code>gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true</code>, וב-403 נותנים לדולב את דף ההגדרות (בענן לא נבדק, #251).</li></ul>
         <span class="owner">הכלל המלא: <code>git-flow.md</code>, "מוסכמת branches ו-PR"</span>
       </div>
     </div>
@@ -687,7 +687,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <li class="claude"><strong>אחרי שינוי</strong><p>בדיקה ברקע (<code>watch_children.py</code>) מעירה את המתזמר כשתווית של בן זזה או שנוספה תגובה. התגובות של המתזמר עצמו נושאות סמן מוסתר, ולא מעירות אותו. המתזמר בודק ב-GitHub: את התוכנית, את ה-PR וה-CI, ושאין branch או תווית מיותרים.</p><p>בן שאומת שסיים את התור עובר לארכיון באותה בדיקה: תשובה, החזרה או תיקון פותחים בן חדש.</p></li>
     <li class="human"><strong>חלון שאלות אחד</strong><p>תשובות לתוכניות, אישורים, ומיזוג אחד בכל פעם. רק דולב מחליט.</p><p>לקח מוצע של בן נכנס אחרי שאלת המיזוג של אותו issue, באותו חלון.</p><p>שאלת המיזוג אומרת אילו בנים פעילים נוגעים באותם קבצים כמו ה-PR, לפי הקבצים שהם כבר שינו ולא רק לפי התוכנית.</p></li>
     <li class="gate"><strong>באג או מכסה</strong><p>באג שפוגע באחרים: issue, Blocked by, עצירת הבנים שנפגעים, ובן שמתקן.</p><p>מכסה בחריגה: לא נפתח בן חדש, ושואלים את דולב.</p></li>
-    <li class="auto"><strong>סוף הספרינט</strong><p>אין מה לפתוח, לשאול או למזג: בן שעוד לא בארכיון עובר לארכיון, ואז סיכום, והלולאה נעצרת.</p><p>ה-branch של משימה ממוזגת נמחק ב-GitHub בהגדרה Automatically delete head branches. בסיכום: ה-branches של משימות סגורות שנשארו בכל זאת. ההגדרה כבויה: מציעים להפעיל אותה ב-<code>gh api -X PATCH</code>, וב-403 נותנים את דף ההגדרות. מהענן אי אפשר למחוק branch ב-<code>git push</code>.</p></li>
+    <li class="auto"><strong>סוף הספרינט</strong><p>אין מה לפתוח, לשאול או למזג: בן שעוד לא בארכיון עובר לארכיון, ואז סיכום, והלולאה נעצרת.</p><p>ה-branch של משימה ממוזגת נמחק ב-GitHub בהגדרה Automatically delete head branches. בסיכום: branches יתומים, של משימות שנסגרו בלי מיזוג או שלא נמחקו, עם קישור לדף ה-branches, כדי שדולב ימחק אותם ביד. מהענן אי אפשר למחוק branch ב-<code>git push</code>.</p></li>
   </ol>
   </div>
 </section>

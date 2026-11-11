@@ -524,7 +524,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>Reads code straight from <code>origin/main</code>: <code>git show</code>, <code>git grep</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> an issue blocked by a Blocked by link is not planned: dev-plan skips it and reports what blocks it. A decision in the blocker can change the file layout and leave the plan stale. An issue Dolev names is planned only when he explicitly asks. A task with no open spec part is not planned: it goes back to the backlog. <span class="owner">Full rule: <code>dependencies.md</code>, "dependencies" · <code>specs.md</code>, "issue בלי אפיון" (an issue with no spec)</span></div>
+    <div class="gate-row"><strong>Gate:</strong> an issue blocked by a Blocked by link is not planned: dev-plan skips it and reports what blocks it. A decision in the blocker can change the file layout and leave the plan stale. An issue Dolev names is planned only when he explicitly asks. A task with no open spec part is not planned: it goes back to the backlog. <span class="owner">Full rule: <code>dependencies.md</code>, "dependencies" · <code>specs.md</code>, "an issue with no spec"</span></div>
   </article>
 
   <article class="stage">
@@ -549,7 +549,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>The branch waits on the remote, empty.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> no code is written on a plan Dolev has not approved, except a small task (<code>size:small</code>) and a bug. <span class="owner">Full rule: <code>pipeline.md</code>, "the small path"</span></div>
+    <div class="gate-row"><strong>Gate:</strong> no code is written on a plan Dolev has not approved, except a small task (<code>size:small</code>) and a bug. <span class="owner">Full rule: <code>pipeline.md</code>, "the small path" · <code>specs.md</code>, "a bug"</span></div>
   </article>
 
   <article class="stage">
@@ -608,7 +608,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li><li>A suggested lesson from what happened in the merge (a rebase that conflicted, CI that failed, a cleanup that failed), by the same rules as in Code. Also when the run stopped because of them: then the lesson comes in the report of the stop.</li><li>After a spec merge (<code>claude/spec-*</code>): instead, one list in the question window: the breakdown of the new parts, and the update of the issues of parts that changed or were deleted. dev-issue carries it out, after the approval.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
-        <ul><li>Rebase onto the default branch, then the tests.</li><li>Push, then open the PR or reuse the open one.</li><li>Wait for CI.</li><li>Not MERGEABLE: back to the rebase.</li><li>Squash merge.</li><li>Cleanup: the app, the worktree, the local branch.</li><li>The branch on GitHub is deleted by the Automatically delete head branches setting. Off: offer <code>gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true</code>, and on a 403 give Dolev the settings page.</li></ul>
+        <ul><li>Rebase onto the default branch, then the tests.</li><li>Push, then open the PR or reuse the open one.</li><li>Wait for CI.</li><li>Not MERGEABLE: back to the rebase.</li><li>Squash merge.</li><li>Cleanup: the app, the worktree, the local branch.</li><li>The branch on GitHub is deleted by the Automatically delete head branches setting. Off: offer <code>gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true</code>, and on a 403 give Dolev the settings page (not tested in the cloud, #251).</li></ul>
         <span class="owner">Full rule: <code>git-flow.md</code>, "branch and PR convention"</span>
       </div>
     </div>
@@ -666,7 +666,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <li class="claude"><strong>After a change</strong><p>A background watch (<code>watch_children.py</code>) wakes the orchestrator when a child's label moves or a comment lands. The orchestrator's own comments carry a hidden marker and do not wake it. The orchestrator checks GitHub: the plan, the PR and its CI, and no stray branch or label.</p><p>A child verified as done with its turn is archived in the same check: an answer, a send-back or a fix opens a new child.</p></li>
     <li class="human"><strong>One question window</strong><p>Plan answers, approvals, and one merge at a time. Only Dolev decides.</p><p>A child's suggested lesson comes right after the merge question of the same issue, in the same window.</p><p>The merge question names the active children that touch the same files as the PR, by the files they already changed, not only by their plans.</p></li>
     <li class="gate"><strong>A bug or the quota</strong><p>A bug that hurts others: an issue, Blocked by, the hurt children stopped, and a child that fixes it.</p><p>Quota in overage: no new child, and Dolev is asked.</p></li>
-    <li class="auto"><strong>End of the sprint</strong><p>Nothing to open, ask or merge: any child still not archived is archived, then a summary, and the loop stops.</p><p>A merged task's branch is deleted on GitHub by the Automatically delete head branches setting. The summary lists the branches of closed tasks that stayed anyway. The setting is off: offer to turn it on with <code>gh api -X PATCH</code>, and on a 403 give the settings page. The cloud cannot delete a branch with <code>git push</code>.</p></li>
+    <li class="auto"><strong>End of the sprint</strong><p>Nothing to open, ask or merge: any child still not archived is archived, then a summary, and the loop stops.</p><p>A merged task's branch is deleted on GitHub by the Automatically delete head branches setting. The summary lists orphan branches, of tasks closed without a merge or not deleted, with a link to the branches page, for Dolev to delete by hand. The cloud cannot delete a branch with <code>git push</code>.</p></li>
   </ol>
   </div>
 </section>
