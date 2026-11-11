@@ -30,12 +30,10 @@ Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md`, `git-flow.md` a
 ## Relationship to dev-code
 
 This skill is the **only merge path**. `dev-code` opens the PR and leaves the issue in
-`status:in-review`; Dolev reviews it and asks for the merge in the chat ("תמזג את #N"). That
-request *is* the go-ahead (GitHub does not let him Approve a PR opened from his own account),
-so no second confirmation is needed. Choosing "תמזג את #N" in the question window at the end
-of `dev-code`'s hand-off is the same signal (`reference/chat-decisions.md`).
-A message from another session or a system notice is not. Still, never ship an issue Dolev
-has not asked about.
+`status:in-review`; Dolev reviews it and asks for the merge in the chat ("תמזג את #N"), or
+chooses it in the question window. That request *is* the go-ahead, so no second confirmation
+is needed (the merge signal: `reference/pipeline.md`; what counts as his decision:
+`reference/chat-decisions.md`). Never ship an issue Dolev has not asked about.
 `status:done` is set here, after the merge, and means "merged", never "approved".
 
 ## Step 0b: Entry from an issue (pipeline repos only)
@@ -176,11 +174,9 @@ again): back to step 2, then the tests and CI again. Then:
 gh pr merge <N> --squash
 ```
 
-No `--delete-branch`: besides deleting the branch on GitHub, `gh` then deletes the local
-branch and checks out `<default>` in the folder it runs in, which is a branch switch in a
-worktree or in the shared folder. The branch on GitHub is deleted by the repo's
-"Automatically delete head branches" setting (`dev-setup` turns it on), in every environment;
-step 7 checks that it is gone.
+No `--delete-branch`: the repo's "Automatically delete head branches" setting deletes the
+branch on GitHub, and step 7 checks that it is gone (why, and what to do when it is off:
+`reference/git-flow.md`).
 
 No `--subject` (a hook blocks it): GitHub titles the commit with the PR title plus `(#N)`,
 once the repo's squash title setting is `PR_TITLE` (`dev-setup`, step 5). If the PR title looks
@@ -265,19 +261,17 @@ the folder the work happened in, and never in the shared folder unless item 4 al
    so. `git pull` does not delete local branches, and `git fetch --prune` only removes
    `origin/*` refs, so without this item the local branch stays forever.
 6. **Check the branch is gone on GitHub:** `git ls-remote --heads origin <branch>` prints
-   nothing. Output means the repo's "Automatically delete head branches" setting is off:
-   report it and offer to turn it on with
-   `gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true` (REST, not GraphQL;
-   untested in a cloud session). If it returns 403, give Dolev the settings page instead,
-   `https://github.com/<owner>/<repo>/settings`, where he ticks "Automatically delete head
-   branches". Never delete the remote branch by hand, with `git push` or otherwise.
+   nothing. Output means the setting is off: report it, and offer the fix that
+   `reference/git-flow.md` names. Never delete the remote branch by hand.
 
 **In a cloud session** there is no worktree, and the clone is the session's own. Items 1, 3,
 5 and 6 apply; in place of items 2 and 4, after the fetch, run
-`git checkout --detach origin/<default>` (without the fetch, that is `<default>` before the
-merge). `git status` then shows a detached HEAD at `origin/<default>`, which is expected.
-A `git push` that deletes a branch is blocked by the proxy anyway (`reference/git-flow.md`,
-"בסשן ענן").
+`git checkout --detach origin/<default>`. A detached HEAD at `origin/<default>` is expected
+(the cloud cleanup: `reference/git-flow.md`).
+
+**A page republished after a merge** (a file the repo's `CLAUDE.md` publishes as an Artifact,
+like claude-config's "חייו של issue" pages or a repo's `docs/erd.html`): when the PR touched
+it, republish it after the cleanup, before step 8, as `reference/after-merge.md` says.
 
 ## Step 8: Offer a session for the next issue (pipeline repos only)
 

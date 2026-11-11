@@ -40,7 +40,7 @@ Show Dolev, in chat, one list, and wait for his yes:
 | Project board | a new user project named after the repo, linked to it | create one, reuse one, or skip |
 | CI tests workflow | only if the repo has none | which commands |
 | lint | ruff for Python, eslint for React (JavaScript), by the files in the repo | — |
-| "Automatically delete head branches" | on | — |
+| "Automatically delete head branches" | on (why: `reference/git-flow.md`) | — |
 | squash merge commit title | the PR title (`PR_TITLE`) | — |
 | ruleset `protect-main` on the default branch | on, in a public repo (from a cloud session: left to Dolev, step 7); a private one is skipped | — |
 | file guide in `README.md` | only if `missing_files` names it | the description line of a new `README.md` |
@@ -88,7 +88,7 @@ L "area:both"               5319e7 "גם וגם"
 L "area:infra"              006b75 "תשתית/כלים"
 ```
 
-Use the `area:*` list Dolev agreed to, not necessarily these four.
+Use the `area:*` list Dolev agreed to, not necessarily these four. What each label means (`costs-money`, `size:small`, `process`): the vocabulary in `reference/pipeline.md`.
 
 ## Step 3: Files
 

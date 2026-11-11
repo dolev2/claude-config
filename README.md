@@ -64,7 +64,8 @@
 | `reference/review-app.md` | הרמת האפליקציה של ה-PR לסקירה, קובץ הרישום, ועצירה | `dev-code`, `dev-ship`, `dev-setup` |
 | `reference/specs.md` | שלב האפיון: מתי `dev-spec` רץ, הפירוק ל-issues וה-PR של שורות "פתוח", סימון Done, באג, משימה קטנה, השער של issue בלי אפיון, וההעברה בריפו שהותקן לפני הסדר החדש | `dev-spec`, `dev-issue`, `dev-plan`, `dev-code`, `dev-ship`, `dev-setup`. יצא לקובץ משלו כי `pipeline.md` ו-`issue-body.md` בתקרה של 150 שורות (#227) |
 | `reference/ux.md` | רשימת הבדיקה של חוויית משתמש: הסעיף בתוכנית, והמעבר על הפיצ'ר בדפדפן לפני המסירה | `dev-plan`, `dev-code` |
-| `reference/after-merge.md` | ההצעה לסשן של המשימה הבאה אחרי מיזוג | `dev-ship` |
+| `reference/after-merge.md` | ההצעה לסשן של המשימה הבאה אחרי מיזוג, וצעדי הפרסום מחדש של עמוד Artifact | `dev-ship`, ומפנים אליו `.claude/CLAUDE.md` ו-`rules/erd.md` |
+| `reference/owners.md` | מפת הבעלים: לכל כלל בצינור, הקובץ שמחזיק את הנוסח המלא, ומי מפנה אליו | כל כלל כתוב במלואו במקום אחד, והשאר מפנים, כדי שהעותקים לא יסטו (#152, #246). מי שמשנה כלל מתחיל בה (`.claude/CLAUDE.md`) |
 | `reference/setup.md` | מה ש-`dev-setup` מתקין ולמה: הסנכרון עם הלוח, הטפסים, השער, Netlify, lint | `dev-setup` בלבד, כדי ששאר הסקילים לא יקראו אותו |
 | `reference/board.md` | לוח ה-Project בהתקנה: יצירה וקישור, `EXPECTED_BOARDS`, שדה Status, פקודת ה-token ל-PowerShell ול-bash, והתצוגות | `dev-setup` בלבד. יצא מהסקיל כדי שיישאר מתחת ל-300 שורות (#168) |
 | `reference/repo-files.md` | הקבצים שההתקנה מוסיפה לריפו: הגדרות lint, כלל הדילוג של Netlify, מדריך הקבצים והבדיקה שלו | `dev-setup` בלבד. יצא מהסקיל כדי שיישאר מתחת ל-300 שורות (#168) |
@@ -140,7 +141,11 @@ git checkout -- .
 
 ## בדיקות
 
+מהשורש של הריפו. אותן פקודות כמו ב-`.claude/CLAUDE.md`, בכוונה (`skills/dev-setup/reference/owners.md`):
 ```bash
+ruff check .
+ruff format --check .
 python .github/file_guide_check.py
 python -m pytest skills/dev-setup/scripts hooks
 ```
+בסביבה נקייה: קודם `pip install pytest ruff==0.17.2`.

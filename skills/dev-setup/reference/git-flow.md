@@ -14,6 +14,7 @@
 לשאול.** מדווחים כמה ממתינים (עם קישורים) ושואלים את דולב אם להמשיך בכל זאת; ממשיכים רק על "כן"
 מפורש. החסם הוא קצב הביקורת של דולב, ו-PR שממתין מזדקן מול ה-branch הראשי. `status:needs-repair`
 פטור מהשאלה. PR שדולב כבר סקר ועוד לא ביקש למזג נשאר ב-`in-review` ונספר, כי הוא עדיין עבודה פתוחה. הפקודה ב-`dev-code`, שלב 1.
+**סשן-בן של המתזמר מדלג על השער**, כי הוא לא שואל את דולב: המתזמר בודק אותו לפני שהוא פותח בן קוד למשימה חדשה, ושואל כשצריך (`orchestrate.md`, #249).
 
 **Plan: עד שלושה issues בריצה.** הוא לא כותב קוד, אז רק הקונטקסט מגביל אותו.
 
@@ -63,7 +64,10 @@
   סשן של מתזמר נקרא `<repo>: מתזמר הספרינט`. זה המקום שמגדיר את הצורה, והשאר מפנים אליו.
 - מחיקת branches אחרי merge: ב-GitHub, ההגדרה "Automatically delete head branches" של ה-repo, בכל סביבה.
   `dev-ship` לא מעביר `--delete-branch`, כי `gh` עם הדגל גם עושה checkout ל-`<default>` בתיקייה שבה הוא רץ.
-  את ה-branch המקומי מוחק `dev-ship` צעד 7. ה-branch נשאר ב-GitHub (ההגדרה כבויה): מדווחים ומציעים להפעיל אותה, ולא מוחקים ביד.
+  `dev-setup` מפעיל את ההגדרה בהתקנה. את ה-branch המקומי מוחק `dev-ship` צעד 7, ושם גם בודקים ש-`git ls-remote --heads origin <branch>` ריק.
+  ה-branch נשאר ב-GitHub (ההגדרה כבויה): מדווחים ומציעים להפעיל אותה ב-`gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true` (REST, לא GraphQL; בענן לא נבדק, #251).
+  חוזר 403: נותנים לדולב את דף ההגדרות, `https://github.com/<owner>/<repo>/settings`, שם הוא מסמן "Automatically delete head branches".
+  לא מוחקים את ה-branch ב-GitHub ביד, לא ב-`git push` ולא בדרך אחרת.
 
 ## בסשן ענן
 
@@ -79,7 +83,7 @@
    `git worktree add` עדיין עובד, ומותר. סוכנים במקביל (`isolation: "worktree"`) לא משתנים.
 3. **הניקוי אחרי merge** (`dev-ship`): אין worktree להסיר. `git fetch --prune origin` ואז `git checkout --detach origin/<default>`
    (בלי ה-fetch זה `main` שלפני המיזוג), ואז מחיקת ה-branch המקומי. ב-GitHub הוא נמחק בהגדרה Automatically delete head branches,
-   כי `git push` שמוחק branch נחסם ב-proxy (403). הבדיקה ש-`git ls-remote --heads` ריק נשארת.
+   כי `git push` שמוחק branch נחסם ב-proxy (403, `rules/env-cloud.md`). הבדיקה ש-`git ls-remote --heads` ריק נשארת.
 4. **שם הסשן:** `/rename` לא זמין. במקומו `mcp__claude-code-remote__set_session_title` עם
    `<repo>: claude/issue-<N>-<slug>`, ואת `session_id` נותן `mcp__claude-code-remote__get_session` בלי פרמטרים.
    הכלי לא זמין: ממשיכים, ומציינים בדיווח שהשם לא שונה.

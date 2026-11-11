@@ -16,7 +16,7 @@
 ## רשת ו-GitHub
 - **הרשת עוברת דרך proxy.** אתר שלא ברשימה של הסביבה חסום.
 - **GitHub רק ב-REST** (`gh api`) ובכלי `mcp__github__*`. GraphQL חסום, ולכן `gh issue` ו-`gh pr` לא רצים. התרגום: הטבלה ב-`cloud.md`.
-- **`git push` שמוחק branch חסום.** ה-branch נמחק בהגדרה של הריפו אחרי המיזוג (`git-flow.md`, "בסשן ענן").
+- **`git push` שמוחק branch חסום.** ה-branch נמחק בהגדרה של הריפו אחרי המיזוג. הכלל, ומה עושים כשההגדרה כבויה: `skills/dev-setup/reference/git-flow.md`.
 
 ## בדיקה ויזואלית ואפליקציה לסקירה
 - **צילום מסך:** Playwright במצב headless, במקום Edge או הדפדפן המובנה. הצעדים: `skills/dev-setup/reference/ux.md`.

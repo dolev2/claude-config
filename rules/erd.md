@@ -4,8 +4,7 @@
 הדוגמה שממנה נגזר הנוהל: `docs/erd.html` ו-`backend/tests/test_erd.py` ב-charging-crm (#47 שם, claude-config #118).
 
 ## איפה הוא גר
-- **מקור האמת הוא קובץ בריפו: `docs/erd.html`.** מי שמיזג PR שנגע בו (`dev-ship`) מפרסם ממנו מחדש את עמוד ה-Artifact לאותו קישור.
-  כלי Artifact לא זמין (למשל ב-CI): מדווחים לדולב שהפרסום מחכה.
+- **מקור האמת הוא קובץ בריפו: `docs/erd.html`.** מי שמיזג PR שנגע בו (`dev-ship`) מפרסם ממנו מחדש את עמוד ה-Artifact לאותו קישור, בצעדים של `skills/dev-setup/reference/after-merge.md`.
   `CLAUDE.md` של הריפו מפנה לקישור בשורה אחת.
 - **ריפו עם מסד ובלי ERD מקבל אותו בשינוי הסכמה הראשון**, מהתבניות `skills/dev-setup/templates/erd.html` ו-`templates/test_erd.py`.
   לא פותחים לו משימה נפרדת, בדיוק כמו חבילת בדיקות ראשונה (`code-tests.md`).

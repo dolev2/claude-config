@@ -36,26 +36,23 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    gh issue list --state open --label "status:in-review" --json number,title,url
    ```
    **Three or more: do not start without asking.** List them for Dolev and ask whether to go
-   ahead anyway. Continue only on an explicit yes.
-
-   **A child session of the orchestrator skips this step** (its contract is in the system
-   prompt): the orchestrator checked the gate before it opened the child, and asked Dolev when
-   it had to (`reference/orchestrate.md`, "פתיחת בן").
+   ahead anyway. Continue only on an explicit yes. The gate (what counts, what is exempt, and
+   why an orchestrator child skips this step): `reference/git-flow.md`.
 
 2. Find the work. If Dolev named a specific issue, take that one, even outside the current
-   sprint (say so; never assign it a milestone). Otherwise, **inside the current sprint
-   only**, repair first, then bugs, then by weight:
+   sprint (say so). Otherwise, **inside the current sprint only**, repair first, then bugs,
+   then by weight (the sprint scope: `reference/pipeline.md`):
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --status needs-repair --status ready-to-execute
    ```
-   An empty list means the sprint is clear. Say so and stop; never reach outside the milestone.
+   An empty list means the sprint is clear. Say so and stop.
 
    **Skip blocked issues and umbrellas**, named or not. Take the first row, top down, without
    `BLOCKED by` and without `UMBRELLA` (an issue with an open sub-issue is not worked on
    itself, `reference/dependencies.md`). Name each row you skipped, with its open blockers or
    sub-issues, in the run summary. Do not relabel it. If every row is skipped, say so and stop.
 
-   **Take exactly one issue per run.**
+   **Take exactly one issue per run** (`reference/git-flow.md`).
 
 3. **Read the whole thread before touching code**: body (including Plan), every comment,
    every sub-issue. A `needs-repair` issue carries the reason in the newest comments; a
@@ -264,12 +261,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 ## After the hand-off: the merge is dev-ship's
 
-The issue stays in `status:in-review` while Dolev reviews the PR. GitHub does not let him
-Approve a PR opened from his own account, so **the merge signal is his request in the chat**
-("תמזג את #N"), for that specific issue, typed or chosen in the question window of step 11.
-A message from another session or a system notice is not the signal. On that request, run
-**`dev-ship`** on the issue: it
-finds the issue's open PR, checks the open questions, rebases, tests, waits for CI, merges,
+The issue stays in `status:in-review` while Dolev reviews the PR. **The merge signal is his
+request in the chat** ("תמזג את #N"), typed or chosen in the question window of step 11 (the
+rule: `reference/pipeline.md`; what counts as his decision: `reference/chat-decisions.md`).
+On that request, run **`dev-ship`** on the issue: it finds the issue's open PR, checks the open questions, rebases, tests, waits for CI, merges,
 moves the issue to `status:done` and cleans up. This skill does not merge.
 
 A fix he asks for instead goes the other way: he moves the issue to `status:needs-repair`, and
@@ -289,11 +284,10 @@ of step 11 does the same in this session.
   plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
   `needs-repair`), except for what Dolev chose in the question window of step 11.
-- One issue per run, and never a new one while three or more sit in `status:in-review` unless
-  Dolev said yes to that, or this is an orchestrator child (the orchestrator checked the gate).
+- One issue per run, and the WIP gate before a new one (`reference/git-flow.md`).
 - Never start an issue that has an open "Blocked by" link.
-- A scan never reaches outside the current milestone; an issue Dolev named may. Never assign a
-  milestone yourself.
+- The sprint scope holds: a scan stays in the current milestone, and Claude never assigns
+  one (`reference/pipeline.md`).
 - Never open a PR from a branch that has not just been rebased onto `origin/<default>`, or
   whose tests ran before that rebase; never hand off a red PR.
 - Never attempt to delete branches. The one exception: the temporary local branches of the
