@@ -105,7 +105,8 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    turn below it that step 2 would pick, and ask whether to work on that one meanwhile. Doing
    his part (approving, answering, merging, relabelling) is never yours. You may ask him for it
    in the question window and carry out what he chooses there
-   (`reference/chat-decisions.md`); never decide it for him.
+   (`reference/chat-decisions.md`); never decide it for him. A plan he approves there starts
+   the code at once: route it to `dev-code` (rule 5 there).
 
 5. If the ranking shows an issue in `status:needs-repair` that you did not
    pick, mention it: a repair is work Dolev already reviewed, and `dev-code` on its own would

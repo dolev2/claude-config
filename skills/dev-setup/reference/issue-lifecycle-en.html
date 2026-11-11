@@ -542,7 +542,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p>Dolev's decision. An answer or an objection sends it back to dev-plan.</p>
-        <p>When Dolev is in the chat, dev-plan asks at the end of its run in the question window, recommendation first. Clicking "approve" moves it to <code>ready-to-execute</code>, with a line in the plan log. Answering the questions continues the planning in the same run.</p>
+        <p>When Dolev is in the chat, dev-plan asks at the end of its run in the question window, recommendation first. Clicking "approve, start coding" (or approving in free text) moves it to <code>ready-to-execute</code>, with a line in the plan log, and the code starts at once in the same session. Several plans approved together are coded one after the other. An approval on GitHub waits for the next dev-code run. Answering the questions continues the planning in the same run.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>No action.</p>

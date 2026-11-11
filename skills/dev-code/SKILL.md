@@ -297,7 +297,10 @@ of step 11 does the same in this session.
   plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
   `needs-repair`), except for what Dolev chose in the question window of step 11.
-- One issue per run, and the WIP gate before a new one (`reference/git-flow.md`).
+- One issue per run, and the WIP gate before a new one (`reference/git-flow.md`). The one
+  exception: plans Dolev approved together in `dev-plan`'s window run one after the other, each
+  a full run with its own PR and hand-off, and the WIP gate before each
+  (`reference/chat-decisions.md`, rule 5).
 - Never start an issue that has an open "Blocked by" link.
 - The sprint scope holds: a scan stays in the current milestone, and Claude never assigns
   one (`reference/pipeline.md`).
