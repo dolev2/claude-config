@@ -1,9 +1,9 @@
 """Drift checks: the pipeline knowledge that is written twice stays the same (#248).
 
-Three copies are kept by a test, not by hand (reference/owners.md): the two lifecycle
-pages, the test commands in .claude/CLAUDE.md and README.md against tests.yml, and the
-files the owners map names. The spec-check action is a uses: step with no documented
-command, and test_spec_check.py covers it.
+Three drift checks, kept by a test and not by hand (reference/owners.md): the two
+lifecycle pages, the test commands in .claude/CLAUDE.md and README.md against tests.yml,
+and the files and skills the owners map names. The spec-check action is a uses: step
+with no documented command, and test_spec_check.py covers it.
 """
 
 import re
@@ -72,11 +72,18 @@ def test_page_shape_catches_a_missing_item_and_a_changed_id():
     gaps = shape_gaps(page, page.replace("<li>2</li>", ""))
     assert gaps == [f"li: 2 in {PAGES[0]}, 1 in {PAGES[1]}"]
     assert shape_gaps(page, page.replace('id="a"', 'id="b"'))[0].startswith("ids:")
+    # class="rules" is the container: only the exact class word counts as a card.
+    assert page_shape(page).counts["rule"] == 1
+    gaps = shape_gaps(page, page.replace('<li class="rule">', "<li>"))
+    assert gaps == [f"rule: 1 in {PAGES[0]}, 0 in {PAGES[1]}"]
 
 
+# Single-line run: steps only; a "run: |" block would read as the command "|".
 RUN_LINE = re.compile(r"^\s*(?:-\s+)?run:\s*(\S.*)$", re.MULTILINE)
 # An argument only CI passes, from a workflow expression: --base origin/${{ ... }}.
 CI_ONLY_ARGUMENT = re.compile(r"\s+--[\w-]+[ =]\S*\$\{\{.*?\}\}\S*")
+TESTS_HEADING = re.compile(r"^## בדיקות\s*$", re.MULTILINE)
+NEXT_SECTION = re.compile(r"^## ", re.MULTILINE)
 INSTALL_LINE = re.compile(r"בסביבה נקייה: קודם `([^`]+)`")
 
 
@@ -84,16 +91,23 @@ def workflow_commands(workflow: str) -> tuple[str, list[str]]:
     """The pip install line of tests.yml, and its other run: lines in order."""
     runs = [CI_ONLY_ARGUMENT.sub("", run).strip() for run in RUN_LINE.findall(workflow)]
     installs = [run for run in runs if run.startswith("pip install")]
-    return installs[0], [run for run in runs if run not in installs]
+    install = installs[0] if installs else ""
+    return install, [run for run in runs if run not in installs]
 
 
 def doc_commands(text: str) -> tuple[str, list[str]]:
-    """The install line and the first code block of a doc's '## בדיקות' section."""
-    section = text[text.index("## בדיקות") :]
+    """The install line and the first code block of a doc's '## בדיקות' section.
+
+    A missing part reads as empty, so the gap names the file instead of crashing.
+    """
+    heading = TESTS_HEADING.search(text)
+    if not heading:
+        return "", []
+    section = NEXT_SECTION.split(text[heading.end() :], maxsplit=1)[0]
     block = re.search(r"```[^\n]*\n(.*?)```", section, re.DOTALL)
     install = INSTALL_LINE.search(section)
-    lines = [line.strip() for line in block.group(1).splitlines() if line.strip()]
-    return (install.group(1) if install else ""), lines
+    lines = [line.strip() for line in block.group(1).splitlines()] if block else []
+    return (install.group(1) if install else ""), [line for line in lines if line]
 
 
 def command_gaps(where: str, doc: str, workflow: str) -> list[str]:
@@ -160,6 +174,10 @@ python check.py
             "commands",
         ),
         (DOC.replace("ruff==1", "ruff==2"), "install `pip install pytest ruff==2`"),
+        (
+            DOC.replace("## בדיקות", "## אחר"),
+            "missing ['ruff check .', 'python check.py']",
+        ),
     ],
 )
 def test_command_gaps_name_the_file_and_the_drift(doc, expected):
