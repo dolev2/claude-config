@@ -75,3 +75,10 @@ def test_main_fails_on_a_stale_block(tmp_path, capsys):
     (folder / "pipeline.md").write_text(stale, encoding="utf-8")
     assert spec_check.main(["--root", str(tmp_path), "--no-issues"]) == 1
     assert "table of contents is stale" in capsys.readouterr().out
+
+
+def test_part_anchors_name_each_part_by_its_id():
+    assert spec_toc.part_anchors(SPEC) == {
+        "S-1.1": "s-11--read-the-spec",
+        "S-1.2": "s-12--compact-after-a-merge",
+    }

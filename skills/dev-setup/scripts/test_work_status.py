@@ -25,8 +25,20 @@ def section(text: str, heading: str) -> str:
     return text[start : end if end != -1 else None]
 
 
-def done(number, day):
-    return {"number": number, "title": f"merged {number}", "closed_at": f"{day}T9:00Z"}
+SPEC_URL = "https://github.com/acme/widgets/blob/HEAD/docs/specs/widgets.md"
+
+
+def done(number, day, body=None):
+    return {
+        "number": number,
+        "title": f"merged {number}",
+        "closed_at": f"{day}T9:00Z",
+        "body": body,
+    }
+
+
+def with_spec(line):
+    return {"body": f"### הקשר / קישורים\n{line}\n"}
 
 
 def test_all_four_tables_with_their_rows():
@@ -130,3 +142,49 @@ def test_script_runs_and_exits_0_on_help():
         check=False,
     )
     assert run.returncode == 0 and "--repo" in run.stdout
+
+
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        ("אפיון: docs/specs/widgets.md S-1.2", f"[S-1.2]({SPEC_URL}#s-12--two)"),
+        ("אפיון: docs/specs/widgets.md S-1.9", f"[S-1.9]({SPEC_URL})"),
+        (
+            "אפיון: docs/specs/widgets.md S-1.2, S-1.9",
+            f"[S-1.2]({SPEC_URL}#s-12--two), [S-1.9]({SPEC_URL})",
+        ),
+        ("בלי שורת אפיון", work_status.NO_PART),
+    ],
+)
+def test_spec_cell_links_to_the_part_heading(line, expected):
+    anchors = {"docs/specs/widgets.md": {"S-1.2": "s-12--two"}}
+    assert work_status.spec_cell(REPO, with_spec(line), anchors) == expected
+
+
+def test_issue_without_body_gets_a_dash():
+    assert work_status.spec_cell(REPO, {"body": None}, {}) == work_status.NO_PART
+
+
+def test_every_table_has_the_spec_column():
+    body = with_spec("אפיון: docs/specs/widgets.md S-1.2")["body"]
+    text = work_status.render(REPO, [], [done(9, "2026-11-10", body)])
+    assert work_status.HEADER in text
+    assert f"| [S-1.2]({SPEC_URL}) |" in section(text, "מה מוזג לאחרונה")
+
+
+def test_unreadable_spec_file_still_gives_the_tables(monkeypatch):
+    def read(path, *flags):
+        if "missing" in path:
+            sys.exit("HTTP 404")
+        return "## S-1.2 · Two\n"
+
+    monkeypatch.setattr(work_status, "gh_api", read)
+    issues = [
+        with_spec("אפיון: docs/specs/widgets.md S-1.2"),
+        with_spec("אפיון: docs/specs/missing.md S-2.1"),
+        {"body": None},
+    ]
+    assert work_status.read_anchors(REPO, issues) == {
+        "docs/specs/missing.md": {},
+        "docs/specs/widgets.md": {"S-1.2": "s-12--two"},
+    }

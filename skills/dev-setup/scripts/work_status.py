@@ -7,7 +7,8 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
     python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --repo owner/name
 
 The tables: what merged last, what is open in the current sprint, what is blocked or
-costs money, and what waits for Dolev. It only reads. The sprint picture comes from
+costs money, and what waits for Dolev. Each row links to the issue's spec part. It only
+reads. The sprint picture comes from
 sprint_state.state(), the same one the orchestrator reads (S-2.2), so nothing here
 ranks or classifies an issue on its own.
 
@@ -18,14 +19,18 @@ Exit codes: 0 with the tables, or with one sentence when the repo has no pipelin
 import argparse
 import sys
 
-from gh_rest import api_list, current_repo, open_issue_nodes, recent_done
+from gh_rest import api_list, current_repo, gh_api, open_issue_nodes, recent_done
 from pipeline_info import REQUIRED_LABELS
 from rank_issues import current_sprint, parse_issue, rank
+from spec_check import issue_spec
+from spec_toc import part_anchors
 from sprint_state import state
 
 TITLE_LIMIT = 50
 EMPTY = "אין."
-HEADER = "| משימה | תיאור | סטטוס |\n|---|---|---|"
+HEADER = "| משימה | תיאור | סטטוס | אפיון |\n|---|---|---|---|"
+NO_PART = "—"
+RAW = "Accept: application/vnd.github.raw"
 STATUS_HE = {
     "explore": "בתכנון",
     "plan-questions": "שאלות לדולב",
@@ -52,13 +57,60 @@ def status_he(status: str | None) -> str:
     return STATUS_HE.get(status, status) if status else "בלי סטטוס"
 
 
-def table(heading: str, rows: list[tuple[int, str, str]], repo: str) -> str:
+def spec_of(issue: dict) -> tuple[str, list[str]] | None:
+    """(spec path, part ids) from the "אפיון:" line, or None without a full line."""
+    line = issue_spec(issue) if issue.get("body") else None
+    return line if line and line[0] and line[1] else None
+
+
+def spec_cell(repo: str, issue: dict, anchors: dict[str, dict[str, str]]) -> str:
+    """Links to the issue's spec parts, or a dash when it has none (a backlog proposal).
+
+    A part whose heading was not found links to the spec file itself, so the cell
+    still leads somewhere.
+    """
+    line = spec_of(issue)
+    if not line:
+        return NO_PART
+    path, ids = line
+    url = f"https://github.com/{repo}/blob/HEAD/{path}"
+    slugs = anchors.get(path, {})
+    return ", ".join(
+        f"[{i}]({url}#{slugs[i]})" if i in slugs else f"[{i}]({url})" for i in ids
+    )
+
+
+def read_anchors(repo: str, issues: list[dict]) -> dict[str, dict[str, str]]:
+    """{spec path: {part id: anchor}} for every spec file the issues point to.
+
+    A file that cannot be read (not on the default branch yet) gets no anchors: its
+    parts link to the file, and the tables are still whole.
+    """
+    paths = {line[0] for line in map(spec_of, issues) if line}
+    found = {}
+    for path in sorted(paths):
+        try:
+            found[path] = part_anchors(
+                gh_api(f"repos/{repo}/contents/{path}", "-H", RAW)
+            )
+        except SystemExit:
+            found[path] = {}
+    return found
+
+
+Row = tuple[int, str, str, dict]
+
+
+def table(
+    heading: str, rows: list[Row], repo: str, anchors: dict[str, dict[str, str]]
+) -> str:
     """One section: its heading, then the rows, or one line saying there are none."""
     if not rows:
         return f"### {heading}\n\n{EMPTY}"
     lines = [
-        f"| [#{n}](https://github.com/{repo}/issues/{n}) | {short(t)} | {s} |"
-        for n, t, s in rows
+        f"| [#{n}](https://github.com/{repo}/issues/{n}) | {short(t)} | {s} "
+        f"| {spec_cell(repo, issue, anchors)} |"
+        for n, t, s, issue in rows
     ]
     return f"### {heading}\n\n{HEADER}\n" + "\n".join(lines)
 
@@ -69,59 +121,76 @@ def blocked_status(entry: dict) -> str:
     return "מחכה ל-" + ", ".join(refs)
 
 
-def sprint_rows(nodes: list[dict], sprint: str) -> list[tuple[int, str, str]]:
+def sprint_rows(nodes: list[dict], sprint: str) -> list[Row]:
     """The open issues of the sprint, in the order of S-1.3."""
-    issues = [
-        parse_issue(n)
-        for n in nodes
-        if n["milestone"] and n["milestone"]["title"] == sprint
+    in_sprint = [
+        n for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint
     ]
-    return [(i.number, i.title, status_he(i.status)) for i in rank(issues)]
+    by_number = {n["number"]: n for n in in_sprint}
+    return [
+        (i.number, i.title, status_he(i.status), by_number[i.number])
+        for i in rank([parse_issue(n) for n in in_sprint])
+    ]
 
 
-def held_rows(nodes: list[dict], picture: dict) -> list[tuple[int, str, str]]:
+def held_rows(nodes: list[dict], picture: dict) -> list[Row]:
     """The blocked issues with what they wait on, then those that cost money.
 
     An issue can be both: it gets one row, with both reasons.
     """
-    titles = {n["number"]: n["title"] for n in nodes}
+    by_number = {n["number"]: n for n in nodes}
     costs = set(picture["on_hold"])
     rows = [
         (
             b["number"],
-            titles[b["number"]],
+            by_number[b["number"]]["title"],
             blocked_status(b) + (", ועולה כסף" if b["number"] in costs else ""),
+            by_number[b["number"]],
         )
         for b in picture["blocked"]
     ]
     blocked = {b["number"] for b in picture["blocked"]}
     rows += [
-        (n, titles[n], COSTS_MONEY) for n in picture["on_hold"] if n not in blocked
+        (n, by_number[n]["title"], COSTS_MONEY, by_number[n])
+        for n in picture["on_hold"]
+        if n not in blocked
     ]
     return rows
 
 
-def render(repo: str, nodes: list[dict], done: list[dict]) -> str:
+def render(
+    repo: str,
+    nodes: list[dict],
+    done: list[dict],
+    anchors: dict[str, dict[str, str]] | None = None,
+) -> str:
     """The four tables as one Markdown text."""
+    anchors = anchors or {}
     sprint = current_sprint(nodes)
     done_rows = [
-        (i["number"], i["title"], f"Done, {i['closed_at'][:10]}") for i in done
+        (i["number"], i["title"], f"Done, {i['closed_at'][:10]}", i) for i in done
     ]
-    sections = [table("מה מוזג לאחרונה", done_rows, repo)]
+    sections = [table("מה מוזג לאחרונה", done_rows, repo, anchors)]
     if sprint is None:
         sections.append("### מה פתוח בספרינט\n\nאין ספרינט פתוח.")
         picture = {"blocked": [], "on_hold": [], "waiting_dolev": []}
     else:
         picture = state(nodes, sprint, [], lambda pr: {})
         sections.append(
-            table(f"מה פתוח בספרינט ({sprint})", sprint_rows(nodes, sprint), repo)
+            table(
+                f"מה פתוח בספרינט ({sprint})",
+                sprint_rows(nodes, sprint),
+                repo,
+                anchors,
+            )
         )
-    sections.append(table("מה חסום", held_rows(nodes, picture), repo))
+    sections.append(table("מה חסום", held_rows(nodes, picture), repo, anchors))
+    by_number = {n["number"]: n for n in nodes}
     waiting = [
-        (w["number"], w["title"], status_he(w["status"]))
+        (w["number"], w["title"], status_he(w["status"]), by_number[w["number"]])
         for w in picture["waiting_dolev"]
     ]
-    sections.append(table("מה מחכה לדולב", waiting, repo))
+    sections.append(table("מה מחכה לדולב", waiting, repo, anchors))
     return "\n\n".join(sections)
 
 
@@ -164,7 +233,7 @@ def main(argv: list[str] | None = None) -> None:
     if missing:
         print(NO_PIPELINE.format(repo=repo))
         return
-    print(render(repo, nodes, done))
+    print(render(repo, nodes, done, read_anchors(repo, nodes + done)))
 
 
 if __name__ == "__main__":
