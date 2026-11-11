@@ -94,6 +94,25 @@ def api_list(path: str) -> list:
     return [item for page in pages for item in page]
 
 
+def latest_done(issues: list[dict], count: int = 5) -> list[dict]:
+    """The `count` issues closed last, newest first, from a REST list of closed issues.
+
+    REST cannot sort issues by when they closed, only by when they were updated, so
+    the caller reads a page sorted by update and this picks by `closed_at`.
+    """
+    closed = [i for i in issues if i.get("closed_at") and "pull_request" not in i]
+    return sorted(closed, key=lambda i: i["closed_at"], reverse=True)[:count]
+
+
+def recent_done(repo: str, count: int = 5) -> list[dict]:
+    """The last `count` issues that reached status:done, newest first (S-1.41)."""
+    page = api(
+        f"repos/{repo}/issues?state=closed&labels=status:done"
+        "&sort=updated&direction=desc&per_page=100"
+    )
+    return latest_done(page, count)
+
+
 def other_repo(repo: str, repository_url: str | None) -> str | None:
     """owner/name from the end of `repository_url`, or None when it is `repo` itself."""
     if not repository_url:

@@ -287,3 +287,19 @@ def test_a_link_to_another_repo_carries_its_repo(monkeypatch):
         {"number": 3, "state": "OPEN"},
         {"number": 3, "state": "OPEN", "repository": "dolev2/Other"},
     ]
+
+
+def closed(number, closed_at, pull=False):
+    issue = {"number": number, "title": f"issue {number}", "closed_at": closed_at}
+    return issue | ({"pull_request": {}} if pull else {})
+
+
+def test_latest_done_orders_by_close_date_and_keeps_five():
+    page = [closed(n, f"2026-11-{n:02d}T10:00:00Z") for n in (3, 9, 1, 7, 5, 8, 2)]
+    assert [i["number"] for i in gh_rest.latest_done(page)] == [9, 8, 7, 5, 3]
+
+
+def test_latest_done_with_fewer_than_five_and_no_prs():
+    page = [closed(1, "2026-11-01T00:00:00Z"), closed(2, "2026-11-02T00:00:00Z", True)]
+    assert [i["number"] for i in gh_rest.latest_done(page)] == [1]
+    assert gh_rest.latest_done([]) == []

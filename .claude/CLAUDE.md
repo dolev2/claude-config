@@ -23,7 +23,7 @@
 - `settings.json`: ההגדרות של Claude Code לכל הפרויקטים: כללי ההרשאות, ה-hooks ומשתני הסביבה.
 - `hooks/`: הסקריפטים של ה-hooks, קובץ Python אחד לכל hook והבדיקות לצידו. כל hook מחובר ב-`settings.json` באותה צורה: `"$(command -v python3 || command -v python)" "$HOME/.claude/hooks/<name>.py"`.
   החוזה: JSON ב-stdin, יציאה 0 בלי פלט כשאין החלטה, יציאה 2 עם הסיבה ב-stderr כדי לחסום.
-- `skills/`: הסקילים. הגנריים של צינור העבודה: `dev-spec`, `dev-issue`, `dev-next`, `dev-plan`, `dev-code`, `dev-ship` ו-`dev-setup`, והמתזמר של הספרינט בסשן ענן: `dev-orchestrate`.
+- `skills/`: הסקילים. הגנריים של צינור העבודה: `dev-spec`, `dev-issue`, `dev-next`, `dev-plan`, `dev-code`, `dev-ship` ו-`dev-setup`, המתזמר של הספרינט בסשן ענן: `dev-orchestrate`, וסקירת העבודה לקריאה בלבד: `status`.
 - `.claude/CLAUDE.md`: הקובץ הזה. נטען רק כשעובדים בתוך הריפו.
 
 `skills/dev-setup/` הוא גם הבית המשותף של הצינור: מסמכי הצינור ב-`reference/` (הליבה: `pipeline.md`), הסקריפטים `scripts/`, ה-actions המשותפים `actions/`, וה-workflows ב-`templates/.github/` שמועתקים לכל ריפו.
