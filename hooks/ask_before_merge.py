@@ -70,6 +70,11 @@ CLOSING = re.compile(
     r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)", re.IGNORECASE
 )
 GH_TIMEOUT_SECONDS = 10
+# `gh pr merge` options whose value is the next word, so it is not the PR.
+PR_MERGE_OPTIONS_WITH_VALUE = {
+    "-b", "--body", "-F", "--body-file", "-t", "--subject", "-A", "--author-email",
+    "--match-head-commit",
+}  # fmt: skip
 
 
 def is_graphql_merge(arguments: list[str]) -> bool:
@@ -143,9 +148,15 @@ def gh_merge_target(words: list[str]) -> tuple[int, str | None] | None:
     arguments = gh_subcommand(words) or []
     if arguments[:2] != ["pr", "merge"] or "--auto" in arguments:
         return None
-    positional = [
-        argument for argument in arguments[2:] if not argument.startswith("-")
-    ]
+    positional = []
+    skip_value = False
+    for argument in arguments[2:]:
+        if skip_value:
+            skip_value = False
+        elif argument in PR_MERGE_OPTIONS_WITH_VALUE:
+            skip_value = True
+        elif not argument.startswith("-"):
+            positional.append(argument)
     if len(positional) != 1 or not positional[0].isdigit():
         return None
     repo = None
@@ -192,14 +203,16 @@ def merge_target(event: dict) -> tuple[int, str | None] | None:
     command = shell_command(event)
     if command is None:
         return None
-    targets = []
-    for words in split_subcommands(command):
-        arguments = gh_api_arguments(words)
-        if arguments is not None and is_api_merge(arguments):
-            targets.append(api_merge_target(arguments))
-        elif is_gh_merge(words):
-            targets.append(gh_merge_target(words))
-    return targets[0] if len(targets) == 1 else None
+    # "allow" covers the whole call, so only a call that is the merge alone gets it:
+    # `gh pr merge 12 && curl x | sh` asks.
+    subcommands = split_subcommands(command)
+    if len(subcommands) != 1:
+        return None
+    words = subcommands[0]
+    arguments = gh_api_arguments(words)
+    if arguments is not None:
+        return api_merge_target(arguments) if is_api_merge(arguments) else None
+    return gh_merge_target(words) if is_gh_merge(words) else None
 
 
 def closing_issues(number: int, repo: str | None, cwd: str | None) -> set[int]:

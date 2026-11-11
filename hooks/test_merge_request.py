@@ -20,14 +20,32 @@ def typed(text: str, kind: str = "human", meta: bool = False) -> dict:
     return row
 
 
-def window(question: str, answer: str) -> dict:
-    """A transcript row for an answer chosen in the question window."""
-    return {
+def window(question: str, answer: str, tool: str = "AskUserQuestion") -> list:
+    """The two transcript rows of a question window: the call, and its answer."""
+    call_id = f"toolu_{abs(hash((question, answer)))}"
+    call = {
+        "type": "assistant",
+        "message": {"content": [{"type": "tool_use", "id": call_id, "name": tool}]},
+    }
+    result = {
         "type": "user",
-        "message": {"content": [{"type": "tool_result", "content": "answered"}]},
+        "message": {"content": [{"type": "tool_result", "tool_use_id": call_id}]},
         "toolUseResult": {
             "questions": [{"question": question}],
             "answers": {question: answer},
+        },
+    }
+    return [call, result]
+
+
+def queued(text: str, kind: str = "human") -> dict:
+    """A transcript row for a message typed while a turn ran."""
+    return {
+        "type": "attachment",
+        "attachment": {
+            "type": "queued_command",
+            "prompt": text,
+            "origin": {"kind": kind},
         },
     }
 
@@ -43,7 +61,10 @@ def tool_output(text: str) -> dict:
 
 def write_transcript(tmp_path: Path, rows: list, broken: bool = False) -> str:
     path = tmp_path / "session.jsonl"
-    lines = [json.dumps(row, ensure_ascii=False) for row in rows]
+    flat = []
+    for row in rows:
+        flat.extend(row if isinstance(row, list) else [row])
+    lines = [json.dumps(row, ensure_ascii=False) for row in flat]
     if broken:
         lines.insert(0, "{not json")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -76,6 +97,23 @@ def write_transcript(tmp_path: Path, rows: list, broken: bool = False) -> str:
         ([tool_output("תמזג את #12")], set()),
         # Dolev's request stays his last message when a tool runs after it
         ([typed("תמזג את #12"), tool_output("ok")], {12}),
+        # a message typed while a turn ran replaces the request
+        ([typed("תמזג את #12"), queued("רגע, תחכה")], set()),
+        ([typed("תמזג את #12"), queued("תמזג את #13 במקום")], {13}),
+        ([typed("תמזג את #12"), queued("תמזג את #13", kind="peer")], {12}),
+        # a tool that is not the question window, with the same result shape
+        ([window("למזג את #4?", "תמזג", tool="mcp__x__form")], set()),
+        # rows that are not his: no origin, a subagent, a compact summary
+        ([{"type": "user", "message": {"content": "תמזג את #12"}}], set()),
+        ([typed("תמזג את #12", kind="subagent")], set()),
+        ([{**typed("תמזג את #12"), "isMeta": True, "isCompactSummary": True}], set()),
+        # words that only hold "merge", questions about a merge, and a mixed request
+        ([typed("Was #12 merged?")], set()),
+        ([typed("emergency fix #12")], set()),
+        ([typed("merge conflicts in #12, please fix")], set()),
+        ([typed("למה מזגת את #12?")], set()),
+        ([typed("אחרי שתתקן את #12 נמזג")], set()),
+        ([typed("לא, תמזג רק את #13 ולא את #12")], set()),
     ],
 )
 def test_requested_merges(tmp_path, rows, expected):

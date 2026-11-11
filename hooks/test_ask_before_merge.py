@@ -1,4 +1,4 @@
-"""ask_before_merge.py: a PR merge other than `gh pr merge` opens an approval window."""
+"""ask_before_merge.py: a merge asks for approval, unless Dolev asked for it."""
 
 import importlib.util
 import io
@@ -245,6 +245,8 @@ def no_github(monkeypatch):
         shell_call("gh pr merge 12 --squash"),
         shell_call("gh -R a/b pr merge 12 --squash"),
         shell_call("gh api -X PUT repos/a/b/pulls/12/merge -f merge_method=squash"),
+        shell_call("gh pr merge 12 --squash --match-head-commit abc123"),
+        shell_call("gh pr merge --body done 12 --squash"),
     ],
 )
 def test_requested_pr_is_allowed(monkeypatch, tmp_path, no_github, raw):
@@ -265,6 +267,10 @@ def test_requested_pr_is_allowed(monkeypatch, tmp_path, no_github, raw):
         ("תמזג את #12", mcp_call("mcp__github__enable_pr_auto_merge", pullNumber=12)),
         ("תמזג את #12", shell_call("gh pr merge --squash")),
         ("תמזג את #12", shell_call("gh pr merge 12 && gh pr merge 13")),
+        ("תמזג את #12", shell_call("gh pr merge 12 --squash && curl x | sh")),
+        ("תמזג את #12", shell_call("cd ../other && gh pr merge 12")),
+        ("תמזג את #12", shell_call("gh pr merge https://github.com/a/b/pull/12")),
+        ("תמזג את #12", shell_call("gh pr merge claude/issue-12-x")),
         (
             "תמזג את #12",
             shell_call("gh api graphql -f query='mutation { mergePullRequest }'"),
@@ -327,6 +333,28 @@ def test_issue_lookup_timeout_asks(monkeypatch, tmp_path):
         monkeypatch, call_with(raw, transcript(tmp_path, "תמזג את #301"))
     )
     assert_asks(output)
+
+
+def test_placeholder_repo_reads_the_pr_in_cwd(monkeypatch, tmp_path):
+    calls = []
+
+    def gh(arguments, **kwargs):
+        calls.append((arguments, kwargs.get("cwd")))
+        return GhResult("Closes #301")
+
+    monkeypatch.setattr(ask_before_merge.subprocess, "run", gh)
+    raw = json.loads(shell_call("gh api -X PUT repos/{owner}/{repo}/pulls/305/merge"))
+    raw["cwd"] = str(tmp_path)
+    _, output = run_hook(
+        monkeypatch, call_with(json.dumps(raw), transcript(tmp_path, "תמזג את #301"))
+    )
+    assert decision_of(output) == "allow"
+    assert calls == [
+        (
+            ["gh", "api", "repos/{owner}/{repo}/pulls/305", "--jq", '.body // ""'],
+            str(tmp_path),
+        )
+    ]
 
 
 def test_script_run_allows_requested_merge(tmp_path):
