@@ -61,13 +61,30 @@ def headings(lines: list[str]) -> list[tuple[int, str]]:
     return found
 
 
-def build(text: str) -> list[str]:
-    """The block between the markers, markers included, for the headings of `text`."""
+def anchored(text: str) -> list[tuple[int, str, str]]:
+    """(level, text, anchor) of every heading, counted as GitHub counts the repeats.
+
+    The title of the table of contents comes first on the page, so it is counted first.
+    """
     seen: dict[str, int] = {}
     anchor(TITLE.removeprefix("## "), seen)
+    return [
+        (level, name, anchor(name, seen)) for level, name in headings(text.splitlines())
+    ]
+
+
+def part_anchors(text: str) -> dict[str, str]:
+    """{part id: the anchor of its heading}, to link to a part from /status (S-1.41)."""
+    return {
+        part[1]: slug for _, name, slug in anchored(text) if (part := PART.match(name))
+    }
+
+
+def build(text: str) -> list[str]:
+    """The block between the markers, markers included, for the headings of `text`."""
     entries = [
-        f"{'  ' * (level - 2)}- [{label(name)}](#{anchor(name, seen)})"
-        for level, name in headings(text.splitlines())
+        f"{'  ' * (level - 2)}- [{label(name)}](#{slug})"
+        for level, name, slug in anchored(text)
     ]
     return [START, TITLE, "", *entries, END]
 
