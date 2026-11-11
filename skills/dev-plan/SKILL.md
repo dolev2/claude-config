@@ -38,8 +38,8 @@ keeps them: edit it in the headings it already has.
 ## Steps
 
 1. Find the work. If Dolev named a specific issue, plan that one, even outside the current
-   sprint (say so in the summary). Otherwise, **inside the current sprint only**, by how much
-   work waits on each issue (the sprint scope: `reference/pipeline.md`):
+   sprint (say so in the summary). Otherwise, **inside the current sprint only**, in the
+   sprint order (`reference/dependencies.md`; the sprint scope: `reference/pipeline.md`):
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --status explore
    ```

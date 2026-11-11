@@ -26,5 +26,6 @@
 | issue אחד בכל ריצת קוד | `git-flow.md`, "כמה issues בריצה אחת" | `dev-code`, `dev-next`, `after-merge.md` |
 | מחיקת branch אחרי מיזוג: ההגדרה של GitHub, בלי `--delete-branch`, ומה עושים כשהיא כבויה | `git-flow.md`, "מוסכמת branches ו-PR" | `dev-ship`, `dev-setup`, `cloud.md` (רק הפקודה ב-REST), `~/.claude/rules/env-cloud.md` |
 | `costs-money`: מה היא עושה, מי מוסיף ומי מסיר | `pipeline.md`, אוצר המילים | `dependencies.md` (רק ההשפעה על הדירוג), `dev-plan`, `dev-next`, `dev-orchestrate`, `dev-setup` |
+| `paused`: מה היא עושה, ושרק דולב שם ומסיר | `pipeline.md`, אוצר המילים | `dependencies.md` (רק ההשפעה על הדירוג), `dev-next`, `dev-orchestrate`, `dev-setup` |
 
 **עותק מכוון** מסומן בטבלה, ונשמר בבדיקה ולא ביד (`skills/dev-setup/scripts/test_doc_drift.py`, שבודקת גם ששני העמודים "חייו של issue" באותו מבנה, ושכל קובץ `.md` וכל סקיל שהמפה מונה קיימים). היום יש אחד: פקודות הבדיקה ב-`README.md`.

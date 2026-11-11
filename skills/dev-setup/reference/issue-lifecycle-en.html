@@ -489,7 +489,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-next</b>: "What's next?"</p>
-        <ul><li><code>bug</code> first, then <code>process</code>.</li><li>Then whatever the most tasks wait on (<code>rank_issues.py</code>).</li><li>No status levels, over the whole sprint. In dev-code the order also has the status level (Stage 6).</li><li>A task labelled <code>costs-money</code> is not offered, unless Dolev named it.</li><li>Routes to dev-plan or dev-code, or says it is waiting for Dolev.</li></ul>
+        <ul><li><code>bug</code> first, then <code>process</code>.</li><li>Then a task of an umbrella that has started, and in each group whatever the fewest tasks wait on (<code>rank_issues.py</code>). Next to the pick: why it was picked.</li><li>No status levels, over the whole sprint. In dev-code the order also has the status level (Stage 6).</li><li>A task labelled <code>costs-money</code> or <code>paused</code> is not offered, unless Dolev named it.</li><li>Routes to dev-plan or dev-code, or says it is waiting for Dolev.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>No action.</p>
@@ -558,8 +558,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
         <p>A fix (<code>needs-repair</code>), then a bug, is taken before a new task.</p>
-        <p>Then the status level: an approved plan before a plan still to write. Inside a level, <code>process</code> first, then by how many tasks wait on it.</p>
-        <p>A task labelled <code>costs-money</code> leaves the ranking, unless Dolev named it.</p>
+        <p>Then the status level: an approved plan before a plan still to write. Inside a level, <code>process</code> first, then a task of an umbrella that has started, and in each group whatever the fewest tasks wait on.</p>
+        <p>A task labelled <code>costs-money</code> or <code>paused</code> leaves the ranking, unless Dolev named it. Only Dolev adds and removes <code>paused</code>.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-code</b>: exactly one issue per run.</p>
