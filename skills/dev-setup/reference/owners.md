@@ -12,7 +12,7 @@
 
 | הכלל | הבעלים | מי מפנה אליו |
 |---|---|---|
-| היקף הספרינט: סריקה לא יוצאת מה-milestone הנוכחי, issue שדולב נקב בשמו מותר, Claude לא משייך milestone (חוץ מבאג ו-`process` בפתיחה) | `pipeline.md`, "ספרינטים" | `dev-plan`, `dev-code`, `dev-next`, `dev-issue` |
+| היקף הספרינט: סריקה לא יוצאת מה-milestone הנוכחי, issue שדולב נקב בשמו מותר, Claude לא משייך milestone (חוץ מבאג ו-`process` בפתיחה, ופירוק מהמתזמר) | `pipeline.md`, "ספרינטים" | `dev-plan`, `dev-code`, `dev-next`, `dev-issue` |
 | הצעה בבקלוג ששויכה ל-milestone של הספרינט היא הצעה מאושרת: בן אפיון ראשון בתור, אחד בכל פעם, והפירוק שלה נכנס לספרינט שלה (S-2.14) | `specs.md`, "מתי נכתב אפיון" | `orchestrate-spec.md`, `pipeline.md` ("ספרינטים"), `dev-orchestrate`, `dev-spec` צעד 1, `dev-issue` ("פירוק אפיון"), `dev-plan` צעד 2 |
 | שער ה-WIP: שלושה ומעלה ב-`status:in-review`, כולל PR שכבר נסקר; תיקון פטור; בן של המתזמר מדלג | `git-flow.md`, "כמה issues בריצה אחת" | `dev-code` שלב 1 (הפקודה), `orchestrate.md` (המתזמר בודק לפני בן קוד) |
 | החלטה באה רק מדולב עצמו | `chat-decisions.md`, כלל 3 | `pipeline.md`, `dev-plan`, `dev-code`, `dev-ship` |
