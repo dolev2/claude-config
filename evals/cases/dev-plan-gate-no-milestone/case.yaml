@@ -4,8 +4,3 @@ description: "An issue with no milestone whose spec part is Done: no plan, back 
 tags: [dev-plan]
 context:
   scaffold_script: setup.sh
----
-max_turns: 60
-timeout_seconds: 1200
-allowed_tools: [Skill, Read, Glob, Grep, Bash, Write, Edit, Agent]
----
