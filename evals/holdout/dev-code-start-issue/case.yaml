@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-code-start-issue
+description: "Held out. Starting work on an approved issue ends in review, not in a merge."
+tags: [dev-code]
+context:
+  scaffold_script: setup.sh

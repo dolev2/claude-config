@@ -200,6 +200,10 @@ def main(covered_by_pattern: list[str]) -> int:
 # Files the guide covers by a sentence, not by name: tests, generated files, images.
 COVERED_BY_PATTERN = [
     "hooks/test_*.py",
+    "evals/test_*.py",
+    "evals/cases/*",
+    "evals/holdout/*",
+    "evals/fixture/*",
     "skills/*/SKILL.md",
 ]
 

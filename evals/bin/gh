@@ -1,0 +1,3 @@
+#!/bin/sh
+# The fake gh of the skill evals: run.py copies it next to fake_gh.py and puts it first on PATH.
+exec python3 "$(dirname "$0")/../fake_gh.py" "$@"

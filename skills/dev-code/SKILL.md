@@ -151,6 +151,18 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    **A failure to run the tests is not permission to skip them.** If the install or the run
    fails, stop: leave the issue's status as it is, comment with the exact error, open no PR.
 
+   **The skill evals**, in a repo that has `evals/run.py` (claude-config), when the diff
+   touches a skill, `skills/dev-setup/reference/` or `evals/` (`reference/tests.md`):
+   `python evals/run.py --model <the model id this session runs on>`, once, after the full
+   run. It picks the cases from the diff itself, and prints one line per skill. Exit 1 is a
+   failed case. Exit 2 is "not run", and the "לא הורץ" line says why: `bubblewrap` or
+   `socat` missing (install them, the command in `reference/tests.md`, and run it again),
+   no `origin/<default>` to diff against (fetch it), or no result. A failed case is a
+   failing test: fix the skill, or the case when the rule changed on purpose (never a case
+   in `evals/holdout/`), and run that case again (`--case <name>`). A stop at the cost
+   ceiling is not a failure: say what ran. On Windows it does not run: say so in the
+   hand-off.
+
 8. A `size:small` task that turns out to break one of its four conditions (`reference/pipeline.md`):
    stop, remove `size:small`, move it to `status:explore` with a comment saying which condition,
    and open no PR.
@@ -224,7 +236,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     should look at. On a repair round, say which of his points each change addresses. The
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
-    was not checked and why. The app's outcome from step 10 goes into that comment and into the
+    was not checked and why. When the skill evals ran (step 7), a "תרחישי הסקילים" line:
+    the lines `evals/run.py` printed, and the model. The app's outcome from step 10 goes into that comment and into the
     chat message, with one line on what to open in it. It also has the lesson, in the four
     fields of `reference/lessons.md` under `#### לקח מוצע`, or "אין לקח". Both end with the next step, in one
     line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to

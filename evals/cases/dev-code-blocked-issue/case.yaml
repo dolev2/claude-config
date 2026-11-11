@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-code-blocked-issue
+description: "An issue with an open Blocked by link: no code, no PR, no label change."
+tags: [dev-code]
+context:
+  scaffold_script: setup.sh

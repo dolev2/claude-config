@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-plan-explore-issue
+description: "A new issue in status:explore: a plan in the issue-body.md shape, the human sections kept letter for letter."
+tags: [dev-plan]
+context:
+  scaffold_script: setup.sh

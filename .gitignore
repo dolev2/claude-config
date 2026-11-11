@@ -16,6 +16,9 @@
 !/docs/
 !/settings.json
 !/hooks/
+# The skill evals (#183); each run writes its plugin copy, workspaces and report here.
+!/evals/
+/evals/results/
 
 # Only the repo's own instructions; Claude Code also keeps worktrees and local settings here.
 !/.claude/

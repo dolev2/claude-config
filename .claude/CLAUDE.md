@@ -71,9 +71,14 @@
 ruff check .
 ruff format --check .
 python .github/file_guide_check.py
-python -m pytest skills/dev-setup/scripts hooks
+python -m pytest skills/dev-setup/scripts hooks evals
+python .github/holdout_check.py
 ```
 בסביבה נקייה: קודם `pip install pytest ruff==0.17.2`.
+
+**חבילה מותנית, תרחישי הסקילים:** `python evals/run.py --model <המודל של הסשן>`, כשה-diff נוגע בסקיל מכוסה, ב-`skills/dev-setup/reference/` או ב-`evals/`.
+היא מריצה את הסקילים מול GitHub מדומה, ורצה בענן וב-Linux בלבד (`bubblewrap`, `socat`). מתי ואיך: `skills/dev-setup/reference/tests.md`.
+את `evals/holdout/` לא משנים באותו PR עם סקיל: `holdout_check.py` נכשל על זה.
 ההגדרות ב-`ruff.toml` שבשורש: עותק של `skills/dev-setup/templates/ruff.toml`, כמו בכל ריפו. שינוי בכללים נכנס לתבנית, ואז לעותק.
 אותו דבר ב-`.github/file_guide_check.py`, עותק של `templates/file_guide_check.py`. החריגים של הריפו מתחת לשורת `--- local ---`.
 

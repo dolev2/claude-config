@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # holdout_check.py diffs the PR against its base
 
       - uses: actions/setup-python@v7
         with:
@@ -39,4 +41,8 @@ jobs:
       # The local path: this repo is the action's home, so a change to it runs here first.
       - uses: ./skills/dev-setup/actions/spec-check
 
-      - run: python -m pytest skills/dev-setup/scripts hooks
+      - run: python -m pytest skills/dev-setup/scripts hooks evals
+
+      # A skill and the held-out eval set never change in one PR (#183).
+      - if: github.event_name == 'pull_request'
+        run: python .github/holdout_check.py --base origin/${{ github.base_ref }}
