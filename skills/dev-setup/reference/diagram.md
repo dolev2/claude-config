@@ -35,13 +35,14 @@ flowchart TD
       PSPEC -- "כן" --> PW["חוקר היתכנות<br/>כותב את התוכנית בגוף<br/>קורא את החלק באפיון<br/>תוכנית מקוצרת<br/>בקצרה בשלוש שורות<br/>ואז פירוט טכני<br/>באג שחזר לתכנון<br/>תוכנית מלאה<br/>החלטה שחוצה משימות<br/>נכתבת כטיוטה בתוכנית<br/>opens a branch off the default branch<br/>claude/issue-N-slug"]:::routine
       PBLK -. "דולב נקב בשמו<br/>וביקש במפורש" .-> PW
       PW --> PQ{"נשארו שאלות שחוסמות תכנון"}:::routine
+      PW -.-> COST(["נדרשת הוצאה<br/>costs-money<br/>מושהית עד שדולב מסיר"]):::gate
       PQ -- "לא" --> SZ{"משימה קטנה<br/>עד כ-3 קבצים, בלי שינוי שמשתמש רואה<br/>בלי מחיקה, בלי שינוי חוזה"}:::routine
     end
 
     SZ -- "כן" --> SMALL["size:small<br/>תוכנית מקוצרת<br/>בלי אישור תוכנית"]:::routine
     SMALL --> RDY
     SZ -- "לא" --> WAIT["status:waiting-approval<br/>התור של דולב"]:::human
-    PQ -- "כן" --> QQ["status:plan-questions<br/>התור של דולב<br/>השאלות נרשמות כתיבות סימון"]:::human
+    PQ -- "כן" --> QQ["status:plan-questions<br/>התור של דולב<br/>השאלות נרשמות כתיבות סימון<br/>גם משימה ידנית, שרק דולב יכול לבצע"]:::human
 
     QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore<br/>או עונה בחלון השאלות בצ'אט<br/>והתכנון ממשיך באותה ריצה"]):::human
     ANS --> BACK["status:explore<br/>התור של Claude<br/>יש כבר תוכנית: Claude מעדכן אותה"]:::routine
@@ -59,8 +60,8 @@ flowchart TD
     subgraph EG["שלב הביצוע — סשן מקומי או ענן"]
       EXEC["dev-code<br/>פריט אחד בדיוק בכל ריצה"]:::routine
       EXEC --> WIP{"שלושה או יותר ממתינים<br/>status:in-review"}:::gate
-      WIP -- "כן" --> STOP(["שואל את דולב אם להמשיך<br/>תיקונים פטורים מהשער"]):::gate
-      WIP -- "לא" --> SPRINT["סריקה רק בספרינט הנוכחי<br/>issue שנקבת בשמו גם מחוצה לו<br/>תיקון, אחריו באג, לפני משימה חדשה<br/>ואז לפי כמה משימות מחכות לה"]:::routine
+      WIP -- "כן" --> STOP(["שואל את דולב אם להמשיך<br/>כולל מה שכבר נסקר ועוד לא התבקש מיזוג<br/>תיקונים פטורים מהשער<br/>בן של המתזמר מדלג: המתזמר בודק לפניו"]):::gate
+      WIP -- "לא" --> SPRINT["סריקה רק בספרינט הנוכחי<br/>issue שנקבת בשמו גם מחוצה לו<br/>תיקון, אחריו באג, לפני משימה חדשה<br/>ואז רמת הסטטוס: תוכנית מאושרת לפני תוכנית לכתוב<br/>בתוך הרמה, קודם<br/>process<br/>ואז לפי כמה משימות מחכות לה"]:::routine
       SPRINT --> BLK{"חסום ע״י issue פתוח<br/>Blocked by<br/>או מטריה עם sub-issue פתוח"}:::gate
       BLK -- "כן" --> BSKIP(["מדלג עליו ומדווח במה הוא חסום<br/>או אילו sub-issues פתוחים"]):::gate
       BLK -- "לא" --> IMPL["מממש את התוכנית<br/>באג בלי תוכנית: תוכנית מקוצרת קודם<br/>מוסיף טסט לכל שינוי<br/>טיוטת החלטה רוחבית<br/>הופכת לדף החלטה באותו PR<br/>מסמן את החלק באפיון כגמור<br/>חלק עם כמה משימות<br/>מוחק רק את המספר שלו<br/>spec_check.py --no-issues<br/>באג לא מסמן"]:::routine
@@ -84,18 +85,19 @@ flowchart TD
     ASK --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
     SHIP --> MERGE["rebase onto the default branch<br/>runs the tests<br/>push, then opens or reuses the PR<br/>waits for CI checks<br/>בודק את השאלות הפתוחות<br/>not MERGEABLE: back to the rebase<br/>squash merge"]:::routine
     MERGE -. "ממה שקרה במיזוג" .-> LESS
-    MERGE --> DONE(["dev-ship sets status:done<br/>status:done = merged<br/>Closes #N closes the issue<br/>the card lands in Done<br/>ניקוי: אפליקציה, worktree, branch מקומי"]):::routine
+    MERGE --> DONE(["dev-ship sets status:done<br/>status:done = merged<br/>Closes #N closes the issue<br/>the card lands in Done<br/>ניקוי במחשב<br/>app, worktree, local branch<br/>ניקוי בענן<br/>checkout --detach, local branch"]):::routine
 
     ORCGO(["דולב: תריץ את הספרינט<br/>רק בסשן ענן"]):::human --> ORC
 
     subgraph OG["המתזמר — סשן ענן אחד"]
       ORC["dev-orchestrate<br/>sprint_state.py --spec<br/>בונה את התמונה מחדש בכל בדיקה<br/>פער מול האפיון: אזהרה בלבד<br/>לא שולח בן לכתוב אפיון"]:::routine
-      ORC --> KID["סשן-בן לכל משימה שלא חסומה<br/>עד 3 במקביל<br/>חפיפת קבצים: אחת אחרי השנייה<br/>שער WIP לפני בן קוד למשימה חדשה: המתזמר שואל, הבן מדלג"]:::routine
+      ORC --> KID["סשן-בן לכל משימה שלא חסומה<br/>עד 3 במקביל, לכל ריפו<br/>tags: repo:owner/name, issue:N<br/>חפיפת קבצים: אחת אחרי השנייה<br/>שער WIP לפני בן קוד למשימה חדשה: המתזמר שואל, הבן מדלג"]:::routine
       KID --> REPORT["הבן כותב ב-GitHub<br/>תווית, תגובה, PR<br/>המתזמר מתעורר מהבדיקה ברקע"]:::routine
       REPORT --> CHECK["המתזמר בודק את התוצאה<br/>ושואל את דולב בחלון אחד"]:::routine
       CHECK --> ORC
     end
 
+    COST -. "יוצאת מהדירוג<br/>חוץ ממשימה שדולב נקב בשמה" .-> SPRINT
     KID -. "תחקור את #N" .-> PLAN
     KID -. "תקודד את #N" .-> EXEC
     CHECK -. "תמזג את #N<br/>רק מדולב" .-> SHIP
@@ -125,7 +127,11 @@ issue שלפני הקוד ל-`status:explore`, ו-issue בקוד או בסקיר
 https://claude.ai/artifact/FcDGAbuAhUSpyYT34zHg1A) מראה את אותו צינור לבני אדם, ומוסיף את ציר
 ה-git. אף סקיל לא קורא את הקובץ הזה או את העמוד בזמן ריצה.
 
-**התרשים והעמוד מתעדכנים יחד עם כל שינוי בצינור**, באותו PR. הכלל המלא, והפרסום מחדש של העמוד אחרי מיזוג: `.claude/CLAUDE.md` של claude-config.
+**איפה כתוב כל כלל:** התרשים מקצר, ולא מחזיק את הנוסח המלא. הקובץ שבו כתוב כל כלל: [`owners.md`](owners.md). בעמוד, ליד כל כלל, תגית קטנה מפנה לקובץ הבעלים שלו.
+
+**`costs-money`** (`pipeline.md`, אוצר המילים) לא מזיזה סטטוס: היא מוציאה את המשימה מהדירוג של כל הסריקות, עד שדולב מסיר אותה.
+
+**התרשים והעמוד מתעדכנים יחד עם כל שינוי בצינור**, באותו PR. הכלל המלא: `.claude/CLAUDE.md` של claude-config. הפרסום מחדש של העמוד אחרי מיזוג: [`after-merge.md`](after-merge.md), "פרסום מחדש של עמוד Artifact".
 
 **כלל עריכה לתרשים: כל שורה בתווית היא עברית בלבד או אנגלית בלבד.** Mermaid מייצר SVG בלי
 כיווניות RTL, ושורה מעורבת נסדרת מחדש משמאל לימין. הפתרון הוא פיצול לשורות חד-כיווניות, לא

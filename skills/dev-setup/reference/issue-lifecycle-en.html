@@ -118,6 +118,9 @@ svg .branch-t { font-family: var(--font-mono); font-size: 11px; fill: var(--clau
 .rule { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; min-width: 0; }
 .rule .enf { font-size: 12px; color: var(--muted); }
 .rule .enf.hook { color: var(--gate); }
+.owner { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; margin-inline-start: 6px; max-width: 100%; }
+.owner code { word-break: break-word; }
+.rule .owner { justify-self: start; margin-inline-start: 0; }
 
 @media (max-width: 860px) {
   .stage { grid-template-columns: 1fr; }
@@ -474,7 +477,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>The PR of the open lines: branch <code>claude/spec-open-lines-&lt;slug&gt;</code>, with no <code>Closes</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> a gap between a task and the spec only warns: in the PR, the status table and the orchestrator's summary. Only an error in a spec file itself fails CI.</div>
+    <div class="gate-row"><strong>Gate:</strong> a gap between a task and the spec only warns: in the PR, the status table and the orchestrator's summary. Only an error in a spec file itself fails CI. <span class="owner">Full rule: <code>specs.md</code>, "warnings in the orchestrator"</span></div>
   </article>
 
   <article class="stage">
@@ -486,7 +489,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-next</b>: "What's next?"</p>
-        <ul><li><code>bug</code> first, then <code>process</code>.</li><li>Then whatever the most tasks wait on (<code>rank_issues.py</code>).</li><li>Routes to dev-plan or dev-code, or says it is waiting for Dolev.</li></ul>
+        <ul><li><code>bug</code> first, then <code>process</code>.</li><li>Then whatever the most tasks wait on (<code>rank_issues.py</code>).</li><li>No status levels, over the whole sprint. In dev-code the order also has the status level (Stage 6).</li><li>A task labelled <code>costs-money</code> is not offered, unless Dolev named it.</li><li>Routes to dev-plan or dev-code, or says it is waiting for Dolev.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>No action.</p>
@@ -508,6 +511,9 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>With the <code>size:small</code> label, and no plan approval.</p>
         <p>Or, for a task with no open spec part:</p>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">backlog</span></div>
+        <p>A plan that needs an expense (a cloud service, a paid API, a subscription) also gets:</p>
+        <div class="flowline"><span class="label h">costs-money</span></div>
+        <p>The task is on hold: it leaves the ranking of every scan until Dolev removes the label.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-plan</b>: up to 3 issues per run.</p>
@@ -518,7 +524,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>Reads code straight from <code>origin/main</code>: <code>git show</code>, <code>git grep</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> an issue blocked by a Blocked by link is not planned: dev-plan skips it and reports what blocks it. A decision in the blocker can change the file layout and leave the plan stale. An issue Dolev names is planned only when he explicitly asks. A task with no open spec part is not planned: it goes back to the backlog.</div>
+    <div class="gate-row"><strong>Gate:</strong> an issue blocked by a Blocked by link is not planned: dev-plan skips it and reports what blocks it. A decision in the blocker can change the file layout and leave the plan stale. An issue Dolev names is planned only when he explicitly asks. A task with no open spec part is not planned: it goes back to the backlog. <span class="owner">Full rule: <code>dependencies.md</code>, "dependencies" · <code>specs.md</code>, "an issue with no spec"</span></div>
   </article>
 
   <article class="stage">
@@ -543,7 +549,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>The branch waits on the remote, empty.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> no code is written on a plan Dolev has not approved, except a small task (<code>size:small</code>) and a bug.</div>
+    <div class="gate-row"><strong>Gate:</strong> no code is written on a plan Dolev has not approved, except a small task (<code>size:small</code>) and a bug. <span class="owner">Full rule: <code>pipeline.md</code>, "the small path" · <code>specs.md</code>, "a bug"</span></div>
   </article>
 
   <article class="stage">
@@ -552,6 +558,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
         <p>A fix (<code>needs-repair</code>), then a bug, is taken before a new task.</p>
+        <p>Then the status level: an approved plan before a plan still to write. Inside a level, <code>process</code> first, then by how many tasks wait on it.</p>
+        <p>A task labelled <code>costs-money</code> leaves the ranking, unless Dolev named it.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-code</b>: exactly one issue per run.</p>
@@ -562,7 +570,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>Only after the rebase: lint and all tests, push and PR.</p><p>A change to a skill (in claude-config): the skill's eval cases too, <code>evals/run.py</code>, on the session's model.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gates:</strong> 3 or more PRs waiting for review, an issue blocked by a Blocked by link, an umbrella issue with an open sub-issue, or a rebase conflict: stop and report.</div>
+    <div class="gate-row"><strong>Gates:</strong> 3 or more PRs waiting for review, an issue blocked by a Blocked by link, an umbrella issue with an open sub-issue, or a rebase conflict: stop and report. A PR Dolev already reviewed but has not asked to merge still counts toward the 3. A fix is exempt, and an orchestrator's child skips the gate: the orchestrator checks it first. <span class="owner">Full rule: <code>git-flow.md</code>, "issues per run" · <code>dependencies.md</code>, "dependencies" · <code>rules/git.md</code>, "before a push or PR"</span></div>
   </article>
 
   <article class="stage">
@@ -584,7 +592,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>Rebase, then <code>git push --force-with-lease</code>.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> <code>open-questions-gate.yml</code> runs when the issue moves to <code>status:in-review</code>, before the merge. An unchecked question triggers a comment, the <code>has-open-questions</code> label, and an email.</div>
+    <div class="gate-row"><strong>Gate:</strong> <code>open-questions-gate.yml</code> runs when the issue moves to <code>status:in-review</code>, before the merge. An unchecked question triggers a comment, the <code>has-open-questions</code> label, and an email. <span class="owner">Full rule: <code>issue-body.md</code>, "open questions"</span></div>
   </article>
 
   <article class="stage">
@@ -600,7 +608,8 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <ul><li>Checks the open questions before the merge.</li><li>At the end: an offer to start a new session with the next task.</li><li>A suggested lesson from what happened in the merge (a rebase that conflicted, CI that failed, a cleanup that failed), by the same rules as in Code. Also when the run stopped because of them: then the lesson comes in the report of the stop.</li><li>After a spec merge (<code>claude/spec-*</code>): instead, one list in the question window: the breakdown of the new parts, and the update of the issues of parts that changed or were deleted. dev-issue carries it out, after the approval.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
-        <ul><li>Rebase onto the default branch, then the tests.</li><li>Push, then open the PR or reuse the open one.</li><li>Wait for CI.</li><li>Not MERGEABLE: back to the rebase.</li><li>Squash merge.</li><li>Cleanup: the app, the worktree, the branch.</li></ul>
+        <ul><li>Rebase onto the default branch, then the tests.</li><li>Push, then open the PR or reuse the open one.</li><li>Wait for CI.</li><li>Not MERGEABLE: back to the rebase.</li><li>Squash merge.</li><li>Cleanup: the app, the worktree, the local branch.</li><li>The branch on GitHub is deleted by the Automatically delete head branches setting. Off: offer <code>gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true</code>, and on a 403 give Dolev the settings page (not tested in the cloud, #251).</li></ul>
+        <span class="owner">Full rule: <code>git-flow.md</code>, "branch and PR convention"</span>
       </div>
     </div>
   </article>
@@ -609,7 +618,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
 <section aria-labelledby="where-h">
   <h2 id="where-h">Computer or cloud</h2>
   <p>Every stage runs both on Dolev's computer and in a cloud session. The table says what is different in the cloud, and what stays on the computer.</p>
-  <p>The full rules: <code>rules/env-cloud.md</code> and <code>reference/cloud.md</code>.</p>
+  <p><span class="owner">The full rules: <code>rules/env-cloud.md</code> · <code>cloud.md</code> · <code>git-flow.md</code>, "in a cloud session"</span></p>
   <div class="panel">
   <table class="where">
     <thead><tr><th>Stage</th><th>On the computer</th><th>In the cloud</th><th>What is different in the cloud</th></tr></thead>
@@ -646,18 +655,18 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </div>
   </div>
   <h3 id="orch-h">The orchestrator: a whole sprint from one session</h3>
-  <p>Cloud only, and only when Dolev writes "run the sprint". The skill: <code>dev-orchestrate</code>. The contract: <code>reference/orchestrate.md</code>.</p>
+  <p>Cloud only, and only when Dolev writes "run the sprint". The skill: <code>dev-orchestrate</code>. <span class="owner">The full contract: <code>orchestrate.md</code></span></p>
   <p>The children go through the same pipeline as above. The orchestrator remembers nothing between checks: every check rebuilds the picture from GitHub and the sessions' tags.</p>
   <div class="panel">
   <ol class="life" aria-labelledby="orch-h">
     <li class="human"><strong>Start</strong><p>Dolev asks. The orchestrator shows what opens now, what waits on a blocker, and what waits for him.</p></li>
     <li class="claude"><strong>Check</strong><p><code>sprint_state.py</code> says what is ready for a child, what waits on a shared file, and what is ready to merge.</p><p>With <code>--spec</code> it also returns the gaps between the tasks and the spec (<code>spec_gaps</code>). Each gap is a warning line in the summary, and stops nothing.</p><p>A skill, script or hook changed on <code>main</code>: refresh <code>~/.claude</code> and read them again.</p><p>The global instructions, rules or settings changed, or the refresh failed: recommend a new orchestrator session to Dolev, and this orchestrator stops.</p></li>
-    <li class="claude"><strong>A child per free task</strong><p>Up to 3 at a time, tagged <code>issue:N</code>. One child plans, a separate one codes.</p><p>No child writes a spec: that happens only when Dolev asks.</p><p>The WIP gate is checked in the orchestrator, before a coding child for a new task: with three or more waiting for review, the child opens only when Dolev answers "yes" in the window. The child itself skips the gate.</p></li>
+    <li class="claude"><strong>A child per free task</strong><p>Up to 3 active children per repo, tagged <code>repo:&lt;owner&gt;/&lt;name&gt;</code> and <code>issue:N</code>. One child plans, a separate one codes.</p><p>Two orchestrators in two repos run up to 6 together: the <code>repo:</code> tag says whose each child is.</p><p>No child writes a spec: that happens only when Dolev asks.</p><p>The WIP gate is checked in the orchestrator, before a coding child for a new task: with three or more waiting for review, the child opens only when Dolev answers "yes" in the window. The child itself skips the gate.</p></li>
     <li class="gate"><strong>The child's contract</strong><p>It never asks Dolev, never touches links, never merges, and calls no session tools: no messages, no renaming its session (the service raises a prompt on each call). Its report is what it leaves on GitHub: the plan, the label, a comment and the PR. Its lesson goes into the hand-off comment, under "suggested lesson".</p></li>
     <li class="claude"><strong>After a change</strong><p>A background watch (<code>watch_children.py</code>) wakes the orchestrator when a child's label moves or a comment lands. The orchestrator's own comments carry a hidden marker and do not wake it. The orchestrator checks GitHub: the plan, the PR and its CI, and no stray branch or label.</p><p>A child verified as done with its turn is archived in the same check: an answer, a send-back or a fix opens a new child.</p></li>
     <li class="human"><strong>One question window</strong><p>Plan answers, approvals, and one merge at a time. Only Dolev decides.</p><p>A child's suggested lesson comes right after the merge question of the same issue, in the same window.</p><p>The merge question names the active children that touch the same files as the PR, by the files they already changed, not only by their plans.</p></li>
     <li class="gate"><strong>A bug or the quota</strong><p>A bug that hurts others: an issue, Blocked by, the hurt children stopped, and a child that fixes it.</p><p>Quota in overage: no new child, and Dolev is asked.</p></li>
-    <li class="auto"><strong>End of the sprint</strong><p>Nothing to open, ask or merge: any child still not archived is archived, then a summary, and the loop stops.</p><p>The summary lists the branches of closed tasks still on GitHub, for Dolev to delete by hand: the cloud cannot delete a branch.</p></li>
+    <li class="auto"><strong>End of the sprint</strong><p>Nothing to open, ask or merge: any child still not archived is archived, then a summary, and the loop stops.</p><p>A merged task's branch is deleted on GitHub by the Automatically delete head branches setting. The summary lists orphan branches, of tasks closed without a merge or not deleted, with a link to the branches page, for Dolev to delete by hand. The cloud cannot delete a branch with <code>git push</code>.</p></li>
   </ol>
   </div>
 </section>
@@ -666,14 +675,14 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   <h2 id="rules-h">Git rules that always apply</h2>
   <p>From <code>rules/git.md</code>. They apply in every repo, even when no skill is running.</p>
   <div class="rules">
-    <div class="rule"><h3>Branch from origin</h3><p>A branch is cut from <code>origin/main</code> after <code>git fetch</code>.</p><p>The local main can be several merges behind.</p><span class="enf">Convention</span></div>
-    <div class="rule"><h3>Rebase before testing</h3><p>Rebase first, then run the tests.</p><p>This catches a hidden conflict: two valid changes that break together.</p><span class="enf">Convention</span></div>
-    <div class="rule"><h3>Rebase, not merge</h3><p>History stays linear.</p><p>Every PR closes as a squash.</p><span class="enf">Convention</span></div>
-    <div class="rule"><h3>Only force-with-lease</h3><p><code>--force</code> silently overwrites other people's commits.</p><span class="enf hook">Enforced: block_force_push.py</span></div>
-    <div class="rule"><h3>Merge only with approval</h3><p>An approval prompt pops up before every merge: <code>gh pr merge</code>, <code>gh api</code> or the MCP tool.</p><p>If Dolev declines: stop, and don't work around it.</p><span class="enf hook">Enforced: ask rule and hook</span></div>
-    <div class="rule"><h3>After a merge: offer <code>/compact</code></h3><p>The turn's last message ends with "What's open" and a full <code>/compact</code> block.</p><p>Forgotten: one more message with the block. Whether to compact stays Dolev's call.</p><span class="enf hook">Enforced: compact_after_merge.py</span></div>
-    <div class="rule"><h3>A conflict means stop</h3><p><code>git rebase --abort</code>, and report the files.</p><p>Never resolve by taking one side wholesale.</p><span class="enf">Convention</span></div>
-    <div class="rule"><h3>Never switch branches in the main folder</h3><p>Another session or Dolev may be working there.</p><p>Work in a worktree.</p><span class="enf hook">Enforced in ~/.claude: guard_main_folder.py</span></div>
+    <div class="rule"><h3>Branch from origin</h3><p>A branch is cut from <code>origin/main</code> after <code>git fetch</code>.</p><p>The local main can be several merges behind.</p><span class="enf">Convention</span><span class="owner">Full rule: <code>rules/git.md</code>, "where to start"</span></div>
+    <div class="rule"><h3>Rebase before testing</h3><p>Rebase first, then run the tests.</p><p>This catches a hidden conflict: two valid changes that break together.</p><span class="enf">Convention</span><span class="owner">Full rule: <code>rules/git.md</code>, "before a push or PR"</span></div>
+    <div class="rule"><h3>Rebase, not merge</h3><p>History stays linear.</p><p>Every PR closes as a squash.</p><span class="enf">Convention</span><span class="owner">Full rule: <code>rules/git.md</code>, "before a push or PR"</span></div>
+    <div class="rule"><h3>Only force-with-lease</h3><p><code>--force</code> silently overwrites other people's commits.</p><span class="enf hook">Enforced: block_force_push.py</span><span class="owner">Full rule: <code>rules/git.md</code>, "before a push or PR"</span></div>
+    <div class="rule"><h3>Merge only with approval</h3><p>An approval prompt pops up before every merge: <code>gh pr merge</code>, <code>gh api</code> or the MCP tool.</p><p>If Dolev declines: stop, and don't work around it.</p><span class="enf hook">Enforced: ask rule and hook</span><span class="owner">Full rule: <code>rules/git.md</code>, "before a push or PR"</span></div>
+    <div class="rule"><h3>After a merge: offer <code>/compact</code></h3><p>The turn's last message ends with "What's open" and a full <code>/compact</code> block.</p><p>Forgotten: one more message with the block. Whether to compact stays Dolev's call.</p><span class="enf hook">Enforced: compact_after_merge.py</span><span class="owner">Full rule: <code>CLAUDE.md</code>, "end of every answer"</span></div>
+    <div class="rule"><h3>A conflict means stop</h3><p><code>git rebase --abort</code>, and report the files.</p><p>Never resolve by taking one side wholesale.</p><span class="enf">Convention</span><span class="owner">Full rule: <code>rules/git.md</code>, "before a push or PR"</span></div>
+    <div class="rule"><h3>Never switch branches in the main folder</h3><p>Another session or Dolev may be working there.</p><p>Work in a worktree.</p><span class="enf hook">Enforced in ~/.claude: guard_main_folder.py</span><span class="owner">Full rule: <code>rules/git.md</code>, "the shared folder"</span></div>
   </div>
 </section>
 
