@@ -179,8 +179,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
 
 `dispatch`, `held_by_overlap`, `waiting_dolev` and `merge_queue` are empty, and no child is
 active: first, `archive_session` for every child of this repo that is not archived yet (one
-message, the number of prompts said before it), the backup for any child step 3 missed; then a summary of what merged and what is still open and why (blocked, costs-money, outside
-the sprint), and the stray branches of closed issues for Dolev to delete by hand (`orchestrate.md`,
+message, the number of prompts said before it), the backup for any child step 3 missed; then a summary of what merged and what is still open and why (blocked, costs-money, paused, outside
+the sprint; a `blocked` entry with `paused_blockers` reads "מחכה למשימה מושהית #N"), and the stray branches of closed issues for Dolev to delete by hand (`orchestrate.md`,
 "branches יתומים"; deleting a branch is blocked in the cloud), then `ScheduleWakeup` with `stop`.
 
 ## Golden rules

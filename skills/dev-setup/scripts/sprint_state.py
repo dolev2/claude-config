@@ -37,7 +37,7 @@ The keys:
     on_hold          costs-money, until Dolev approves the expense
     paused           Claude's turn, but labelled `paused`: only Dolev pauses and resumes
                      an issue (S-1.42). Not in on_hold, which work_status.py reads as
-                     "costs money"
+                     "costs money", even with costs-money too (as in rank_issues.py)
     findings         audit_sprint.py's findings, as data
     pipeline_sha     the last commit on the pipeline's main that touched what is read
                      from disk on every use (pipeline_shas.py): when it moves, the
@@ -241,7 +241,7 @@ def state(
         "umbrellas": [
             {"number": i.number, "open_subs": i.open_subs} for i in umbrellas
         ],
-        "on_hold": [i.number for i in claude_turn if i.costs_money],
+        "on_hold": [i.number for i in claude_turn if i.costs_money and not i.paused],
         "paused": [i.number for i in claude_turn if i.paused],
         "findings": [f.as_dict() for f in audit(list(audited.values()))],
     }

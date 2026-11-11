@@ -61,7 +61,8 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
 2. Pick the first row, top down, that:
    - has no `BLOCKED by`. A blocked issue is never the next one. What blocks it can stand
      below it, since it carries more weight; the pick is still the first row that is not
-     blocked, and every chain has one. This holds for planning
+     blocked. The head of a chain is in the ranking, unless it is paused, costs money, or
+     sits in another repo: then the chain waits, and step 2 says on what. This holds for planning
      too: a blocked issue is not routed to `dev-plan` (`reference/dependencies.md`, #253). A blocker of another
      repo (`owner/name#N`) is not in the ranking at all: the issue waits on that repo;
    - is not `status:backlog` with `0 waiting`. That is a sprint umbrella or an idea nobody

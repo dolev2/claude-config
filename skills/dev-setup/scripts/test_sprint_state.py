@@ -512,3 +512,9 @@ def test_dispatch_follows_the_new_order():
         node(10, status="explore", subs=[3], closed_subs=[9]),
     )
     assert numbers(result["dispatch"]) == [3, 2, 1]
+
+
+def test_an_issue_both_paused_and_costing_money_is_only_paused():
+    result = run(node(1, labels=("task", "paused", "costs-money")))
+    assert result["paused"] == [1]
+    assert result["on_hold"] == []

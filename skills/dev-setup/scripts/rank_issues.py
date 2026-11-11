@@ -40,7 +40,7 @@ them (claude-config #55). They are listed, never ranked.
 import argparse
 import json
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence, Set
 from dataclasses import dataclass, field
 
 from gh_rest import current_repo, open_issue_nodes
@@ -344,8 +344,8 @@ def print_ranking(
     ranked: list[Issue],
     on_hold: list[Issue],
     no_sprint: list[Issue],
-    paused: list[Issue] = (),
-    paused_numbers: set[int] = frozenset(),
+    paused: Sequence[Issue] = (),
+    paused_numbers: Set[int] = frozenset(),
 ) -> None:
     """The ranking as text: the sprint, one row per issue, then the lists apart."""
     print(f"Sprint: {sprint}")
