@@ -16,7 +16,7 @@
 | עובדות הסביבה בענן: GraphQL חסום, push שמוחק branch חסום, הרשת דרך proxy | `~/.claude/rules/env-cloud.md` | `cloud.md`, `git-flow.md` |
 | תרגום פקודות `gh` בענן | `cloud.md`, "פקודות GitHub בסשן ענן" | כל סקיל `dev-*` (שלב 0) |
 | צעדי git בענן: ה-branch של המשימה, בלי worktree, החלפת branch בעץ נקי, הניקוי אחרי מיזוג, שם הסשן | `git-flow.md`, "בסשן ענן" | `~/.claude/rules/git.md` (החריג), `cloud.md`, `dev-ship` צעד 7 |
-| פקודות הבדיקה של claude-config | `.claude/CLAUDE.md`, "בדיקות" | `README.md` מחזיק עותק מלא בכוונה. עד #248 הוא נשמר ביד, ואחריה בדיקה משווה את שניהם ל-`tests.yml` |
+| פקודות הבדיקה של claude-config | `.claude/CLAUDE.md`, "בדיקות" | `README.md` מחזיק עותק מלא בכוונה. בדיקה משווה את שניהם ל-`tests.yml` (`skills/dev-setup/scripts/test_doc_drift.py`) |
 | בדיקה ידנית בדפדפן וצילומי מסך: Edge, Playwright, הרוחבים, הצילומים למסירה | `ux.md` | `~/.claude/rules/code-tests.md`, `tests.md`, `~/.claude/rules/env-windows.md` (רק עובדות Edge), `~/.claude/rules/env-cloud.md`, `dev-code` שלב 10 |
 | פרסום מחדש של עמוד Artifact אחרי מיזוג: קריאה, השוואה, `publish` בלי `icon` ובלי `force`, השלד | `after-merge.md`, "פרסום מחדש של עמוד Artifact" | `.claude/CLAUDE.md` של claude-config (העמודים והקישורים), `~/.claude/rules/erd.md`, `dev-ship` |
 | אות המיזוג: בקשה אחת של דולב בצ'אט, על ה-issue הספציפי | `pipeline.md`, "הכללים שלא משתנים" | `chat-decisions.md` כלל 7, `dev-code`, `dev-ship` |
@@ -25,4 +25,4 @@
 | מחיקת branch אחרי מיזוג: ההגדרה של GitHub, בלי `--delete-branch`, ומה עושים כשהיא כבויה | `git-flow.md`, "מוסכמת branches ו-PR" | `dev-ship`, `dev-setup`, `cloud.md` (רק הפקודה ב-REST), `~/.claude/rules/env-cloud.md` |
 | `costs-money`: מה היא עושה, מי מוסיף ומי מסיר | `pipeline.md`, אוצר המילים | `dependencies.md` (רק ההשפעה על הדירוג), `dev-plan`, `dev-next`, `dev-orchestrate`, `dev-setup` |
 
-**עותק מכוון** מסומן בטבלה, ונשמר בבדיקה ולא ביד (הבדיקה: #248, עוד פתוחה). היום יש אחד: פקודות הבדיקה ב-`README.md`.
+**עותק מכוון** מסומן בטבלה, ונשמר בבדיקה ולא ביד (`skills/dev-setup/scripts/test_doc_drift.py`, שבודקת גם ששני העמודים "חייו של issue" באותו מבנה, ושכל קובץ `.md` וכל סקיל שהמפה מונה קיימים). היום יש אחד: פקודות הבדיקה ב-`README.md`.
