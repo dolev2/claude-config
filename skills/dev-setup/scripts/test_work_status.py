@@ -70,7 +70,8 @@ def test_sprint_table_follows_the_sprint_order():
         node(3, status="ready-to-execute", labels=("bug",)),
     ]
     sprint = section(work_status.render(REPO, nodes, []), "מה פתוח בספרינט")
-    assert sprint.index("[#3]") < sprint.index("[#2]") < sprint.index("[#1]")
+    # The bug first, then fewest waiting first (S-1.42): 1 waits on 2.
+    assert sprint.index("[#3]") < sprint.index("[#1]") < sprint.index("[#2]")
 
 
 def test_empty_tables_say_so():

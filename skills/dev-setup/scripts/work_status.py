@@ -21,7 +21,7 @@ import sys
 
 from gh_rest import api_list, current_repo, gh_api, open_issue_nodes, recent_done
 from pipeline_info import REQUIRED_LABELS
-from rank_issues import current_sprint, parse_issue, rank
+from rank_issues import current_sprint, parse_issue, rank, with_started_umbrellas
 from spec_check import issue_spec
 from spec_toc import part_anchors
 from sprint_state import state
@@ -122,14 +122,16 @@ def blocked_status(entry: dict) -> str:
 
 
 def sprint_rows(nodes: list[dict], sprint: str) -> list[Row]:
-    """The open issues of the sprint, in the order of S-1.3."""
+    """The open issues of the sprint, in the order of S-1.42."""
     in_sprint = [
         n for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint
     ]
     by_number = {n["number"]: n for n in in_sprint}
     return [
         (i.number, i.title, status_he(i.status), by_number[i.number])
-        for i in rank([parse_issue(n) for n in in_sprint])
+        for i in rank(
+            with_started_umbrellas([parse_issue(n) for n in in_sprint], nodes)
+        )
     ]
 
 

@@ -18,14 +18,15 @@ not read.
 The keys:
 
     dispatch         ready for a child session: Claude's turn, no open blocker, not an
-                     umbrella, not costs-money, not claimed, no file shared with work in
-                     flight. Repairs first, then bugs, then approved plans, then plans
-                     to write.
+                     umbrella, not costs-money, not paused, not claimed, no file shared
+                     with work in flight. Repairs first, then bugs, then approved plans,
+                     then plans to write; in each, the order of S-1.42 (rank_issues.py)
     held_by_overlap  would be in dispatch, but shares a planned file with work in flight
                      (claimed, in review, or earlier in dispatch), so it runs after it.
                      Work in flight counts its planned files and the files its Plan's
                      branch already changed (claude-config #203)
-    blocked          Claude's turn, waiting on an open blocker
+    blocked          Claude's turn, waiting on an open blocker; paused_blockers: the
+                     blockers Dolev paused, so the wait is his
     umbrellas        would be in dispatch, but a sub-issue is still open: the issue
                      and its open sub-issues (#N, or owner/name#N in another repo)
     waiting_dolev    plan questions, plans to approve, PRs to review
@@ -34,6 +35,9 @@ The keys:
                      not yet, ask again next check (cloud.md). overlaps: the other
                      work in flight that shares a file the PR changes, [{number, files}]
     on_hold          costs-money, until Dolev approves the expense
+    paused           Claude's turn, but labelled `paused`: only Dolev pauses and resumes
+                     an issue (S-1.42). Not in on_hold, which work_status.py reads as
+                     "costs money"
     findings         audit_sprint.py's findings, as data
     pipeline_sha     the last commit on the pipeline's main that touched what is read
                      from disk on every use (pipeline_shas.py): when it moves, the
@@ -59,7 +63,13 @@ from audit_sprint import SprintIssue, audit, is_shared_doc, sprint_issue
 from gh_rest import api, current_repo, open_issue_nodes
 from issue_body import plan_branch, sections
 from pipeline_shas import CACHE, pipeline_shas
-from rank_issues import Issue, current_sprint, parse_issue, rank
+from rank_issues import (
+    Issue,
+    current_sprint,
+    parse_issue,
+    rank,
+    with_started_umbrellas,
+)
 from spec_check import gaps, git, parse_spec, spec_files_at
 from sprint_github import branch_files, pr_files, pr_status
 
@@ -174,14 +184,19 @@ def state(
         n for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint
     ]
     by_number = {n["number"]: n for n in in_sprint}
-    issues = rank([parse_issue(n) for n in in_sprint], DISPATCH_ORDER + DOLEV_TURN)
+    parsed = with_started_umbrellas([parse_issue(n) for n in in_sprint], nodes)
+    issues = rank(parsed, DISPATCH_ORDER + DOLEV_TURN)
+    paused = {i.number for i in map(parse_issue, nodes) if i.paused}
     audited = {n["number"]: sprint_issue(n) for n in in_sprint}
 
     claude_turn = [i for i in issues if i.status in DISPATCH_ORDER]
     eligible = [
         i
         for i in claude_turn
-        if not i.blocked and not i.costs_money and i.number not in claimed
+        if not i.blocked
+        and not i.costs_money
+        and not i.paused
+        and i.number not in claimed
     ]
     umbrellas = [i for i in eligible if i.umbrella]
     candidates = [i for i in eligible if i not in umbrellas]
@@ -213,6 +228,7 @@ def state(
                 "number": i.number,
                 "blocked_by": i.open_blockers,
                 "outside_blockers": i.outside_blockers,
+                "paused_blockers": [n for n in i.open_blockers if n in paused],
             }
             for i in claude_turn
             if i.blocked
@@ -226,6 +242,7 @@ def state(
             {"number": i.number, "open_subs": i.open_subs} for i in umbrellas
         ],
         "on_hold": [i.number for i in claude_turn if i.costs_money],
+        "paused": [i.number for i in claude_turn if i.paused],
         "findings": [f.as_dict() for f in audit(list(audited.values()))],
     }
 
