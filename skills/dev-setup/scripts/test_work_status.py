@@ -189,3 +189,15 @@ def test_unreadable_spec_file_still_gives_the_tables(monkeypatch):
         "docs/specs/missing.md": {},
         "docs/specs/widgets.md": {"S-1.2": "s-12--two"},
     }
+
+
+def test_the_graph_comes_after_the_tables():
+    nodes = [node(1), node(2, status="explore", blocked_by=[(1, "OPEN")])]
+    text = work_status.render(REPO, nodes, [])
+    assert text.index("### מה מחכה לדולב") < text.index("### גרף החסימות")
+    assert "  n1 --> n2" in section(text, "גרף החסימות")
+
+
+def test_the_graph_without_a_sprint_says_so():
+    text = work_status.render(REPO, [], [])
+    assert section(text, "גרף החסימות").rstrip().endswith("אין ספרינט פתוח.")
