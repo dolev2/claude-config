@@ -76,3 +76,81 @@ def test_pr_files(monkeypatch):
         ),
     )
     assert sprint_github.pr_files("o/r", 40) == {"a.py"}
+
+
+TIMELINE = "repos/o/r/issues/9/timeline?per_page=100"
+
+
+def cross_ref(number, repository="o/r", is_pr=True):
+    issue = {
+        "number": number,
+        "repository_url": f"https://api.github.com/repos/{repository}",
+    }
+    if is_pr:
+        issue["pull_request"] = {"url": "x"}
+    return {"event": "cross-referenced", "source": {"type": "issue", "issue": issue}}
+
+
+def pull(number, branch, state="open", merged_at=None, body="Refs #9"):
+    return {
+        "number": number,
+        "state": state,
+        "merged_at": merged_at,
+        "body": body,
+        "head": {"ref": branch, "sha": f"sha{number}"},
+    }
+
+
+def test_spec_prs_reads_open_merged_and_closed_spec_prs(monkeypatch):
+    timeline = [
+        cross_ref(40),
+        cross_ref(41),
+        cross_ref(42),
+        cross_ref(43),
+        cross_ref(44, is_pr=False),
+        cross_ref(45, repository="o/other"),
+        {"event": "labeled"},
+        cross_ref(40),
+    ]
+    monkeypatch.setattr(
+        sprint_github, "api_list", lambda path: timeline if path == TIMELINE else []
+    )
+    fake_api(
+        monkeypatch,
+        {
+            "repos/o/r/pulls/40": pull(40, "claude/spec-a"),
+            "repos/o/r/pulls/41": pull(41, "claude/spec-b", "closed", "2026-11-01"),
+            "repos/o/r/pulls/42": pull(42, "claude/spec-c", "closed"),
+            "repos/o/r/pulls/43": pull(43, "claude/issue-9-code"),
+        },
+    )
+    assert sprint_github.spec_prs("o/r", 9) == [
+        {
+            "number": 40,
+            "state": "open",
+            "branch": "claude/spec-a",
+            "body": "Refs #9",
+            "headSha": "sha40",
+        },
+        {
+            "number": 41,
+            "state": "merged",
+            "branch": "claude/spec-b",
+            "body": "Refs #9",
+            "headSha": "sha41",
+        },
+        {
+            "number": 42,
+            "state": "closed",
+            "branch": "claude/spec-c",
+            "body": "Refs #9",
+            "headSha": "sha42",
+        },
+    ]
+
+
+def test_an_issue_no_pr_mentions_has_no_spec_prs(monkeypatch):
+    monkeypatch.setattr(sprint_github, "api_list", lambda path: [])
+    calls = fake_api(monkeypatch, {})
+    assert sprint_github.spec_prs("o/r", 9) == []
+    assert calls == []

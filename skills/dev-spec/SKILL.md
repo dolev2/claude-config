@@ -1,6 +1,6 @@
 ---
 name: dev-spec
-description: Writes the spec of a topic in Dolev's pipeline as a PR — a chapter in the repo's one spec, docs/specs/<repo>.md, with a fixed id per part (S-<n>.<m>), what each part does, for whom, what the user sees in each state, and what is out — for a backlog proposal Dolev approves by asking for its spec, or for an approved task whose deliverable is a spec. The merge of that PR is the approval of the "what"; dev-issue then breaks it into issues. Use in any of Dolev's repos whenever he says "תכתוב אפיון ל-#N", "תאפיין את #N", "write a spec for #N", or asks to add parts to a topic's spec. Never merges (dev-ship does, on his request) and never runs on its own initiative. Works in any repo that has the pipeline labels; if the repo has its own repo-specific spec skill, use that instead.
+description: Writes the spec of a topic in Dolev's pipeline as a PR — a chapter in the repo's one spec, docs/specs/<repo>.md, with a fixed id per part (S-<n>.<m>), what each part does, for whom, what the user sees in each state, and what is out — for a backlog proposal Dolev approves by asking for its spec (or by putting it in the sprint's milestone, when the orchestrator sends a child), or for an approved task whose deliverable is a spec. The merge of that PR is the approval of the "what"; dev-issue then breaks it into issues. Use in any of Dolev's repos whenever he says "תכתוב אפיון ל-#N", "תאפיין את #N", "write a spec for #N", or asks to add parts to a topic's spec. Never merges (dev-ship does, on his request) and never runs on its own initiative. Works in any repo that has the pipeline labels; if the repo has its own repo-specific spec skill, use that instead.
 ---
 
 # Write a spec
@@ -42,9 +42,11 @@ every run.
      `status:ready-to-execute` or `status:needs-repair`, with a Plan that says so.
    Anything else stops here, with one line on why: a `bug` (it points at the part it breaks,
    and gets no new spec), a task that only needs code (`dev-plan` or `dev-code`), an issue in
-   Dolev's turn. Never start on your own initiative. A proposal is never written by a child of
-   the orchestrator: it has no label the orchestrator dispatches. A task like #230 is ordinary
-   work: `dev-code` hands it here, also in a child session.
+   Dolev's turn. Never start on your own initiative. **A child of the orchestrator writes a
+   proposal Dolev put in the sprint's milestone** (S-2.14): that milestone is the approval, and
+   the orchestrator's "תכתוב אפיון ל-#N" is the request (`reference/orchestrate-spec.md`). It stops after a green PR with `Refs #N`, and asks no question in the window
+   (step 5). A proposal with no milestone, or in another one, is never a child's. A task like
+   #230 is ordinary work: `dev-code` hands it here, also in a child session.
 
 2. **Read the whole thread first** (`reference/issue-body.md`): body, every comment, sub-issues,
    linked PRs, and the issues it mentions. Then the code and the existing specs, against an
@@ -97,7 +99,9 @@ every run.
    question each, at most four per call, your recommendation first with "(מומלץ)". His answer
    goes into the file, and its box is ticked with the decision. No window (an automated run):
    the PR body is where he reads them. A child session of an orchestrator never opens the
-   window: it writes the questions in a comment on the issue and ends its turn.
+   window: it still opens the PR (steps 6–8) with the unticked boxes in its body, then writes
+   the questions in a comment on the issue and ends its turn. The orchestrator reads them from
+   the PR body (`reference/orchestrate-spec.md`).
 
 6. **The branch**, in a worktree (in a cloud session: its own clone), never by switching
    branches in the shared working copy (`reference/git-flow.md`):
@@ -156,7 +160,8 @@ every run.
 
 ## Golden rules
 
-- Only on Dolev's request for that issue; his "תכתוב אפיון ל-#N" is the approval of a proposal.
+- Only on Dolev's request for that issue; his "תכתוב אפיון ל-#N" is the approval of a proposal,
+  and so is the sprint's milestone on it, when the orchestrator sends a child (S-2.14).
   A task like #230 comes from `dev-code` instead, like any approved task.
 - Never merge here. The merge is `dev-ship`'s, on his request, and it is the approval.
 - Never invent a requirement or business data; a gap is an open question in the PR body.

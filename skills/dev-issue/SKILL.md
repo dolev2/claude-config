@@ -210,7 +210,9 @@ issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
    The rows in state "אין issue" are the parts to open.
 2. **Step 1 of this skill, unchanged:** show Dolev the list before creating anything, one issue
    per part: the title (the part's name), the part's id, the milestone (his call, as always),
-   and the blockers. A blocker comes **only** from a dependency written in the spec ("תלוי
+   and the blockers. **The exception: a breakdown run from the orchestrator** (S-2.14), of a
+   proposal in the sprint's milestone: each new task takes the proposal's milestone, which
+   Dolev already chose (`reference/pipeline.md`, "ספרינטים"), and the list says so. A blocker comes **only** from a dependency written in the spec ("תלוי
    ב-S-1.2": blocked by the issue of S-1.2, new or existing). A dependency that seems missing is
    a question to him, never a guessed link; if he agrees, the spec is updated first
    (`dev-spec`).
@@ -258,4 +260,4 @@ Only after Dolev approved the list in `dev-ship` step 8, and only on that list. 
 - In a breakdown, a link comes only from a dependency written in the spec; never guess one.
 - A task opens only with an `אפיון:` line to an open part; without one, it is a backlog idea.
 - Never assign a milestone on your own judgement, except `current_sprint` for a bug or a
-  `process` issue.
+  `process` issue, and the proposal's milestone in a breakdown run from the orchestrator.

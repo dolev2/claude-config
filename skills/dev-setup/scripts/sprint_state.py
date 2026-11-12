@@ -19,12 +19,18 @@ The keys:
 
     dispatch         ready for a child session: Claude's turn, no open blocker, not an
                      umbrella, not costs-money, not paused, not claimed, no file shared
-                     with work in flight. Repairs first, then bugs, then approved plans,
-                     then plans to write; in each, the order of S-1.42 (rank_issues.py)
+                     with work in flight. A spec child first (status "spec", one at a
+                     time, S-2.14), then repairs, then bugs, then approved plans, then
+                     plans to write; in each, the order of S-1.42 (rank_issues.py)
     held_by_overlap  would be in dispatch, but shares a planned file with work in flight
                      (claimed, in review, or earlier in dispatch), so it runs after it.
                      Work in flight counts its planned files and the files its Plan's
-                     branch already changed (claude-config #203)
+                     branch already changed (claude-config #203). The spec file is no
+                     overlap between tasks; a second proposal waits on the spec child
+                     that is writing, with the spec file
+    proposals        the sprint's approved proposals (backlog, in its milestone,
+                     S-2.14): {number, title, stage, pr}, stage waiting, writing,
+                     questions, review or breakdown (sprint_proposals.py)
     blocked          Claude's turn, waiting on an open blocker; paused_blockers: the
                      blockers Dolev paused, so the wait is his
     umbrellas        would be in dispatch, but a sub-issue is still open: the issue
@@ -33,7 +39,9 @@ The keys:
     merge_queue      in review with an open PR: its head, mergeable_state and CI.
                      mergeable_state "unknown" means GitHub is still computing it:
                      not yet, ask again next check (cloud.md). overlaps: the other
-                     work in flight that shares a file the PR changes, [{number, files}]
+                     work in flight that shares a file the PR changes,
+                     [{number, files}]. A spec PR ready for review is here too,
+                     with "kind": "spec"
     on_hold          costs-money, until Dolev approves the expense
     paused           Claude's turn, but labelled `paused`: only Dolev pauses and resumes
                      an issue (S-1.42). Not in on_hold, which work_status.py reads as
@@ -61,7 +69,7 @@ from pathlib import Path
 
 from audit_sprint import SprintIssue, audit, is_shared_doc, sprint_issue
 from gh_rest import api, current_repo, open_issue_nodes
-from issue_body import plan_branch, sections
+from issue_body import SPECS_DIR, plan_branch, sections
 from pipeline_shas import CACHE, pipeline_shas
 from rank_issues import (
     Issue,
@@ -71,7 +79,8 @@ from rank_issues import (
     with_started_umbrellas,
 )
 from spec_check import gaps, git, parse_spec, spec_files_at
-from sprint_github import branch_files, pr_files, pr_status
+from sprint_github import branch_files, pr_files, pr_status, spec_prs
+from sprint_proposals import proposals, spec_merge_queue, spec_split
 
 DISPATCH_ORDER = ["needs-repair", "ready-to-execute", "explore"]
 DOLEV_TURN = ["plan-questions", "waiting-approval", "in-review"]
@@ -92,13 +101,24 @@ def claimed_list(text: str) -> list[int]:
 
 
 def shared_files(a: set[str], b: set[str]) -> list[str]:
-    """Files in both sets, without README.md and CLAUDE.md."""
-    return sorted(f for f in a & b if not is_shared_doc(f))
+    """Files in both sets, without README.md, CLAUDE.md and the spec files.
+
+    A code PR changes only the status line of its own part in the spec, so the spec
+    holds no task back (S-2.14); spec children are held apart (sprint_proposals.py).
+    """
+    return sorted(
+        f for f in a & b if not is_shared_doc(f) and not f.startswith(SPECS_DIR)
+    )
 
 
 def no_files(_: object) -> set[str]:
     """The default reader of changed files: nothing read from GitHub."""
     return set()
+
+
+def no_prs(_: int) -> list[dict]:
+    """The default reader of an issue's spec PRs: nothing read from GitHub."""
+    return []
 
 
 def work_files(
@@ -174,11 +194,14 @@ def state(
     status_of: Callable[[dict], dict],
     files_of_branch: Callable[[str], set[str]] = no_files,
     files_of_pr: Callable[[int], set[str]] = no_files,
+    spec_prs_of: Callable[[int], list[dict]] = no_prs,
+    spec_file: str = SPECS_DIR,
 ) -> dict:
     """The sprint's state, with what it reads from GitHub passed in as functions.
 
     `status_of(pr)` gives mergeable_state and CI of a PR, `files_of_branch(branch)` the
-    files a branch changed, and `files_of_pr(number)` the files a PR changes.
+    files a branch changed, `files_of_pr(number)` the files a PR changes, and
+    `spec_prs_of(number)` the spec PRs that reference an issue (sprint_github.py).
     """
     in_sprint = [
         n for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint
@@ -210,6 +233,9 @@ def state(
     in_flight = [n for n in claimed if n in audited] + in_review
     files = work_files(in_sprint, audited, in_flight, files_of_branch)
     dispatch, held = dispatch_split(candidates, files, in_flight)
+    found = proposals(nodes, sprint, claimed, spec_prs_of)
+    # A spec child goes out before any other child (S-2.14).
+    spec_dispatch, spec_held = spec_split(found, spec_file)
 
     merge_queue = [
         {"number": i.number, "pr": pr["number"], "head_sha": pr["headSha"]}
@@ -218,11 +244,14 @@ def state(
         for i in dolev_turn
         if i.status == "in-review"
         for pr in by_number[i.number]["closingPullRequests"]
-    ]
+    ] + spec_merge_queue(found, spec_file, status_of)
     return {
         "sprint": sprint,
-        "dispatch": dispatch,
-        "held_by_overlap": held,
+        "dispatch": spec_dispatch + dispatch,
+        "held_by_overlap": spec_held + held,
+        "proposals": [
+            {key: p[key] for key in ("number", "title", "stage", "pr")} for p in found
+        ],
         "blocked": [
             {
                 "number": i.number,
@@ -319,6 +348,8 @@ def main(argv: list[str] | None = None) -> None:
         lambda pr: pr_status(repo, pr),
         lambda branch: branch_files(repo, base, branch),
         lambda number: pr_files(repo, number),
+        lambda number: spec_prs(repo, number),
+        f"{SPECS_DIR}{repo.split('/')[-1]}.md",
     )
     result |= pipeline_shas(CACHE)
     if args.spec:

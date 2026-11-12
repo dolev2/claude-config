@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-plan-gate-no-milestone
+description: "An issue with no milestone whose spec part is Done: no plan, back to the backlog, and the comment offers 'תכתוב אפיון ל-#12'."
+tags: [dev-plan]
+context:
+  scaffold_script: setup.sh
