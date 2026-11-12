@@ -15,8 +15,9 @@ Two kinds of findings, by Dolev's answer on #226:
   more than one spec file in a repo not yet merged into one.
 
 A stale table of contents is an error, and a missing one a warning, so that a repo
-whose specs predate it keeps a green CI until `--toc` adds one (spec_toc.py). So is one
-in the older form, without each part's status, that still matches the headings (#279).
+whose specs predate it keeps a green CI until `--toc` adds one (spec_toc.py). A block
+in the older form, without each part's status, that still matches the headings is also
+a warning (#279).
 The status links need owner/name: from --repo, else from the origin of --root.
 
 Usage:
@@ -303,7 +304,10 @@ def repo_name(root: Path, given: str | None) -> str:
 def toc_findings(
     path: str, text: str, repo: str
 ) -> tuple[list[Finding], list[Finding]]:
-    """(errors, warnings) of a file's table of contents: stale fails, missing warns."""
+    """(errors, warnings) of a file's table of contents.
+
+    Stale fails; missing, or the older form without the status, only warns.
+    """
     found = spec_toc.check(text, repo)
     if found is None:
         return [], []
