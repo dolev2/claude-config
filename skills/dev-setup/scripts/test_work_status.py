@@ -201,3 +201,45 @@ def test_the_graph_comes_after_the_tables():
 def test_the_graph_without_a_sprint_says_so():
     text = work_status.render(REPO, [], [])
     assert section(text, "גרף החסימות").rstrip().endswith("אין ספרינט פתוח.")
+
+
+def fake_github(monkeypatch, nodes):
+    monkeypatch.setattr(work_status, "api_list", lambda path: LABELS)
+    monkeypatch.setattr(work_status, "open_issue_nodes", lambda repo, with_body: nodes)
+    monkeypatch.setattr(work_status, "recent_done", lambda repo: [])
+    monkeypatch.setattr(work_status, "read_anchors", lambda repo, issues: {})
+
+
+def test_page_flag_writes_the_page_and_keeps_the_chat_output(
+    monkeypatch, capsys, tmp_path
+):
+    fake_github(monkeypatch, [node(1)])
+    work_status.main(["--repo", REPO])
+    plain = capsys.readouterr().out
+    sessions = tmp_path / "sessions.json"
+    sessions.write_text('{"1": [{"url": "https://claude.ai/code/s1"}]}')
+    target = tmp_path / "page.html"
+    work_status.main(
+        ["--repo", REPO, "--page", str(target), "--sessions", str(sessions)]
+    )
+    assert capsys.readouterr().out == plain
+    text = target.read_text(encoding="utf-8")
+    assert "https://github.com/acme/widgets/issues/1" in text
+    assert "https://claude.ai/code/s1" in text
+
+
+def test_no_page_without_the_pipeline(monkeypatch, tmp_path):
+    monkeypatch.setattr(work_status, "api_list", lambda path: [{"name": "bug"}])
+    target = tmp_path / "page.html"
+    work_status.main(["--repo", REPO, "--page", str(target)])
+    assert not target.exists()
+
+
+@pytest.mark.parametrize("content", ["not json", "[1, 2]", '{"x": []}'])
+def test_a_broken_sessions_file_exits_2(content, capsys, tmp_path):
+    sessions = tmp_path / "sessions.json"
+    sessions.write_text(content)
+    with pytest.raises(SystemExit) as exit_info:
+        work_status.main(["--repo", REPO, "--sessions", str(sessions)])
+    assert exit_info.value.code == 2
+    assert "קובץ הסשנים" in capsys.readouterr().err

@@ -44,13 +44,15 @@ def label_text(text: str, limit: int = TITLE_LIMIT) -> str:
     return re.sub('[#"<>&]', lambda m: LABEL_CODES[m.group()], text)
 
 
-def node_line(ref: str, title: str, status: str) -> str:
+def node_line(ref: str, title: str, status: str, extra: str = "") -> str:
     """One node: the number, the short title and the status, each on its own line.
 
     The number has a line of its own so a Hebrew title never flips it to the far side.
+    `extra`, already safe for a label, goes on a line under the status.
     """
     name = f"{ref}<br>{label_text(title)}" if title else ref
-    return f'  {node_id(ref)}["{name}<br>{status}"]'
+    tail = f"<br>{extra}" if extra else ""
+    return f'  {node_id(ref)}["{name}<br>{status}{tail}"]'
 
 
 def units(refs: list[str], edges: list[tuple[str, str]]) -> list[list[str]]:
@@ -117,19 +119,14 @@ def node_status(ref: str, by_ref: dict[str, dict], status_he: StatusHe) -> str:
     return status_he(parse_issue(found).status if found else None)
 
 
-def graph(
-    sprint_nodes: list[dict] | None, nodes: list[dict], status_he: StatusHe
-) -> str:
-    """The graph section: a heading, then a Mermaid block or one line saying why not.
+def layout(sprint_nodes: list[dict], nodes: list[dict], status_he: StatusHe) -> dict:
+    """The graph as data: the refs, the blockers outside the sprint, the arrows, and
+    each ref's title and status.
 
-    `sprint_nodes` are the sprint's open issues in the table's order, None with no
-    sprint. `nodes` are all the open issues of the repo, so a blocker in another
-    milestone still shows its status.
+    `sprint_nodes` are the sprint's open issues in the table's order. `nodes` are all
+    the open issues of the repo, so a blocker in another milestone still shows its
+    status. The chat graph and the page (status_page.py) both draw from this.
     """
-    if sprint_nodes is None:
-        return f"{HEADING}\n\n{NO_SPRINT}"
-    if not sprint_nodes:
-        return f"{HEADING}\n\n{EMPTY}"
     by_ref = {f"#{n['number']}": n for n in nodes}
     issues = [parse_issue(n) for n in sprint_nodes]
     refs = [f"#{i.number}" for i in issues]
@@ -139,11 +136,30 @@ def graph(
         for blocker in [f"#{b}" for b in i.open_blockers] + i.outside_blockers
     ]
     outside = list(dict.fromkeys(b for b, _ in edges if b not in refs))
+    return {
+        "refs": refs,
+        "outside": outside,
+        "edges": edges,
+        "titles": {
+            r: by_ref[r]["title"] if r in by_ref else "" for r in refs + outside
+        },
+        "statuses": {r: node_status(r, by_ref, status_he) for r in refs + outside},
+    }
+
+
+def mermaid_lines(shape: dict, extra: Callable[[str], str] | None = None) -> list[str]:
+    """The lines of the Mermaid flowchart for a layout().
+
+    `extra` adds raw label text under a node's status (the page's links); without it,
+    the lines are the chat graph's.
+    """
+    refs, outside, edges = shape["refs"], shape["outside"], shape["edges"]
     lines = [
         node_line(
             ref,
-            by_ref[ref]["title"] if ref in by_ref else "",
-            node_status(ref, by_ref, status_he),
+            shape["titles"][ref],
+            shape["statuses"][ref],
+            extra(ref) if extra else "",
         )
         for ref in refs + outside
     ]
@@ -154,4 +170,20 @@ def graph(
             f"  {OUTSIDE_STYLE}",
             f"  class {','.join(map(node_id, outside))} outside",
         ]
-    return f"{HEADING}\n\n```mermaid\nflowchart TD\n" + "\n".join(lines) + "\n```"
+    return ["flowchart TD", *lines]
+
+
+def graph(
+    sprint_nodes: list[dict] | None, nodes: list[dict], status_he: StatusHe
+) -> str:
+    """The graph section: a heading, then a Mermaid block or one line saying why not.
+
+    `sprint_nodes` are the sprint's open issues in the table's order, None with no
+    sprint.
+    """
+    if sprint_nodes is None:
+        return f"{HEADING}\n\n{NO_SPRINT}"
+    if not sprint_nodes:
+        return f"{HEADING}\n\n{EMPTY}"
+    lines = mermaid_lines(layout(sprint_nodes, nodes, status_he))
+    return f"{HEADING}\n\n```mermaid\n" + "\n".join(lines) + "\n```"
