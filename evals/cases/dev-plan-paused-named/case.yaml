@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-plan-paused-named
+description: "Dolev names a paused issue and there is no question window: no plan, no label change, and the reply shows the pause reason and asks."
+tags: [dev-plan]
+context:
+  scaffold_script: setup.sh

@@ -45,7 +45,9 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    labelled `costs-money` are not ranked, and a line lists them
    (`On hold, costs-money: …`). Issues labelled `paused` are not ranked either, and the line
    `Paused by Dolev: …` lists them. Never pick one of either (the labels: `reference/pipeline.md`); an issue
-   Dolev names works as usual, and its label stays. A line `Active, no sprint: …` lists open
+   Dolev names labelled `costs-money` works as usual, and its label stays. One labelled `paused`: before anything else, ask the question of
+   `reference/chat-decisions.md` ("משימה מושהית שדולב ביקש במספר"; the reason:
+   `pause_reason.py <N>`), then route it in step 3 with his choice. A line `Active, no sprint: …` lists open
    issues in the pipeline (past backlog, short of done) that have no milestone at all: no
    scan reaches them, so step 6 reports them.
 
@@ -97,7 +99,8 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    Next to the issue, its part in the spec: the id and the part's name, from the `אפיון:` line
    of its body (`gh issue view <N> --json body`) and the heading in that file on
    `origin/<default>`; no line: "בלי אפיון". The ranking does not change for it. Then invoke the phase skill with the
-   issue number. Both phase skills take the issue Dolev named over their own ranking, and
+   issue number, and, for a paused issue asked about in step 1, his choice there: the phase
+   skill does not ask again. Both phase skills take the issue Dolev named over their own ranking, and
    still apply every gate of their own (the WIP gate, the blocked check, the sprint).
 
 4. **When the top issue waits for Dolev, do not route around it silently.** Say what it

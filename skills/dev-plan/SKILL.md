@@ -38,13 +38,18 @@ keeps them: edit it in the headings it already has.
 ## Steps
 
 1. Find the work. If Dolev named a specific issue, plan that one, even outside the current
-   sprint (say so in the summary). Otherwise, **inside the current sprint only**, in the
+   sprint (say so in the summary); a named issue labelled `paused` is asked about first (below). Otherwise, **inside the current sprint only**, in the
    sprint order (`reference/dependencies.md`; the sprint scope: `reference/pipeline.md`):
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --status explore
    ```
    The first line names the sprint. An empty list means the sprint has nothing left to plan.
    Say so and stop.
+
+   **A named issue labelled `paused`:** before anything else here, even the blocked check,
+   ask the question of `reference/chat-decisions.md` ("משימה מושהית שדולב ביקש במספר";
+   the reason: `pause_reason.py <N>`), unless `dev-next` already asked it for this request.
+   "לא להתחיל", or no window: write the question and stop (rule 6 there).
 
    **Skip blocked issues** (`reference/dependencies.md`, claude-config #253): a decision in a
    blocker can change the file layout and leave a plan stale. Take rows top down, without
