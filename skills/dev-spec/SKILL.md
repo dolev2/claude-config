@@ -91,6 +91,8 @@ every run.
    No file, function or endpoint names, and no code: that is the "how", and it stays for the
    Plan of each issue. The parts are in the order the work should go. A new part has no status
    line: it is open.
+   Whenever a list, cases or steps would read better as items, write them as items: the
+   README's "סעיפים" section (tight lists, each item starting with a Hebrew word).
 
 5. **Never invent a requirement.** A price, a rule, a value or a choice nobody has made is an
    open question, not text. Collect them for the PR body's "שאלות פתוחות" section, as unticked
