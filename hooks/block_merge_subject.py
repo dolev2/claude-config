@@ -13,20 +13,21 @@ A merge commit's title lands on the default branch for good. Without `--subject`
 takes it from the PR title (the repo's `squash_merge_commit_title` is `PR_TITLE`, set by
 dev-setup), so a wrong title is fixed on the PR with `gh pr edit --title`. A deny rule
 cannot do this: `*--subject*` misses `-t` and grouped flags like `-st`. This is a guard
-against mistakes, not a security boundary: `sh -c` and `--input` are not read.
+against mistakes, not a security boundary. `-R`/`--repo` anywhere after `gh`, and
+`sh -c` or `bash -c` wrappers, are read; `--input`, a gh alias and GraphQL are not.
 """
 
 import sys
-from pathlib import PurePath
 
 from shell_commands import (
     MERGE_ENDPOINT,
     gh_api_arguments,
+    gh_subcommand,
     is_mcp_merge,
     read_event,
     shell_command,
 )
-from shell_split import split_subcommands, strip_prefixes
+from shell_split import split_subcommands
 
 REASON = (
     "מיזוג עם `--subject` או `-t` חסום: כותרת ה-commit נלקחת מכותרת ה-PR.\n"
@@ -54,12 +55,10 @@ LONG_FLAGS_WITH_VALUE = {
 
 def merge_arguments(words: list[str]) -> list[str] | None:
     """The arguments after `gh pr merge`; None when the command is not a PR merge."""
-    words = strip_prefixes(words)
-    if len(words) < 3 or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
+    subcommand = gh_subcommand(words)
+    if subcommand is None or subcommand[:2] != ["pr", "merge"]:
         return None
-    if words[1:3] != ["pr", "merge"]:
-        return None
-    return words[3:]
+    return subcommand[2:]
 
 
 def sets_subject(arguments: list[str]) -> bool:

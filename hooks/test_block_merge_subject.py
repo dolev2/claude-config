@@ -51,6 +51,11 @@ def tool_call(command: str, tool: str = "Bash") -> str:
         'GH_REPO=a/b gh pr merge 116 --squash -t "x"',
         '/usr/bin/gh pr merge 116 --subject "x"',
         'gh.exe pr merge 116 --subject "x"',
+        "gh -R a/b pr merge 5 --subject x",
+        "gh pr -R a/b merge 5 -t x",
+        "gh --repo=a/b pr merge 5 -t x",
+        "gh -Ra/b pr merge 5 --subject x",
+        "bash -c 'gh -R a/b pr merge 5 -t x'",
     ],
 )
 def test_merge_subject_is_blocked(monkeypatch, command):
@@ -68,6 +73,8 @@ def test_merge_subject_is_blocked(monkeypatch, command):
         'gh pr merge 116 --squash --body "-t is not a flag here"',
         'gh pr merge 116 --squash -b "--subject"',
         "gh pr merge 116 --squash -R dolev2/test-repo",
+        "gh -R a/b pr merge 5 --squash",
+        "gh -R a/b pr edit 5 --title x",
         'gh pr edit 116 --title "15ב. Something"',
         'gh pr create --title "x" -t "y"',
         'gh issue edit 113 --title "x"',
