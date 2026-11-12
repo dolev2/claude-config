@@ -5,6 +5,7 @@ takes these readers as functions (claude-config #203).
 """
 
 import json
+import re
 from urllib.parse import quote
 
 from gh_rest import api, api_list, gh_api, other_repo
@@ -80,8 +81,18 @@ def referencing_prs(repo: str, number: int) -> list[int]:
     return sorted(found)
 
 
+def links_issue(body: str, number: int) -> bool:
+    """True when a PR body links issue `number`: `Refs #N` or `Closes #N` (specs.md).
+
+    A spec PR that only mentions the issue (in its table of parts, say) is not its
+    spec PR, though GitHub leaves the same cross-reference (claude-config #334).
+    """
+    link = rf"\b(?:refs|closes)\s+#{number}\b"
+    return re.search(link, body, re.IGNORECASE) is not None
+
+
 def spec_prs(repo: str, number: int) -> list[dict]:
-    """The spec PRs (`claude/spec-*`) that reference issue `number`.
+    """The spec PRs (`claude/spec-*`) whose body links issue `number`.
 
     Each is {number, state, branch, body, headSha}; state is "open", "merged" or
     "closed" (closed without a merge). sprint_proposals.py reads the stage from them.
@@ -90,7 +101,8 @@ def spec_prs(repo: str, number: int) -> list[dict]:
     for pr_number in referencing_prs(repo, number):
         pull = api(f"repos/{repo}/pulls/{pr_number}")
         branch = pull["head"]["ref"]
-        if not branch.startswith(SPEC_BRANCH):
+        body = pull.get("body") or ""
+        if not branch.startswith(SPEC_BRANCH) or not links_issue(body, number):
             continue
         merged = pull.get("merged_at") is not None
         found.append(
@@ -98,7 +110,7 @@ def spec_prs(repo: str, number: int) -> list[dict]:
                 "number": pr_number,
                 "state": "merged" if merged else pull["state"],
                 "branch": branch,
-                "body": pull.get("body") or "",
+                "body": body,
                 "headSha": pull["head"]["sha"],
             }
         )

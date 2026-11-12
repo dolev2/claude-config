@@ -29,8 +29,11 @@ The keys:
                      overlap between tasks; a second proposal waits on the spec child
                      that is writing, with the spec file
     proposals        the sprint's approved proposals (backlog, in its milestone,
-                     S-2.14): {number, title, stage, pr}, stage waiting, writing,
-                     questions, review or breakdown (sprint_proposals.py)
+                     S-2.14): {number, title, stage, pr, parts}, stage waiting,
+                     writing, questions, review, replan or breakdown
+                     (sprint_proposals.py). parts: the open spec parts on
+                     origin/<default> that already name the issue; with any, the
+                     stage is replan, a task to plan again (#334)
     blocked          Claude's turn, waiting on an open blocker; paused_blockers: the
                      blockers Dolev paused, so the wait is his
     umbrellas        would be in dispatch, but a sub-issue is still open: the issue
@@ -196,12 +199,14 @@ def state(
     files_of_pr: Callable[[int], set[str]] = no_files,
     spec_prs_of: Callable[[int], list[dict]] = no_prs,
     spec_file: str = SPECS_DIR,
+    open_parts: dict[int, list[str]] | None = None,
 ) -> dict:
     """The sprint's state, with what it reads from GitHub passed in as functions.
 
     `status_of(pr)` gives mergeable_state and CI of a PR, `files_of_branch(branch)` the
     files a branch changed, `files_of_pr(number)` the files a PR changes, and
-    `spec_prs_of(number)` the spec PRs that reference an issue (sprint_github.py).
+    `spec_prs_of(number)` the spec PRs that link an issue (sprint_github.py).
+    `open_parts` maps an issue to the open spec parts that name it (open_parts()).
     """
     in_sprint = [
         n for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint
@@ -233,7 +238,7 @@ def state(
     in_flight = [n for n in claimed if n in audited] + in_review
     files = work_files(in_sprint, audited, in_flight, files_of_branch)
     dispatch, held = dispatch_split(candidates, files, in_flight)
-    found = proposals(nodes, sprint, claimed, spec_prs_of)
+    found = proposals(nodes, sprint, claimed, spec_prs_of, open_parts)
     # A spec child goes out before any other child (S-2.14).
     spec_dispatch, spec_held = spec_split(found, spec_file)
 
@@ -250,7 +255,8 @@ def state(
         "dispatch": spec_dispatch + dispatch,
         "held_by_overlap": spec_held + held,
         "proposals": [
-            {key: p[key] for key in ("number", "title", "stage", "pr")} for p in found
+            {key: p[key] for key in ("number", "title", "stage", "pr", "parts")}
+            for p in found
         ],
         "blocked": [
             {
@@ -306,16 +312,26 @@ def repo_specs(base: str) -> dict[str, str]:
     return spec_files_at(root, f"origin/{base}")
 
 
-def spec_gaps_or_warning(nodes: list[dict], base: str) -> list[dict]:
-    """spec_gaps, or one gap saying the specs were not read: the sprint check goes on.
+def specs_or_warning(base: str) -> tuple[dict[str, str], str | None]:
+    """(the spec files, None), or ({}, why they were not read): the check goes on.
 
-    Like spec_check.py's "issues not read", a gap only warns (Dolev's answer on #226).
+    Like spec_check.py's "issues not read", specs not read only warn (Dolev's answer
+    on #226): with --spec it is one gap, and no proposal is seen as a task to replan.
     """
     try:
-        files = repo_specs(base)
+        return repo_specs(base), None
     except (ValueError, OSError, subprocess.TimeoutExpired) as err:
-        return [{"path": None, "line": None, "message": f"spec files not read: {err}"}]
-    return spec_gaps(nodes, files)
+        return {}, f"spec files not read: {err}"
+
+
+def open_parts(files: dict[str, str]) -> dict[int, list[str]]:
+    """Each issue an open part's status line names (`פתוח (#N)`) → those parts' ids."""
+    found: dict[int, list[str]] = {}
+    for text in files.values():
+        for part in parse_spec(text)[0]:
+            for number in part.open_issues if part.status == "open" else ():
+                found.setdefault(number, []).append(part.id)
+    return found
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -341,6 +357,9 @@ def main(argv: list[str] | None = None) -> None:
     if sprint is None:
         sys.exit("No open milestone has open issues.")
     base = api(f"repos/{repo}")["default_branch"]
+    # Read on every run, not only with --spec: a proposal an open part already names
+    # is a task to replan, not a spec to write (#334).
+    files, unread = specs_or_warning(base)
     result = state(
         nodes,
         sprint,
@@ -350,10 +369,12 @@ def main(argv: list[str] | None = None) -> None:
         lambda number: pr_files(repo, number),
         lambda number: spec_prs(repo, number),
         f"{SPECS_DIR}{repo.split('/')[-1]}.md",
+        open_parts(files),
     )
     result |= pipeline_shas(CACHE)
     if args.spec:
-        result["spec_gaps"] = spec_gaps_or_warning(nodes, base)
+        warning = {"path": None, "line": None, "message": unread}
+        result["spec_gaps"] = [warning] if unread else spec_gaps(nodes, files)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

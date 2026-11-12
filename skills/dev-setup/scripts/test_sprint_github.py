@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
@@ -154,3 +156,35 @@ def test_an_issue_no_pr_mentions_has_no_spec_prs(monkeypatch):
     calls = fake_api(monkeypatch, {})
     assert sprint_github.spec_prs("o/r", 9) == []
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("body", "linked"),
+    [
+        ("Refs #9", True),
+        ("Closes #9\n\nmore", True),
+        ("refs  #9.", True),
+        ("| S-2.3 | #9 |", False),
+        ("Closes #23, and #9 is in the table", False),
+        ("Refs #90", False),
+        ("Refs #19", False),
+        ("", False),
+    ],
+)
+def test_links_issue(body, linked):
+    assert sprint_github.links_issue(body, 9) is linked
+
+
+def test_a_spec_pr_that_only_mentions_the_issue_is_not_its_spec_pr(monkeypatch):
+    # dolev2/job-search#24 mentioned #6 in its table of parts, with Closes #23 (#334).
+    monkeypatch.setattr(
+        sprint_github, "api_list", lambda path: [cross_ref(24), cross_ref(25)]
+    )
+    fake_api(
+        monkeypatch,
+        {
+            "repos/o/r/pulls/24": pull(24, "claude/spec-a", body="Closes #23\n#9"),
+            "repos/o/r/pulls/25": pull(25, "claude/spec-b", body="Refs #9"),
+        },
+    )
+    assert [p["number"] for p in sprint_github.spec_prs("o/r", 9)] == [25]
