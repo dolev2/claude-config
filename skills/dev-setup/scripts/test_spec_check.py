@@ -29,6 +29,7 @@ Free grouping, no part.
 ```
 """
 SPEC = "docs/specs/pipeline.md"
+REPO = "o/r"
 
 
 def issue(number: int, body: str = "", *labels: str) -> dict:
@@ -266,7 +267,7 @@ def test_table_done_and_out_of_scope():
 def test_gaps_never_change_the_exit_code(tmp_path, monkeypatch, capsys):
     folder = tmp_path / "docs" / "specs"
     folder.mkdir(parents=True)
-    (folder / "pipeline.md").write_text(spec_toc.write(VALID), encoding="utf-8")
+    (folder / "pipeline.md").write_text(spec_toc.write(VALID, REPO), encoding="utf-8")
     found = [issue(5), *ALL_POINTING[1:]]
     monkeypatch.setattr(spec_check, "fetch_issues", lambda repo: found)
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
@@ -280,10 +281,12 @@ def test_out_of_scope_and_many_files_only_warn(tmp_path, monkeypatch, capsys):
     folder = tmp_path / "docs" / "specs"
     folder.mkdir(parents=True)
     out = "# B\n\n## S-1.1 · a\n**מצב:** מחוץ להיקף\n"
-    (folder / "a.md").write_text(spec_toc.write(VALID), encoding="utf-8")
-    (folder / "b.md").write_text(spec_toc.write(out), encoding="utf-8")
+    (folder / "a.md").write_text(spec_toc.write(VALID, REPO), encoding="utf-8")
+    (folder / "b.md").write_text(spec_toc.write(out, REPO), encoding="utf-8")
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
-    assert spec_check.main(["--root", str(tmp_path), "--no-issues"]) == 0
+    assert (
+        spec_check.main(["--root", str(tmp_path), "--repo", REPO, "--no-issues"]) == 0
+    )
     printed = capsys.readouterr().out
     assert "warning: 2 spec files in docs/specs/: one spec per repo" in printed
     assert "warning: docs/specs/b.md:" in printed
@@ -308,7 +311,9 @@ def test_error_is_an_annotation_in_actions(tmp_path, monkeypatch, capsys):
     folder.mkdir(parents=True)
     (folder / "x.md").write_text("## S-2 · broken\n", encoding="utf-8")
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
-    assert spec_check.main(["--root", str(tmp_path), "--no-issues"]) == 1
+    assert (
+        spec_check.main(["--root", str(tmp_path), "--repo", REPO, "--no-issues"]) == 1
+    )
     assert "::error file=docs/specs/x.md,line=1::" in capsys.readouterr().out
 
 
@@ -326,6 +331,8 @@ def test_run(tmp_path, text, code):
             str(SCRIPT),
             "--root",
             str(tmp_path),
+            "--repo",
+            REPO,
             "--no-issues",
             "--table",
         ],
@@ -426,7 +433,8 @@ def test_spec_files_at_reads_a_non_ascii_name(repo):
 )
 def test_main_ref_reads_the_specs_of_the_ref(repo, ref, expected, capsys):
     (repo / "docs" / "specs" / "pipeline.md").unlink()
-    code = spec_check.main(["--root", str(repo), "--no-issues", "--ref", ref])
+    args = ["--root", str(repo), "--repo", REPO, "--no-issues", "--ref", ref]
+    code = spec_check.main(args)
     assert code == 0
     assert expected in capsys.readouterr().out
 
@@ -434,3 +442,28 @@ def test_main_ref_reads_the_specs_of_the_ref(repo, ref, expected, capsys):
 def test_main_unknown_ref_exits_with_the_reason(repo):
     with pytest.raises(SystemExit, match="spec files not read"):
         spec_check.main(["--root", str(repo), "--no-issues", "--ref", "nope"])
+
+
+def test_toc_with_repo_writes_full_issue_links(tmp_path):
+    folder = tmp_path / "docs" / "specs"
+    folder.mkdir(parents=True)
+    (folder / "pipeline.md").write_text(VALID, encoding="utf-8")
+    assert spec_check.main(["--root", str(tmp_path), "--repo", "a/b", "--toc"]) == 0
+    text = (folder / "pipeline.md").read_text(encoding="utf-8")
+    assert "· גמור: [#12](https://github.com/a/b/issues/12)" in text
+
+
+def test_toc_without_repo_takes_the_origin_of_root(repo, capsys):
+    run_git(repo, "remote", "add", "origin", "https://github.com/own/name.git")
+    assert spec_check.main(["--root", str(repo), "--toc"]) == 0
+    text = (repo / "docs" / "specs" / "pipeline.md").read_text(encoding="utf-8")
+    assert "· פתוח: [#5](https://github.com/own/name/issues/5)" in text
+    assert spec_check.main(["--root", str(repo), "--no-issues"]) == 0
+    assert "0 errors" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("flag", ["--toc", "--no-issues"])
+def test_no_repo_and_no_origin_exits_with_the_message(repo, flag):
+    with pytest.raises(SystemExit) as stop:
+        spec_check.main(["--root", str(repo), flag])
+    assert stop.value.code == spec_check.gh_rest.NOT_A_REPO

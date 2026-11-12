@@ -15,11 +15,14 @@ Two kinds of findings, by Dolev's answer on #226:
   more than one spec file in a repo not yet merged into one.
 
 A stale table of contents is an error, and a missing one a warning, so that a repo
-whose specs predate it keeps a green CI until `--toc` adds one (spec_toc.py).
+whose specs predate it keeps a green CI until `--toc` adds one (spec_toc.py). A block
+in the older form, without each part's status, that still matches the headings is also
+a warning (#279).
+The status links need owner/name: from --repo, else from the origin of --root.
 
 Usage:
     spec_check.py [--root DIR] [--repo owner/name] [--no-issues] [--table] [--ref REF]
-    spec_check.py --toc [--root DIR]
+    spec_check.py --toc [--root DIR] [--repo owner/name]
     spec_check.py --changes BASE HEAD [--root DIR] [--repo owner/name] [--no-issues]
 """
 
@@ -284,9 +287,28 @@ def summary(specs: dict[str, list[Part]], errors: int, warnings: int) -> str:
     )
 
 
-def toc_findings(path: str, text: str) -> tuple[list[Finding], list[Finding]]:
-    """(errors, warnings) of a file's table of contents: stale fails, missing warns."""
-    found = spec_toc.check(text)
+def repo_name(root: Path, given: str | None) -> str:
+    """owner/name for the issue links: `given`, else the origin of `root`; exits."""
+    if given:
+        return given
+    try:
+        url = git(root, "remote", "get-url", "origin")
+    except ValueError:
+        url = ""
+    repo = gh_rest.repo_from_url(url)
+    if not repo:
+        sys.exit(gh_rest.NOT_A_REPO)
+    return repo
+
+
+def toc_findings(
+    path: str, text: str, repo: str
+) -> tuple[list[Finding], list[Finding]]:
+    """(errors, warnings) of a file's table of contents.
+
+    Stale fails; missing, or the older form without the status, only warns.
+    """
+    found = spec_toc.check(text, repo)
     if found is None:
         return [], []
     line, message = found
@@ -296,11 +318,12 @@ def toc_findings(path: str, text: str) -> tuple[list[Finding], list[Finding]]:
 
 
 def read_specs(
-    root: Path, ref: str | None
+    root: Path, ref: str | None, repo: str | None = None
 ) -> tuple[dict[str, list[Part]], list[Finding], list[Finding]]:
     """The parsed spec files, from the disk or from `ref`, their errors and warnings.
 
     `ref` serves a clone that may be behind GitHub, like dev-ship's main folder (#227).
+    `repo` is --repo; only a repo that has spec files needs one (`repo_name`).
     """
     try:
         files = spec_files_at(root, ref) if ref else spec_files(root)
@@ -310,20 +333,25 @@ def read_specs(
     errors: list[Finding] = []
     warnings: list[Finding] = []
     warnings += files_warning(len(files))
+    if files:
+        repo = repo_name(root, repo)
     for path, text in files.items():
         specs[path], found = parse_spec(text)
         errors += [Finding(path, line, message) for line, message in found]
         warnings += part_warnings(path, specs[path])
-        toc_errors, toc_warnings = toc_findings(path, text)
+        toc_errors, toc_warnings = toc_findings(path, text, repo)
         errors += toc_errors
         warnings += toc_warnings
     return specs, errors, warnings
 
 
-def write_tocs(root: Path) -> int:
+def write_tocs(root: Path, repo: str | None) -> int:
     """Rebuild the table of contents of each spec file on disk; print what changed."""
-    for path, text in spec_files(root).items():
-        new = spec_toc.write(text)
+    files = spec_files(root)
+    if files:
+        repo = repo_name(root, repo)
+    for path, text in files.items():
+        new = spec_toc.write(text, repo)
         if new != text:
             (root / path).write_text(new, encoding="utf-8")
             print(f"table of contents written: {path}")
@@ -380,10 +408,10 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8")
 
     if args.toc:
-        return write_tocs(Path(args.root))
+        return write_tocs(Path(args.root), args.repo)
     if args.changes:
         return print_changes(args)
-    specs, errors, warnings = read_specs(Path(args.root), args.ref)
+    specs, errors, warnings = read_specs(Path(args.root), args.ref, args.repo)
 
     issues = None
     if not args.no_issues:

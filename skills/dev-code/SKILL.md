@@ -131,8 +131,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    part's heading. A part that several tasks build (`פתוח (#12, #13)`): delete this issue's
    number from the line, and write Done only when no other number is left in it. A bug marks
    nothing: its part is already Done. A repair round finds the line already there. Before the
-   push in step 9:
-   `python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --no-issues` passes.
+   push in step 9, `--toc` rewrites the table of contents, which shows each part's status,
+   and then `--no-issues` passes:
+   `python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --toc`, then
+   `python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --no-issues`.
 
    **While writing, run only the test files of what changed**, never a full suite; a failing
    test reruns alone (`reference/tests.md`). The full run comes once, in
