@@ -151,7 +151,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       would open, with the proposal's milestone (S-2.14). It is asked again every check until
       Dolev answers, since a check keeps no memory. A proposal in stage `replan` is asked the
       same way, never as a breakdown: it is the task of the parts in `parts`, so "להחזיר
-      לתכנון (מומלץ)" first, then "להשאיר בבקלוג" (#334);
+      לתכנון (מומלץ)" first, then "להוריד מהספרינט" (#334);
    5. the coding children held by the WIP gate (step 4): one question, the issues in
       `status:in-review`, and which held issues to open anyway (`multiSelect`, one option
       per issue), with "wait" first;
@@ -175,8 +175,13 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    PR is open) to write the answer into the file on the same branch (`dev-spec`,
    step 8, a revision). Breakdown approved: `dev-issue` breaks the spec down here ("פירוק
    אפיון"), the new tasks in the proposal's milestone, and closes the proposal. Back to
-   planning (`replan`): `status:backlog` → `status:explore`, a comment naming its parts, and a
-   planning child next check, like any `explore` issue. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
+   planning (`replan`): first the body, with the editing rules of `reference/issue-body.md`:
+   no `אפיון:` line in "הקשר / קישורים", or one that does not name its parts, gets
+   `אפיון: <the spec file> <its parts>` there (without it, the planning gate sends the issue
+   back to the backlog again). Then `status:backlog` → `status:explore`, a comment naming its
+   parts, and a planning child next check, like any `explore` issue. Off the sprint: its
+   milestone is removed (his choice in the window), so it is no longer a proposal and is not
+   asked again. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
    line that this is a good moment for `/compact`, with the full command in a code block as the
    global `CLAUDE.md` says ("מה פתוח": `/compact` and the summary that must survive;
    `hooks/compact_after_merge.py` blocks the turn's end once without it). A fix:
