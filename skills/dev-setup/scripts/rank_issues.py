@@ -12,7 +12,7 @@ The repo is the `origin` remote of the current directory, unless --repo is given
 Everything is read through REST (gh_rest.py), because GraphQL is blocked in cloud
 sessions (claude-config #138).
 
-The rule is in ../reference/dependencies.md (S-1.42, claude-config #295). In short:
+The rule is in ../reference/dependencies.md (S-1.3, claude-config #295). In short:
 an issue's weight is the number of open issues in the sprint that wait on it through
 "Blocked by" links, directly or through other issues. Order: a repair
 (`needs-repair`, when it is in --status) first, then every `bug` before any new task,
@@ -217,7 +217,7 @@ def rank(issues: list[Issue], statuses: list[str] | None = None) -> list[Issue]:
     The key: a repair first (it is no new task, and its PR is aging), then a bug
     before any new task, then the tier, then `process`, then a sub-issue of a started
     umbrella (`umbrella_of`, filled by with_started_umbrellas), then weight, lowest
-    first, then number (S-1.42). A blocker may so stand below what it blocks: the pick
+    first, then number (S-1.3). A blocker may so stand below what it blocks: the pick
     is always the first row that is not blocked.
     """
     with_waiting(issues)

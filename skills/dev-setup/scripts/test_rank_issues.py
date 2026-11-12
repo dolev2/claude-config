@@ -54,7 +54,7 @@ def test_indirect_waiters_count():
             node(4, blocking=[3]), node(3), node(2, blocking=[3]), node(1, blocking=[2])
         )
     )
-    # Fewest waiting first (S-1.42): the blocked 3 is listed first, and skipped.
+    # Fewest waiting first (S-1.3): the blocked 3 is listed first, and skipped.
     assert numbers(ranked) == [3, 2, 4, 1]
     assert ranked[-1].waiting == [2, 3]
 
@@ -333,7 +333,7 @@ def test_a_blocked_bug_stays_listed_and_the_free_task_is_the_first_unblocked():
         ),
         statuses=EXECUTE_AND_PLAN,
     )
-    # 2 and 3 are both approved; 3 has fewer waiting, so it comes first (S-1.42).
+    # 2 and 3 are both approved; 3 has fewer waiting, so it comes first (S-1.3).
     assert numbers(ranked) == [1, 3, 2]
     assert ranked[0].blocked
     assert next(i for i in ranked if not i.blocked).number == 3
@@ -386,7 +386,7 @@ def test_the_json_output_carries_the_open_sub_issues(monkeypatch, capsys):
     assert {row["number"]: row["open_subs"] for row in rows} == {1: ["#2"], 2: []}
 
 
-# S-1.42 (#295): a topic is finished before the next.
+# S-1.3 (#295): a topic is finished before the next.
 
 
 def started(nodes, statuses=None):

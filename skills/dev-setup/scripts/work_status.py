@@ -122,7 +122,7 @@ def blocked_status(entry: dict) -> str:
 
 
 def sprint_rows(nodes: list[dict], sprint: str) -> list[Row]:
-    """The open issues of the sprint, in the order of S-1.42."""
+    """The open issues of the sprint, in the order of S-1.3."""
     in_sprint = [
         n for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint
     ]

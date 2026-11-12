@@ -21,7 +21,7 @@ The keys:
                      umbrella, not costs-money, not paused, not claimed, no file shared
                      with work in flight. A spec child first (status "spec", one at a
                      time, S-2.14), then repairs, then bugs, then approved plans, then
-                     plans to write; in each, the order of S-1.42 (rank_issues.py)
+                     plans to write; in each, the order of S-1.3 (rank_issues.py)
     held_by_overlap  would be in dispatch, but shares a planned file with work in flight
                      (claimed, in review, or earlier in dispatch), so it runs after it.
                      Work in flight counts its planned files and the files its Plan's
@@ -44,7 +44,7 @@ The keys:
                      with "kind": "spec"
     on_hold          costs-money, until Dolev approves the expense
     paused           Claude's turn, but labelled `paused`: only Dolev pauses and resumes
-                     an issue (S-1.42). Not in on_hold, which work_status.py reads as
+                     an issue (S-1.3). Not in on_hold, which work_status.py reads as
                      "costs money", even with costs-money too (as in rank_issues.py)
     findings         audit_sprint.py's findings, as data
     pipeline_sha     the last commit on the pipeline's main that touched what is read

@@ -26,7 +26,7 @@ In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the labels, t
 ranking rule and why this skill ranks without status tiers, while the phases put the status
 tier first. In both, a `bug` comes before any new task, then `process` issues, then the sub-issues
 of an umbrella that has started, then the rest, and in each group the lowest weight comes first
-(a repair, `needs-repair`, stays first in the phases). Why: a topic is finished before the next (S-1.42).
+(a repair, `needs-repair`, stays first in the phases). Why: a topic is finished before the next (S-1.3).
 Its sub-section "בדיקת הסדר" holds what the audit below finds, and the rule for merging.
 The review of the sprint order edits issue bodies, so it also reads `issue-body.md` there.
 Asking Dolev for his step in the question window (step 4) follows `chat-decisions.md`.

@@ -490,7 +490,7 @@ def test_specs_not_read_is_one_gap_and_the_check_goes_on(monkeypatch):
     ]
 
 
-# S-1.42 (#295): paused issues, and the new order of dispatch.
+# S-1.3 (#295): paused issues, and the new order of dispatch.
 
 
 def test_a_paused_issue_is_not_dispatched_and_is_listed_apart():
