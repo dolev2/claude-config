@@ -9,8 +9,13 @@ in with the `project` scope:
 - "ספרינט נוכחי": a board split into Status columns, filtered to `milestone:"<sprint>"`.
 - "הכל": a table of every item.
 
-The sprint defaults to the current one (the lowest-numbered open milestone with open
-issues), or, on a board with no open issues yet, the lowest-numbered open milestone.
+The sprint defaults to the current one, by the pipeline's shared rule (sprint_rule.py:
+open issues, PRs not counted), or, in a repo with no open issues yet, the
+lowest-numbered open milestone.
+
+The repo, its milestones and its issues are read over REST (gh_rest.py), which a cloud
+session allows. The board itself is read and written over GraphQL, because Projects V2
+has no REST API for views; a cloud session blocks that part (claude-config #140).
 
 A view that already carries one of the two names is left as it is, so a second run
 changes nothing. The board's untouched default view ("View 1", a table with no filter)
@@ -26,6 +31,9 @@ import re
 import subprocess
 import sys
 import tempfile
+
+import gh_rest
+import sprint_rule
 
 SPRINT_VIEW = "ספרינט נוכחי"
 ALL_VIEW = "הכל"
@@ -49,13 +57,6 @@ BOARD_QUERY = """query($owner:String!,$number:Int!){
       verticalGroupByFields(first:5){nodes{... on ProjectV2FieldCommon{name}}}
     }}
   }}
-}"""
-MILESTONES_QUERY = """query($owner:String!,$name:String!){
-  repository(owner:$owner,name:$name){
-    milestones(states:OPEN,first:100,orderBy:{field:NUMBER,direction:ASC}){
-      nodes{title issues(states:OPEN){totalCount}}
-    }
-  }
 }"""
 CREATE = """mutation(
   $project:ID!,$name:String!,$layout:ProjectV2ViewLayout!,$fields:[ID!]
@@ -102,11 +103,20 @@ def graphql(query: str, **variables: object) -> dict:
     return json.loads(out)["data"]
 
 
-def pick_sprint(milestones: list[dict]) -> str | None:
-    """The current sprint, or the first open milestone when none has open issues yet."""
-    with_issues = [m for m in milestones if m["issues"]["totalCount"] > 0]
-    chosen = (with_issues or milestones or [None])[0]
-    return chosen["title"] if chosen else None
+def open_milestones(repo: str) -> list[dict]:
+    """The repo's open milestones over REST, lowest number first."""
+    items = gh_rest.api_list(f"repos/{repo}/milestones?state=open&per_page=100")
+    return sorted(items, key=lambda m: m["number"])
+
+
+def pick_sprint(current: str | None, milestones: list[dict]) -> str | None:
+    """`current` (the shared rule's sprint), or the first open milestone without one.
+
+    `milestones` is sorted by number. None when there is neither.
+    """
+    if current:
+        return current
+    return milestones[0]["title"] if milestones else None
 
 
 def plan(views: list[dict], field_ids: dict[str, str], sprint: str) -> list[tuple]:
@@ -191,16 +201,8 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = parser.parse_args(argv)
 
-    repo = args.repo
-    if not repo:
-        code, repo = run(
-            "gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"
-        )
-        if code != 0 or not repo:
-            sys.exit(
-                "Not inside a GitHub repo that gh can see; pass --repo owner/name."
-            )
-    owner, name = repo.split("/")
+    repo = args.repo or gh_rest.current_repo()
+    owner = repo.split("/")[0]
     number = args.number
     if number is None:
         code, out = run("gh", "variable", "get", "PROJECT_NUMBER", "--repo", repo)
@@ -208,10 +210,11 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(f"{repo} has no PROJECT_NUMBER variable; pass --number.")
         number = int(out)
 
-    milestones = graphql(MILESTONES_QUERY, owner=owner, name=name)["repository"][
-        "milestones"
-    ]["nodes"]
-    sprint = args.sprint or pick_sprint(milestones)
+    milestones = open_milestones(repo)
+    sprint = args.sprint
+    if not sprint:
+        issues = gh_rest.api_list(f"repos/{repo}/issues?state=open&per_page=100")
+        sprint = pick_sprint(sprint_rule.current_sprint(issues), milestones)
     if not sprint:
         sys.exit(f"{repo} has no open milestone; create the sprints first.")
     if sprint not in {m["title"] for m in milestones}:
