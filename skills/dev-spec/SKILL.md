@@ -88,10 +88,8 @@ every run.
    - **a dependency on another part**, written in the part that depends: "תלוי ב-S-1.2". The
      breakdown reads its "Blocked by" links from these lines only, so a dependency that is not
      written is not a link.
-   **What, not how:** the README's "מה, לא איך" section says what a part says and what it
-   never copies from an owner doc (exact order, command forms, counts, names of tools, files,
-   functions and endpoints); such a detail gets a pointer in words. No code. The "how" stays
-   for the Plan of each issue. The parts are in the order the work should go. A new part has no status
+   **What, not how:** what a part says, and what it never copies from an owner doc, is the
+   README's "מה, לא איך" section. No code. The "how" stays for the Plan of each issue. The parts are in the order the work should go. A new part has no status
    line: it is open.
    Whenever a list, cases or steps would read better as items, write them as items: the
    README's "סעיפים" section (tight lists, each item starting with a Hebrew word).
