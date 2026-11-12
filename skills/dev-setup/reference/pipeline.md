@@ -141,7 +141,7 @@ gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:e
 - לא לנחש על issue לא ברור. לשאול בתגובה ולהעביר ל-`status:plan-questions`.
 - **אות המיזוג הוא בקשה אחת של דולב בצ'אט** ("תמזג את #N"), על ה-issue הספציפי. לא תווית ולא
   Approve: GitHub לא מאפשר Approve ל-PR שנפתח מהחשבון של דולב, וה-PRים של Claude נפתחים ממנו.
-  הבקשה מפעילה את `dev-ship`. חלון האישור של `gh pr merge` נשאר כרשת ביטחון, לא כאישור שני. למה: `~/.claude/docs/decisions/108-merge-signal-chat.md`.
+  הבקשה מפעילה את `dev-ship`. מיזוג שדולב ביקש בהודעה האחרונה שלו עובר בלי חלון נוסף, וחלון האישור קופץ רק בלי בקשה כזו (S-3.11). למה: `~/.claude/docs/decisions/301-merge-request-skips-window.md`.
 - לא לגעת ב-issue שהסטטוס שלו לא בתור של Claude (`explore`, `ready-to-execute`, `needs-repair`),
   אלא אם דולב ביקש במפורש (למשל מיזוג של issue ב-`status:in-review`), או בחר בחלון השאלות
   (`chat-decisions.md`). מותר לשאול אותו ולבצע את מה שבחר; אסור להחליט במקומו.

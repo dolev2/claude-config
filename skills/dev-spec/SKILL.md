@@ -154,7 +154,7 @@ every run.
    message, in Hebrew: the link to the PR's changes first, the parts it adds, the open questions
    left, and the next step: he reads the file in the PR, asks for fixes, and asks for the merge
    like any PR ("תמזג את ה-PR של האפיון"). **The merge is the approval of the "what".**
-   When no question is left open, ask in the question window: "תמזג (מומלץ)" runs `dev-ship` on
+   When no question is left open, ask in the question window: "תמזג את #<PR> (מומלץ)", with the PR's number (the merge hook reads it), runs `dev-ship` on
    the PR, "אקרא ב-GitHub ואחזור" changes nothing, and "Other" with a fix revises the file on
    the same branch (step 8, a revision).
 
