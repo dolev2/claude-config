@@ -2,8 +2,9 @@
 
 S-2.14 (claude-config #296): a backlog proposal Dolev put in the sprint's milestone is
 approved for a spec, with no new label (docs/decisions/334-open-part-is-a-task-not-a-
-proposal.md, which replaces 296). The orchestrator sends it a spec child before any other child, one at a
-time, since every spec child writes the repo's one spec file and its table of contents.
+proposal.md, which replaces 296). The orchestrator sends it a spec child before any
+other child, one at a time, since every spec child writes the repo's one spec file and
+its table of contents.
 
 The stage of a proposal is read from the spec PRs that reference it (`claude/spec-*`,
 `Refs #N`), which sprint_github.spec_prs() reads; here they are passed in, so the logic
