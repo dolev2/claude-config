@@ -7,8 +7,8 @@ added or renamed always reaches the table of contents in the same PR.
 
 Each part's entry also shows its status line, with links to its issues (S-1.39, #279):
 ` · גמור: [#226](...)` or ` · פתוח: [#280](...), [#281](...)`. A part with no status
-line, or out of scope, gets nothing. The links are full URLs: GitHub does not link a bare
-#N inside a .md file, and a relative link breaks on a branch whose name has a "/".
+line, or out of scope, gets nothing. The links are full URLs: GitHub does not link a
+bare #N inside a .md file, and a relative link breaks on a branch whose name has a "/".
 """
 
 import re
