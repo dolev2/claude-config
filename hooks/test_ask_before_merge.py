@@ -134,6 +134,8 @@ def test_api_merge_asks(monkeypatch, command):
         "echo 5 | xargs gh pr merge",
         "exec gh pr merge 5",
         "gh pr -R o/r merge 5",
+        "gh pr merge 5 -b -R",
+        "gh pr merge 5 --body -R --squash",
         "gh pr view 5 # check first\ngh pr merge 5",
         "gh api --hostname github.com graphql -f query='mutation{mergePullRequest}'",
         "gh api -X POST graphql -f query='mutation{mergePullRequest(input:{}){x}}'",
