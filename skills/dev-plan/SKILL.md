@@ -272,18 +272,24 @@ keeps them: edit it in the headings it already has.
    **Then ask for the approval in the question window**, when Dolev is in the chat
    (`reference/chat-decisions.md`): one question per issue this run moved to
    `status:waiting-approval` (at most three), each naming the issue and its title, with:
-   1. "מאשר (מומלץ)": move it to `status:ready-to-execute`
+   1. "מאשר, תתחיל לקודד (מומלץ)": move it to `status:ready-to-execute`
       (`--remove-label "status:waiting-approval"`) and add a line to its plan log, reading the
       body fresh first. The wording, for a click and for free text: `reference/chat-decisions.md`.
+      An approval Dolev types in the chat, or writes in "Other" ("מאשר", "תקודד"), counts the
+      same; only an objection takes item 3.
    2. "אקרא ב-GitHub ואחזור": change nothing; the issue waits for approval as before.
    3. "Other" with an objection: the plan is sent back (`status:waiting-approval` →
       `status:explore`). Revise it in place in this run, add a line to the plan log quoting his
       words (step 2, "sent it back"), move it back to `status:waiting-approval`, and ask once
       more. A revision that raises a blocking question takes the question path; a second
       objection is not asked about again in this run.
-   After each choice, one line in the chat on what changed ("#N עבר לביצוע"). Approving does not
-   start the work: Execute stays a separate run of `dev-code`. No window available, or the run
-   is automated: the summary above is the hand-off, as before.
+   After each choice, one line in the chat on what changed ("#N אושר, הקידוד מתחיל").
+   **Then the approval starts the code, in this session** (S-1.43, `reference/chat-decisions.md`
+   rule 5): run `dev-code` on each approved issue, one after the other, in the order of
+   `rank_issues.py`, each with its own PR and hand-off. An issue that got an open "Blocked by"
+   link meanwhile: one line in the chat with its blocker, and on to the next. No window
+   available, or the run is automated: nothing is approved, and the summary above is the
+   hand-off, as before.
 
 ## Golden rules
 
@@ -300,7 +306,7 @@ keeps them: edit it in the headings it already has.
 - A decision comes only from Dolev himself (`reference/chat-decisions.md`).
 - A comment is for questions only (the question path). A change Dolev asks for is an edit to
   the plan with a line in its log, and content for another issue is an edit to that issue.
-- At most three issues per run.
+- At most three issues planned per run. Approved plans then run `dev-code` one after the other (step 8).
 - Split for size, link for dependency. An issue merges into another, on Dolev's OK, only when
   it has no PR of its own, or when two small issues overlap in files, neither has a PR yet,
   and together they are still one PR that can be reviewed on its own (`reference/dependencies.md`).

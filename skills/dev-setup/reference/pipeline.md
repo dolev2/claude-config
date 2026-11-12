@@ -72,7 +72,7 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 |---|---|---|---|
 | `status:explore` | ממתין לתכנון, או לעדכון של תוכנית קיימת | Claude | Claude (Plan) |
 | `status:plan-questions` | Claude שאל שאלה על התוכנית, וממתין לתשובה. גם **משימה ידנית**, שרק דולב יכול לבצע (אין ל-Claude גישה, כמו Netlify ב-#75): מה שעליו לבדוק או לענות כתוב כתיבות בשאלות הפתוחות, ושום סשן קוד או בן של המתזמר לא לוקח אותה (#203) | דולב | דולב |
-| `status:waiting-approval` | התוכנית מוכנה, ממתינה לאישור | דולב | דולב, או Claude על תשובה שלו בחלון השאלות (`chat-decisions.md`) |
+| `status:waiting-approval` | התוכנית מוכנה, ממתינה לאישור | דולב | דולב, או Claude על אישור שלו בצ'אט, שמתחיל גם את הקידוד (`chat-decisions.md`, כלל 5) |
 | `status:ready-to-execute` | מאושר לביצוע | Claude | Claude (Execute) |
 | `status:needs-repair` | חזר לתיקון אחרי בדיקה | Claude | Claude (Execute) |
 | `status:in-review` | Claude סיים, PR פתוח. דולב סוקר, ומבקש מיזוג בצ'אט | דולב | דולב: תיקון (`needs-repair`), או בקשת מיזוג שמפעילה את `dev-ship`. או Claude על תשובה שלו בחלון השאלות |

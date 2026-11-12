@@ -53,7 +53,7 @@ flowchart TD
     APP -- "מאשר ב-GitHub" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
     APP -- "יש לי הסתייגות" --> BACK
     SMALL -. "דולב עוצר אותה" .-> BACK
-    WAIT -- "אישור בצ'אט<br/>התווית עוברת<br/>וציטוט ביומן התוכנית" --> RDY
+    WAIT -- "אישור בצ'אט<br/>התווית עוברת<br/>וציטוט ביומן התוכנית<br/>והקידוד מתחיל באותו סשן" --> RDY
 
     RDY --> EXEC
 

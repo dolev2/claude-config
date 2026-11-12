@@ -542,7 +542,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p>Dolev's decision. An answer or an objection sends it back to dev-plan.</p>
-        <p>When Dolev is in the chat, dev-plan asks at the end of its run in the question window, recommendation first. Clicking "approve" moves it to <code>ready-to-execute</code>, with a line in the plan log. Answering the questions continues the planning in the same run.</p>
+        <p>When Dolev is in the chat, dev-plan asks at the end of its run in the question window, recommendation first. Clicking "approve, start coding" (or approving in free text) moves it to <code>ready-to-execute</code>, with a line in the plan log, and the code starts at once in the same session. Several plans approved together are coded one after the other. An approval on GitHub waits for the next dev-code run. Answering the questions continues the planning in the same run.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>No action.</p>
@@ -562,7 +562,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <p>A task labelled <code>costs-money</code> or <code>paused</code> leaves the ranking, unless Dolev named it. Only Dolev adds and removes <code>paused</code>.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
-        <p><b class="mono">dev-code</b>: exactly one issue per run.</p>
+        <p><b class="mono">dev-code</b>: exactly one issue per run. Plans Dolev approved together in the chat are coded one after the other in the same session, each with its own PR.</p>
         <ul><li>Implements the plan and adds a test for every change.</li><li>In the same PR: a status line, <code>Done (#N)</code>, under the part's heading in the spec, and <code>spec_check.py --no-issues</code>.</li><li>A part several tasks build (<code>פתוח (#12, #13)</code>): each task deletes only its own number, and the last one writes Done. A bug points at the part it breaks, and marks nothing.</li><li>The plan has a cross-task decision: writes it as a page in <code>docs/decisions/</code> in the same PR, and the rule that relies on it points there.</li><li>A bug without a Plan: writes a short plan first. A bug that changes a contract or deletes something goes back to planning.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user experience in the spec part (or the plan), at desktop and phone width. In a cloud session: with Playwright.</li><li>Hands over a PR with a link to the review app. In a cloud session: the app runs in the session.</li><li>In the hand-off: a link to the PR's changes at the top of the message, screenshots in the chat (desktop, plus phone in a cloud session). No screenshot: one line saying why.</li><li>A suggested lesson, only if there was one: at most one, from what happened in the code and the tests, with its source. A second question in the question window, after the merge question. Approving it opens a task for it, and no rule changes until that task's PR is merged. Nobody in the chat: a backlog proposal.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
