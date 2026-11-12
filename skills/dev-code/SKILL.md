@@ -194,8 +194,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
       python "$HOME/.claude/skills/dev-setup/scripts/wait_ci.py" --sha <sha>
       ```
       Its first line: `success`, `failure` (then a line per failed check: name, conclusion,
-      link), `timeout pending`, `timeout not-started`, or `none` (no `pull_request` workflow in
-      the checkout; say "אין CI בריפו" in the hand-off).
+      link), `timeout pending`, `timeout not-started`, `none` (no `pull_request` workflow in
+      the checkout; say "אין CI בריפו" in the hand-off), or `error` (GitHub could not be read;
+      then gh's message: run it once more, and a second `error` is a stuck CI, below).
     - **A review agent**: the `Agent` tool, no `isolation` (it reads this worktree) and no
       cheaper `model`. Its brief holds the full Plan, the spec part, `<sha>`, the diff command
       `git diff origin/<default>...<sha>`, and pointers to the repo's `CLAUDE.md` and the rules
@@ -244,8 +245,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
        id from the check's link), fix it on the same branch, rerun the lint and the touched
        area's suite, push, and run `wait_ci.py` again on the new head. No limit on the rounds.
     2. A failure the branch cannot fix (a missing key, a host the network blocks),
-       `timeout pending` or `timeout not-started`: a comment on the issue (what failed, what
-       was tried, the check's link), the label does not move, and the turn ends with no
+       `timeout pending`, `timeout not-started` or a second `error`: a comment on the issue (what failed, what
+       was tried, the check's link; for `error`, gh's message), the label does not move, and the turn ends with no
        hand-off. The orchestrator brings it to Dolev as a stuck child.
 
     **No hand-off**, for any reason: stop the app and delete the registry file (`reference/review-app.md`): there is nothing to review.

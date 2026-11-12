@@ -127,6 +127,21 @@ def test_main_reads_the_check_runs_of_the_given_sha(tmp_path, monkeypatch, capsy
     assert paths == ["repos/o/r/commits/abc1234/check-runs?per_page=100"]
 
 
+def test_unreadable_check_runs_print_error_with_the_message(
+    tmp_path, monkeypatch, capsys
+):
+    root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
+
+    def api(path):
+        raise SystemExit(f"gh api {path} failed:\nHTTP 403")
+
+    monkeypatch.setattr(wait_ci, "api", api)
+    wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == "error"
+    assert "HTTP 403" in out[-1]
+
+
 @pytest.mark.parametrize(
     "argv",
     [

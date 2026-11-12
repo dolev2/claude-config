@@ -14,6 +14,8 @@ The first line is one word, and the exit is 0 for all of them:
     timeout pending      some checks had not finished after --timeout
     timeout not-started  the repo has a pull_request workflow, but no check showed up
     none                 no workflow of the checkout runs on pull_request; no wait
+    error                then gh's message: GitHub could not be read (a 403, or the
+                         retries of gh_rest ran out), so the result is unknown
 Bad input exits 2. "Green" is decided by `ci_summary`, as for the orchestrator.
 """
 
@@ -118,7 +120,13 @@ def main(argv: list[str] | None = None) -> None:
         path = f"repos/{repo}/commits/{args.sha}/check-runs?per_page=100"
         return api(path)["check_runs"]
 
-    print("\n".join(wait(read_runs, args.interval, args.timeout)))
+    try:
+        lines = wait(read_runs, args.interval, args.timeout)
+    except SystemExit as err:
+        # gh_rest exits with gh's message on a failed call; an exit with no first
+        # line would leave the session without a rule for it (claude-config #336).
+        lines = ["error", str(err.code)]
+    print("\n".join(lines))
 
 
 if __name__ == "__main__":
