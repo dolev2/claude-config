@@ -178,7 +178,8 @@ task for an open part), a small PR writes the status lines, after step 4. The ru
 2. Under the heading of each part: `**מצב:** פתוח (#N)`, or the number added to the line
    already there (`פתוח (#12, #13)`). In a split, the parent's number is replaced by the
    sub-issues' numbers.
-3. `spec_check.py --no-issues` passes, and `spec_check.py --table` shows each part with its
+3. `spec_check.py --toc` rewrites the table of contents, which shows each part's status
+   (`reference/specs.md`), then `spec_check.py --no-issues` passes, and `spec_check.py --table` shows each part with its
    issue (no "is open with no status line" on these parts).
 4. A PR against `<default>` with no `Closes` (no issue closes in it), and a small table in its
    body: part, issue. The merge is `dev-ship`'s, on Dolev's request, as always.

@@ -4,9 +4,16 @@ A spec file holds its table of contents between two markers, right after the ope
 lines. The block is never written by hand: `spec_check.py --toc` writes it from the
 headings, and `spec_check.py` fails when it no longer matches them, so a part that is
 added or renamed always reaches the table of contents in the same PR.
+
+Each part's entry also shows its status line, with links to its issues (S-1.39, #279):
+` · גמור: [#226](...)` or ` · פתוח: [#280](...), [#281](...)`. A part with no status
+line, or out of scope, gets nothing. The links are full URLs: GitHub does not link a bare
+#N inside a .md file, and a relative link breaks on a branch whose name has a "/".
 """
 
 import re
+
+from spec_parse import parse_spec
 
 START = "<!-- toc -->"
 END = "<!-- /toc -->"
@@ -80,28 +87,60 @@ def part_anchors(text: str) -> dict[str, str]:
     }
 
 
-def build(text: str) -> list[str]:
-    """The block between the markers, markers included, for the headings of `text`."""
-    entries = [
-        f"{'  ' * (level - 2)}- [{label(name)}](#{slug})"
-        for level, name, slug in anchored(text)
-    ]
+def issue_links(repo: str, numbers: tuple[int, ...]) -> str:
+    """Links to the issues of `repo`, comma separated: [#N](https://github.com/...)."""
+    return ", ".join(
+        f"[#{number}](https://github.com/{repo}/issues/{number})" for number in numbers
+    )
+
+
+def statuses(text: str, repo: str) -> dict[str, str]:
+    """{part id: the status the entry ends with}, for the done and open parts only."""
+    found = {}
+    for part in parse_spec(text)[0]:
+        if part.status == "done":
+            found[part.id] = f" · גמור: {issue_links(repo, (part.done_issue,))}"
+        elif part.status == "open":
+            found[part.id] = f" · פתוח: {issue_links(repo, part.open_issues)}"
+    return found
+
+
+def build(text: str, repo: str | None = None) -> list[str]:
+    """The block between the markers, markers included, for the headings of `text`.
+
+    `repo` (owner/name) adds each part's status and issues; None builds the older form
+    without them, which `check` still accepts with a warning.
+    """
+    status = statuses(text, repo) if repo else {}
+    entries = []
+    for level, name, slug in anchored(text):
+        part = PART.match(name)
+        tail = status.get(part[1], "") if part else ""
+        entries.append(f"{'  ' * (level - 2)}- [{label(name)}](#{slug}){tail}")
     return [START, TITLE, "", *entries, END]
 
 
-def check(text: str) -> tuple[int, str] | None:
-    """(line, message) when the table of contents is missing or stale, else None."""
+def check(text: str, repo: str) -> tuple[int, str] | None:
+    """(line, message) when the table of contents is missing, old or stale, else None.
+
+    Line 0 is a warning: no block at all, or a block in the older form without the
+    status that still matches the headings, so a repo whose spec predates it keeps a
+    green CI until `--toc` runs there (#279).
+    """
     lines = text.splitlines()
     found = region(lines)
     if found is None:
         return 0, f"no table of contents: run spec_check.py --toc to add {START}"
     start, end = found
-    if lines[start : end + 1] != build(text):
-        return start + 1, "the table of contents is stale: run spec_check.py --toc"
-    return None
+    block = lines[start : end + 1]
+    if block == build(text, repo):
+        return None
+    if block == build(text):
+        return 0, "the table of contents has no status: run spec_check.py --toc"
+    return start + 1, "the table of contents is stale: run spec_check.py --toc"
 
 
-def write(text: str) -> str:
+def write(text: str, repo: str) -> str:
     """`text` with its table of contents rebuilt; a file with none gets one.
 
     A new block goes before the first ## heading, after the opening lines.
@@ -112,5 +151,5 @@ def write(text: str) -> str:
         at = len(lines) if first is None else first
         lines[at:at] = [START, END, ""]
     start, end = region(lines)
-    block = build("\n".join(lines))
+    block = build("\n".join(lines), repo)
     return "\n".join([*lines[:start], *block, *lines[end + 1 :]]) + "\n"
