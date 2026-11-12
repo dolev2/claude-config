@@ -34,7 +34,8 @@ gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5
 4. The first check shows Dolev the opening picture: what opens now, what waits on a blocker or
    on a shared file, and what waits for him. Then one line per approved proposal (`proposals`,
    S-2.14), with its stage in words: `waiting` "מחכה לבן אפיון", `writing` "בכתיבה",
-   `questions` "שאלות", `review` "אפיון לסקירה", `breakdown` "פירוק לאישור".
+   `questions` "שאלות", `review` "אפיון לסקירה", `breakdown` "פירוק לאישור", `replan` "חוזרת
+   לתכנון" (an open spec part already names it, `parts`: it is that part's task, #334).
 
 ## Each check
 
@@ -108,7 +109,9 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    An issue a planning child sent to `status:backlog` (no open spec part, `dev-plan` step 2) is
    a line in the summary of step 6, "חזר לבקלוג: אין חלק באפיון". Its milestone stays, so
    `sprint_state.py` already lists it in `proposals`, and it gets a spec child through step 4
-   like any approved proposal (S-2.14). It is not a question in the window.
+   like any approved proposal (S-2.14). It is not a question in the window. Once an open spec
+   part names it (`פתוח (#N)`), its stage is `replan` instead: no spec child and no breakdown,
+   but the question of step 5 (#334).
 4. **Dispatch.** While fewer than 3 of this repo's children are active and nobody is in overage
    (any child, or this session's own `get_session`: overage is per account): one child per
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
@@ -146,7 +149,9 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       breakdown;
    4. a breakdown to approve (`proposals`, stage `breakdown`): the list of issues `dev-issue`
       would open, with the proposal's milestone (S-2.14). It is asked again every check until
-      Dolev answers, since a check keeps no memory;
+      Dolev answers, since a check keeps no memory. A proposal in stage `replan` is asked the
+      same way, never as a breakdown: it is the task of the parts in `parts`, so "להחזיר
+      לתכנון (מומלץ)" first, then "להוריד מהספרינט" (#334);
    5. the coding children held by the WIP gate (step 4): one question, the issues in
       `status:in-review`, and which held issues to open anyway (`multiSelect`, one option
       per issue), with "wait" first;
@@ -169,7 +174,14 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    check (as step 4 says, still one spec at a time: the other proposals stay held while this
    PR is open) to write the answer into the file on the same branch (`dev-spec`,
    step 8, a revision). Breakdown approved: `dev-issue` breaks the spec down here ("פירוק
-   אפיון"), the new tasks in the proposal's milestone, and closes the proposal. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
+   אפיון"), the new tasks in the proposal's milestone, and closes the proposal. Back to
+   planning (`replan`): first the body, with the editing rules of `reference/issue-body.md`:
+   no `אפיון:` line in "הקשר / קישורים", or one that does not name its parts, gets
+   `אפיון: <the spec file> <its parts>` there (without it, the planning gate sends the issue
+   back to the backlog again). Then `status:backlog` → `status:explore`, a comment naming its
+   parts, and a planning child next check, like any `explore` issue. Off the sprint: its
+   milestone is removed (his choice in the window), so it is no longer a proposal and is not
+   asked again. Merge: `dev-ship` on that issue here, then `orchestrate.md`, "מיזוג", and one
    line that this is a good moment for `/compact`, with the full command in a code block as the
    global `CLAUDE.md` says ("מה פתוח": `/compact` and the summary that must survive;
    `hooks/compact_after_merge.py` blocks the turn's end once without it). A fix:

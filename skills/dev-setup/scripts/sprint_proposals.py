@@ -1,9 +1,10 @@
 """The approved proposals of a sprint and the stage of each, for sprint_state.py.
 
 S-2.14 (claude-config #296): a backlog proposal Dolev put in the sprint's milestone is
-approved for a spec, with no new label (docs/decisions/296-sprint-milestone-approves-
-proposal.md). The orchestrator sends it a spec child before any other child, one at a
-time, since every spec child writes the repo's one spec file and its table of contents.
+approved for a spec, with no new label (docs/decisions/334-open-part-is-a-task-not-a-
+proposal.md, which replaces 296). The orchestrator sends it a spec child before any
+other child, one at a time, since every spec child writes the repo's one spec file and
+its table of contents.
 
 The stage of a proposal is read from the spec PRs that reference it (`claude/spec-*`,
 `Refs #N`), which sprint_github.spec_prs() reads; here they are passed in, so the logic
@@ -13,6 +14,10 @@ is tested without a network:
     writing    a child is working on it (--claimed)
     questions  an open spec PR whose "שאלות פתוחות" section has an unticked box
     review     an open spec PR with no open question: a merge question
+    replan     an open spec part already names it (`פתוח (#N)`), and no open spec PR:
+               it is that part's task, sent back to the backlog by the planning gate
+               before the part existed. Not broken down and no spec child: the
+               orchestrator asks Dolev to send it back to planning (#334)
     breakdown  a merged spec PR, and the proposal is still open: the breakdown waits
                for Dolev's approval
 """
@@ -55,11 +60,14 @@ def has_open_question(pr_body: str) -> bool:
     return bool(UNTICKED.search(section(sections(pr_body), QUESTION_HEADINGS)))
 
 
-def stage(prs: list[dict], is_claimed: bool) -> tuple[str, dict | None]:
+def stage(
+    prs: list[dict], is_claimed: bool, parts: list[str] | None = None
+) -> tuple[str, dict | None]:
     """(stage, the spec PR it is read from or None), from the proposal's spec PRs.
 
     `prs` are [{number, state, branch, body, headSha}], state "open", "merged" or
     "closed". A PR closed without a merge counts for nothing: the proposal waits again.
+    `parts` are the open spec parts whose status line names the issue.
     """
     specs = [pr for pr in prs if pr["branch"].startswith(SPEC_BRANCH)]
     open_pr = next((pr for pr in specs if pr["state"] == "open"), None)
@@ -70,6 +78,8 @@ def stage(prs: list[dict], is_claimed: bool) -> tuple[str, dict | None]:
         return (
             "questions" if has_open_question(open_pr["body"]) else "review"
         ), open_pr
+    if parts:
+        return "replan", None
     if merged:
         return "breakdown", merged
     return "waiting", None
@@ -80,13 +90,18 @@ def proposals(
     sprint: str,
     claimed: list[int],
     spec_prs_of: Callable[[int], list[dict]],
+    open_parts: dict[int, list[str]] | None = None,
 ) -> list[dict]:
-    """Every approved proposal of the sprint, by number: {number, title, stage, pr}."""
+    """Every approved proposal of the sprint, by number: {number, title, stage, pr,
+    parts}, with `parts` the open spec parts that name it (`open_parts`, by issue).
+    """
+    open_parts = open_parts or {}
     found = []
     for node in sorted(nodes, key=lambda n: n["number"]):
         if not is_proposal(node, sprint):
             continue
-        name, pr = stage(spec_prs_of(node["number"]), node["number"] in claimed)
+        parts = open_parts.get(node["number"], [])
+        name, pr = stage(spec_prs_of(node["number"]), node["number"] in claimed, parts)
         found.append(
             {
                 "number": node["number"],
@@ -94,6 +109,7 @@ def proposals(
                 "stage": name,
                 "pr": pr["number"] if pr else None,
                 "head_sha": pr["headSha"] if pr else None,
+                "parts": parts,
             }
         )
     return found

@@ -103,6 +103,21 @@ def test_stage(prs, claimed, expected):
     assert (name, found["number"] if found else None) == expected
 
 
+@pytest.mark.parametrize(
+    ("prs", "claimed", "expected"),
+    [
+        ([], False, ("replan", None)),
+        ([pr(state="merged")], False, ("replan", None)),
+        ([pr()], False, ("review", 40)),
+        ([], True, ("writing", None)),
+    ],
+    ids=["no-pr", "merged-pr-is-no-breakdown", "open-pr-wins", "claimed-wins"],
+)
+def test_stage_of_an_issue_an_open_part_names(prs, claimed, expected):
+    name, found = sprint_proposals.stage(prs, claimed, ["S-2.3"])
+    assert (name, found["number"] if found else None) == expected
+
+
 def test_a_box_outside_the_questions_section_is_no_question():
     body = "### מה נוסף\n- [ ] a part\n\n### שאלות פתוחות\n_אין._\n"
     assert not sprint_proposals.has_open_question(body)
@@ -116,6 +131,16 @@ def test_proposals_are_by_number_with_their_stage():
     assert [(p["number"], p["stage"], p["pr"]) for p in found] == [
         (3, "review", 40),
         (7, "writing", None),
+    ]
+
+
+def test_proposals_carry_the_open_parts_that_name_them():
+    found = sprint_proposals.proposals(
+        [node(3), node(6)], "W1", [], lambda n: [], {6: ["S-2.3"]}
+    )
+    assert [(p["number"], p["stage"], p["parts"]) for p in found] == [
+        (3, "waiting", []),
+        (6, "replan", ["S-2.3"]),
     ]
 
 

@@ -74,6 +74,7 @@ def run(
     branches=None,
     pr_files=None,
     spec_prs=None,
+    open_parts=None,
 ):
     branches = branches or {}
     pr_files = pr_files or {}
@@ -87,6 +88,7 @@ def run(
         lambda number: set(pr_files.get(number, ())),
         lambda number: spec_prs.get(number, []),
         SPEC,
+        open_parts=open_parts,
     )
 
 
@@ -392,6 +394,8 @@ def fake_github(monkeypatch, nodes):
     monkeypatch.setattr(sprint_state, "current_repo", lambda: "acme/widgets")
     monkeypatch.setattr(sprint_state, "open_issue_nodes", lambda repo, with_body: nodes)
     monkeypatch.setattr(sprint_state, "api", lambda path: {"default_branch": "main"})
+    monkeypatch.setattr(sprint_state, "repo_specs", lambda base: {})
+    monkeypatch.setattr(sprint_state, "spec_prs", lambda repo, number: [])
 
 
 def test_a_failing_git_leaves_null_shas_and_the_rest_of_the_state(
@@ -481,13 +485,29 @@ def test_specs_not_read_is_one_gap_and_the_check_goes_on(monkeypatch):
         raise ValueError("unknown revision origin/main")
 
     monkeypatch.setattr(sprint_state, "repo_specs", broken)
-    assert sprint_state.spec_gaps_or_warning([], "main") == [
-        {
-            "path": None,
-            "line": None,
-            "message": "spec files not read: unknown revision origin/main",
-        }
-    ]
+    assert sprint_state.specs_or_warning("main") == (
+        {},
+        "spec files not read: unknown revision origin/main",
+    )
+
+
+@pytest.mark.parametrize("flag", [["--spec"], []])
+def test_main_reports_specs_not_read_only_with_the_flag(
+    flag, tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(pipeline_shas, "PIPELINE_URL", str(tmp_path / "missing"))
+    monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
+    fake_github(monkeypatch, [node(3, "backlog")])
+
+    def broken(base):
+        raise OSError("no git")
+
+    monkeypatch.setattr(sprint_state, "repo_specs", broken)
+    sprint_state.main(flag)
+    result = json.loads(capsys.readouterr().out)
+    assert result["proposals"][0]["stage"] == "waiting"
+    gap = {"path": None, "line": None, "message": "spec files not read: no git"}
+    assert result.get("spec_gaps") == ([gap] if flag else None)
 
 
 # S-1.3 (#295): paused issues, and the new order of dispatch.
@@ -554,7 +574,7 @@ def test_a_proposal_gets_a_spec_child_before_a_repair_and_a_bug():
     assert spec["status"] == "spec"
     assert spec["prompt"] == "תכתוב אפיון ל-#3"
     assert result["proposals"] == [
-        {"number": 3, "title": "issue 3", "stage": "waiting", "pr": None}
+        {"number": 3, "title": "issue 3", "stage": "waiting", "pr": None, "parts": []}
     ]
 
 
@@ -614,3 +634,56 @@ def test_a_sprint_with_no_proposal_has_the_same_dispatch_as_before():
     before = sprint_state.state(nodes, "W1", [], no_pr_status)
     assert before["proposals"] == []
     assert run(*nodes) == before
+
+
+# #334: a backlog issue that an open spec part already points at is a task to plan
+# again, not a proposal (dolev2/job-search#6, after a merged spec PR that only
+# mentioned it).
+
+
+@pytest.mark.parametrize(
+    "prs", [[], [spec_pr(24, "merged")]], ids=["no-spec-pr", "merged-spec-pr"]
+)
+def test_a_backlog_issue_an_open_part_points_at_goes_back_to_planning(prs):
+    result = run(node(6, "backlog"), spec_prs={6: prs}, open_parts={6: ["S-2.3"]})
+    assert result["proposals"] == [
+        {
+            "number": 6,
+            "title": "issue 6",
+            "stage": "replan",
+            "pr": None,
+            "parts": ["S-2.3"],
+        }
+    ]
+    assert result["dispatch"] == [] and result["held_by_overlap"] == []
+    assert result["merge_queue"] == []
+
+
+def test_a_replan_holds_no_other_proposal_back():
+    result = run(node(3, "backlog"), node(6, "backlog"), open_parts={6: ["S-2.3"]})
+    assert numbers(result["dispatch"]) == [3]
+    assert result["held_by_overlap"] == []
+
+
+def test_open_parts_maps_each_issue_to_the_open_parts_that_name_it():
+    text = (
+        "# R\n\n## S-1.1 · a\n**מצב:** פתוח (#6, #7)\n\n"
+        "## S-1.2 · b\n**מצב:** Done (#8)\n\n## S-1.3 · c\n**מצב:** פתוח (#6)\n"
+    )
+    expected = {6: ["S-1.1", "S-1.3"], 7: ["S-1.1"]}
+    assert sprint_state.open_parts({SPEC: text}) == expected
+
+
+@pytest.mark.parametrize("flag", [["--spec"], []])
+def test_main_reads_the_open_parts_with_or_without_the_flag(
+    flag, tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(pipeline_shas, "PIPELINE_URL", str(tmp_path / "missing"))
+    monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
+    fake_github(monkeypatch, [node(6, "backlog")])
+    text = "# R\n\n## S-2.3 · a\n**מצב:** פתוח (#6)\n"
+    monkeypatch.setattr(sprint_state, "repo_specs", lambda base: {SPEC: text})
+    sprint_state.main(flag)
+    result = json.loads(capsys.readouterr().out)
+    assert result["proposals"][0]["stage"] == "replan"
+    assert result["dispatch"] == []
