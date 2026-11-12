@@ -31,7 +31,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 ## Execute
 
-1. Check the WIP gate before starting a **new** issue (repairs are exempt):
+1. Check the WIP gate before starting a **new** issue (repairs are exempt). A named issue
+   labelled `paused` gets the question of step 2 first, before this gate:
    ```bash
    gh issue list --state open --label "status:in-review" --json number,title,url
    ```
@@ -40,12 +41,19 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    why an orchestrator child skips this step): `reference/git-flow.md`.
 
 2. Find the work. If Dolev named a specific issue, take that one, even outside the current
-   sprint (say so). Otherwise, **inside the current sprint only**, repair first, then bugs,
+   sprint (say so); a named issue labelled `paused` is asked about first (below). Otherwise, **inside the current sprint only**, repair first, then bugs,
    then the sprint order (`reference/dependencies.md`; the sprint scope: `reference/pipeline.md`):
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py" --status needs-repair --status ready-to-execute
    ```
    An empty list means the sprint is clear. Say so and stop.
+
+   **A named issue labelled `paused`:** before anything else, even the WIP gate of step 1 and
+   the blocked check, ask the question of `reference/chat-decisions.md` ("משימה מושהית שדולב
+   ביקש במספר"; the reason: `pause_reason.py <N>`), unless it was already asked for this request (rule 5
+   there: `dev-next` asked, or a plan approved in the window after "להמשיך בלי להסיר").
+   "לא להתחיל": the chat line of rule 4 there, and stop. No window: write the question and
+   stop (rule 6 there).
 
    **Skip blocked issues and umbrellas**, named or not. Take the first row, top down, without
    `BLOCKED by` and without `UMBRELLA` (an issue with an open sub-issue is not worked on

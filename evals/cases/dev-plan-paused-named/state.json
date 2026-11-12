@@ -1,0 +1,26 @@
+{
+  "repo": "acme/demo",
+  "default_branch": "main",
+  "milestones": [
+    {
+      "title": "Sprint 1"
+    }
+  ],
+  "issues": {
+    "12": {
+      "title": "ברכה לשם ריק",
+      "labels": [
+        "task",
+        "area:core",
+        "status:explore",
+        "paused"
+      ],
+      "milestone": "Sprint 1",
+      "body": "### מה רוצים\n\nכשהשם ריק, `greet` מחזירה \"Hello, stranger\" במקום \"Hello, \".\n\n### הקשר / קישורים\n\n1. נמצא בשימוש בדף הבית.\n\nאפיון: docs/specs/demo.md S-1.1\n\n---\n### Plan\n\n_טרם נכתבה תוכנית._\n\n### שאלות פתוחות\n\n_אין._\n",
+      "comments": [
+        "סיבת השהיה: מחכים להחלטה על הטקסט של הברכה מהלקוח."
+      ]
+    }
+  },
+  "pulls": {}
+}
