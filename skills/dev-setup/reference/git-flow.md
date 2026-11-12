@@ -107,4 +107,5 @@
 - **לפני כל merge, גם ה-CI**, אם יש ב-repo workflow שרץ על PR. ב-repo פרטי בחשבון חינמי אין branch
   protection, ו-PR אדום ניתן ל-merge. לכן מחכים: `gh pr checks <N> --watch --fail-fast`.
   אין checks בכלל (`no checks reported`): לציין את זה בדיווח, ולהמשיך על סמך הבדיקות המקומיות.
-  בסשן ענן `gh pr checks` לא רץ: נרשמים להתראות של ה-PR (`subscribe_pr_activity`), כמו בשורה שלו בטבלה של `cloud.md`.
+  בסשן ענן `gh pr checks` לא רץ. הסשן שממזג (`dev-ship`, המתזמר) נרשם להתראות של ה-PR (`subscribe_pr_activity`).
+  `dev-code` ו-`dev-spec` מחכים ל-CI ב-`wait_ci.py` ברקע, בכל סביבה, ולא נרשמים: אירועי PR מגיעים רק לסשן אחד (#336, השורה בטבלה של `cloud.md`).

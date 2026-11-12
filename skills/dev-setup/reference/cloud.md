@@ -101,7 +101,7 @@ REPO=https://github.com/dolev2/claude-config
 | `gh pr view` (`--json state,headRefName,headRefOid,mergeable,mergeStateStatus`) | `gh api R/pulls/<N>`: `.state` ו-`.merged`, `.head.ref`, `.head.sha`, `.mergeable`, `.mergeable_state` (`clean`, `dirty`, `behind`, `blocked`, `unstable`). `MERGEABLE` הוא `.mergeable == true` |
 | `gh pr view --json closingIssuesReferences` | אין שדה כזה ב-REST: ה-issues מה-`Closes #<N>` ב-`.body` של `R/pulls/<N>` |
 | `gh pr list` (`--head`, `--state`, `--search`) | `gh api "R/pulls?state=open&head=<owner>:<branch>"` (`state` כמו ב-`--state`: `open`, `closed` או `all`). חיפוש לפי issue: ה-timeline, כמו בשורה של `closedByPullRequestsReferences` |
-| `gh pr checks --watch` | `subscribe_pr_activity`, ומסיימים את התור: האירוע `check_suite.completed` מעיר את הסשן. אחריו, ולבדיקה חד-פעמית: `gh api R/commits/<sha>/check-runs` |
+| `gh pr checks --watch` | ב-`dev-code` וב-`dev-spec`: `wait_ci.py --sha <head>` ב-Bash עם `run_in_background`, והיציאה שלו מעירה את הסשן (#336). `subscribe_pr_activity` רק בסשן שממזג (`dev-ship`, המתזמר). לבדיקה חד-פעמית: `gh api R/commits/<sha>/check-runs` |
 | `gh pr merge --squash` | `mcp__github__merge_pull_request` עם `merge_method: "squash"` ו-`expectedHeadSha`, בלי `commit_title`. `hooks/ask_before_merge.py` מקפיץ חלון אישור לפני מיזוג שדולב לא ביקש בהודעה האחרונה שלו (claude-config #135, #301). את ה-branch ב-GitHub מוחקת ההגדרה של הריפו, כמו מחוץ לענן (`git-flow.md`) |
 | ה-GraphQL של `issue-body.md` (sub-issues ומי שמפנה) | `gh api R/issues/<N>/sub_issues`, ו-`R/issues/<N>/timeline` (אירועי `cross-referenced`) |
 | Blocked by ו-sub-issue (`dependencies.md`, `dev-issue`) | כבר REST: רצים כמו שהם |
