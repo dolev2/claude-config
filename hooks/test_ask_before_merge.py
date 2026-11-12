@@ -134,6 +134,8 @@ def test_api_merge_asks(monkeypatch, command):
         "echo 5 | xargs gh pr merge",
         "exec gh pr merge 5",
         "gh pr -R o/r merge 5",
+        "gh pr merge 5 -b -R",
+        "gh pr merge 5 --body -R --squash",
         "gh pr view 5 # check first\ngh pr merge 5",
         "gh api --hostname github.com graphql -f query='mutation{mergePullRequest}'",
         "gh api -X POST graphql -f query='mutation{mergePullRequest(input:{}){x}}'",
@@ -196,6 +198,21 @@ def test_script_run_prints_the_decision():
     )
     assert result.returncode == 0
     assert_asks(result.stdout.decode("utf-8"))
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("gh pr merge 5", (5, None)),
+        ("gh -R a/b pr merge 5", (5, "a/b")),
+        ("gh pr merge 5 --repo=a/b", (5, "a/b")),
+        ("gh pr merge -R a/b --body -R 5", (5, "a/b")),
+        ("gh pr merge 5 -b -R", (5, None)),
+        ("gh pr merge 5 --auto", None),
+    ],
+)
+def test_gh_merge_target(command, expected):
+    assert ask_before_merge.gh_merge_target(command.split()) == expected
 
 
 def test_ask_decision_reason():

@@ -143,6 +143,28 @@ def test_assignments_are_returned():
         (["gh", "--repo=o/r", "pr", "merge"], ["pr", "merge"]),
         (["gh", "pr", "-R", "o/r", "merge", "5"], ["pr", "merge", "5"]),
         (["env", "gh.exe", "api", "x"], ["api", "x"]),
+        (
+            ["gh", "pr", "merge", "5", "--body", "-R", "--subject", "x"],
+            ["pr", "merge", "5", "--body", "-R", "--subject", "x"],
+        ),
+        (
+            ["gh", "pr", "merge", "5", "-b", "-R", "-t", "x"],
+            ["pr", "merge", "5", "-b", "-R", "-t", "x"],
+        ),
+        (
+            ["gh", "pr", "merge", "5", "-sb", "-R", "-t", "x"],
+            ["pr", "merge", "5", "-sb", "-R", "-t", "x"],
+        ),
+        (
+            ["gh", "pr", "merge", "5", "--body=-R", "x"],
+            ["pr", "merge", "5", "--body=-R", "x"],
+        ),
+        (["gh", "pr", "merge", "5", "-bx", "-R", "o/r"], ["pr", "merge", "5", "-bx"]),
+        (
+            ["gh", "pr", "merge", "5", "--squash", "-R", "o/r"],
+            ["pr", "merge", "5", "--squash"],
+        ),
+        (["gh", "api", "-X", "PUT", "-R", "o/r", "x"], ["api", "-X", "PUT", "x"]),
         (["git", "pr"], None),
         ([], None),
     ],

@@ -56,6 +56,9 @@ def tool_call(command: str, tool: str = "Bash") -> str:
         "gh --repo=a/b pr merge 5 -t x",
         "gh -Ra/b pr merge 5 --subject x",
         "bash -c 'gh -R a/b pr merge 5 -t x'",
+        "gh pr merge 5 --body -R --subject x",
+        "gh pr merge 5 -b -R -t x",
+        "gh pr merge 5 -sb -R --subject x",
     ],
 )
 def test_merge_subject_is_blocked(monkeypatch, command):

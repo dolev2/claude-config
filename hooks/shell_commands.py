@@ -30,6 +30,14 @@ API_OPTIONS_WITH_VALUE = {
     "--input", "-q", "--jq", "-t", "--template", "--hostname", "--cache", "-p",
     "--preview",
 }  # fmt: skip
+# Options of `gh pr merge` and `gh api` whose value is the next word, so a `-R` there is
+# that value and not the repo (claude-config#329). gh reads the next word as the value
+# even when it starts with `-`.
+GH_LONG_OPTIONS_WITH_VALUE = API_OPTIONS_WITH_VALUE | {
+    "--body", "--body-file", "--subject", "--author-email", "--match-head-commit",
+}  # fmt: skip
+# Their one-letter forms; in a group like `-sb`, the letters after one are its value.
+GH_SHORT_OPTIONS_WITH_VALUE = set("AbFtXfHqp")
 
 
 def read_event(raw: str) -> dict | None:
@@ -156,21 +164,40 @@ def gh_subcommand(words: list[str]) -> list[str] | None:
     """The words after `gh`, without `-R`/`--repo` and its value; None when not gh.
 
     gh takes `-R` anywhere after the command group: `gh -R a/b pr merge`, `gh pr -R a/b
-    merge`.
+    merge`. A `-R` that is the value of another option (`--body -R`) is kept.
     """
     words = strip_prefixes(words)
     if not words or PurePath(words[0]).name.lower() not in ("gh", "gh.exe"):
         return None
     kept: list[str] = []
-    skip_value = False
+    skip_repo = keep_value = False
     for word in words[1:]:
-        if skip_value:
-            skip_value = False
+        if keep_value:
+            keep_value = False
+            kept.append(word)
+        elif skip_repo:
+            skip_repo = False
         elif word in ("-R", "--repo"):
-            skip_value = True
+            skip_repo = True
         elif not word.startswith(("-R", "--repo=")):
             kept.append(word)
+            keep_value = takes_next_word(word)
     return kept
+
+
+def takes_next_word(word: str) -> bool:
+    """True when the gh option `word` takes the next word as its value.
+
+    `--body`, `-b` and `-sb` do; `--body=x`, `-bx` and `-sbx` do not.
+    """
+    if word.startswith("--"):
+        return word in GH_LONG_OPTIONS_WITH_VALUE
+    if not word.startswith("-") or word == "-":
+        return False
+    for index, letter in enumerate(word[1:]):
+        if letter in GH_SHORT_OPTIONS_WITH_VALUE:
+            return index == len(word) - 2
+    return False
 
 
 def git_subcommand(words: list[str]) -> tuple[list[str], str, list[str]] | None:
