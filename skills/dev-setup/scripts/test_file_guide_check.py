@@ -187,3 +187,118 @@ def test_the_same_name_in_two_folders_is_not_twice():
 
 def test_no_guide_lists_nothing_twice():
     assert file_guide_check.listed_twice("# repo\n") == []
+
+
+# Several guides: a README per folder, and each file in the nearest one.
+
+
+def guides(texts: dict[str, str], patterns: list[str] | None = None) -> dict[str, str]:
+    return file_guide_check.find_guides(texts, patterns or [])
+
+
+def problems(texts: dict[str, str], files: list[str], patterns=None) -> list[str]:
+    found = guides(texts, patterns)
+    result = file_guide_check.check_guides(found, files, patterns or [])
+    return [message for _, message in result]
+
+
+ROOT = guide("### השורש\n" + TABLE + "| `README.md` | x | y |")
+
+
+def test_one_root_readme_gives_the_same_result_as_before():
+    readme = guide("### השורש\n" + TABLE + "| `app.py` | x | y |\n| `old.py` | x | y |")
+    assert problems({"README.md": readme}, ["README.md", "app.py", "db.py"]) == [
+        "not in the guide: db.py (belongs in README.md)",
+        "in README.md, but no such file: old.py",
+    ]
+
+
+def test_a_file_described_in_its_folder_readme_passes():
+    hooks = guide("### ה-hooks\n" + TABLE + "| `guard.py` | x | y |")
+    files = ["README.md", "hooks/README.md", "hooks/guard.py"]
+    assert problems({"README.md": ROOT, "hooks/README.md": hooks}, files) == []
+
+
+def test_a_file_missing_from_its_folder_readme_points_to_it():
+    hooks = guide("### ה-hooks\n" + TABLE + "| `guard.py` | x | y |")
+    files = ["README.md", "hooks/README.md", "hooks/guard.py", "hooks/new.py"]
+    assert problems({"README.md": ROOT, "hooks/README.md": hooks}, files) == [
+        "not in the guide: hooks/new.py (belongs in hooks/README.md)"
+    ]
+
+
+def test_a_file_the_root_describes_instead_of_its_folder_readme_fails():
+    root = guide("### השורש\n" + TABLE + "| `hooks/guard.py` | x | y |")
+    hooks = guide("### ה-hooks\n" + TABLE + "| `other.py` | x | y |")
+    files = ["README.md", "hooks/README.md", "hooks/guard.py", "hooks/other.py"]
+    assert problems({"README.md": root, "hooks/README.md": hooks}, files) == [
+        "in hooks/README.md, but described in README.md: hooks/guard.py",
+        "not in the guide: hooks/guard.py (belongs in hooks/README.md)",
+    ]
+
+
+def test_a_file_in_a_subfolder_without_a_readme_belongs_to_the_folder_above():
+    setup = guide("### `scripts/`\n" + TABLE + "| `lint.py` | x | y |")
+    files = ["README.md", "skills/setup/README.md", "skills/setup/scripts/lint.py"]
+    assert problems({"README.md": ROOT, "skills/setup/README.md": setup}, files) == []
+
+
+def test_a_readme_without_a_guide_section_is_a_plain_file():
+    spec_format = "# the spec format\n\n| `S-1.1` | x |\n"
+    root = guide("### השורש\n" + TABLE + "| `docs/specs/README.md` | x | y |")
+    texts = {"README.md": root, "docs/specs/README.md": spec_format}
+    assert list(guides(texts)) == ["README.md"]
+    assert problems(texts, ["README.md", "docs/specs/README.md"]) == []
+
+
+def test_a_readme_in_test_data_is_not_read():
+    fixture = guide("### השורש\n" + TABLE + "| `greet.py` | x | y |")
+    texts = {"README.md": ROOT, "evals/fixture/README.md": fixture}
+    patterns = ["evals/fixture/*"]
+    assert list(guides(texts, patterns)) == ["README.md"]
+    files = ["README.md", "evals/fixture/README.md", "evals/fixture/greet.py"]
+    assert problems(texts, files, patterns) == []
+
+
+def test_a_name_twice_in_one_guide_fails_and_in_two_guides_is_described_elsewhere():
+    hooks = guide("### ה-hooks\n" + TABLE + "| `a.py` | x | y |\n| `a.py` | x | z |")
+    assert problems(
+        {"README.md": ROOT, "hooks/README.md": hooks},
+        ["README.md", "hooks/README.md", "hooks/a.py"],
+    ) == ["in hooks/README.md twice: a.py"]
+    root = guide("### `hooks/`\n" + TABLE + "| `a.py` | x | y |")
+    hooks = guide("### ה-hooks\n" + TABLE + "| `a.py` | x | y |")
+    assert problems(
+        {"README.md": root, "hooks/README.md": hooks},
+        ["README.md", "hooks/README.md", "hooks/a.py"],
+    ) == ["in hooks/README.md, but described in README.md: hooks/a.py"]
+
+
+def test_a_gone_file_names_its_readme():
+    docs = guide("### השורש\n" + TABLE + "| `old.md` | x | y |")
+    files = ["README.md", "docs/README.md"]
+    assert problems({"README.md": ROOT, "docs/README.md": docs}, files) == [
+        "in docs/README.md, but no such file: docs/old.md"
+    ]
+
+
+def test_without_a_root_guide_it_is_none():
+    hooks = guide("### ה-hooks\n" + TABLE)
+    found = guides({"hooks/README.md": hooks})
+    assert file_guide_check.check_guides(found, ["hooks/README.md"], []) is None
+
+
+def test_main_fails_on_a_file_its_folder_readme_misses(tmp_path, monkeypatch, capsys):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / "README.md").write_text(ROOT, encoding="utf-8")
+    (tmp_path / "hooks").mkdir()
+    hooks = guide("### ה-hooks\n" + TABLE + "| `guard.py` | x | y |")
+    (tmp_path / "hooks" / "README.md").write_text(hooks, encoding="utf-8")
+    (tmp_path / "hooks" / "guard.py").write_text("", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    assert file_guide_check.main([]) == 0
+    (tmp_path / "hooks" / "new.py").write_text("", encoding="utf-8")
+    assert file_guide_check.main([]) == 1
+    out = capsys.readouterr().out
+    assert "not in the guide: hooks/new.py (belongs in hooks/README.md)" in out
+    assert "file guide in hooks/README.md" in out
