@@ -23,7 +23,8 @@ How a guide is read, so that prose never counts as a row:
   without "/" sits in the folder of the name before it. A name with "*" is a pattern;
 - a row whose first column is a folder names its files in the other columns, by name or
   by name without extension (`AppShell` for AppShell.jsx). The folder alone covers
-  nothing, so a new file in it still needs to be named.
+  nothing, so a new file in it still needs to be named. So a folder table (the root's
+  folder structure) keeps file names out of backticks in its other columns.
 """
 
 import re
@@ -262,7 +263,8 @@ def main(covered_by_pattern: list[str]) -> int:
         to_fix = ", ".join(sorted({readme for readme, _ in problems}))
         print(f"Add a row to the file guide in {to_fix}, or remove the stale one.")
         return 1
-    print(f"file guide complete: {len(guides)} guides")
+    count = f": {len(guides)} guides" if len(guides) > 1 else ""
+    print(f"file guide complete{count}")
     return 0
 
 
