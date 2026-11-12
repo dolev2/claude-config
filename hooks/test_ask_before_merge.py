@@ -200,6 +200,21 @@ def test_script_run_prints_the_decision():
     assert_asks(result.stdout.decode("utf-8"))
 
 
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("gh pr merge 5", (5, None)),
+        ("gh -R a/b pr merge 5", (5, "a/b")),
+        ("gh pr merge 5 --repo=a/b", (5, "a/b")),
+        ("gh pr merge -R a/b --body -R 5", (5, "a/b")),
+        ("gh pr merge 5 -b -R", (5, None)),
+        ("gh pr merge 5 --auto", None),
+    ],
+)
+def test_gh_merge_target(command, expected):
+    assert ask_before_merge.gh_merge_target(command.split()) == expected
+
+
 def test_ask_decision_reason():
     assert_asks(ask_before_merge.ask_decision())
     decision = json.loads(ask_before_merge.ask_decision("סיבה אחרת"))

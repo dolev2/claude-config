@@ -46,6 +46,7 @@ from shell_commands import (
     is_rest_pr_merge,
     read_event,
     shell_command,
+    takes_next_word,
 )
 from shell_split import split_subcommands
 
@@ -159,13 +160,27 @@ def gh_merge_target(words: list[str]) -> tuple[int, str | None] | None:
             positional.append(argument)
     if len(positional) != 1 or not positional[0].isdigit():
         return None
+    return int(positional[0]), merge_repo(words)
+
+
+def merge_repo(words: list[str]) -> str | None:
+    """The `-R`/`--repo` value of a gh command, or None.
+
+    A `-R` that is the value of another option (`--body -R`) is not the repo.
+    """
     repo = None
+    is_value = False
     for index, word in enumerate(words):
-        if word in ("-R", "--repo") and index + 1 < len(words):
+        if is_value:
+            is_value = False
+        elif word in ("-R", "--repo") and index + 1 < len(words):
             repo = words[index + 1]
+            is_value = True
         elif word.startswith("--repo="):
             repo = word.split("=", 1)[1]
-    return int(positional[0]), repo
+        else:
+            is_value = takes_next_word(word)
+    return repo
 
 
 def api_merge_target(arguments: list[str]) -> tuple[int, str | None] | None:
