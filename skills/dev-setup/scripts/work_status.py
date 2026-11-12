@@ -25,10 +25,9 @@ from rank_issues import current_sprint, parse_issue, rank, with_started_umbrella
 from spec_check import issue_spec
 from spec_toc import part_anchors
 from sprint_state import state
-from status_graph import graph
+from status_graph import EMPTY, NO_SPRINT, graph
 
 TITLE_LIMIT = 50
-EMPTY = "אין."
 HEADER = "| משימה | תיאור | סטטוס | אפיון |\n|---|---|---|---|"
 NO_PART = "—"
 RAW = "Accept: application/vnd.github.raw"
@@ -175,18 +174,14 @@ def render(
     ]
     sections = [table("מה מוזג לאחרונה", done_rows, repo, anchors)]
     if sprint is None:
-        sections.append("### מה פתוח בספרינט\n\nאין ספרינט פתוח.")
+        sections.append(f"### מה פתוח בספרינט\n\n{NO_SPRINT}")
         picture = {"blocked": [], "on_hold": [], "waiting_dolev": []}
+        sprint_nodes = None
     else:
         picture = state(nodes, sprint, [], lambda pr: {})
-        sections.append(
-            table(
-                f"מה פתוח בספרינט ({sprint})",
-                sprint_rows(nodes, sprint),
-                repo,
-                anchors,
-            )
-        )
+        rows = sprint_rows(nodes, sprint)
+        sprint_nodes = [issue for *_, issue in rows]
+        sections.append(table(f"מה פתוח בספרינט ({sprint})", rows, repo, anchors))
     sections.append(table("מה חסום", held_rows(nodes, picture), repo, anchors))
     by_number = {n["number"]: n for n in nodes}
     waiting = [
@@ -194,7 +189,7 @@ def render(
         for w in picture["waiting_dolev"]
     ]
     sections.append(table("מה מחכה לדולב", waiting, repo, anchors))
-    sections.append(graph(nodes, sprint, status_he))
+    sections.append(graph(sprint_nodes, nodes, status_he))
     return "\n\n".join(sections)
 
 
