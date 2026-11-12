@@ -1,4 +1,4 @@
-"""The work in the repo at a glance: four Markdown tables, for /status (S-1.41).
+"""The work in the repo at a glance: four tables and a graph, for /status (S-1.41).
 
 Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a logged-in
 `gh`:
@@ -7,10 +7,10 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
     python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --repo owner/name
 
 The tables: what merged last, what is open in the current sprint, what is blocked or
-costs money, and what waits for Dolev. Each row links to the issue's spec part. It only
-reads. The sprint picture comes from
-sprint_state.state(), the same one the orchestrator reads (S-2.2), so nothing here
-ranks or classifies an issue on its own.
+costs money, and what waits for Dolev. Each row links to the issue's spec part. Then the
+sprint's blocking graph, as a Mermaid block (status_graph.py, S-1.48). It only reads.
+The sprint picture comes from sprint_state.state(), the same one the orchestrator
+reads (S-2.2), so nothing here ranks or classifies an issue on its own.
 
 Exit codes: 0 with the tables, or with one sentence when the repo has no pipeline;
 1 when GitHub could not be read, with no tables, so a partial picture never looks whole.
@@ -25,6 +25,7 @@ from rank_issues import current_sprint, parse_issue, rank, with_started_umbrella
 from spec_check import issue_spec
 from spec_toc import part_anchors
 from sprint_state import state
+from status_graph import graph
 
 TITLE_LIMIT = 50
 EMPTY = "אין."
@@ -166,7 +167,7 @@ def render(
     done: list[dict],
     anchors: dict[str, dict[str, str]] | None = None,
 ) -> str:
-    """The four tables as one Markdown text."""
+    """The four tables and the blocking graph as one Markdown text."""
     anchors = anchors or {}
     sprint = current_sprint(nodes)
     done_rows = [
@@ -193,6 +194,7 @@ def render(
         for w in picture["waiting_dolev"]
     ]
     sections.append(table("מה מחכה לדולב", waiting, repo, anchors))
+    sections.append(graph(nodes, sprint, status_he))
     return "\n\n".join(sections)
 
 
