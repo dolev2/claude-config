@@ -48,8 +48,10 @@ keeps them: edit it in the headings it already has.
 
    **A named issue labelled `paused`:** before anything else here, even the blocked check,
    ask the question of `reference/chat-decisions.md` ("משימה מושהית שדולב ביקש במספר";
-   the reason: `pause_reason.py <N>`), unless `dev-next` already asked it for this request.
-   "לא להתחיל", or no window: write the question and stop (rule 6 there).
+   the reason: `pause_reason.py <N>`), unless it was already asked for this request (rule 5
+   there: `dev-next` asked, or a plan approved in the window after "להמשיך בלי להסיר").
+   "לא להתחיל": the chat line of rule 4 there, and stop. No window: write the question and
+   stop (rule 6 there).
 
    **Skip blocked issues** (`reference/dependencies.md`, claude-config #253): a decision in a
    blocker can change the file layout and leave a plan stale. Take rows top down, without

@@ -47,7 +47,8 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    `Paused by Dolev: …` lists them. Never pick one of either (the labels: `reference/pipeline.md`); an issue
    Dolev names labelled `costs-money` works as usual, and its label stays. One labelled `paused`: before anything else, ask the question of
    `reference/chat-decisions.md` ("משימה מושהית שדולב ביקש במספר"; the reason:
-   `pause_reason.py <N>`), then route it in step 3 with his choice. A line `Active, no sprint: …` lists open
+   `pause_reason.py <N>`), then route it in step 3 with his choice. "לא להתחיל", or no window:
+   stop (rules 4 and 6 there). A line `Active, no sprint: …` lists open
    issues in the pipeline (past backlog, short of done) that have no milestone at all: no
    scan reaches them, so step 6 reports them.
 

@@ -50,8 +50,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
    **A named issue labelled `paused`:** before anything else, even the WIP gate of step 1 and
    the blocked check, ask the question of `reference/chat-decisions.md` ("משימה מושהית שדולב
-   ביקש במספר"; the reason: `pause_reason.py <N>`), unless `dev-next` already asked it for this
-   request. "לא להתחיל", or no window: write the question and stop (rule 6 there).
+   ביקש במספר"; the reason: `pause_reason.py <N>`), unless it was already asked for this request (rule 5
+   there: `dev-next` asked, or a plan approved in the window after "להמשיך בלי להסיר").
+   "לא להתחיל": the chat line of rule 4 there, and stop. No window: write the question and
+   stop (rule 6 there).
 
    **Skip blocked issues and umbrellas**, named or not. Take the first row, top down, without
    `BLOCKED by` and without `UMBRELLA` (an issue with an open sub-issue is not worked on
