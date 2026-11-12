@@ -143,8 +143,16 @@ every run.
    - a proposal: `Refs #<N>`, **never `Closes`**: the proposal closes only after the breakdown;
    - a task like #230: `Closes #<N>`, like every task.
    A revision on an open PR: push to it with `git push --force-with-lease`, never a plain
-   `--force`, and update the body. Then `gh pr checks <PR> --watch --fail-fast`; a red PR is not
-   handed over.
+   `--force`, and update the body. Then wait for CI on the pushed head, in the background
+   (`run_in_background`), never `gh pr checks --watch` or `subscribe_pr_activity`:
+   `python "$HOME/.claude/skills/dev-setup/scripts/wait_ci.py" --sha "$(git rev-parse HEAD)"`.
+   A red PR is not handed over. Its first line, as in `dev-code` step 10: `success` hands
+   over, with a "CI" line (green, the head, the fix rounds); `none` hands over at once, saying
+   "אין CI בריפו". In an orchestrator's child (S-2.15): `failure` is fixed on the same branch
+   from the failed job's log, pushed, and waited for again, with no limit on the rounds; a
+   failure the branch cannot fix, `timeout pending`, `timeout not-started` or a second `error` is a comment on
+   the issue (what failed, what was tried, the check's link), and the turn ends with no
+   hand-off.
 
 9. **Hand off.** A task (the second kind) moves to Dolev's turn, with a hand-off comment as in
    `dev-code`:

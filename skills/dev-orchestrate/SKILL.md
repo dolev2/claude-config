@@ -97,8 +97,13 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `--expect` holds the status the previous check saw, from its summary line. Each issue it
    names, or whose status moved since the last check, is checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
    התקדם"). An issue now in `status:in-review` with an open PR, or a proposal with an open spec PR
-   (`proposals`): `subscribe_pr_activity` on it. A spec PR with red CI gets a new spec child
-   on its branch (`reference/orchestrate-spec.md`).
+   (`proposals`) whose child handed off (a comment on the issue with the green PR's link; the
+   proposal stays `status:backlog`): `subscribe_pr_activity` on it. Until a child hands off,
+   it waits for CI itself with `wait_ci.py` (S-2.15). A spec PR whose CI went red after its child handed off
+   (a rebase) gets a new spec child on its branch (`reference/orchestrate-spec.md`); while
+   the child still works, the red is its own to fix. A child's comment that it is stuck on CI
+   (a failure it cannot fix from the branch, or a timeout) is a stuck child in the window
+   (`orchestrate.md`, "באג, קישור או פיצול שבן מצא"), with the failed check and its link.
    A child the check verified as done with its turn (the plan in the body and Dolev's status, a
    planning child that moved its issue to `status:backlog` with the gate's comment,
    a PR with `status:in-review` and the hand-off comment, or a spec child with a green PR

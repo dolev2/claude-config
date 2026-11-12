@@ -187,8 +187,16 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 10. **While CI runs: review the diff and start the app.** Right after the push, note the
     pushed head as `<sha>` (`git rev-parse HEAD`): the review reads that commit, so a fix you
     make meanwhile does not move it. Then, in one message, so all three run at the same time:
-    - **CI**, if the repo has checks: `gh pr checks <N> --watch --fail-fast`, in the background
-      (`run_in_background`). No checks reported: say so.
+    - **CI**, in every environment: `wait_ci.py` on `<sha>`, in the background
+      (`run_in_background`; its exit wakes the session), never `gh pr checks --watch` or
+      `subscribe_pr_activity` (PR events belong to the session that merges):
+      ```bash
+      python "$HOME/.claude/skills/dev-setup/scripts/wait_ci.py" --sha <sha>
+      ```
+      Its first line: `success`, `failure` (then a line per failed check: name, conclusion,
+      link), `timeout pending`, `timeout not-started`, `none` (no `pull_request` workflow in
+      the checkout; say "אין CI בריפו" in the hand-off), or `error` (GitHub could not be read;
+      then gh's message: run it once more, and a second `error` is a stuck CI, below).
     - **A review agent**: the `Agent` tool, no `isolation` (it reads this worktree) and no
       cheaper `model`. Its brief holds the full Plan, the spec part, `<sha>`, the diff command
       `git diff origin/<default>...<sha>`, and pointers to the repo's `CLAUDE.md` and the rules
@@ -222,8 +230,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     it. Wrong: note it with the reason. Right but outside the Plan: do not fix it; propose it
     as a task in the hand-off. Fixes are committed, the lint and the full suite of each area
     a fix touched run again (a file outside every area: all of step 7), and the
-    push is followed by a new `gh pr checks <N> --watch --fail-fast`: the first watch may have
-    finished on the old head. **One review round only**: a fix is not reviewed again. The app
+    push is followed by a new `wait_ci.py` on the new head: the first wait may have finished on
+    the old one. **One review round only**: a fix is not reviewed again. The app
     runs from the worktree, so it picks the fix up; if its server does not reload on its own,
     restart it (`reference/review-app.md`: stop it, then start it again).
 
@@ -232,11 +240,20 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     above. A red PR is never handed to Dolev for review. The same holds when the checks fail
     after a fix: leave the status as it is, and comment on the PR with the exact error.
 
+    **Red CI in an orchestrator's child** (S-2.15), instead of the paragraph above:
+    1. `failure`: read the failed job's log (`gh api repos/<repo>/actions/jobs/<id>/logs`, the
+       id from the check's link), fix it on the same branch, rerun the lint and the touched
+       area's suite, push, and run `wait_ci.py` again on the new head. No limit on the rounds.
+    2. A failure the branch cannot fix (a missing key, a host the network blocks),
+       `timeout pending`, `timeout not-started` or a second `error`: a comment on the issue (what failed, what
+       was tried, the check's link; for `error`, gh's message), the label does not move, and the turn ends with no
+       hand-off. The orchestrator brings it to Dolev as a stuck child.
+
     **No hand-off**, for any reason: stop the app and delete the registry file (`reference/review-app.md`): there is nothing to review.
     No screenshots either.
 
     Go on to step 11 only when the agent has returned, the user-experience check is done, and CI
-    is green on the last push (no checks reported: the agent alone).
+    is green on the last push (`wait_ci.py` printed `success` on it; `none`: the agent alone).
 
 11. Hand off:
     ```bash
@@ -247,7 +264,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     should look at. On a repair round, say which of his points each change addresses. The
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
-    was not checked and why. When the skill evals ran (step 7), a "תרחישי הסקילים" line:
+    was not checked and why. A "CI" line: green, the head it ran on, and how many fix rounds
+    there were (or "אין CI בריפו"). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
     the lines `evals/run.py` printed, and the model. The app's outcome from step 10 goes into that comment and into the
     chat message, with one line on what to open in it. It also has the lesson, in the four
     fields of `reference/lessons.md` under `#### לקח מוצע`, or "אין לקח". Both end with the next step, in one
