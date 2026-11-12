@@ -559,7 +559,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
         <p>A fix (<code>needs-repair</code>), then a bug, is taken before a new task.</p>
         <p>Then the status level: an approved plan before a plan still to write. Inside a level, <code>process</code> first, then a task of an umbrella that has started, and in each group whatever the fewest tasks wait on.</p>
-        <p>A task labelled <code>costs-money</code> or <code>paused</code> leaves the ranking, unless Dolev named it. Only Dolev adds and removes <code>paused</code>.</p>
+        <p>A task labelled <code>costs-money</code> or <code>paused</code> leaves the ranking, unless Dolev named it. <code>paused</code> is added and removed only by Dolev's decision: he adds it himself, or asks Claude to. If he said why, Claude writes the reason in a comment that starts with the fixed prefix <code>סיבת השהיה:</code> ("pause reason:"), kept as is because Claude reads it back.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-code</b>: exactly one issue per run. Plans Dolev approved together in the chat are coded one after the other in the same session, each with its own PR.</p>
