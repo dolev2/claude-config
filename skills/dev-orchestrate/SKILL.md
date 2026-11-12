@@ -135,7 +135,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    questions, most important first (`chat-decisions.md`):
    1. a plan's open questions: the questions themselves. A spec PR's open questions
       (`proposals`, stage `questions`: its unticked boxes) are asked the same way;
-   2. a plan to approve: its "בקצרה", with approve first. Its "איפה באפיון" line goes into the
+   2. a plan to approve: its "בקצרה", with approve first. Its "איפה באפיון" story goes into the
       question as it is, even when the rest is shortened for the phone (#238);
    3. a PR ready to merge (`merge_queue`, CI `success`, `mergeable_state` neither `dirty` nor
       `unknown`; `unknown` is asked again next check): a change

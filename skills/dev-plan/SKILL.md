@@ -160,10 +160,12 @@ keeps them: edit it in the headings it already has.
 
    **Every plan tells Dolev where the task sits in the spec**: the line
    `- **איפה באפיון:**`, right under `- **אפיון:**`; in the full plan of a bug, it comes before
-   "החלטות שמחכות לדולב" and names the Done part the bug breaks. One or two
-   sentences, in business language: the chapter and the group the part sits in, what the part
-   does there and why it matters, and what depends on it or what it depends on, when there is any
-   (the spec's "תלוי ב-S-x.y" lines and the issue's Blocked by). The short plan of a small task
+   "החלטות שמחכות לדולב" and names the Done part the bug breaks. Three to five
+   sentences that tell the change as a short story in its context, in business language, not a
+   list and not a dry summary: the chapter and the group the part sits in and what the chapter
+   does, what problem the part solves and why it matters, and what comes before or after it, when
+   there is any (the spec's "תלוי ב-S-x.y" lines and the issue's Blocked by). One sentence per
+   line, each ending with `\`; they do not count toward the 8-line limit. The short plan of a small task
    has it too. The short plan of a bug (written by `dev-code`) does not: it points at a Done part
    it breaks (`reference/issue-body.md`).
 
