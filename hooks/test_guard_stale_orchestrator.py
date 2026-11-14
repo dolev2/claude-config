@@ -256,6 +256,27 @@ def test_a_child_is_not_a_hand_off(monkeypatch, tmp_path, stale, capsys):
     assert json.loads(run(monkeypatch, stop_event(tmp_path), capsys)[1])
 
 
+def test_an_early_untagged_session_is_not_a_hand_off(
+    monkeypatch, tmp_path, pipeline, capsys
+):
+    start_session(tmp_path, pipeline.baseline)
+    run(monkeypatch, event(tmp_path, NEW_ORCHESTRATOR, "PostToolUse"), capsys)
+    stale = pipeline.commit("rules/new.md")
+
+    assert (
+        stale in json.loads(run(monkeypatch, stop_event(tmp_path), capsys)[1])["reason"]
+    )
+
+
+def test_a_skill_call_with_odd_input_is_not_a_run():
+    entry = {
+        "type": "assistant",
+        "message": {"content": [{"type": "tool_use", "name": "Skill", "input": "x"}]},
+    }
+
+    assert guard.runs_the_skill(entry) is False
+
+
 def test_stop_in_a_regular_session_runs_no_git(monkeypatch, tmp_path, stale, capsys):
     def no_git(cache):
         raise AssertionError("git ran in a regular session")

@@ -87,7 +87,8 @@ def runs_the_skill(entry: object) -> bool:
             if COMMAND.match(str(block.get("text", ""))):
                 return True
         if block.get("type") == "tool_use" and block.get("name") == "Skill":
-            skill = (block.get("input") or {}).get("skill")
+            tool_input = block.get("input")
+            skill = tool_input.get("skill") if isinstance(tool_input, dict) else None
             if isinstance(skill, str) and skill.lstrip("/") == SKILL:
                 return True
     return False
@@ -184,8 +185,11 @@ def before_tool(event: dict) -> str | None:
 
 
 def after_tool(event: dict) -> None:
-    """A session opened without the child tag is the hand-off: mark it."""
+    """A session opened without the child tag, by a stale orchestrator, is the
+    hand-off: mark it. Earlier in the sprint it is not, so the Stop guard stays on."""
     if not is_create_session(event) or is_child_creation(event):
+        return
+    if stale_commit(event) is None:
         return
     marker = session_marker(HANDED_OFF_PREFIX, event.get("session_id"))
     if marker is not None:
