@@ -32,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the size check diffs the PR against its base
 
       - uses: actions/setup-python@v7
         with:
@@ -42,6 +44,11 @@ jobs:
       # The specs in docs/specs/: an error in a file fails, a gap against the issues
       # only warns. A repo with no spec yet only warns (claude-config #226).
       - uses: dolev2/claude-config/skills/dev-setup/actions/spec-check@main
+
+      # A code or skill file the PR moved past about 300 lines gets a warning with the
+      # split questions, and never fails (claude-config #369).
+      - if: github.event_name == 'pull_request'
+        uses: dolev2/claude-config/skills/dev-setup/actions/size-check@main
 
   backend:
     runs-on: ubuntu-latest

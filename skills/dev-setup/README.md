@@ -59,6 +59,7 @@
 | `spec_parse.py` | קורא קובץ אפיון אחד: החלקים ושורת המצב של כל אחד. |
 | `spec_toc.py` | בונה את תוכן העניינים של קובץ אפיון, ובודק שהוא לא התיישן. |
 | `spec_changes.py` | משווה את האפיון בין שני refs, ואומר מה קורה ל-issue של כל חלק שהשתנה. |
+| `size_check.py` | מזהיר על קובץ קוד או סקיל שה-PR העביר את הסף של כ-300 שורות, עם שאלות הפיצול, ולא מכשיל. |
 | `board_views.py` | יוצר את שתי התצוגות של הלוח בהתקנה. |
 | `port_check.py` | בודק אם פורט תפוס ובוחר פורט פנוי, ב-IPv4 וב-IPv6. |
 | `lint_check.py` | מדווח על הגדרות lint, או עותק של בדיקת המדריך, שחסרים או שסטו מהתבנית. |
@@ -69,6 +70,7 @@
 |---|---|
 | `open-questions-gate/` | שער השאלות הפתוחות: `action.yml` מריץ את `check_open_questions.py`. |
 | `spec-check/` | בדיקת האפיונים מ-`tests.yml`: `action.yml` מריץ את `scripts/spec_check.py`. |
+| `size-check/` | אזהרת הגודל ב-PR מ-`tests.yml`: `action.yml` מריץ את `scripts/size_check.py`. |
 | `project-sync/action.yml` | הסנכרון מהתוויות ללוח, בכיוון אחד, שכל ריפו עם לוח קורא לו. |
 | `project-sync/sync_project.py` | נקודת הכניסה של הסנכרון: ההגדרות, הלולאה על ה-issues ומה מודפס. |
 | `project-sync/sync_rules.py` | הכללים של הסנכרון, בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד. |
