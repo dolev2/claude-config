@@ -56,6 +56,7 @@
 | `gh_rest.py` | קורא issues מ-GitHub ב-REST בלבד, כי GraphQL חסום בענן. |
 | `issue_body.py` | קורא את הסעיפים של גוף issue: המטרה, התלות, האפיון והתוכנית. |
 | `spec_check.py` | בודק את קבצי האפיון: שגיאה בקובץ מכשילה, ופער מול ה-issues מזהיר. |
+| `size_check.py` | מזהיר על קובץ קוד או סקיל שה-PR העביר את הסף של כ-300 שורות, עם שאלות הפיצול, ולא מכשיל. |
 | `spec_parse.py` | קורא קובץ אפיון אחד: החלקים ושורת המצב של כל אחד. |
 | `spec_toc.py` | בונה את תוכן העניינים של קובץ אפיון, ובודק שהוא לא התיישן. |
 | `spec_changes.py` | משווה את האפיון בין שני refs, ואומר מה קורה ל-issue של כל חלק שהשתנה. |
@@ -69,6 +70,7 @@
 |---|---|
 | `open-questions-gate/` | שער השאלות הפתוחות: `action.yml` מריץ את `check_open_questions.py`. |
 | `spec-check/` | בדיקת האפיונים מ-`tests.yml`: `action.yml` מריץ את `scripts/spec_check.py`. |
+| `size-check/` | אזהרת הגודל ב-PR מ-`tests.yml`: `action.yml` מריץ את `scripts/size_check.py`. |
 | `project-sync/action.yml` | הסנכרון מהתוויות ללוח, בכיוון אחד, שכל ריפו עם לוח קורא לו. |
 | `project-sync/sync_project.py` | נקודת הכניסה של הסנכרון: ההגדרות, הלולאה על ה-issues ומה מודפס. |
 | `project-sync/sync_rules.py` | הכללים של הסנכרון, בלי קריאות ל-GitHub, כדי שאפשר לבדוק אותם לבד. |

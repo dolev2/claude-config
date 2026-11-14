@@ -1,0 +1,33 @@
+name: Size check
+description: >
+  Warns on a code or skill file that the PR moved past about 300 lines, with the
+  split questions. Never fails. The rules are in skills/dev-setup/scripts/size_check.py.
+
+# One copy for every repo with the pipeline: each repo's tests.yml calls
+# dolev2/claude-config/skills/dev-setup/actions/size-check@main, so a fix merged here
+# reaches all of them at once, like spec-check (claude-config #369).
+#
+# `uses:` downloads this whole repo, so the script is read from its home in scripts/.
+# The calling job must check out its own repo first, with fetch-depth: 0, and run this
+# step on pull_request only: the script diffs the PR against its base.
+
+inputs:
+  base:
+    description: The ref the PR is compared to
+    required: false
+    default: origin/${{ github.base_ref }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check the file sizes
+      shell: bash
+      env:
+        BASE: ${{ inputs.base }}
+        SCRIPT: ${{ github.action_path }}/../../scripts/size_check.py
+      run: |
+        if [ ! -f "$SCRIPT" ]; then
+          echo "::error::size_check.py not found next to the action ($SCRIPT)"
+          exit 1
+        fi
+        python3 "$SCRIPT" --base "$BASE"

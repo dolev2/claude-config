@@ -2,8 +2,9 @@
 
 Three drift checks, kept by a test and not by hand (reference/owners.md): the two
 lifecycle pages, the test commands in .claude/CLAUDE.md and README.md against tests.yml,
-and the files and skills the owners map names. The spec-check action is a uses: step
-with no documented command, and test_spec_check.py covers it.
+and the files and skills the owners map names. The spec-check and size-check actions are
+uses: steps with no documented command; test_spec_check.py and test_size_check.py cover
+them.
 """
 
 import re

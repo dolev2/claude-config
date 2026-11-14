@@ -41,6 +41,10 @@ jobs:
       # The local path: this repo is the action's home, so a change to it runs here first.
       - uses: ./skills/dev-setup/actions/spec-check
 
+      # A code or skill file the PR moved past about 300 lines: a warning that never fails.
+      - if: github.event_name == 'pull_request'
+        uses: ./skills/dev-setup/actions/size-check
+
       - run: python -m pytest skills/dev-setup/scripts hooks evals
 
       # A skill and the held-out eval set never change in one PR (#183).

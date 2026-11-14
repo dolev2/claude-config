@@ -275,6 +275,11 @@ in every step here, **propose and wait for Dolev's yes**; the details are in
 The backlog stays as it is. The move is done when `spec_check.py` warns about no issue without
 a spec line and about no second spec file; until then, step 7 lists what is left.
 
+**The size warning** (S-4.14), in the same look at `tests.yml`: no `size-check` step
+(`grep -n "size-check" .github/workflows/tests.yml`)? Propose the step from the template's
+`files` job, with `fetch-depth: 0` on its checkout, as a diff, and wait for his yes, like
+item 1. A template change reaches no installed repo by itself.
+
 ## Golden rules
 
 - Nothing is written to GitHub before Dolev agrees to the list in step 1.

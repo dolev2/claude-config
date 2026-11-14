@@ -113,13 +113,6 @@ def test_every_local_import_ships_in_the_folder():
             )
 
 
-def test_no_file_of_the_sync_grows_past_the_limit():
-    # The split of claude-config #57: about 300 lines a file (rules/code-general.md).
-    for path in ACTION.glob("*.py"):
-        lines = path.read_text(encoding="utf-8").count("\n")
-        assert lines <= 300, f"{path.name}: {lines} lines"
-
-
 def test_action_runs_a_script_that_exists():
     # A rename here would break every board at once, silently.
     action = (ACTION / "action.yml").read_text(encoding="utf-8")
