@@ -1,4 +1,4 @@
-"""Fails when the file guide in README.md misses a file, or names one gone or twice.
+"""Fails when the file guides miss a file, or name one gone, twice or in another guide.
 
 From the dev-setup template (dolev2/claude-config#89). Each repo keeps a copy at
 .github/file_guide_check.py and runs it in CI and before every PR:
@@ -6,17 +6,25 @@ From the dev-setup template (dolev2/claude-config#89). Each repo keeps a copy at
     python .github/file_guide_check.py
 
 Above the "# --- local ---" line the copy is identical to the template (lint_check.py
-compares that part); below it, the files this repo's guide covers by a sentence.
+compares that part); below it, the files this repo's guides cover by a sentence.
 
-How the guide is read, so that prose never counts as a row:
+Which READMEs are guides, and which files each one covers:
+- a guide is the README.md at the root, and any other README.md with a "מדריך קבצים" /
+  "File guide" section. One that COVERED_BY_PATTERN covers is test data, never a guide;
+- a guide's paths are relative to its own folder;
+- each file belongs to the nearest guide: the deepest one whose folder holds it, else
+  the root's. Only that guide describes it, and a guide needs no row for itself.
+
+How a guide is read, so that prose never counts as a row:
 - only table rows inside the "מדריך קבצים" / "File guide" section;
 - a heading with a folder in backticks ("### `skills/dev-setup/`: ...") is the prefix of
-  the rows under it;
+  the rows under it, inside the guide's folder;
 - first column: paths relative to that prefix. In a cell with several names, a name
   without "/" sits in the folder of the name before it. A name with "*" is a pattern;
 - a row whose first column is a folder names its files in the other columns, by name or
   by name without extension (`AppShell` for AppShell.jsx). The folder alone covers
-  nothing, so a new file in it still needs to be named.
+  nothing, so a new file in it still needs to be named. So a folder table (the root's
+  folder structure) keeps file names out of backticks in its other columns.
 """
 
 import re
@@ -71,15 +79,15 @@ def first_cell_paths(cell: str, prefix: str) -> list[str]:
     return paths
 
 
-def guide_rows(lines: list[str]) -> list[tuple[list[str], list[str]]]:
+def guide_rows(lines: list[str], folder: str = "") -> list[tuple[list[str], list[str]]]:
     """Each table row as (paths in its first column, names in its other columns)."""
     rows = []
-    prefix = ""
+    prefix = folder
     for line in lines:
         heading = HEADING.match(line)
         if heading:
             folders = [n for n in CODE.findall(heading[2]) if n.endswith("/")]
-            prefix = folders[0] if folders else ""
+            prefix = folder + folders[0] if folders else folder
         elif line.lstrip().startswith("|"):
             cells = line.strip().strip("|").split("|")
             names = [n for cell in cells[1:] for n in CODE.findall(cell)]
@@ -114,13 +122,16 @@ def exists(path: str, files: list[str]) -> bool:
 
 
 def check(
-    readme: str, files: list[str], covered_by_pattern: list[str]
+    readme: str, files: list[str], covered_by_pattern: list[str], folder: str = ""
 ) -> tuple[list[str], list[str]] | None:
-    """(files the guide misses, first-column paths that do not exist), or None."""
+    """(files the guide misses, first-column paths that do not exist), or None.
+
+    folder is the guide's own folder ("hooks/"); the root guide's is "".
+    """
     lines = guide_lines(readme)
     if lines is None:
         return None
-    rows = guide_rows(lines)
+    rows = guide_rows(lines, folder)
     missing = [
         file
         for file in files
@@ -147,6 +158,69 @@ def listed_twice(readme: str) -> list[str]:
     return twice
 
 
+def guide_folder(readme: str) -> str:
+    """The folder a guide's paths are relative to: "hooks/" for hooks/README.md."""
+    parent = PurePosixPath(readme).parent.as_posix()
+    return "" if parent == "." else f"{parent}/"
+
+
+def find_guides(texts: dict[str, str], covered_by_pattern: list[str]) -> dict[str, str]:
+    """The guides among the READMEs (path to text): the root's, then the others."""
+    guides = {"README.md": texts.get("README.md", "")}
+    for path, text in sorted(texts.items()):
+        if (
+            path != "README.md"
+            and not any(fnmatchcase(path, p) for p in covered_by_pattern)
+            and guide_lines(text) is not None
+        ):
+            guides[path] = text
+    return guides
+
+
+def nearest_guide(file: str, guides: dict[str, str]) -> str:
+    """The guide a file belongs to: the deepest one whose folder holds it."""
+    holders = [guide for guide in guides if file.startswith(guide_folder(guide))]
+    return max(holders, key=lambda guide: len(guide_folder(guide)))
+
+
+def guide_problems(
+    path: str, result: tuple[list[str], list[str]], owners: dict[str, str]
+) -> list[str]:
+    """One guide's problems: its own files it misses, others' it describes, and gone."""
+    missing, gone = result
+    problems = []
+    for file, owner in owners.items():
+        if owner == path and file in missing:
+            problems.append(f"not in the guide: {file} (belongs in {path})")
+        elif owner != path and file not in missing:
+            problems.append(f"in {owner}, but described in {path}: {file}")
+    return problems + [f"in {path}, but no such file: {name}" for name in gone]
+
+
+def check_guides(
+    guides: dict[str, str], files: list[str], covered_by_pattern: list[str]
+) -> list[tuple[str, str]] | None:
+    """Every problem as (the README to fix, the message); None with no root guide."""
+    results = {
+        path: check(text, files, covered_by_pattern, guide_folder(path))
+        for path, text in guides.items()
+    }
+    if results["README.md"] is None:
+        return None
+    owners = {
+        file: nearest_guide(file, guides)
+        for file in files
+        if file not in guides
+        and not any(fnmatchcase(file, pattern) for pattern in covered_by_pattern)
+    }
+    problems = []
+    for path, result in results.items():
+        messages = guide_problems(path, result, owners)
+        messages += [f"in {path} twice: {name}" for name in listed_twice(guides[path])]
+        problems += [(path, message) for message in messages]
+    return problems
+
+
 def repo_files(root: Path) -> list[str]:
     """Every file git tracks or would track (new files too), relative to the root."""
     # -z: without it git quotes a non-ASCII path ("\327\247..."), which then misses.
@@ -163,7 +237,7 @@ def repo_files(root: Path) -> list[str]:
 
 
 def main(covered_by_pattern: list[str]) -> int:
-    """Print what the guide misses and what it names in vain; 1 if anything, else 0."""
+    """Print what the guides miss and what they name in vain; 1 if anything, else 0."""
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     # encoding: without it Windows decodes a non-ASCII path with the locale codepage.
@@ -175,24 +249,22 @@ def main(covered_by_pattern: list[str]) -> int:
         check=True,
     )
     root = Path(top.stdout.strip())
-    readme = root / "README.md"
-    text = readme.read_text(encoding="utf-8") if readme.exists() else ""
-    result = check(text, repo_files(root), covered_by_pattern)
-    if result is None:
+    files = repo_files(root)
+    readmes = [file for file in files if PurePosixPath(file).name == "README.md"]
+    texts = {file: (root / file).read_text(encoding="utf-8") for file in readmes}
+    guides = find_guides(texts, covered_by_pattern)
+    problems = check_guides(guides, files, covered_by_pattern)
+    if problems is None:
         print('README.md has no "מדריך קבצים" / "File guide" section.')
         return 1
-    missing, gone = result
-    for file in missing:
-        print(f"not in the guide: {file}")
-    for path in gone:
-        print(f"in the guide, but no such file: {path}")
-    twice = listed_twice(text)
-    for path in twice:
-        print(f"in the guide twice: {path}")
-    if missing or gone or twice:
-        print("Add a row to the file guide in README.md, or remove the stale one.")
+    for _, message in problems:
+        print(message)
+    if problems:
+        to_fix = ", ".join(sorted({readme for readme, _ in problems}))
+        print(f"Add a row to the file guide in {to_fix}, or remove the stale one.")
         return 1
-    print("file guide complete")
+    count = f": {len(guides)} guides" if len(guides) > 1 else ""
+    print(f"file guide complete{count}")
     return 0
 
 

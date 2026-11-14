@@ -1,6 +1,7 @@
 # The templates are copied into other repos as is, so keep LF on every checkout.
 * text=auto eol=lf
 
-# The file guide gains a row in most PRs; union keeps both rows on a rebase.
+# The file guides gain a row in most PRs; union keeps both rows on a rebase.
+# No "/" in the pattern, so it holds for every README.md: the root's and each folder's.
 # file_guide_check.py catches the one case it gets wrong: a row both sides edited.
 README.md merge=union

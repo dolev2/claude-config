@@ -7,7 +7,7 @@ description: Installs Dolev's GitHub × Claude Code issue pipeline in the curren
 
 This skill folder is also the shared home of the pipeline: the mechanism every dev-* skill
 follows (`reference/`, with `pipeline.md` as its core), the scripts, the shared actions and the
-templates. What each file is, and why it exists: the file guide in the repo's `README.md`.
+templates. What each file is, and why it exists: the file guide in this folder's `README.md`.
 
 Read `reference/pipeline.md`, `reference/setup.md`, `reference/review-app.md` and
 `reference/tests.md` (how the test commands in `CLAUDE.md` are read) before step 1,
