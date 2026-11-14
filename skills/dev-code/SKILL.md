@@ -172,7 +172,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    `socat` missing (install them, the command in `reference/tests.md`, and run it again),
    no `origin/<default>` to diff against (fetch it), or no result. A failed case is a
    failing test: fix the skill, or the case when the rule changed on purpose (never a case
-   in `evals/holdout/`), and run that case again (`--case <name>`). A stop at the cost
+   in `evals/holdout/`), and run each failed case again, in a run of its own (`--case <name>`,
+   `reference/tests.md`). A stop at the cost
    ceiling is not a failure: say what ran. On Windows it does not run: say so in the
    hand-off.
 
@@ -268,7 +269,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
     was not checked and why. A "CI" line: green, the head it ran on, and how many fix rounds
     there were (or "אין CI בריפו"). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
-    the lines `evals/run.py` printed, and the model. The app's outcome from step 10 goes into that comment and into the
+    the lines `evals/run.py` printed, the model, and a line for each case that ran again, with
+    its result. The app's outcome from step 10 goes into that comment and into the
     chat message, with one line on what to open in it. It also has the lesson, in the four
     fields of `reference/lessons.md` under `#### לקח מוצע`, or "אין לקח". Both end with the next step, in one
     line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
