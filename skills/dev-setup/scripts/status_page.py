@@ -131,9 +131,9 @@ body {{ margin: 0; padding: 16px; background: var(--bg); color: var(--fg);
   font-family: system-ui, sans-serif; }}
 h1 {{ font-size: 1.25rem; margin: 0 0 4px; }}
 .note {{ color: var(--muted); margin: 0 0 4px; font-size: .9rem; }}
-.frame {{ margin-top: 12px; overflow-x: auto; background: var(--frame);
+.frame {{ direction: ltr; margin-top: 12px; overflow-x: auto; background: var(--frame);
   border: 1px solid var(--edge); border-radius: 8px; padding: 8px; }}
-.mermaid {{ direction: ltr; margin: 0; min-width: max-content; }}
+.mermaid {{ direction: ltr; margin: 0; width: max-content; text-align: left; }}
 .lnk {{ color: var(--link); display: inline-block; padding: 4px 2px; }}
 .hot path, path.hot {{ stroke: var(--hot) !important; stroke-width: 3px !important; }}
 </style>
@@ -161,7 +161,10 @@ function highlight(id) {{
 }}
 if (window.mermaid) {{
   mermaid.initialize({{ startOnLoad: false, securityLevel: "loose",
-    theme: dark ? "dark" : "default", flowchart: {{ htmlLabels: true }} }});
+    theme: dark ? "dark" : "default",
+    // Natural size, not shrunk to the screen: on a phone the frame scrolls
+    // sideways, and the links stay big enough to tap (S-1.50).
+    flowchart: {{ htmlLabels: true, useMaxWidth: false }} }});
   mermaid.run().then(() => {{
     document.querySelectorAll("g.node").forEach(g => {{
       const id = (g.id.match(/(n[A-Za-z0-9_]+?)-\\d+$/) || [])[1];
