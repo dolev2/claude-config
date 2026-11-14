@@ -11,8 +11,8 @@ Why there is also a poll
 ------------------------
 `projects_v2_item` webhooks are only delivered for organization-owned projects. This
 project belongs to a user account, so a card dragged on the board produces no event.
-The scheduled run puts it back in the column of its label: sweep_all.py, on an
-hourly schedule, which GitHub runs a few times a day (claude-config #129), for every
+The scheduled run puts it back in the column of its label: sweep_all.py, on a
+15-minute schedule, which GitHub runs a few times a day (claude-config #129), for every
 repo at once from the public dolev2/.github (claude-config #46). The
 same run catches up on an issue event whose run failed.
 
