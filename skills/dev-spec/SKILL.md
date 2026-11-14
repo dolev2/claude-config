@@ -70,6 +70,9 @@ every run.
      ```
      A new part in chapter `<n>` takes the highest `<m>` of that chapter plus one.
    - **A new topic:** a new chapter, numbered the highest `<n>` ever used plus one.
+   - **The chapter's "בריפו:" line** (S-1.38, `docs/specs/README.md`, "שורת בריפו"): a new
+     chapter opens with it, naming the folders it lives in; an existing chapter without it
+     gets it when this run adds parts to it. Folders only, repo-relative, each in backticks.
    - **The repo's first spec:** the file from `templates/spec.md`. It creates `docs/specs/`,
      and the file guide in `README.md` gets a `docs/specs/*.md` row.
    - **More than one spec file** (`spec_check.py` warns "N spec files"): a repo from before
