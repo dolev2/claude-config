@@ -14,6 +14,10 @@ Two kinds of findings, by Dolev's answer on #226:
   files alone (#242), an open part without its line, a part marked out of scope, and
   more than one spec file in a repo not yet merged into one.
 
+A chapter's "בריפו:" line that names a folder the repo does not have is an error, and a
+chapter without the line a warning (S-1.38, spec_repo_line.py); with --ref the folders
+are read from that ref's tree.
+
 A stale table of contents is an error, and a missing one a warning, so that a repo
 whose specs predate it keeps a green CI until `--toc` adds one (spec_toc.py). A block
 in the older form, without each part's status, that still matches the headings is also
@@ -30,12 +34,14 @@ import argparse
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import NamedTuple
 
 import gh_rest
 import issue_body
 import spec_changes
+import spec_repo_line
 import spec_toc
 from spec_parse import Part, parse_spec
 
@@ -317,6 +323,29 @@ def toc_findings(
     return [Finding(path, line, message)], []
 
 
+def folder_test(root: Path, ref: str | None) -> Callable[[str], bool]:
+    """Whether a repo-relative path is a folder: on the disk under `root`, or `ref`."""
+    if not ref:
+        return lambda path: (root / path).is_dir()
+
+    def in_ref(path: str) -> bool:
+        listed = git(root, "ls-tree", "-d", "-z", "--name-only", ref, "--", path)
+        return path in listed.split("\0")
+
+    return in_ref
+
+
+def repo_line_findings(
+    path: str, text: str, is_dir: Callable[[str], bool]
+) -> tuple[list[Finding], list[Finding]]:
+    """(errors, warnings) of the chapters' repo lines in one spec file."""
+    errors, warnings = spec_repo_line.check(text, is_dir)
+    return (
+        [Finding(path, line, message) for line, message in errors],
+        [Finding(path, line, message) for line, message in warnings],
+    )
+
+
 def read_specs(
     root: Path, ref: str | None, repo: str | None = None
 ) -> tuple[dict[str, list[Part]], list[Finding], list[Finding]]:
@@ -335,6 +364,7 @@ def read_specs(
     warnings += files_warning(len(files))
     if files:
         repo = repo_name(root, repo)
+    is_dir = folder_test(root, ref)
     for path, text in files.items():
         specs[path], found = parse_spec(text)
         errors += [Finding(path, line, message) for line, message in found]
@@ -342,6 +372,9 @@ def read_specs(
         toc_errors, toc_warnings = toc_findings(path, text, repo)
         errors += toc_errors
         warnings += toc_warnings
+        line_errors, line_warnings = repo_line_findings(path, text, is_dir)
+        errors += line_errors
+        warnings += line_warnings
     return specs, errors, warnings
 
 

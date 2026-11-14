@@ -467,3 +467,61 @@ def test_no_repo_and_no_origin_exits_with_the_message(repo, flag):
     with pytest.raises(SystemExit) as stop:
         spec_check.main(["--root", str(repo), flag])
     assert stop.value.code == spec_check.gh_rest.NOT_A_REPO
+
+
+CHAPTERED = """# Spec
+
+## פרק 1 · Hooks
+**בריפו:** `hooks/`
+
+### S-1.1 · x
+**מצב:** Done (#3)
+"""
+
+
+def run_script(root: Path, *extra: str) -> subprocess.CompletedProcess:
+    """spec_check.py --no-issues on `root`, as CI runs it."""
+    command = [sys.executable, str(SCRIPT), "--root", str(root), "--repo", REPO]
+    return subprocess.run(
+        [*command, "--no-issues", *extra],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+
+@pytest.fixture
+def chaptered(tmp_path):
+    """A git repo with hooks/ and a spec whose chapter names it; toc written."""
+    run_git(tmp_path, "init", "-q")
+    run_git(tmp_path, "config", "user.email", "test@example.com")
+    run_git(tmp_path, "config", "user.name", "test")
+    (tmp_path / "hooks").mkdir()
+    (tmp_path / "hooks" / "a.py").write_text("", encoding="utf-8")
+    folder = tmp_path / "docs" / "specs"
+    folder.mkdir(parents=True)
+    (folder / "pipeline.md").write_text(CHAPTERED, encoding="utf-8")
+    assert spec_check.main(["--root", str(tmp_path), "--repo", REPO, "--toc"]) == 0
+    run_git(tmp_path, "add", ".")
+    run_git(tmp_path, "commit", "-q", "-m", "spec")
+    return tmp_path
+
+
+def test_renamed_folder_fails_the_check(chaptered):
+    done = run_script(chaptered)
+    assert done.returncode == 0, done.stdout
+    assert "0 warnings" in done.stdout
+    (chaptered / "hooks").rename(chaptered / "guards")
+    done = run_script(chaptered)
+    assert done.returncode == 1
+    assert "`hooks/` is no folder" in done.stdout
+
+
+def test_ref_reads_the_folders_of_the_ref(chaptered):
+    run_git(chaptered, "mv", "hooks", "guards")
+    run_git(chaptered, "commit", "-q", "-m", "rename")
+    assert run_script(chaptered, "--ref", "HEAD~1").returncode == 0
+    done = run_script(chaptered, "--ref", "HEAD")
+    assert done.returncode == 1
+    assert "`hooks/` is no folder" in done.stdout
