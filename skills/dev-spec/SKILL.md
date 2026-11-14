@@ -88,8 +88,8 @@ every run.
    - **a dependency on another part**, written in the part that depends: "תלוי ב-S-1.2". The
      breakdown reads its "Blocked by" links from these lines only, so a dependency that is not
      written is not a link.
-   No file, function or endpoint names, and no code: that is the "how", and it stays for the
-   Plan of each issue. The parts are in the order the work should go. A new part has no status
+   **What, not how:** what a part says, and what it never copies from an owner doc, is the
+   README's "מה, לא איך" section. No code. The "how" stays for the Plan of each issue. The parts are in the order the work should go. A new part has no status
    line: it is open.
    Whenever a list, cases or steps would read better as items, write them as items: the
    README's "סעיפים" section (tight lists, each item starting with a Hebrew word).
@@ -175,7 +175,8 @@ every run.
   A task like #230 comes from `dev-code` instead, like any approved task.
 - Never merge here. The merge is `dev-ship`'s, on his request, and it is the approval.
 - Never invent a requirement or business data; a gap is an open question in the PR body.
-- No file, function or endpoint names in a spec: the "how" belongs to the Plan.
+- A spec says what, not how (the README's "מה, לא איך"): no detail an owner doc holds is
+  copied into it; the "how" belongs to the Plan.
 - One spec per repo, `docs/specs/<repo>.md`; a topic is a chapter in it, never a new file.
 - A part's id never changes and a used number never returns; a dropped part is deleted,
   never marked "מחוץ להיקף".
