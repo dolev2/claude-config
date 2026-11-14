@@ -88,7 +88,7 @@ def test_no_sprint_and_empty_sprint_show_the_chat_line():
     assert NO_SPRINT in page(REPO, None, [], {}, "now")
     empty = page(REPO, layout([], [], status_he), [], {}, "now")
     assert f"<p class='empty'>{EMPTY}</p>" in empty
-    assert "class='mermaid'" not in empty
+    assert "class='graph'" not in empty
 
 
 def test_a_url_cannot_close_the_label():
@@ -102,6 +102,6 @@ def test_a_url_cannot_close_the_label():
 
 def test_the_page_is_rtl_with_both_themes():
     text = build([node(1)])
-    assert '<html lang="he" dir="rtl">' in text
+    assert '<div lang="he" dir="rtl">' in text
     assert "prefers-color-scheme: dark" in text
     assert ':root[data-theme="dark"]' in text

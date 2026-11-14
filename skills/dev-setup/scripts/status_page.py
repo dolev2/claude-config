@@ -105,7 +105,7 @@ def page(
         edges: list[list[str]] = []
     else:
         lines = mermaid_lines(shape, node_links(repo, open_prs(nodes), sessions))
-        body = f"<pre class='mermaid'>{html.escape(chr(10).join(lines))}</pre>"
+        body = f"<pre class='graph'>{html.escape(chr(10).join(lines))}</pre>"
         edges = [[a, b] for a, b in shape["edges"]]
     return TEMPLATE.format(
         title=html.escape(page_title(repo)),
@@ -116,35 +116,37 @@ def page(
     )
 
 
-TEMPLATE = """<!doctype html>
-<html lang="he" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title}</title>
+# The Artifact host wraps the page in its own <html>/<head>/<body>, and draws any
+# <pre class="mermaid"> itself; the graph uses its own class so only this script draws
+# it, with links allowed in the labels.
+TEMPLATE = """<title>{title}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <style>
 :root {{ --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --edge: #d0d7de;
   --hot: #cf222e; --link: #0969da; --frame: #f6f8fa; }}
 @media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{
   --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --edge: #3d444d;
-  --hot: #ff7b72; --link: #4493f8; --frame: #151b23; }} }}
+  --hot: #ff7b72; --link: #4493f8; --frame: #151b23; color-scheme: dark; }} }}
 :root[data-theme="dark"] {{ --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1;
-  --edge: #3d444d; --hot: #ff7b72; --link: #4493f8; --frame: #151b23; }}
-body {{ margin: 0; padding: 16px; background: var(--bg); color: var(--fg);
+  --edge: #3d444d; --hot: #ff7b72; --link: #4493f8; --frame: #151b23;
+  color-scheme: dark; }}
+body {{ margin: 0; padding-block: 16px; background: var(--bg); color: var(--fg);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
   font-family: system-ui, sans-serif; }}
 h1 {{ font-size: 1.25rem; margin: 0 0 4px; }}
 .note {{ color: var(--muted); margin: 0 0 4px; font-size: .9rem; }}
 .frame {{ direction: ltr; margin-top: 12px; overflow-x: auto; background: var(--frame);
   border: 1px solid var(--edge); border-radius: 8px; padding: 8px; }}
-.mermaid {{ direction: ltr; margin: 0; width: max-content; text-align: left; }}
+.graph {{ direction: ltr; margin: 0; width: max-content; text-align: left; }}
 .lnk {{ color: var(--link); display: inline-block; padding: 8px 6px; }}
 .hot path, path.hot {{ stroke: var(--hot) !important; stroke-width: 3px !important; }}
 </style>
-</head>
-<body>
+<div lang="he" dir="rtl">
 <h1>{title}</h1>
 {notes}
 <div class="frame">{body}</div>
+</div>
 <script src="{mermaid}"></script>
 <script>
 const EDGES = {edges};
@@ -175,7 +177,7 @@ if (window.mermaid) {{
     // Natural size, not shrunk to the screen: on a phone the frame scrolls
     // sideways, and the links stay big enough to tap (S-1.50).
     flowchart: {{ htmlLabels: true, useMaxWidth: false }} }});
-  mermaid.run().then(() => {{
+  mermaid.run({{ querySelector: "pre.graph" }}).then(() => {{
     document.querySelectorAll("g.node").forEach(g => {{
       const id = (g.id.match(/(n[A-Za-z0-9_]+?)-\\d+$/) || [])[1];
       g.addEventListener("mouseenter", () => highlight(id));
@@ -186,13 +188,5 @@ if (window.mermaid) {{
     }});
   }});
 }}
-document.addEventListener("click", e => {{
-  const a = e.target.closest("a.lnk");
-  if (!a) return;
-  e.preventDefault();
-  window.open(a.href, "_blank", "noopener");
-}});
 </script>
-</body>
-</html>
 """
