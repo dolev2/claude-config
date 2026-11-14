@@ -135,6 +135,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    and then `--no-issues` passes:
    `python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --toc`, then
    `python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --no-issues`.
+   In claude-config itself, run them from the repo (`skills/dev-setup/scripts/spec_check.py`):
+   the copy in `$HOME/.claude` is the one the session started with, and may be behind `main`.
 
    **While writing, run only the test files of what changed**, never a full suite; a failing
    test reruns alone (`reference/tests.md`). The full run comes once, in
