@@ -62,6 +62,12 @@ def test_sessions_newest_first():
         session("mid", "2026-11-02T00:00:00Z"),
     ]
     assert [e["url"] for e in session_order(entries)] == ["new", "mid", "old"]
+    assert entries[0]["url"] == "old"
+
+
+def test_a_session_without_a_date_comes_last():
+    entries = [{"url": "undated"}, session("dated", "2026-11-01T00:00:00Z")]
+    assert [e["url"] for e in session_order(entries)] == ["dated", "undated"]
 
 
 def test_sessions_not_read_says_so():

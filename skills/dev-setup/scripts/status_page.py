@@ -31,11 +31,14 @@ def page_title(repo: str) -> str:
 
 
 def session_order(entries: list[dict]) -> list[dict]:
-    """The sessions of one issue in the order their links appear on the node."""
-    # TODO(human): return `entries` newest first (S-1.50: "מהחדש לישן"), by each
-    # entry's "created_at" (an ISO 8601 string). Decide what happens to an entry
-    # without "created_at". Don't change the list you were given.
-    return entries
+    """The sessions of one issue, newest first; one with no `created_at` comes last.
+
+    ISO 8601 strings of one format sort as dates. A session with no date still gets
+    its link: hiding it would hide a session that may still be working.
+    """
+    dated = [e for e in entries if e.get("created_at")]
+    undated = [e for e in entries if not e.get("created_at")]
+    return sorted(dated, key=lambda e: e["created_at"], reverse=True) + undated
 
 
 def link(url: str, word: str) -> str:
