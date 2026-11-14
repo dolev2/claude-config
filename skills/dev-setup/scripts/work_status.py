@@ -8,16 +8,22 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 
 The tables: what merged last, what is open in the current sprint, what is blocked or
 costs money, and what waits for Dolev. Each row links to the issue's spec part. Then the
-sprint's blocking graph, as a Mermaid block (status_graph.py, S-1.48). It only reads.
+sprint's blocking graph, as a Mermaid block (status_graph.py, S-1.48). It only reads
+GitHub. With --page it also writes the clickable graph (status_page.py, S-1.50), with
+the session links from the --sessions file, for the status skill to publish.
 The sprint picture comes from sprint_state.state(), the same one the orchestrator
 reads (S-2.2), so nothing here ranks or classifies an issue on its own.
 
 Exit codes: 0 with the tables, or with one sentence when the repo has no pipeline;
-1 when GitHub could not be read, with no tables, so a partial picture never looks whole.
+1 when GitHub could not be read, with no tables, so a partial picture never looks whole;
+2 when the --sessions file is broken.
 """
 
 import argparse
+import json
 import sys
+from datetime import UTC, datetime
+from pathlib import Path
 
 from gh_rest import api_list, current_repo, gh_api, open_issue_nodes, recent_done
 from pipeline_info import REQUIRED_LABELS
@@ -25,7 +31,8 @@ from rank_issues import current_sprint, parse_issue, rank, with_started_umbrella
 from spec_check import issue_spec
 from spec_toc import part_anchors
 from sprint_state import state
-from status_graph import EMPTY, NO_SPRINT, graph
+from status_graph import EMPTY, NO_SPRINT, graph, layout
+from status_page import page
 
 TITLE_LIMIT = 50
 HEADER = "| משימה | תיאור | סטטוס | אפיון |\n|---|---|---|---|"
@@ -193,6 +200,43 @@ def render(
     return "\n\n".join(sections)
 
 
+def sprint_issues(nodes: list[dict]) -> list[dict] | None:
+    """The sprint's open issues in the table's order, or None with no open sprint."""
+    sprint = current_sprint(nodes)
+    if sprint is None:
+        return None
+    return [issue for *_, issue in sprint_rows(nodes, sprint)]
+
+
+def read_sessions(path: str) -> dict[int, list[dict]]:
+    """The sessions file: {"<issue>": [{url, title, created_at}, ...]}, keyed by int.
+
+    Exits 2 with what is wrong, so a broken file never shows as "no sessions".
+    """
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        sessions = {int(number): list(entries) for number, entries in data.items()}
+        for entries in sessions.values():
+            for entry in entries:
+                if not isinstance(entry, dict) or not isinstance(entry.get("url"), str):
+                    raise ValueError(f"a session without a url: {entry!r}")
+        return sessions
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        print(f"קובץ הסשנים {path} לא נקרא: {error}", file=sys.stderr)
+        sys.exit(2)
+
+
+def write_page(
+    path: str, repo: str, nodes: list[dict], sessions: dict[int, list[dict]] | None
+) -> None:
+    """The clickable graph (S-1.50), from the same picture as the chat graph."""
+    issues = sprint_issues(nodes)
+    shape = None if issues is None else layout(issues, nodes, status_he)
+    updated = datetime.now(UTC).isoformat(timespec="minutes")
+    text = page(repo, shape, nodes, sessions, updated)
+    Path(path).write_text(text, encoding="utf-8", newline="\n")
+
+
 def missing_labels(repo: str) -> list[str]:
     """The pipeline labels the repo lacks; none missing means the pipeline is there."""
     names = {label["name"] for label in api_list(f"repos/{repo}/labels?per_page=100")}
@@ -226,12 +270,22 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--repo", help="owner/name; defaults to the repo of the current directory"
     )
+    parser.add_argument(
+        "--page", help="also write the clickable graph page (S-1.50) to this file"
+    )
+    parser.add_argument(
+        "--sessions",
+        help='JSON {"<issue>": [{url, title, created_at}]}: the sessions not archived',
+    )
     args = parser.parse_args(argv)
 
+    sessions = read_sessions(args.sessions) if args.sessions else None
     repo, missing, nodes, done = read(args.repo)
     if missing:
         print(NO_PIPELINE.format(repo=repo))
         return
+    if args.page:
+        write_page(args.page, repo, nodes, sessions)
     print(render(repo, nodes, done, read_anchors(repo, nodes + done)))
 
 

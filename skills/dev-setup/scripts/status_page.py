@@ -1,0 +1,192 @@
+"""The clickable blocking graph of /status, as one HTML page (S-1.50).
+
+work_status.py --page writes it from the same layout as the chat graph
+(status_graph.layout), so the page and the chat never disagree. The status skill then
+publishes it to the repo's one fixed page. Nothing here reads GitHub or the sessions:
+the PRs come from the issue nodes, and the sessions are passed in.
+
+On each node, under its status, up to three kinds of link: the issue (always), its
+open PR (when there is one), and each session of the issue that is not archived.
+"""
+
+import html
+import json
+from collections.abc import Callable
+
+from status_graph import EMPTY, NO_SPRINT, mermaid_lines
+
+PAGE_TITLE = "גרף החסימות · {name}"
+SESSIONS_NOT_READ = "רשימת הסשנים לא נקראה, ולכן אין קישורי סשן."
+MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+ISSUE_WORD = "משימה"
+PR_WORD = "PR"
+SESSION_WORD = "סשן"
+
+Sessions = dict[int, list[dict]]
+
+
+def page_title(repo: str) -> str:
+    """The fixed name of the repo's page: the skill finds the page by it."""
+    return PAGE_TITLE.format(name=repo.split("/")[-1])
+
+
+def session_order(entries: list[dict]) -> list[dict]:
+    """The sessions of one issue, newest first; one with no `created_at` comes last.
+
+    ISO 8601 strings of one format sort as dates. A session with no date still gets
+    its link: hiding it would hide a session that may still be working.
+    """
+    dated = [e for e in entries if e.get("created_at")]
+    undated = [e for e in entries if not e.get("created_at")]
+    return sorted(dated, key=lambda e: e["created_at"], reverse=True) + undated
+
+
+def link(url: str, word: str) -> str:
+    """One small link, safe inside a quoted Mermaid label.
+
+    Single quotes around the URL, since the label itself is in double quotes; the URL
+    and the word are escaped so neither can close the label or the tag.
+    """
+    safe = html.escape(url.replace("#", "%23"), quote=True)
+    return f"<a class='lnk' href='{safe}' target='_blank' rel='noopener'>{word}</a>"
+
+
+def node_links(
+    repo: str, prs: dict[str, list[int]], sessions: Sessions | None
+) -> Callable[[str], str]:
+    """For a ref, the links that go under its status on the page."""
+
+    def links(ref: str) -> str:
+        if "/" in ref:
+            owner_repo, number = ref.split("#")
+            return link(f"https://github.com/{owner_repo}/issues/{number}", ISSUE_WORD)
+        number = int(ref.lstrip("#"))
+        parts = [link(f"https://github.com/{repo}/issues/{number}", ISSUE_WORD)]
+        parts += [
+            link(f"https://github.com/{repo}/pull/{pr}", f"{PR_WORD} {pr}")
+            for pr in prs.get(ref, [])
+        ]
+        for index, entry in enumerate(session_order((sessions or {}).get(number, []))):
+            word = SESSION_WORD if index == 0 else f"{SESSION_WORD} {index + 1}"
+            parts.append(link(entry["url"], word))
+        return " · ".join(parts)
+
+    return links
+
+
+def open_prs(nodes: list[dict]) -> dict[str, list[int]]:
+    """The open PRs that close each issue, as `#N` → [PR numbers]."""
+    return {
+        f"#{n['number']}": [pr["number"] for pr in n.get("closingPullRequests") or []]
+        for n in nodes
+    }
+
+
+def page(
+    repo: str,
+    shape: dict | None,
+    nodes: list[dict],
+    sessions: Sessions | None,
+    updated: str,
+) -> str:
+    """The whole page. `shape` is a status_graph.layout(), or None with no sprint.
+
+    A sprint with no open issue has an empty layout; both cases show the chat's line
+    instead of a graph. `sessions` is None when the list was not read.
+    """
+    notes = [
+        f"<span id='updated' data-at='{html.escape(updated, quote=True)}'>"
+        f"עודכן: {html.escape(updated)}</span>"
+    ]
+    if sessions is None:
+        notes.append(SESSIONS_NOT_READ)
+    if shape is None or not shape["refs"]:
+        body = f"<p class='empty'>{NO_SPRINT if shape is None else EMPTY}</p>"
+        edges: list[list[str]] = []
+    else:
+        lines = mermaid_lines(shape, node_links(repo, open_prs(nodes), sessions))
+        body = f"<pre class='graph'>{html.escape(chr(10).join(lines))}</pre>"
+        edges = [[a, b] for a, b in shape["edges"]]
+    return TEMPLATE.format(
+        title=html.escape(page_title(repo)),
+        notes="".join(f"<p class='note'>{note}</p>" for note in notes),
+        body=body,
+        edges=json.dumps(edges),
+        mermaid=MERMAID_URL,
+    )
+
+
+# The Artifact host wraps the page in its own <html>/<head>/<body>, and draws any
+# <pre class="mermaid"> itself; the graph uses its own class so only this script draws
+# it, with links allowed in the labels.
+TEMPLATE = """<title>{title}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root {{ --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --edge: #d0d7de;
+  --hot: #cf222e; --link: #0969da; --frame: #f6f8fa; }}
+@media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{
+  --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --edge: #3d444d;
+  --hot: #ff7b72; --link: #4493f8; --frame: #151b23; color-scheme: dark; }} }}
+:root[data-theme="dark"] {{ --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1;
+  --edge: #3d444d; --hot: #ff7b72; --link: #4493f8; --frame: #151b23;
+  color-scheme: dark; }}
+body {{ margin: 0; padding-block: 16px; background: var(--bg); color: var(--fg);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  font-family: system-ui, sans-serif; }}
+h1 {{ font-size: 1.25rem; margin: 0 0 4px; }}
+.note {{ color: var(--muted); margin: 0 0 4px; font-size: .9rem; }}
+.frame {{ direction: ltr; margin-top: 12px; overflow-x: auto; background: var(--frame);
+  border: 1px solid var(--edge); border-radius: 8px; padding: 8px; }}
+.graph {{ direction: ltr; margin: 0; width: max-content; text-align: left; }}
+.lnk {{ color: var(--link); display: inline-block; padding: 8px 6px; }}
+.hot path, path.hot {{ stroke: var(--hot) !important; stroke-width: 3px !important; }}
+</style>
+<div lang="he" dir="rtl">
+<h1>{title}</h1>
+{notes}
+<div class="frame">{body}</div>
+</div>
+<script src="{mermaid}"></script>
+<script>
+const EDGES = {edges};
+const chosen = document.documentElement.dataset.theme;
+const dark = chosen ? chosen === "dark"
+  : matchMedia("(prefers-color-scheme: dark)").matches;
+const stamp = document.getElementById("updated");
+if (stamp && stamp.dataset.at) {{
+  const at = new Date(stamp.dataset.at);
+  if (!isNaN(at)) stamp.textContent = "עודכן: " + at.toLocaleString("he-IL");
+}}
+function nodeId(ref) {{
+  return "n" + ref.replace(/^#/, "").replace(/[^A-Za-z0-9]/g, "_");
+}}
+function edgePaths(a, b) {{
+  return document.querySelectorAll(
+    `[id^="L_${{a}}_${{b}}_"], [id^="L-${{a}}-${{b}}-"]`);
+}}
+function highlight(id) {{
+  document.querySelectorAll(".hot").forEach(e => e.classList.remove("hot"));
+  if (!id) return;
+  for (const [a, b] of EDGES.map(e => e.map(nodeId)))
+    if (a === id || b === id) edgePaths(a, b).forEach(p => p.classList.add("hot"));
+}}
+if (window.mermaid) {{
+  mermaid.initialize({{ startOnLoad: false, securityLevel: "loose",
+    theme: dark ? "dark" : "default",
+    // Natural size, not shrunk to the screen: on a phone the frame scrolls
+    // sideways, and the links stay big enough to tap (S-1.50).
+    flowchart: {{ htmlLabels: true, useMaxWidth: false }} }});
+  mermaid.run({{ querySelector: "pre.graph" }}).then(() => {{
+    document.querySelectorAll("g.node").forEach(g => {{
+      const id = (g.id.match(/(n[A-Za-z0-9_]+?)-\\d+$/) || [])[1];
+      g.addEventListener("mouseenter", () => highlight(id));
+      g.addEventListener("mouseleave", () => highlight(null));
+      g.addEventListener("click", e => {{
+        if (!e.target.closest("a")) highlight(id);
+      }});
+    }});
+  }});
+}}
+</script>
+"""
