@@ -29,6 +29,8 @@ def test_valid_line_with_many_folders_has_no_findings():
         ("/etc/", "absolute path"),
         ("C:/x/", "absolute path"),
         ("../other/", "leaves the repo"),
+        ("./", "repo root"),
+        ("S-1.2", "folders only"),
     ],
 )
 def test_bad_path_is_an_error_with_the_line_and_the_path(path, reason):
