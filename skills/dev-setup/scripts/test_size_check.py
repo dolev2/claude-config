@@ -48,8 +48,8 @@ def commit(repo: Path, files: dict[str, str | None], tag: str | None = None) -> 
 def run(repo: Path, base: dict, head: dict) -> list[tuple]:
     commit(repo, base, tag="base")
     commit(repo, head)
-    diff = size_check.git("diff", "--name-only", "base...HEAD").stdout.split()
-    return size_check.findings("base", diff)
+    diff = size_check.git("diff", "--name-status", "-M", "-z", "base...HEAD").stdout
+    return size_check.findings("base", size_check.changed_paths(diff))
 
 
 def test_a_code_file_that_crosses_the_limit_warns(repo):
@@ -103,6 +103,19 @@ def test_a_deleted_file_does_not_warn_or_crash(repo):
     assert run(repo, {"app.py": lines(400), "keep.py": "x\n"}, {"app.py": None}) == []
 
 
+def test_a_moved_file_already_over_the_limit_does_not_warn(repo):
+    found = run(
+        repo, {"old/app.py": lines(400)}, {"old/app.py": None, "new/app.py": lines(400)}
+    )
+    assert found == []
+
+
+def test_a_path_with_a_space_and_a_colon_is_checked_and_escaped(repo):
+    found = run(repo, {}, {"my app:v2.py": lines(301)})
+    assert found == [("my app:v2.py", None, 301)]
+    assert size_check.warning(*found[0]).startswith("::warning file=my app%3Av2.py::")
+
+
 def test_the_run_exits_0_with_a_warning_and_writes_the_summary(repo, tmp_path_factory):
     commit(repo, {"app.py": lines(10)}, tag="base")
     commit(repo, {"app.py": lines(350)})
@@ -116,7 +129,7 @@ def test_the_run_exits_0_with_a_warning_and_writes_the_summary(repo, tmp_path_fa
     )
     assert result.returncode == 0
     assert result.stdout.startswith("::warning file=app.py::")
-    assert "`app.py`: 10 ← 350" in summary.read_text(encoding="utf-8")
+    assert "הקובץ `app.py`: 10 ← 350" in summary.read_text(encoding="utf-8")
 
 
 def test_an_unknown_base_exits_non_zero_with_a_message(repo):

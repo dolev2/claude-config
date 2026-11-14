@@ -66,13 +66,34 @@ def line_count(ref: str, path: str) -> int | None:
     return len(shown.stdout.splitlines()) if shown.returncode == 0 else None
 
 
-def findings(base: str, files: list[str]) -> list[tuple[str, int | None, int]]:
+def changed_paths(name_status: str) -> list[tuple[str, str]]:
+    """(path in base, path at HEAD) from `git diff --name-status -M -z`.
+
+    A renamed file is counted at its old path in base, so a move of a long file is not
+    read as a new one.
+    """
+    fields = name_status.split("\0")
+    pairs, i = [], 0
+    while i < len(fields) - 1:
+        status = fields[i]
+        if status[:1] in ("R", "C"):
+            pairs.append((fields[i + 1], fields[i + 2]))
+            i += 3
+        else:
+            pairs.append((fields[i + 1], fields[i + 1]))
+            i += 2
+    return pairs
+
+
+def findings(
+    base: str, pairs: list[tuple[str, str]]
+) -> list[tuple[str, int | None, int]]:
     """(path, lines in base, lines at HEAD) for each checked file that crossed."""
     found = []
-    for path in files:
+    for old, path in pairs:
         if not is_checked(path):
             continue
-        before, after = line_count(base, path), line_count("HEAD", path)
+        before, after = line_count(base, old), line_count("HEAD", path)
         if crossed(before, after):
             found.append((path, before, after))
     return found
@@ -84,26 +105,28 @@ def warning(path: str, before: int | None, after: int) -> str:
     head = (
         f"עבר את הסף של כ-{LIMIT} שורות ({was} ← {after}). זו נורת אזהרה, לא חובה לפצל."
     )
-    return f"::warning file={path}::" + "%0A".join((head, *QUESTIONS))
+    escaped = path.replace("%", "%25").replace(":", "%3A").replace(",", "%2C")
+    return f"::warning file={escaped}::" + "%0A".join((head, *QUESTIONS))
 
 
 def summary(found: list[tuple[str, int | None, int]]) -> str:
     """The job summary: every file, then the questions once."""
-    rows = [f"- `{p}`: {'חדש' if b is None else b} ← {a} שורות" for p, b, a in found]
-    return "\n".join(
-        ["### קבצים שעברו את הסף של כ-300 שורות", *rows, "", *QUESTIONS, ""]
-    )
+    rows = [
+        f"- הקובץ `{p}`: {'חדש' if b is None else b} ← {a} שורות" for p, b, a in found
+    ]
+    heading = f"### קבצים שעברו את הסף של כ-{LIMIT} שורות"
+    return "\n".join([heading, *rows, "", *QUESTIONS, ""])
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--base", default="origin/main")
     args = parser.parse_args(argv)
-    diff = git("diff", "--name-only", f"{args.base}...HEAD")
+    diff = git("diff", "--name-status", "-M", "-z", f"{args.base}...HEAD")
     if diff.returncode != 0:
         print(f"אי אפשר להשוות ל-{args.base}: {diff.stderr.strip()}", file=sys.stderr)
         return 2
-    found = findings(args.base, diff.stdout.split())
+    found = findings(args.base, changed_paths(diff.stdout))
     if not found:
         print(f"אף קובץ לא עבר את הסף של כ-{LIMIT} שורות ב-PR הזה.")
         return 0
