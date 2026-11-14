@@ -14,7 +14,11 @@ git config --global user.name "Eval"
 git config --global user.email "eval@example.com"
 git config --global init.defaultBranch main
 git init -q --bare "$REMOTE"
-git init -q .
+# The git folder lives apart, in .gitdir, and .git is only a pointer to it: the eval
+# sandbox makes a workspace's .git/worktrees and .git/config read-only, so with a
+# plain .git folder `git worktree add` fails in every run (#372).
+git init -q --separate-git-dir="$WORKSPACE/.gitdir" .
+echo "/.gitdir/" >> .gitdir/info/exclude
 git remote add origin "$REMOTE"
 cp -R "$PLUGIN_DIR/evals/fixture/." .
 git add -A
@@ -63,7 +67,7 @@ PY
   echo "$WORKSPACE/gh-state" > "$HOME/.fake-gh-state"
   # The run mounts placeholders of config files into the workspace (.bashrc, .mcp.json
   # and the like); excluded, so a skill's `git status` sees only the repo's own files.
-  cat >> .git/info/exclude <<'EX'
+  cat >> "$(git rev-parse --git-dir)/info/exclude" <<'EX'
 gh-state/
 /.*
 !/.github/
