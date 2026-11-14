@@ -97,6 +97,7 @@ def test_a_url_cannot_close_the_label():
     assert "<b>" not in line
     assert "'\"" not in line
     assert "%23y" in line
+    assert "&amp;%23" not in line and "&%23" not in line
 
 
 def test_the_page_is_rtl_with_both_themes():

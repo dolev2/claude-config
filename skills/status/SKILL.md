@@ -11,11 +11,14 @@ wrote, and shows what it printed.
 
 ## Step 1: Read the sessions
 
-`mcp__claude-code-remote__list_sessions` with `tags: ["repo:<owner>/<name>"]` (the repo
-of the current directory) and `limit: 100`; drop the archived ones. For each session that
-has an `issue:<N>` tag, one entry under `"<N>"`: `{"url":
-"https://claude.ai/code/<session id>", "title": ..., "created_at": ...}`. Write them, as
-JSON, to `<scratchpad>/status-sessions.json`. The tool is missing, or the call fails: skip
+`mcp__claude-code-remote__list_sessions` with `limit: 100`, page after page (`after_id`
+set to the last `last_id`) while `has_more` is true. Do not pass `tags`: a session cannot
+filter by them (the call fails); read each row's `tags` instead. Keep the rows whose tags
+hold `repo:<owner>/<name>` (the repo of the current directory) and whose
+`session_status` is not `SESSION_STATUS_ARCHIVED`. For each kept row with an
+`issue:<N>` tag, one entry under `"<N>"`: `{"url": "https://claude.ai/code/<id>",
+"title": ..., "created_at": ...}`. Write them, as JSON, to
+`<scratchpad>/status-sessions.json`. The tool is missing, or a call fails: skip
 `--sessions` in step 2; the page then says the sessions were not read.
 
 ## Step 2: Run the script
@@ -28,7 +31,9 @@ python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --page <scratchpa
 
 Only when the script wrote the page (exit 0 with the tables). The page's name is fixed per
 repo: `גרף החסימות · <name>` (`<name>` without the owner).
-1. `Artifact` `action: "list"` with `limit: 200`, and find the row with exactly that title.
+1. `Artifact` `action: "list"` with `limit: 200`, and find the row with exactly that
+   title. Not on this page and the listing gives a `next_page_token`: list again with
+   `page_token` set to it, until the row is found or the listing ends.
 2. Found: `read` it, then `publish` the file with `url` set to it, with no `icon` and no
    `force`. Not found: `publish` it as a new page, with `icon: "chart"`.
 3. The publish failed or was declined: the link line of step 4 says the page was not

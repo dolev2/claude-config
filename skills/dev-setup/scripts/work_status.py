@@ -8,18 +8,21 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 
 The tables: what merged last, what is open in the current sprint, what is blocked or
 costs money, and what waits for Dolev. Each row links to the issue's spec part. Then the
-sprint's blocking graph, as a Mermaid block (status_graph.py, S-1.48). It only reads.
+sprint's blocking graph, as a Mermaid block (status_graph.py, S-1.48). It only reads
+GitHub. With --page it also writes the clickable graph (status_page.py, S-1.50), with
+the session links from the --sessions file, for the status skill to publish.
 The sprint picture comes from sprint_state.state(), the same one the orchestrator
 reads (S-2.2), so nothing here ranks or classifies an issue on its own.
 
 Exit codes: 0 with the tables, or with one sentence when the repo has no pipeline;
-1 when GitHub could not be read, with no tables, so a partial picture never looks whole.
+1 when GitHub could not be read, with no tables, so a partial picture never looks whole;
+2 when the --sessions file is broken.
 """
 
 import argparse
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from gh_rest import api_list, current_repo, gh_api, open_issue_nodes, recent_done
@@ -212,7 +215,12 @@ def read_sessions(path: str) -> dict[int, list[dict]]:
     """
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
-        return {int(number): list(entries) for number, entries in data.items()}
+        sessions = {int(number): list(entries) for number, entries in data.items()}
+        for entries in sessions.values():
+            for entry in entries:
+                if not isinstance(entry, dict) or not isinstance(entry.get("url"), str):
+                    raise ValueError(f"a session without a url: {entry!r}")
+        return sessions
     except (OSError, ValueError, TypeError, AttributeError) as error:
         print(f"קובץ הסשנים {path} לא נקרא: {error}", file=sys.stderr)
         sys.exit(2)
@@ -224,7 +232,7 @@ def write_page(
     """The clickable graph (S-1.50), from the same picture as the chat graph."""
     issues = sprint_issues(nodes)
     shape = None if issues is None else layout(issues, nodes, status_he)
-    updated = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M (UTC%z)")
+    updated = datetime.now(UTC).isoformat(timespec="minutes")
     text = page(repo, shape, nodes, sessions, updated)
     Path(path).write_text(text, encoding="utf-8", newline="\n")
 

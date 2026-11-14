@@ -235,7 +235,10 @@ def test_no_page_without_the_pipeline(monkeypatch, tmp_path):
     assert not target.exists()
 
 
-@pytest.mark.parametrize("content", ["not json", "[1, 2]", '{"x": []}'])
+@pytest.mark.parametrize(
+    "content",
+    ["not json", "[1, 2]", '{"x": []}', '{"1": [5]}', '{"1": [{"title": "t"}]}'],
+)
 def test_a_broken_sessions_file_exits_2(content, capsys, tmp_path):
     sessions = tmp_path / "sessions.json"
     sessions.write_text(content)

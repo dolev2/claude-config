@@ -47,7 +47,7 @@ def link(url: str, word: str) -> str:
     Single quotes around the URL, since the label itself is in double quotes; the URL
     and the word are escaped so neither can close the label or the tag.
     """
-    safe = html.escape(url, quote=True).replace("#", "%23")
+    safe = html.escape(url.replace("#", "%23"), quote=True)
     return f"<a class='lnk' href='{safe}' target='_blank' rel='noopener'>{word}</a>"
 
 
@@ -94,7 +94,10 @@ def page(
     A sprint with no open issue has an empty layout; both cases show the chat's line
     instead of a graph. `sessions` is None when the list was not read.
     """
-    notes = [f"עודכן: {html.escape(updated)}"]
+    notes = [
+        f"<span id='updated' data-at='{html.escape(updated, quote=True)}'>"
+        f"עודכן: {html.escape(updated)}</span>"
+    ]
     if sessions is None:
         notes.append(SESSIONS_NOT_READ)
     if shape is None or not shape["refs"]:
@@ -134,7 +137,7 @@ h1 {{ font-size: 1.25rem; margin: 0 0 4px; }}
 .frame {{ direction: ltr; margin-top: 12px; overflow-x: auto; background: var(--frame);
   border: 1px solid var(--edge); border-radius: 8px; padding: 8px; }}
 .mermaid {{ direction: ltr; margin: 0; width: max-content; text-align: left; }}
-.lnk {{ color: var(--link); display: inline-block; padding: 4px 2px; }}
+.lnk {{ color: var(--link); display: inline-block; padding: 8px 6px; }}
 .hot path, path.hot {{ stroke: var(--hot) !important; stroke-width: 3px !important; }}
 </style>
 </head>
@@ -145,7 +148,14 @@ h1 {{ font-size: 1.25rem; margin: 0 0 4px; }}
 <script src="{mermaid}"></script>
 <script>
 const EDGES = {edges};
-const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+const chosen = document.documentElement.dataset.theme;
+const dark = chosen ? chosen === "dark"
+  : matchMedia("(prefers-color-scheme: dark)").matches;
+const stamp = document.getElementById("updated");
+if (stamp && stamp.dataset.at) {{
+  const at = new Date(stamp.dataset.at);
+  if (!isNaN(at)) stamp.textContent = "עודכן: " + at.toLocaleString("he-IL");
+}}
 function nodeId(ref) {{
   return "n" + ref.replace(/^#/, "").replace(/[^A-Za-z0-9]/g, "_");
 }}
