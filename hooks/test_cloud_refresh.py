@@ -1,9 +1,12 @@
 """cloud_refresh.py: a cloud session's ~/.claude moves to the latest main, safely."""
 
 import importlib.util
+import io
+import json
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -195,3 +198,49 @@ def test_report_from_the_command_line(setup, tmp_path):
 
     assert run.returncode == 1
     assert run.stdout == "not refreshed: uncommitted changes\n"
+
+
+def run_hook(monkeypatch, home: Path, tmp_path: Path, **kwargs) -> Path:
+    """The hook, with a SessionStart event on stdin; the session's baseline marker."""
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path / "tmp"))
+    event = json.dumps({"session_id": "s-1", "hook_event_name": "SessionStart"})
+    monkeypatch.setattr(sys, "stdin", io.TextIOWrapper(io.BytesIO(event.encode())))
+    run_main(monkeypatch, home, **kwargs)
+    return tmp_path / "tmp" / "claude-hooks" / "session-start-s-1"
+
+
+def test_baseline_is_the_head_after_the_refresh(monkeypatch, setup, tmp_path):
+    home, work = setup
+    commit(work, "v2\n")
+    new_main = git(work, "rev-parse", "HEAD").strip()
+
+    marker = run_hook(monkeypatch, home, tmp_path)
+
+    assert marker.read_text(encoding="utf-8") == new_main
+
+
+def test_baseline_is_not_overwritten(monkeypatch, setup, tmp_path):
+    # SessionStart runs again after /compact, and settings.json is not reloaded then.
+    home, work = setup
+    marker = run_hook(monkeypatch, home, tmp_path)
+    first = marker.read_text(encoding="utf-8")
+    commit(work, "v2\n")
+
+    run_hook(monkeypatch, home, tmp_path)
+
+    assert marker.read_text(encoding="utf-8") == first
+
+
+def test_no_baseline_outside_a_cloud_session(monkeypatch, setup, tmp_path):
+    home, _ = setup
+
+    assert not run_hook(monkeypatch, home, tmp_path, remote=None).exists()
+
+
+def test_no_baseline_from_report(monkeypatch, setup, tmp_path, capsys):
+    home, _ = setup
+
+    marker = run_hook(monkeypatch, home, tmp_path, argv=["--report"])
+
+    assert not marker.exists()
+    assert capsys.readouterr().out.startswith("refreshed ")

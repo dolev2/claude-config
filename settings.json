@@ -74,6 +74,11 @@
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_main_folder.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_stale_orchestrator.py\"",
+            "timeout": 60
           }
         ]
       },
@@ -89,6 +94,11 @@
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/block_merge_subject.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_stale_orchestrator.py\"",
+            "timeout": 60
           }
         ]
       },
@@ -99,6 +109,11 @@
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_create_session.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_stale_orchestrator.py\"",
+            "timeout": 60
           }
         ]
       },
@@ -153,6 +168,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__.*__create_session",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_stale_orchestrator.py\"",
+            "timeout": 60
+          }
+        ]
       }
     ],
     "Stop": [
@@ -162,6 +187,11 @@
             "type": "command",
             "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/compact_after_merge.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$(command -v python3 || command -v python)\" \"$HOME/.claude/hooks/guard_stale_orchestrator.py\"",
+            "timeout": 60
           }
         ]
       }

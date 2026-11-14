@@ -17,15 +17,26 @@ happened (claude-config#192). Then it prints one line and exits with a code:
 
 The reasons: not a cloud session, not a claude-config checkout, uncommitted changes,
 fetch failed, checkout failed, git timed out, git failed.
+
+As the hook, after the refresh it also writes the session's baseline marker: the HEAD of
+~/.claude, which is what the session loaded its CLAUDE.md, rules and settings from
+(guard_stale_orchestrator.py; claude-config#271). It writes it only when there is none:
+SessionStart runs again after /compact, and settings.json is not reloaded then. --report
+writes no marker: it runs mid-session, after the session loaded its rules.
 """
 
+import json
 import os
+import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 REPO = "dolev2/claude-config"
 GIT_TIMEOUT_SECONDS = 20
+BASELINE_PREFIX = "session-start"
+UNSAFE_ID_CHARACTERS = re.compile(r"[^A-Za-z0-9-]")
 
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess:
@@ -36,6 +47,37 @@ def git(root: Path, *args: str) -> subprocess.CompletedProcess:
         timeout=GIT_TIMEOUT_SECONDS,
         env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
     )
+
+
+def session_marker(prefix: str, session_id: object) -> Path | None:
+    """`<tempdir>/claude-hooks/<prefix>-<id>`; None without a usable session_id."""
+    if not isinstance(session_id, str):
+        return None
+    safe_id = UNSAFE_ID_CHARACTERS.sub("", session_id)
+    if not safe_id:
+        return None
+    return Path(tempfile.gettempdir()) / "claude-hooks" / f"{prefix}-{safe_id}"
+
+
+def read_session_id() -> object:
+    """The session_id of the SessionStart event on stdin; None when there is none."""
+    try:
+        event = json.loads(sys.stdin.buffer.read().decode("utf-8", errors="replace"))
+    except (OSError, ValueError, AttributeError):
+        return None
+    return event.get("session_id") if isinstance(event, dict) else None
+
+
+def write_baseline(root: Path, session_id: object) -> None:
+    """Write the HEAD of root to the session's baseline marker, unless one exists."""
+    marker = session_marker(BASELINE_PREFIX, session_id)
+    if marker is None or marker.exists():
+        return
+    head = git(root, "rev-parse", "-q", "--verify", "HEAD")
+    if head.returncode != 0 or not head.stdout.strip():
+        return
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text(head.stdout.strip(), encoding="utf-8")
 
 
 def checkout_problem(root: Path) -> str | None:
@@ -88,8 +130,13 @@ def main(argv: list[str] | None = None) -> int:
         return report(root)
     if os.environ.get("CLAUDE_CODE_REMOTE") != "true":
         return 0
+    session_id = read_session_id()
     try:
         refresh(root)
+    except (OSError, subprocess.SubprocessError):
+        pass
+    try:
+        write_baseline(root, session_id)
     except (OSError, subprocess.SubprocessError):
         pass
     return 0
