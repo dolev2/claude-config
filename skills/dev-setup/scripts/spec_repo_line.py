@@ -58,8 +58,11 @@ def path_error(path: str, is_dir: Callable[[str], bool]) -> str | None:
         return f"`{path}` is an absolute path: write it relative to the repo root"
     if ".." in clean.split("/"):
         return f"`{path}` leaves the repo with '..': write it from the repo root"
-    if not is_dir(clean.rstrip("/")):
-        return f"`{path}` is no folder in the repo"
+    folder = clean.rstrip("/")
+    if folder in ("", "."):
+        return f"`{path}` is the repo root: name the chapter's own folders"
+    if not is_dir(folder):
+        return f"`{path}` is no folder in the repo (the line names folders only)"
     return None
 
 
