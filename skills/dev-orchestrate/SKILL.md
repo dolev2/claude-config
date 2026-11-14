@@ -82,6 +82,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       running children go on. Then `TaskStop` the background watch, `unsubscribe_pr_activity`
       on every PR this session follows (so the new orchestrator gets their events),
       `ScheduleWakeup` with `stop`, and end the check: no children opened, no merge asked.
+      A block from `guard_stale_orchestrator.py` (opening a child, a merge, or the end of the
+      turn) is the same state: the rules this session loaded are stale. Do the same stop.
    3. `pipeline_sha` moved: `python "$HOME/.claude/hooks/cloud_refresh.py" --report`. Exit 1:
       the same stop, with its reason in plain words. Exit 0: read this skill and the "Read
       first" files again before going on.

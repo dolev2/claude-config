@@ -115,3 +115,24 @@ def test_merge_hook_is_still_wired():
 def test_bad_rule_is_rejected(rule, reason):
     problems = allow_problems([rule], merge_hook_matchers(load_settings()))
     assert any(reason in problem for problem in problems), problems
+
+
+def hook_matchers(settings: dict, event: str, script: str) -> set[str]:
+    """The matchers of `event` that run `script`; "" for an entry with no matcher."""
+    return {
+        entry.get("matcher", "")
+        for entry in settings["hooks"][event]
+        if any(script in hook["command"] for hook in entry["hooks"])
+    }
+
+
+def test_stale_orchestrator_guard_is_wired():
+    settings = load_settings()
+    script = "guard_stale_orchestrator.py"
+    assert hook_matchers(settings, "PreToolUse", script) == {
+        "Bash|PowerShell",
+        "mcp__.*__(merge_pull_request|enable_pr_auto_merge)",
+        "mcp__.*__create_session",
+    }
+    assert hook_matchers(settings, "PostToolUse", script) == {"mcp__.*__create_session"}
+    assert hook_matchers(settings, "Stop", script) == {""}
