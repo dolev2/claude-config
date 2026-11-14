@@ -65,3 +65,19 @@ def test_workspace_status_shows_only_the_repo(tmp_path):
         check=True,
     ).stdout
     assert status == ""
+
+
+def test_demo_repo_can_add_a_worktree(tmp_path):
+    # The eval sandbox makes a workspace's .git/worktrees and .git/config read-only,
+    # so the demo repo keeps its git folder apart and .git is only a pointer (#372).
+    workspace, env = setup_case(tmp_path, "dev-code-ready-issue")
+    assert (workspace / ".git").is_file()
+    added = subprocess.run(
+        ["git", "worktree", "add", str(tmp_path / "wt"), "-b", "claude/issue-12-x"],
+        cwd=workspace,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert added.returncode == 0, added.stderr
