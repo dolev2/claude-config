@@ -198,7 +198,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       `status:in-review`, and which held issues to open anyway (`multiSelect`, one option
       per issue), with "wait" first;
    6. a child blocked on a permission prompt or failed: which session, which tool, and a link;
-   7. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### לקח מוצע`), or
+   7. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### משימות המשך`, `reference/follow-ups.md`), or
       from a `dev-ship` this session ran. Its four fields, with "open a task" first, right after
       its issue's merge question when there is one, otherwise last. **One lesson per window**,
       so with one merge they take at most 2 of the 4. Every lesson not yet asked, from a child
