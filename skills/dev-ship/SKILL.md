@@ -324,8 +324,8 @@ that issue in this session.
 
 **Process tasks** (`reference/process-tasks.md`), only from steps 1–7 of this run: every one
 that passes the filter, with no limit, each a question in a question window of its own (after
-the breakdown question, when there is one), one at a time. From the orchestrator, it
-goes into the orchestrator's next window (`dev-orchestrate`, step 5).
+the breakdown question, when there is one). From the orchestrator, they
+go into the orchestrator's next window (`dev-orchestrate`, step 5).
 
 ## Reporting back
 
