@@ -1,11 +1,11 @@
 ---
 name: status
-description: Shows the work in the current repo at a glance, in four tables — the five issues merged last, the open issues of the current sprint, the issues that are blocked or cost money, and what waits for Dolev — and a Mermaid graph of the sprint's blocking order with each issue's status and labels, by running one script and printing its output as it is, and republishes the same graph as the repo's clickable page, where each node links to its issue, open PR and session. Read-only on GitHub. Use in any of Dolev's repos whenever he types "/status", "סטטוס", "מה המצב", "תן לי סקירה", or asks for an overview of the work. Not for picking the next issue: that is dev-next.
+description: Shows the work in the current repo at a glance, in four tables — the five issues merged last, the open issues of the current sprint, the issues that are blocked or cost money, and what waits for Dolev — and a Mermaid graph of the sprint's blocking order with each issue's status and labels, the issues with an active session first and marked "פעיל", by running one script and printing its output as it is, and republishes the same graph as the repo's clickable page, where each node links to its issue, open PR and session. Read-only on GitHub. Use in any of Dolev's repos whenever he types "/status", "סטטוס", "מה המצב", "תן לי סקירה", or asks for an overview of the work. Not for picking the next issue: that is dev-next.
 ---
 
 # Status
 
-A view of the spec parts S-1.41, S-1.48, S-1.50 and S-1.56 (`docs/specs/claude-config.md`).
+A view of the spec parts S-1.41, S-1.48, S-1.50, S-1.56 and S-1.57 (`docs/specs/claude-config.md`).
 The script holds all the logic; this skill finds the session's first source, reads the
 sessions, runs it, publishes the page it wrote, and shows what it printed.
 
@@ -31,13 +31,12 @@ The overview is always of one repo (S-1.56); the script chooses it.
 
 `mcp__claude-code-remote__list_sessions` with `limit: 100`, page after page (`after_id`
 set to the last `last_id`) while `has_more` is true. Do not pass `tags`: a session cannot
-filter by them (the call fails); read each row's `tags` instead. Keep the rows whose tags
-hold `repo:<owner>/<name>` (the repo of step 0) and whose
-`session_status` is not `SESSION_STATUS_ARCHIVED`. For each kept row with an
-`issue:<N>` tag, one entry under `"<N>"`: `{"url": "https://claude.ai/code/<id>",
-"title": ..., "created_at": ...}`. Write them, as JSON, to
-`<scratchpad>/status-sessions.json`. The tool is missing, or a call fails: skip
-`--sessions` in step 2; the page then says the sessions were not read.
+filter by them (the call fails). Write **every row** of every page, unfiltered, as a JSON
+list, to `<scratchpad>/status-sessions.json`, each with its five fields as the tool gave
+them: `{"id", "title", "tags", "session_status", "created_at"}`. The script decides which
+session belongs to which issue (by its tags or its name) and drops the archived ones
+(`status_sessions.py`). The tool is missing, or a call fails: skip `--sessions` in
+step 2; the output and the page then say the sessions were not read.
 
 ## Step 2: Run the script
 
@@ -59,7 +58,8 @@ repo: `גרף החסימות · <name>` (`<name>` without the owner).
 
 ## Step 4: Show the output
 
-Print the script's output exactly as it is: the repo line (`**הריפו:** ...`), five
+Print the script's output exactly as it is: the repo line (`**הריפו:** ...`), the line
+saying the sessions were not read when step 1 had none (S-1.57), five
 headings, the four tables (each with its rows or the line "אין.") and the blocking graph
 (a `mermaid` block, or one line saying why there is none). Do not rebuild, reorder, filter
 or summarize the rows, and keep the `mermaid` block as it is: the app draws it, and the
@@ -70,8 +70,8 @@ terminal shows it as text. Add nothing between the sections. Under the graph, on
   `dev-setup`. No page. Never fall back to the session's next repo (S-1.56).
 - **Exit 1** (GitHub did not answer): show the message as it is. Never show tables from an
   earlier run, or build them yourself. No page: the one already published stays as it was.
-- **Exit 2** (the sessions file is broken): fix the file, or run again without
-  `--sessions`.
+- **Exit 2** (the sessions file is broken): write it again as step 1 says, or run again
+  without `--sessions`.
 
 Then end with "מה פתוח", as every answer does (global `CLAUDE.md`). When the tables leave the
 next step clear, recommend it there: an issue waiting for Dolev first, otherwise what

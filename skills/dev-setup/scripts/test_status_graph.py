@@ -178,3 +178,37 @@ def test_one_long_label_stays_whole_on_its_own_line():
 
 def test_a_label_with_codes_is_written_safe():
     assert labels_text(['p#1 "x"']) == "p#35;1 #quot;x#quot;"
+
+
+def active_draw(nodes: list[dict], active: set[int]) -> list[str]:
+    in_sprint = [n for n in nodes if n["milestone"]["title"] == "W1"]
+    return mermaid(graph(in_sprint, nodes, status_he, active))
+
+
+def declared(lines: list[str]) -> list[str]:
+    """The node ids in the order they are declared."""
+    return [line.split("[")[0].strip() for line in lines if '["' in line]
+
+
+def test_an_active_node_is_declared_first_and_marked():
+    lines = active_draw([node(1, labels=()), node(2, labels=())], {2})
+    assert declared(lines)[:2] == ["n2", "n1"]
+    assert '  n2["#2<br>issue 2<br>מוכן לקוד · פעיל"]' in lines
+    assert '  n1["#1<br>issue 1<br>מוכן לקוד"]' in lines
+
+
+def test_an_active_node_keeps_the_arrow_from_its_blocker():
+    nodes = [node(1), node(2, blocked_by=[(1, "OPEN")])]
+    assert "  n1 --> n2" in active_draw(nodes, {2})
+
+
+def test_an_active_blocker_outside_the_sprint_is_marked_and_stays():
+    nodes = [node(1, milestone="W2", labels=()), node(2, blocked_by=[(1, "OPEN")])]
+    lines = active_draw(nodes, {1})
+    assert declared(lines) == ["n2", "n1"]
+    assert any(line.startswith("  n1[") and "· פעיל" in line for line in lines)
+
+
+def test_no_active_set_keeps_the_graph_as_it_was():
+    nodes = [node(1), node(2)]
+    assert active_draw(nodes, set()) == mermaid(draw(nodes))

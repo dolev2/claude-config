@@ -14,8 +14,9 @@ sentence saying there is no repo to show. --which prints only the chosen repo.
 The tables: what merged last, what is open in the current sprint, what is blocked or
 costs money, and what waits for Dolev. Each row links to the issue's spec part. Then the
 sprint's blocking graph, as a Mermaid block (status_graph.py, S-1.48). It only reads
-GitHub. With --page it also writes the clickable graph (status_page.py, S-1.50), with
-the session links from the --sessions file, for the status skill to publish.
+GitHub. The --sessions file (status_sessions.py) puts the issues with an active session
+first, marked "פעיל" (S-1.57). With --page it also writes the clickable graph
+(status_page.py, S-1.50), with the session links, for the status skill to publish.
 The sprint picture comes from sprint_state.state(), the same one the orchestrator
 reads (S-2.2), so nothing here ranks or classifies an issue on its own.
 
@@ -26,8 +27,8 @@ with only the repo under --which;
 """
 
 import argparse
-import json
 import sys
+from collections.abc import Collection
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -47,6 +48,7 @@ from spec_toc import part_anchors
 from sprint_state import state
 from status_graph import EMPTY, NO_SPRINT, graph, layout
 from status_page import page
+from status_sessions import ACTIVE_MARK, Sessions, read_sessions
 
 TITLE_LIMIT = 50
 HEADER = "| משימה | תיאור | סטטוס | אפיון |\n|---|---|---|---|"
@@ -69,6 +71,7 @@ REPO_LINE = "**הריפו:** [{repo}](https://github.com/{repo})"
 NO_REPO = "אין ריפו לסקור: התיקייה של הסשן לא בתוך ריפו של GitHub, {reason}."
 NO_SOURCES = "ולסשן אין ריפו במקורות"
 SOURCES_UNREAD = "והמקורות של הסשן לא נקראו"
+SESSIONS_NOT_READ = 'רשימת הסשנים לא נקראה, ולכן אין סימן "פעיל".'
 
 
 def choose_repo(
@@ -146,13 +149,23 @@ Row = tuple[int, str, str, dict]
 
 
 def table(
-    heading: str, rows: list[Row], repo: str, anchors: dict[str, dict[str, str]]
+    heading: str,
+    rows: list[Row],
+    repo: str,
+    anchors: dict[str, dict[str, str]],
+    active: Collection[int] = (),
 ) -> str:
-    """One section: its heading, then the rows, or one line saying there are none."""
+    """One section: its heading, then the rows, or one line saying there are none.
+
+    The issues in `active` (an active session, S-1.57) come first, in the same order
+    among themselves, with "פעיל" after the status, in the same column.
+    """
     if not rows:
         return f"### {heading}\n\n{EMPTY}"
+    rows = sorted(rows, key=lambda row: row[0] not in active)
     lines = [
-        f"| [#{n}](https://github.com/{repo}/issues/{n}) | {short(t)} | {s} "
+        f"| [#{n}](https://github.com/{repo}/issues/{n}) | {short(t)} "
+        f"| {s}{ACTIVE_MARK if n in active else ''} "
         f"| {spec_cell(repo, issue, anchors)} |"
         for n, t, s, issue in rows
     ]
@@ -210,13 +223,17 @@ def render(
     done: list[dict],
     anchors: dict[str, dict[str, str]] | None = None,
     billing: dict | None = None,
+    sessions: Sessions | None = None,
 ) -> str:
     """The four tables and the blocking graph as one Markdown text.
 
     `billing` is the billing flag while it is on (billing_flag.current()): its line
-    comes before the tables (S-1.53).
+    comes before the tables (S-1.53). `sessions` (status_sessions.by_issue) puts the
+    issues with an active session first; None means the list was not read, and a line
+    under the repo line says so (S-1.57).
     """
     anchors = anchors or {}
+    active = set(sessions or {})
     sprint = current_sprint(nodes)
     done_rows = [
         (i["number"], i["title"], f"Done, {i['closed_at'][:10]}", i) for i in done
@@ -230,17 +247,20 @@ def render(
         picture = state(nodes, sprint, [], lambda pr: {})
         rows = sprint_rows(nodes, sprint)
         sprint_nodes = [issue for *_, issue in rows]
-        sections.append(table(f"מה פתוח בספרינט ({sprint})", rows, repo, anchors))
-    sections.append(table("מה חסום", held_rows(nodes, picture), repo, anchors))
+        sections.append(
+            table(f"מה פתוח בספרינט ({sprint})", rows, repo, anchors, active)
+        )
+    sections.append(table("מה חסום", held_rows(nodes, picture), repo, anchors, active))
     by_number = {n["number"]: n for n in nodes}
     waiting = [
         (w["number"], w["title"], status_he(w["status"]), by_number[w["number"]])
         for w in picture["waiting_dolev"]
     ]
-    sections.append(table("מה מחכה לדולב", waiting, repo, anchors))
-    sections.append(graph(sprint_nodes, nodes, status_he))
+    sections.append(table("מה מחכה לדולב", waiting, repo, anchors, active))
+    sections.append(graph(sprint_nodes, nodes, status_he, active))
+    unread = [SESSIONS_NOT_READ] if sessions is None else []
     notice = [billing["notice"]] if billing else []
-    return "\n\n".join([REPO_LINE.format(repo=repo), *notice, *sections])
+    return "\n\n".join([REPO_LINE.format(repo=repo), *unread, *notice, *sections])
 
 
 def sprint_issues(nodes: list[dict]) -> list[dict] | None:
@@ -251,30 +271,13 @@ def sprint_issues(nodes: list[dict]) -> list[dict] | None:
     return [issue for *_, issue in sprint_rows(nodes, sprint)]
 
 
-def read_sessions(path: str) -> dict[int, list[dict]]:
-    """The sessions file: {"<issue>": [{url, title, created_at}, ...]}, keyed by int.
-
-    Exits 2 with what is wrong, so a broken file never shows as "no sessions".
-    """
-    try:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
-        sessions = {int(number): list(entries) for number, entries in data.items()}
-        for entries in sessions.values():
-            for entry in entries:
-                if not isinstance(entry, dict) or not isinstance(entry.get("url"), str):
-                    raise ValueError(f"a session without a url: {entry!r}")
-        return sessions
-    except (OSError, ValueError, TypeError, AttributeError) as error:
-        print(f"קובץ הסשנים {path} לא נקרא: {error}", file=sys.stderr)
-        sys.exit(2)
-
-
 def write_page(
-    path: str, repo: str, nodes: list[dict], sessions: dict[int, list[dict]] | None
+    path: str, repo: str, nodes: list[dict], sessions: Sessions | None
 ) -> None:
     """The clickable graph (S-1.50), from the same picture as the chat graph."""
     issues = sprint_issues(nodes)
-    shape = None if issues is None else layout(issues, nodes, status_he)
+    active = set(sessions or {})
+    shape = None if issues is None else layout(issues, nodes, status_he, active)
     updated = datetime.now(UTC).isoformat(timespec="minutes")
     text = page(repo, shape, nodes, sessions, updated)
     Path(path).write_text(text, encoding="utf-8", newline="\n")
@@ -332,7 +335,8 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "--sessions",
-        help='JSON {"<issue>": [{url, title, created_at}]}: the sessions not archived',
+        help="JSON [{id, title, tags, session_status, created_at}]: every row "
+        "list_sessions returned, unfiltered",
     )
     args = parser.parse_args(argv)
 
@@ -344,7 +348,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.which:
         print(repo)
         return
-    sessions = read_sessions(args.sessions) if args.sessions else None
+    sessions = read_sessions(args.sessions, repo) if args.sessions else None
     missing, nodes, done = read(repo)
     if missing:
         print(NO_PIPELINE.format(repo=repo))
@@ -352,7 +356,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.page:
         write_page(args.page, repo, nodes, sessions)
     anchors = read_anchors(repo, nodes + done)
-    print(render(repo, nodes, done, anchors, billing_flag.current()))
+    print(render(repo, nodes, done, anchors, billing_flag.current(), sessions))
 
 
 if __name__ == "__main__":
