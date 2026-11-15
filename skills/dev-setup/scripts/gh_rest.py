@@ -46,10 +46,19 @@ def repo_from_url(url: str) -> str | None:
     return f"{match[1]}/{match[2]}" if match else None
 
 
+def repo_of_folder() -> str | None:
+    """owner/name of the `origin` remote of the current directory, or None without one.
+
+    None covers a folder outside any repo, a repo with no `origin`, and an `origin`
+    that is not on GitHub.
+    """
+    code, out, _ = run("git", "remote", "get-url", "origin")
+    return repo_from_url(out) if code == 0 else None
+
+
 def current_repo() -> str:
     """owner/name of the `origin` remote of the current directory; exits without one."""
-    code, out, _ = run("git", "remote", "get-url", "origin")
-    repo = repo_from_url(out) if code == 0 else None
+    repo = repo_of_folder()
     if not repo:
         sys.exit(NOT_A_REPO)
     return repo

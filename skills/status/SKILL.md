@@ -5,16 +5,34 @@ description: Shows the work in the current repo at a glance, in four tables — 
 
 # Status
 
-A view of the spec parts S-1.41, S-1.48 and S-1.50 (`docs/specs/claude-config.md`). The
-script holds all the logic; this skill reads the sessions, runs it, publishes the page it
-wrote, and shows what it printed.
+A view of the spec parts S-1.41, S-1.48, S-1.50 and S-1.56 (`docs/specs/claude-config.md`).
+The script holds all the logic; this skill finds the session's first source, reads the
+sessions, runs it, publishes the page it wrote, and shows what it printed.
+
+## Step 0: Which repo
+
+The overview is always of one repo (S-1.56); the script chooses it.
+1. **In a cloud session** (`CLAUDE_CODE_REMOTE=true`): `mcp__claude-code-remote__get_session`
+   with no `session_id`. The first item of `session_context.sources` that has a
+   `git_repository.url` gives `<owner>/<name>` (from the URL, without `.git`): pass it as
+   `--source-repo <owner>/<name>`. No such item: neither flag. The tool is missing or the
+   call fails: `--sources-unread`. Outside the cloud: neither flag.
+2. Run:
+   ```bash
+   python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --which <the flags of 1>
+   ```
+   It prints the chosen `<owner>/<name>`: the repo of the current directory when it is in
+   one, otherwise the source. **Exit 3:** it printed one sentence saying there is no repo
+   to show, and why. Show the sentence, and stop: no other step, no page, no `dev-setup`.
+3. From here on, "the repo" is the one it printed: the `repo:` tag of step 1, `--repo` in
+   step 2, and `<name>` in the page's title.
 
 ## Step 1: Read the sessions
 
 `mcp__claude-code-remote__list_sessions` with `limit: 100`, page after page (`after_id`
 set to the last `last_id`) while `has_more` is true. Do not pass `tags`: a session cannot
 filter by them (the call fails); read each row's `tags` instead. Keep the rows whose tags
-hold `repo:<owner>/<name>` (the repo of the current directory) and whose
+hold `repo:<owner>/<name>` (the repo of step 0) and whose
 `session_status` is not `SESSION_STATUS_ARCHIVED`. For each kept row with an
 `issue:<N>` tag, one entry under `"<N>"`: `{"url": "https://claude.ai/code/<id>",
 "title": ..., "created_at": ...}`. Write them, as JSON, to
@@ -24,7 +42,7 @@ hold `repo:<owner>/<name>` (the repo of the current directory) and whose
 ## Step 2: Run the script
 
 ```bash
-python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --page <scratchpad>/status-page.html --sessions <scratchpad>/status-sessions.json
+python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --repo <owner>/<name> --page <scratchpad>/status-page.html --sessions <scratchpad>/status-sessions.json
 ```
 
 ## Step 3: Publish the page
@@ -41,15 +59,15 @@ repo: `גרף החסימות · <name>` (`<name>` without the owner).
 
 ## Step 4: Show the output
 
-Print the script's output exactly as it is: five headings, the four tables (each with its
-rows or the line "אין.") and the blocking graph (a `mermaid` block, or one line saying why
-there is none). Do not rebuild, reorder, filter or summarize the rows, and keep the
-`mermaid` block as it is: the app draws it, and the terminal shows it as text. Add nothing
-between the sections. Under the graph, one line: `הגרף הלחיץ: [גרף החסימות · <name>](<url>)`,
-or the line of step 3.
+Print the script's output exactly as it is: the repo line (`**הריפו:** ...`), five
+headings, the four tables (each with its rows or the line "אין.") and the blocking graph
+(a `mermaid` block, or one line saying why there is none). Do not rebuild, reorder, filter
+or summarize the rows, and keep the `mermaid` block as it is: the app draws it, and the
+terminal shows it as text. Add nothing between the sections. Under the graph, one line:
+`הגרף הלחיץ: [גרף החסימות · <name>](<url>)`, or the line of step 3.
 
 - **Exit 0 with one sentence** (the repo has no pipeline): show the sentence, and offer
-  `dev-setup`. No page.
+  `dev-setup`. No page. Never fall back to the session's next repo (S-1.56).
 - **Exit 1** (GitHub did not answer): show the message as it is. Never show tables from an
   earlier run, or build them yourself. No page: the one already published stays as it was.
 - **Exit 2** (the sessions file is broken): fix the file, or run again without

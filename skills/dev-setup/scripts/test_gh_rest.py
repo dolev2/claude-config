@@ -35,6 +35,21 @@ def test_non_github_remote_is_not_a_repo(url):
     assert gh_rest.repo_from_url(url) is None
 
 
+@pytest.mark.parametrize(
+    "result",
+    [(2, "", "no such remote"), (0, "https://gitlab.com/acme/widgets.git", "")],
+)
+def test_repo_of_folder_is_none_without_a_github_origin(monkeypatch, result):
+    monkeypatch.setattr(gh_rest, "run", lambda *args: result)
+    assert gh_rest.repo_of_folder() is None
+
+
+def test_repo_of_folder_reads_origin(monkeypatch):
+    url = "https://github.com/acme/widgets.git"
+    monkeypatch.setattr(gh_rest, "run", lambda *args: (0, url, ""))
+    assert gh_rest.repo_of_folder() == REPO
+
+
 def test_current_repo_without_remote_exits_with_the_hint(monkeypatch):
     monkeypatch.setattr(gh_rest, "run", lambda *args: (2, "", "no such remote"))
     with pytest.raises(SystemExit, match="pass --repo owner/name"):
