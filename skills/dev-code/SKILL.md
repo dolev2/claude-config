@@ -285,9 +285,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     `billing_flag.py status`). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
     the lines `evals/run.py` printed, the model, and a line for each case that ran again, with
     its result; a case that also failed on `<default>` is marked there as existing, with
-    the commit it ran on and its result, and is a follow-up task below. The app's outcome from step 10 goes into that comment and into the
-    chat message, with one line on what to open in it. After the "סקירת קוד" line, it has the
-    fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
+    the commit it ran on and its result, and is a follow-up task below. The app's outcome
+    from step 10 goes into that comment and into the chat message, with one line on what to
+    open in it. After the "סקירת קוד" line, it has the fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
     `תהליך`) and its fields, or "אין משימות המשך" (`reference/follow-ups.md`; a process task
     passes the filter of `reference/lessons.md`). Both end with the next step, in one
     line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
