@@ -1,5 +1,5 @@
-# The repo, with the spec part of #12's area already built and Done on main (#11), so the
-# code and the spec agree, and the issues: #12 asks for more than the Done part holds.
+# The repo, with S-1.1 already built and Done on main (#11), so the code and the spec
+# agree, and the issues: #12 asks for more than the Done part holds (#415).
 . "$(dirname "$0")/../scaffold.sh"
 empty_name_change
 sed -i 's/Done (#12)/Done (#11)/' docs/specs/demo.md
