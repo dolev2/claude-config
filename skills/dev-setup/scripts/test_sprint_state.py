@@ -12,6 +12,7 @@ sys.path.insert(0, str(HERE))
 spec = importlib.util.spec_from_file_location("sprint_state", HERE / "sprint_state.py")
 sprint_state = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sprint_state)
+import billing_flag  # noqa: E402
 import issue_body  # noqa: E402
 import pipeline_shas  # noqa: E402
 import sprint_github  # noqa: E402
@@ -410,6 +411,17 @@ def test_a_failing_git_leaves_null_shas_and_the_rest_of_the_state(
     assert numbers(result["dispatch"]) == [2]
     assert result["pipeline_sha"] is None and result["session_sha"] is None
     assert "pipeline-change check did not run" in out.err
+    assert result["billing_flag"] is None
+
+
+def test_the_billing_flag_while_it_is_on(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(pipeline_shas, "PIPELINE_URL", str(tmp_path / "missing"))
+    monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
+    flag = {"since": "2026-11-15T10:00:00", "source": "manual", "run": None}
+    monkeypatch.setattr(billing_flag, "current", lambda cache: flag | {"notice": "n"})
+    fake_github(monkeypatch, [node(1)])
+    sprint_state.main([])
+    assert json.loads(capsys.readouterr().out)["billing_flag"] == flag | {"notice": "n"}
 
 
 def test_main_without_an_open_milestone_exits(monkeypatch):

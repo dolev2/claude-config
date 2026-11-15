@@ -36,6 +36,8 @@ gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5
    S-2.14), with its stage in words: `waiting` "מחכה לבן אפיון", `writing` "בכתיבה",
    `questions` "שאלות", `review` "אפיון לסקירה", `breakdown` "פירוק לאישור", `replan` "חוזרת
    לתכנון" (an open spec part already names it, `parts`: it is that part's task, #334).
+   While `sprint_state.py` gives a `billing_flag`, its `notice` is the picture's first line,
+   as it is (S-1.53, `reference/git-flow.md`, "דגל החיוב").
 
 ## Each check
 
@@ -176,7 +178,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    2. a plan to approve: its "בקצרה", with approve first. Its "איפה באפיון" story goes into the
       question as it is, even when the rest is shortened for the phone (#238);
    3. a PR ready to merge (`merge_queue`, CI `success`, `mergeable_state` neither `dirty` nor
-      `unknown`; `unknown` is asked again next check): a change
+      `unknown`; `unknown` is asked again next check; CI `billing` is GitHub's billing, not a
+      PR to merge: `billing_flag.py check --sha <head_sha>` turns the flag on): a change
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
       warns. Only one merge question per window. A spec PR (`kind: "spec"`) is an ordinary

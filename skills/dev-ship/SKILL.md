@@ -139,7 +139,10 @@ step 6 reads the link back.
 gh pr checks <N> --watch --fail-fast
 ```
 
-**If a check fails, stop here.** Report which job failed and link the run. A private repo on
+**If a check fails, stop here.** First run
+`python "$HOME/.claude/skills/dev-setup/scripts/billing_flag.py" check --sha <head>`: `billing <link>`
+means GitHub failed it for billing and the billing flag is now on, so there is no test to fix; say
+so in one line, with the run (`reference/git-flow.md`, "דגל החיוב"). Otherwise report which job failed and link the run. A private repo on
 a free plan has no branch protection, so a red PR still has a working merge button; this step
 is the only thing between a red run and `<default>`. If the repo reports no checks at all,
 say so and continue on the strength of step 3.

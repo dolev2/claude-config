@@ -25,6 +25,12 @@ def section(text: str, heading: str) -> str:
     return text[start : end if end != -1 else None]
 
 
+@pytest.fixture(autouse=True)
+def billing_off(monkeypatch):
+    """The billing flag is off unless a test says otherwise; no git in these tests."""
+    monkeypatch.setattr(work_status.billing_flag, "current", lambda: None)
+
+
 SPEC_URL = "https://github.com/acme/widgets/blob/HEAD/docs/specs/widgets.md"
 
 
@@ -321,3 +327,29 @@ def test_a_broken_sessions_file_exits_2(content, capsys, tmp_path):
         work_status.main(["--repo", REPO, "--sessions", str(sessions)])
     assert exit_info.value.code == 2
     assert "קובץ הסשנים" in capsys.readouterr().err
+
+
+BILLING_ON = {
+    "since": "2026-11-15T10:00:00",
+    "source": "auto",
+    "run": "https://x/1",
+    "notice": "החיוב ב-GitHub חסום מאז 2026-11-15 (נדלק לבד בריצה https://x/1).",
+}
+
+
+@pytest.mark.parametrize(("billing", "shown"), [(BILLING_ON, True), (None, False)])
+def test_the_billing_line_comes_before_the_tables(billing, shown):
+    text = work_status.render(REPO, [node(1)], [], billing=billing)
+    assert (BILLING_ON["notice"] in text) is shown
+    if shown:
+        assert text.index(BILLING_ON["notice"]) < text.index("### ")
+
+
+def test_main_shows_the_billing_line_while_the_flag_is_on(monkeypatch, capsys):
+    monkeypatch.setattr(work_status, "api_list", lambda path: LABELS)
+    monkeypatch.setattr(work_status, "open_issue_nodes", lambda repo, with_body: [])
+    monkeypatch.setattr(work_status, "recent_done", lambda repo: [])
+    monkeypatch.setattr(work_status, "read_anchors", lambda repo, issues: {})
+    monkeypatch.setattr(work_status.billing_flag, "current", lambda: BILLING_ON)
+    work_status.main(["--repo", REPO])
+    assert BILLING_ON["notice"] in capsys.readouterr().out

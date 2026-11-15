@@ -30,7 +30,7 @@ RELOAD_PATHS = ["skills", "hooks"]
 SESSION_PATHS = ["CLAUDE.md", "rules", "settings.json"]
 
 
-def git(*args: str) -> str:
+def git(*args: str, stdin: str | None = None) -> str:
     """Runs git without prompting for credentials; its stdout. Raises on failure."""
     env = os.environ | {"GIT_TERMINAL_PROMPT": "0"}
     done = subprocess.run(
@@ -38,10 +38,17 @@ def git(*args: str) -> str:
         check=True,
         capture_output=True,
         text=True,
+        input=stdin,
         env=env,
         timeout=GIT_TIMEOUT_SECONDS,
     )
     return done.stdout
+
+
+def ensure_clone(cache: Path) -> None:
+    """Clones the pipeline repo into `cache`, bare and blob-less, unless it is there."""
+    if not (cache / "HEAD").exists():
+        git("clone", "-q", "--bare", "--filter=blob:none", PIPELINE_URL, str(cache))
 
 
 def refresh_cache(cache: Path) -> None:
@@ -49,8 +56,7 @@ def refresh_cache(cache: Path) -> None:
 
     Full history without blobs: `git log -- <path>` compares trees, never file contents.
     """
-    if not (cache / "HEAD").exists():
-        git("clone", "-q", "--bare", "--filter=blob:none", PIPELINE_URL, str(cache))
+    ensure_clone(cache)
     git("-C", str(cache), "fetch", "-q", "origin", "+refs/heads/main:refs/heads/main")
 
 

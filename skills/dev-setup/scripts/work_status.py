@@ -31,6 +31,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+import billing_flag
 from gh_rest import (
     api_list,
     gh_api,
@@ -208,8 +209,13 @@ def render(
     nodes: list[dict],
     done: list[dict],
     anchors: dict[str, dict[str, str]] | None = None,
+    billing: dict | None = None,
 ) -> str:
-    """The four tables and the blocking graph as one Markdown text."""
+    """The four tables and the blocking graph as one Markdown text.
+
+    `billing` is the billing flag while it is on (billing_flag.current()): its line
+    comes before the tables (S-1.53).
+    """
     anchors = anchors or {}
     sprint = current_sprint(nodes)
     done_rows = [
@@ -233,7 +239,8 @@ def render(
     ]
     sections.append(table("מה מחכה לדולב", waiting, repo, anchors))
     sections.append(graph(sprint_nodes, nodes, status_he))
-    return "\n\n".join([REPO_LINE.format(repo=repo), *sections])
+    notice = [billing["notice"]] if billing else []
+    return "\n\n".join([REPO_LINE.format(repo=repo), *notice, *sections])
 
 
 def sprint_issues(nodes: list[dict]) -> list[dict] | None:
@@ -344,7 +351,8 @@ def main(argv: list[str] | None = None) -> None:
         return
     if args.page:
         write_page(args.page, repo, nodes, sessions)
-    print(render(repo, nodes, done, read_anchors(repo, nodes + done)))
+    anchors = read_anchors(repo, nodes + done)
+    print(render(repo, nodes, done, anchors, billing_flag.current()))
 
 
 if __name__ == "__main__":
