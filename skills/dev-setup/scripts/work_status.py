@@ -5,6 +5,11 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 
     python "$HOME/.claude/skills/dev-setup/scripts/work_status.py"
     python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --repo owner/name
+    python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --which --source-repo o/n
+
+Which repo (S-1.56): --repo, else the repo of the current directory, else the first
+repo in the session's sources (--source-repo, read by the status skill), else one
+sentence saying there is no repo to show. --which prints only the chosen repo.
 
 The tables: what merged last, what is open in the current sprint, what is blocked or
 costs money, and what waits for Dolev. Each row links to the issue's spec part. Then the
@@ -16,7 +21,7 @@ reads (S-2.2), so nothing here ranks or classifies an issue on its own.
 
 Exit codes: 0 with the tables, or with one sentence when the repo has no pipeline;
 1 when GitHub could not be read, with no tables, so a partial picture never looks whole;
-2 when the --sessions file is broken.
+2 when the --sessions file is broken; 3 when there is no repo to show.
 """
 
 import argparse
@@ -25,7 +30,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from gh_rest import api_list, current_repo, gh_api, open_issue_nodes, recent_done
+from gh_rest import api_list, gh_api, open_issue_nodes, recent_done, repo_of_folder
 from pipeline_info import REQUIRED_LABELS
 from rank_issues import current_sprint, parse_issue, rank, with_started_umbrellas
 from spec_check import issue_spec
@@ -50,7 +55,27 @@ STATUS_HE = {
 }
 NO_PIPELINE = "הצינור לא מותקן בריפו {repo}, ואפשר להתקין אותו ב-dev-setup."
 COSTS_MONEY = "עולה כסף, מחכה לאישור"
-NOT_READ = "הסקירה לא הוצגה: GitHub לא ענה, ולא נקראו {what}.\n{error}"
+NOT_READ = "הסקירה של {repo} לא הוצגה: GitHub לא ענה, ולא נקראו {what}.\n{error}"
+REPO_LINE = "**הריפו:** [{repo}](https://github.com/{repo})"
+NO_REPO = "אין ריפו לסקור: התיקייה של הסשן לא בתוך ריפו של GitHub, {reason}."
+NO_SOURCES = "ולסשן אין ריפו במקורות"
+SOURCES_UNREAD = "והמקורות של הסשן לא נקראו"
+
+
+def choose_repo(
+    repo: str | None, folder_repo: str | None, source_repo: str | None
+) -> str | None:
+    """The repo to show (S-1.56): the one asked for, the folder's, then the source's.
+
+    The folder wins over the sources, so a session that sits in a repo never shows
+    another one. None means there is no repo to show.
+    """
+    return repo or folder_repo or source_repo or None
+
+
+def no_repo(sources_unread: bool) -> str:
+    """The one sentence for a session with no repo to show, with the reason."""
+    return NO_REPO.format(reason=SOURCES_UNREAD if sources_unread else NO_SOURCES)
 
 
 def short(title: str, limit: int = TITLE_LIMIT) -> str:
@@ -197,7 +222,7 @@ def render(
     ]
     sections.append(table("מה מחכה לדולב", waiting, repo, anchors))
     sections.append(graph(sprint_nodes, nodes, status_he))
-    return "\n\n".join(sections)
+    return "\n\n".join([REPO_LINE.format(repo=repo), *sections])
 
 
 def sprint_issues(nodes: list[dict]) -> list[dict] | None:
@@ -243,25 +268,24 @@ def missing_labels(repo: str) -> list[str]:
     return [name for name in REQUIRED_LABELS if name not in names]
 
 
-def read(repo: str | None) -> tuple[str, list[str], list[dict], list[dict]]:
-    """(repo, missing labels, open issues, last merged), or exits 1 with what failed.
+def read(repo: str) -> tuple[list[str], list[dict], list[dict]]:
+    """(missing labels, open issues, last merged), or exits 1 with what failed.
 
     gh_rest exits with gh's error on a failed call; that exit is turned into a
-    message saying which part was not read, instead of a half-built picture.
+    message saying which part of which repo was not read, instead of a half-built
+    picture.
     """
-    what = "פרטי הריפו"
+    what = "התוויות"
     try:
-        repo = repo or current_repo()
-        what = "התוויות"
         missing = missing_labels(repo)
         if missing:
-            return repo, missing, [], []
+            return missing, [], []
         what = "המשימות הפתוחות"
         nodes = open_issue_nodes(repo, with_body=True)
         what = "המשימות שמוזגו"
-        return repo, [], nodes, recent_done(repo)
+        return [], nodes, recent_done(repo)
     except SystemExit as failure:
-        print(NOT_READ.format(what=what, error=failure.code or ""))
+        print(NOT_READ.format(repo=repo, what=what, error=failure.code or ""))
         sys.exit(1)
 
 
@@ -269,6 +293,19 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--repo", help="owner/name; defaults to the repo of the current directory"
+    )
+    parser.add_argument(
+        "--source-repo",
+        help="owner/name of the first repo in the session's sources, used only "
+        "when the current directory is not in a GitHub repo",
+    )
+    parser.add_argument(
+        "--sources-unread",
+        action="store_true",
+        help="the session's sources could not be read (says why there is no repo)",
+    )
+    parser.add_argument(
+        "--which", action="store_true", help="print only the chosen repo, and stop"
     )
     parser.add_argument(
         "--page", help="also write the clickable graph page (S-1.50) to this file"
@@ -279,8 +316,16 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = parser.parse_args(argv)
 
+    folder = None if args.repo else repo_of_folder()
+    repo = choose_repo(args.repo, folder, args.source_repo)
+    if repo is None:
+        print(no_repo(args.sources_unread))
+        sys.exit(3)
+    if args.which:
+        print(repo)
+        return
     sessions = read_sessions(args.sessions) if args.sessions else None
-    repo, missing, nodes, done = read(args.repo)
+    missing, nodes, done = read(repo)
     if missing:
         print(NO_PIPELINE.format(repo=repo))
         return
