@@ -1,6 +1,6 @@
 ---
 name: status
-description: Shows the work in the current repo at a glance, in four tables — the five issues merged last, the open issues of the current sprint, the issues that are blocked or cost money, and what waits for Dolev — and a Mermaid graph of the sprint's blocking order with each issue's status, by running one script and printing its output as it is, and republishes the same graph as the repo's clickable page, where each node links to its issue, open PR and session. Read-only on GitHub. Use in any of Dolev's repos whenever he types "/status", "סטטוס", "מה המצב", "תן לי סקירה", or asks for an overview of the work. Not for picking the next issue: that is dev-next.
+description: Shows the work in the current repo at a glance, in four tables — the five issues merged last, the open issues of the current sprint, the issues that are blocked or cost money, and what waits for Dolev — and a Mermaid graph of the sprint's blocking order with each issue's status and labels, by running one script and printing its output as it is, and republishes the same graph as the repo's clickable page, where each node links to its issue, open PR and session. Read-only on GitHub. Use in any of Dolev's repos whenever he types "/status", "סטטוס", "מה המצב", "תן לי סקירה", or asks for an overview of the work. Not for picking the next issue: that is dev-next.
 ---
 
 # Status

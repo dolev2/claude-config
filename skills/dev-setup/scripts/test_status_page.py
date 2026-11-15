@@ -42,6 +42,12 @@ def test_every_node_links_to_its_issue():
     assert "/pull/" not in line
 
 
+def test_the_labels_come_before_the_links():
+    line = node_line(build([node(1, labels=("bug", "area:skills"))]), 1)
+    assert "bug · area:skills" in line
+    assert line.index("bug · area:skills") < line.index("href=")
+
+
 def test_an_open_pr_gets_a_link():
     line = node_line(build([node(1, prs=[7])]), 1)
     assert "https://github.com/o/r/pull/7" in line

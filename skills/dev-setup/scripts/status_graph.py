@@ -4,14 +4,14 @@ work_status.py calls graph() with the sprint's issues in the order of its table,
 open issues it already read, so the graph and the tables come from the same picture and
 never disagree. Nothing here reads GitHub.
 
-A node per open issue of the sprint, with its number, a short title and its status; an
-arrow from each open blocker to the issue that waits for it. An open blocker outside the
-sprint (another milestone, or another repo) is a dashed node. A closed blocker blocks
-nothing, so it is left out.
+A node per open issue of the sprint, with its number, a short title, its status and its
+other labels (S-1.58); an arrow from each open blocker to the issue that waits for it.
+An open blocker outside the sprint (another milestone or repo) is a dashed node.
+A closed blocker blocks nothing, so it is left out.
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from itertools import pairwise
 
 from rank_issues import parse_issue
@@ -25,6 +25,7 @@ EMPTY = "אין."
 OTHER_REPO = "ריפו אחר"
 OUTSIDE_STYLE = "classDef outside stroke-dasharray: 5 5"
 # Mermaid reads #name; as an entity, and the label is HTML: these are written as codes.
+LABEL_SEPARATOR = " · "
 LABEL_CODES = {"#": "#35;", '"': "#quot;", "<": "#lt;", ">": "#gt;", "&": "#amp;"}
 
 
@@ -44,14 +45,31 @@ def label_text(text: str, limit: int = TITLE_LIMIT) -> str:
     return re.sub('[#"<>&]', lambda m: LABEL_CODES[m.group()], text)
 
 
-def node_line(ref: str, title: str, status: str, extra: str = "") -> str:
-    """One node: the number, the short title and the status, each on its own line.
+def labels_text(labels: Sequence[str]) -> str:
+    """The labels joined by ` · `, a new line before one that would pass TITLE_LIMIT.
+
+    No label is cut: a node with many labels grows down, not wide (S-1.58).
+    """
+    lines: list[str] = []
+    for name in (" ".join(label.split()) for label in labels):
+        if lines and len(lines[-1]) + len(LABEL_SEPARATOR) + len(name) <= TITLE_LIMIT:
+            lines[-1] += LABEL_SEPARATOR + name
+        else:
+            lines.append(name)
+    return "<br>".join(label_text(line, limit=len(line)) for line in lines)
+
+
+def node_line(
+    ref: str, title: str, status: str, extra: str = "", labels: Sequence[str] = ()
+) -> str:
+    """One node: the number, the short title, the status and the labels, each on its
+    own line.
 
     The number has a line of its own so a Hebrew title never flips it to the far side.
-    `extra`, already safe for a label, goes on a line under the status.
+    `extra`, already safe for a label, goes on a line under the labels.
     """
     name = f"{ref}<br>{label_text(title)}" if title else ref
-    tail = f"<br>{extra}" if extra else ""
+    tail = "".join(f"<br>{part}" for part in (labels_text(labels), extra) if part)
     return f'  {node_id(ref)}["{name}<br>{status}{tail}"]'
 
 
@@ -119,9 +137,21 @@ def node_status(ref: str, by_ref: dict[str, dict], status_he: StatusHe) -> str:
     return status_he(parse_issue(found).status if found else None)
 
 
+def node_labels(ref: str, by_ref: dict[str, dict]) -> list[str]:
+    """The labels of a node in GitHub's order, without the status label.
+
+    A blocker of another repo, or one we did not read, has none.
+    """
+    found = by_ref.get(ref)
+    if not found:
+        return []
+    names = [label["name"] for label in found["labels"]["nodes"]]
+    return [name for name in names if not name.startswith("status:")]
+
+
 def layout(sprint_nodes: list[dict], nodes: list[dict], status_he: StatusHe) -> dict:
     """The graph as data: the refs, the blockers outside the sprint, the arrows, and
-    each ref's title and status.
+    each ref's title, status and labels.
 
     `sprint_nodes` are the sprint's open issues in the table's order. `nodes` are all
     the open issues of the repo, so a blocker in another milestone still shows its
@@ -144,6 +174,7 @@ def layout(sprint_nodes: list[dict], nodes: list[dict], status_he: StatusHe) -> 
             r: by_ref[r]["title"] if r in by_ref else "" for r in refs + outside
         },
         "statuses": {r: node_status(r, by_ref, status_he) for r in refs + outside},
+        "labels": {r: node_labels(r, by_ref) for r in refs + outside},
     }
 
 
@@ -160,6 +191,7 @@ def mermaid_lines(shape: dict, extra: Callable[[str], str] | None = None) -> lis
             shape["titles"][ref],
             shape["statuses"][ref],
             extra(ref) if extra else "",
+            shape["labels"][ref],
         )
         for ref in refs + outside
     ]
