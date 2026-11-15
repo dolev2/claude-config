@@ -173,7 +173,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    `socat` missing (install them, the command in `reference/tests.md`, and run it again),
    no `origin/<default>` to diff against (fetch it), or no result. A failed case is a
    failing test: fix the skill, or the case when the rule changed on purpose (never a case
-   in `evals/holdout/`), and run each failed case again, in a run of its own (`--case <name>`,
+   in `evals/holdout/`); a failed case of a skill the diff does not touch first runs on
+   `<default>`, as `reference/tests.md` says, and one that fails there too is not fixed
+   here. Run each failed case again, in a run of its own (`--case <name>`,
    `reference/tests.md`). A stop at the cost
    ceiling is not a failure: say what ran. On Windows it does not run: say so in the
    hand-off.
@@ -282,9 +284,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     החיוב דולק מ-<since>)"; after `billing`, `<since>` is the date of
     `billing_flag.py status`). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
     the lines `evals/run.py` printed, the model, and a line for each case that ran again, with
-    its result. The app's outcome from step 10 goes into that comment and into the
-    chat message, with one line on what to open in it. After the "סקירת קוד" line, it has the
-    fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
+    its result; a case that also failed on `<default>` is marked there as existing, with
+    the commit it ran on and its result, and is a follow-up task below. The app's outcome
+    from step 10 goes into that comment and into the chat message, with one line on what to
+    open in it. After the "סקירת קוד" line, it has the fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
     `תהליך`) and its fields, or "אין משימות המשך" (`reference/follow-ups.md`; a process task
     passes the filter of `reference/lessons.md`). Both end with the next step, in one
     line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
