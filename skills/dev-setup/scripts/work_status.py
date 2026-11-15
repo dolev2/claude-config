@@ -5,7 +5,7 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
 
     python "$HOME/.claude/skills/dev-setup/scripts/work_status.py"
     python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --repo owner/name
-    python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --which --source-repo o/n
+    python "$HOME/.claude/skills/dev-setup/scripts/work_status.py" --which
 
 Which repo (S-1.56): --repo, else the repo of the current directory, else the first
 repo in the session's sources (--source-repo, read by the status skill), else one
