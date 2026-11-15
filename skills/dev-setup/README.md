@@ -45,9 +45,10 @@
 | `audit_sprint.py` | בודק את קישורי ה-Blocked by של כל הספרינט: קישור חסר, מעגל וחפיפת קבצים. |
 | `pause_reason.py` | אומר אם issue מושהה, ומה הסיבה. |
 | `sprint_state.py` | מחזיר את מצב הספרינט כ-JSON אחד, בשביל המתזמר. |
-| `sprint_github.py` | הקריאות ל-GitHub של `sprint_state.py`, כדי שהבדיקות שלו ירוצו בלי רשת. |
+| `sprint_github.py` | הקריאות ל-GitHub של `sprint_state.py` ושל `handover_prompt.py`, כדי שהבדיקות שלהם ירוצו בלי רשת. |
 | `sprint_proposals.py` | ההצעות המאושרות בספרינט, והשלב של האפיון של כל אחת. |
 | `pipeline_shas.py` | מזהי הצינור ב-`main`, כדי שהמתזמר יזהה שהצינור השתנה באמצע ספרינט. |
+| `handover_prompt.py` | בונה את פרומפט הפתיחה של מתזמר חדש, כשמתזמר מוסר לו את הספרינט. |
 | `watch_children.py` | מחכה ברקע שה-issue של בן ישתנה, ומעיר את המתזמר. |
 | `wait_ci.py` | מחכה שה-CI של commit אחד יסתיים, ומדפיס את התוצאה. |
 | `work_status.py` | מדפיס את הטבלאות של `/status` ואת גרף החסימות. |

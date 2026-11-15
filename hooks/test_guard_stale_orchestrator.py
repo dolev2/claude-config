@@ -238,6 +238,7 @@ def test_stop_in_a_stale_orchestrator_is_blocked(monkeypatch, tmp_path, stale, c
     decision = json.loads(out)
     assert decision["decision"] == "block"
     assert stale in decision["reason"]
+    assert guard.OPEN_FAILED in decision["reason"]
 
 
 def test_stop_hook_active_passes(monkeypatch, tmp_path, stale, capsys):

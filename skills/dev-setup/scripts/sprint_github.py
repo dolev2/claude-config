@@ -6,6 +6,7 @@ takes these readers as functions (claude-config #203).
 
 import json
 import re
+from datetime import UTC, datetime
 from urllib.parse import quote
 
 from gh_rest import api, api_list, gh_api, other_repo
@@ -115,3 +116,37 @@ def spec_prs(repo: str, number: int) -> list[dict]:
             }
         )
     return found
+
+
+def moment(text: str) -> datetime:
+    """An ISO time as an aware datetime; one without a zone is taken as UTC."""
+    parsed = datetime.fromisoformat(text)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def done_since(repo: str, sprint: str, since: str) -> list[dict]:
+    """The sprint's issues that closed in status:done at or after `since` (ISO).
+
+    REST's `since` filters by update time, so a later edit of an issue closed before
+    `since` would pass it: `closed_at` decides (handover_prompt.py, S-2.12).
+    """
+    issues = api_list(
+        f"repos/{repo}/issues?state=closed&labels=status:done"
+        f"&since={quote(since)}&per_page=100"
+    )
+    return [
+        {"number": i["number"], "title": i["title"]}
+        for i in sorted(issues, key=lambda i: i.get("closed_at") or "")
+        if "pull_request" not in i
+        and (i.get("milestone") or {}).get("title") == sprint
+        and i.get("closed_at")
+        and moment(i["closed_at"]) >= moment(since)
+    ]
+
+
+def issue_summary(repo: str, number: int) -> dict:
+    """{number, title, status} of one issue; status is its `status:` label, or None."""
+    issue = api(f"repos/{repo}/issues/{number}")
+    labels = [label["name"] for label in issue.get("labels", [])]
+    status = next((n for n in labels if n.startswith("status:")), None)
+    return {"number": number, "title": issue["title"], "status": status}

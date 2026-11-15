@@ -18,7 +18,9 @@ Wired in settings.json, run by python3 or python from $HOME/.claude/hooks/:
 2. PostToolUse, for `mcp__.*__create_session`. A session opened without that tag, the
    new orchestrator of S-2.12, is the hand-off: it writes the `handed-off` marker.
 3. Stop. A stale orchestrator that has not handed off: the turn is blocked once
-   (`decision: block`); stop_hook_active lets it end, so it never loops.
+   (`decision: block`); stop_hook_active lets it end, so it never loops. The reason
+   also says that a failed opening, whose prompt already went to Dolev, ends the turn,
+   so the block does not push for a second try and a second window.
 
 Cheap checks first: a cloud session, the baseline marker, a guarded call, an
 orchestrator, and only then git. When git fails, or the baseline is not in the cache,
@@ -49,6 +51,10 @@ COMMAND = re.compile(
 )
 ORCHESTRATOR_PREFIX = "orchestrator"
 HANDED_OFF_PREFIX = "handed-off"
+OPEN_FAILED = (
+    "אם הפתיחה של המתזמר החדש נכשלה, או שדולב דחה את החלון, "
+    "והפרומפט כבר נשלח לדולב: מסיימים את התור, בלי ניסיון פתיחה שני."
+)
 
 
 def is_cloud() -> bool:
@@ -207,7 +213,7 @@ def at_stop(event: dict) -> str | None:
     sha = stale_commit(event)
     if sha is None:
         return None
-    text = reason(sha, "התור לא נגמר לפני המסירה")
+    text = f"{reason(sha, 'התור לא נגמר לפני המסירה')}\n{OPEN_FAILED}"
     return json.dumps({"decision": "block", "reason": text}, ensure_ascii=False)
 
 
