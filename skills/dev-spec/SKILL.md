@@ -151,10 +151,12 @@ every run.
    `python "$HOME/.claude/skills/dev-setup/scripts/wait_ci.py" --sha "$(git rev-parse HEAD)"`.
    A red PR is not handed over. Its first line, as in `dev-code` step 10: `success` hands
    over, with a "CI" line (green, the head, the fix rounds); `none` hands over at once, saying
-   "אין CI בריפו". In an orchestrator's child (S-2.15): `failure` is fixed on the same branch
+   "אין CI בריפו"; `billing-flag`, or `billing` without `not-written`, hands over on the local
+   checks, with the CI line of `dev-code` step 11 (S-1.54, `reference/git-flow.md`,
+   "דגל החיוב"), and in a child is not stuck. In an orchestrator's child (S-2.15): `failure` is fixed on the same branch
    from the failed job's log, pushed, and waited for again, with no limit on the rounds; a
-   failure the branch cannot fix, `billing` (never a test to fix: say the billing flag is on and
-   which run showed it, `reference/git-flow.md`, "דגל החיוב"), `timeout pending`,
+   failure the branch cannot fix, `billing` with `not-written` (never a test to fix: say the
+   billing flag is not on and which run showed it), `timeout pending`,
    `timeout not-started` or a second `error` is a comment on
    the issue (what failed, what was tried, the check's link), and the turn ends with no
    hand-off.

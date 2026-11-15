@@ -68,7 +68,7 @@ flowchart TD
       IMPL --> RB{"rebase onto the default branch"}:::gate
       RB -- "התנגשות" --> RSTOP(["עוצר ומדווח באישיו<br/>no PR is opened"]):::gate
       RB -- "נקי" --> CODE["מריץ בדיקות על הקוד המשולב<br/>שינוי בסקיל: גם תרחישי הסקיל<br/>opens a PR that closes the issue"]:::routine
-      CODE --> WCI["CI checks run<br/>מחכים להם ב-wait_ci.py ברקע<br/>CI אדום: תיקון וחזרה להמתנה<br/>נכשל בגלל החיוב: דגל החיוב נדלק<br/>ובאותו זמן<br/>סוכן לקריאה בלבד סוקר את השינויים<br/>אפליקציית הסקירה עולה<br/>אחרי שהיא עולה<br/>בדיקת חוויית משתמש בדפדפן<br/>בשני רוחבים"]:::routine
+      CODE --> WCI["CI checks run<br/>מחכים להם ב-wait_ci.py ברקע<br/>CI אדום: תיקון וחזרה להמתנה<br/>נכשל בגלל החיוב: דגל החיוב נדלק<br/>דגל דולק: מסירה ומיזוג בלי CI<br/>ובאותו זמן<br/>סוכן לקריאה בלבד סוקר את השינויים<br/>אפליקציית הסקירה עולה<br/>אחרי שהיא עולה<br/>בדיקת חוויית משתמש בדפדפן<br/>בשני רוחבים"]:::routine
       WCI --> HAND["מסירה: קישור לשינויים<br/>צילומי מסך בצ'אט<br/>טלפון רק בענן"]:::routine
     end
 
@@ -83,7 +83,7 @@ flowchart TD
     RC -- "תקין" --> ASK(["דולב מבקש מיזוג בצ'אט<br/>תמזג את #N<br/>בהקלדה או בחלון השאלות"]):::human
 
     ASK --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
-    SHIP --> MERGE["rebase onto the default branch<br/>runs the tests<br/>push, then opens or reuses the PR<br/>waits for CI checks<br/>בודק את השאלות הפתוחות<br/>not MERGEABLE: back to the rebase<br/>squash merge"]:::routine
+    SHIP --> MERGE["rebase onto the default branch<br/>runs the tests<br/>push, then opens or reuses the PR<br/>waits for CI checks<br/>דגל החיוב דולק: לא מחכים<br/>בודק את השאלות הפתוחות<br/>not MERGEABLE: back to the rebase<br/>squash merge"]:::routine
     MERGE -. "ממה שקרה במיזוג" .-> LESS
     MERGE --> DONE(["dev-ship sets status:done<br/>status:done = merged<br/>Closes #N closes the issue<br/>the card lands in Done<br/>ניקוי במחשב<br/>app, worktree, local branch<br/>ניקוי בענן<br/>checkout --detach, local branch"]):::routine
 

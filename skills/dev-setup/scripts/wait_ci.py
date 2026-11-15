@@ -10,6 +10,9 @@ and `subscribe_pr_activity`, whose events belong to the session that merges.
 
 The first line is one word, and the exit is 0 for all of them:
     success
+    billing-flag <since> the billing flag is already on (S-1.54): no wait, and the
+                         check runs are not read. A flag that could not be read is
+                         a warning on stderr, and the ordinary wait
     failure              then one line per failed check: name, conclusion, html_url
     billing <html_url>   GitHub failed the check for billing; the billing flag is now
                          on (billing_flag.py, S-1.53). A second line
@@ -121,6 +124,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if not has_pr_workflow(args.root):
         print("none")
+        return
+    flag = billing_flag.current()
+    if flag is not None:
+        print(f"billing-flag {flag['since']}")
         return
     repo = args.repo or current_repo()
 

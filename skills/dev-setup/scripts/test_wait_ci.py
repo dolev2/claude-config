@@ -12,6 +12,13 @@ sys.path.insert(0, str(HERE))
 spec = importlib.util.spec_from_file_location("wait_ci", HERE / "wait_ci.py")
 wait_ci = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(wait_ci)
+REAL_CURRENT = wait_ci.billing_flag.current
+
+
+@pytest.fixture(autouse=True)
+def flag_off(monkeypatch):
+    """The billing flag is off unless a test says otherwise; no test reads git."""
+    monkeypatch.setattr(wait_ci.billing_flag, "current", lambda: None)
 
 
 def run(name, status="completed", conclusion="success"):
@@ -216,3 +223,54 @@ def test_main_turns_the_flag_on_for_a_billing_failure(
     monkeypatch.setattr(wait_ci.billing_flag, "turn_on", turn_on)
     wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
     assert capsys.readouterr().out == expected
+
+
+def test_flag_on_prints_billing_flag_without_reading_the_check_runs(
+    tmp_path, monkeypatch, capsys
+):
+    root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
+    since = "2026-11-15T10:00:00+00:00"
+    monkeypatch.setattr(wait_ci.billing_flag, "current", lambda: {"since": since})
+    monkeypatch.setattr(wait_ci, "api", lambda path: pytest.fail("read GitHub"))
+    wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
+    assert capsys.readouterr().out == f"billing-flag {since}\n"
+
+
+@pytest.mark.parametrize(
+    ("conclusion", "expected"),
+    [
+        ("success", "success\n"),
+        ("failure", "failure\ntests failure https://github.com/o/r/runs/tests\n"),
+    ],
+)
+def test_flag_off_waits_as_before(conclusion, expected, tmp_path, monkeypatch, capsys):
+    root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
+    checks = {"check_runs": [run("tests", conclusion=conclusion)]}
+    monkeypatch.setattr(wait_ci, "api", lambda path: checks)
+    monkeypatch.setattr(wait_ci, "billing_run", lambda repo, runs: None)
+    wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
+    assert capsys.readouterr().out == expected
+
+
+def test_an_unread_flag_warns_and_waits_as_before(tmp_path, monkeypatch, capsys):
+    root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
+
+    def read(cache):
+        raise OSError("git is missing")
+
+    monkeypatch.setattr(wait_ci.billing_flag, "current", REAL_CURRENT)
+    monkeypatch.setattr(wait_ci.billing_flag, "read", read)
+    monkeypatch.setattr(wait_ci, "api", lambda path: {"check_runs": [run("tests")]})
+    wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
+    out = capsys.readouterr()
+    assert out.out == "success\n"
+    assert "the billing flag was not read: git is missing" in out.err
+
+
+def test_no_pull_request_workflow_prints_none_even_with_the_flag_on(
+    tmp_path, monkeypatch, capsys
+):
+    root = workflows(tmp_path, **{"sync.yml": "on:\n  issues:\n"})
+    monkeypatch.setattr(wait_ci.billing_flag, "current", lambda: {"since": "x"})
+    wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
+    assert capsys.readouterr().out == "none\n"
