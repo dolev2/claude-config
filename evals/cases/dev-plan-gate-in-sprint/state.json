@@ -8,14 +8,14 @@
   ],
   "issues": {
     "12": {
-      "title": "ברכה לשם ריק",
+      "title": "ברכה לשם של רווחים",
       "labels": [
         "task",
         "area:core",
         "status:explore"
       ],
       "milestone": "Sprint 1",
-      "body": "### מה רוצים\n\nכשהשם ריק, `greet` מחזירה \"Hello, stranger\" במקום \"Hello, \".\n\n### הקשר / קישורים\n\n1. נמצא בשימוש בדף הבית.\n\nאפיון: docs/specs/demo.md S-1.1\n\n---\n### Plan\n\n_טרם נכתבה תוכנית._\n\n### שאלות פתוחות\n\n_אין._\n"
+      "body": "### מה רוצים\n\nכשהשם כולו רווחים, `greet` מחזירה \"Hello, stranger\", כמו לשם ריק.\n\n### הקשר / קישורים\n\n1. נמצא בשימוש בדף הבית.\n\nאפיון: docs/specs/demo.md S-1.1\n\n---\n### Plan\n\n_טרם נכתבה תוכנית._\n\n### שאלות פתוחות\n\n_אין._\n"
     }
   },
   "pulls": {}

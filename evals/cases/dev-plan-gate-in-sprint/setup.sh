@@ -1,6 +1,8 @@
-# The repo, with the spec part of #12 already Done on main, and the issues.
+# The repo, with the spec part of #12's area already built and Done on main (#11), so the
+# code and the spec agree, and the issues: #12 asks for more than the Done part holds.
 . "$(dirname "$0")/../scaffold.sh"
-sed -i 's/פתוח (#12)/Done (#11)/' docs/specs/demo.md
+empty_name_change
+sed -i 's/Done (#12)/Done (#11)/' docs/specs/demo.md
 git commit -qam "S-1.1 נבנה ב-#11"
 git push -q origin main 2>/dev/null
 seed_state
