@@ -158,8 +158,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `--expect` holds the status the previous check saw, from its summary line. Each issue it
    names, or whose status moved since the last check, is checked on GitHub, never taken on a child's word (`orchestrate.md`, "איך המתזמר יודע שבן
    התקדם"). An issue now in `status:in-review` with an open PR, or a proposal with an open spec PR
-   (`proposals`) whose child handed off (a comment on the issue with the green PR's link; the
-   proposal stays `status:backlog`): `subscribe_pr_activity` on it. Until a child hands off,
+   (`proposals`) whose child handed off (a comment on the issue with the green PR's link, or, with the billing flag on, a
+   PR after the local checks, S-1.54; the proposal stays `status:backlog`): `subscribe_pr_activity` on it. Until a child hands off,
    it waits for CI itself with `wait_ci.py` (S-2.15). A spec PR whose CI went red after its child handed off
    (a rebase) gets a new spec child on its branch (`reference/orchestrate-spec.md`); while
    the child still works, the red is its own to fix. A child's comment that it is stuck on CI
@@ -167,8 +167,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    (`orchestrate.md`, "באג, קישור או פיצול שבן מצא"), with the failed check and its link.
    A child the check verified as done with its turn (the plan in the body and Dolev's status, a
    planning child that moved its issue to `status:backlog` with the gate's comment,
-   a PR with `status:in-review` and the hand-off comment, or a spec child with a green PR
-   from `claude/spec-*` that says `Refs #N` and a comment on the issue) gets `archive_session` in this check,
+   a PR with `status:in-review` and the hand-off comment, or a spec child with a green PR (with the billing flag on: one
+   whose hand-off says CI did not run, S-1.54) from `claude/spec-*` that says `Refs #N` and a comment on the issue) gets `archive_session` in this check,
    in step 4's message, or in a message of its own when step 4 opens nobody: it never works again, since an answer, a send-back or a fix opens a new
    child (`orchestrate.md`, "בן שסיים").
    A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
@@ -207,8 +207,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    2. a plan to approve: its "בקצרה", with approve first. Its "איפה באפיון" story goes into the
       question as it is, even when the rest is shortened for the phone (#238);
    3. a PR ready to merge (`merge_queue`, CI `success`, `mergeable_state` neither `dirty` nor
-      `unknown`; `unknown` is asked again next check; CI `billing` is GitHub's billing, not a
-      PR to merge: below; while `billing_flag` is not `null`, any CI but `failure` counts, and
+      `unknown`; `unknown` is asked again next check; while the billing flag is off, CI `billing`
+      is GitHub's billing, not a PR to merge: below; while `billing_flag` is not `null`, any CI but `failure` counts, and
       the question says "ה-CI לא רץ: החיוב חסום" instead of the CI state, S-1.54): a change
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only

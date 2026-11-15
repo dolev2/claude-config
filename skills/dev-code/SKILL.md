@@ -279,7 +279,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
     was not checked and why. A "CI" line: green, the head it ran on, and how many fix rounds
     there were (or "אין CI בריפו"; with the billing flag on: "ה-CI לא רץ: החיוב חסום (דגל
-    החיוב דולק מ-<since>)"). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
+    החיוב דולק מ-<since>)"; after `billing`, `<since>` is the date of
+    `billing_flag.py status`). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
     the lines `evals/run.py` printed, the model, and a line for each case that ran again, with
     its result. The app's outcome from step 10 goes into that comment and into the
     chat message, with one line on what to open in it. After the "סקירת קוד" line, it has the
