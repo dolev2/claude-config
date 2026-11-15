@@ -61,6 +61,9 @@ The keys:
     billing_flag     null while the billing flag is off (or could not be read, with a
                      warning); while it is on, {since, source, run, notice}, notice
                      being the line Dolev sees (billing_flag.py, S-1.53)
+    follow_ups       the follow-up tasks of the children's hand-offs not yet asked in
+                     the window, open and closed issues of the sprint alike, and
+    follow_up_gaps   the hand-offs not in the format: follow_ups.py (S-2.16)
     spec_gaps        only with --spec: spec_check.py's gaps between ALL open issues and
                      the specs on origin/<default>, as [{path, line, message}]. An
                      error in a spec file is not here: that is CI's job (spec_check.py).
@@ -75,6 +78,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import billing_flag
+import follow_ups
 from audit_sprint import SprintIssue, audit, is_shared_doc, sprint_issue
 from gh_rest import api, current_repo, open_issue_nodes
 from issue_body import SPECS_DIR, plan_branch, sections
@@ -378,6 +382,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     result |= pipeline_shas(CACHE)
     result["billing_flag"] = billing_flag.current(CACHE)
+    result |= follow_ups.follow_ups(repo, sprint)
     if args.spec:
         warning = {"path": None, "line": None, "message": unread}
         result["spec_gaps"] = [warning] if unread else spec_gaps(nodes, files)

@@ -224,13 +224,23 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       `status:in-review`, and which held issues to open anyway (`multiSelect`, one option
       per issue), with "wait" first;
    6. a child blocked on a permission prompt or failed: which session, which tool, and a link;
-   7. a lesson (`reference/lessons.md`): from a child's hand-off comment (`#### משימות המשך`, `reference/follow-ups.md`), or
-      from a `dev-ship` this session ran. Its four fields, with "open a task" first, right after
-      its issue's merge question when there is one, otherwise last. **One lesson per window**,
-      so with one merge they take at most 2 of the 4. Every lesson not yet asked, from a child
-      or from `dev-ship`, waits for the next check and goes into the `/compact` summary. The
-      choice is written in a comment on the issue, so it is not asked again, and a task opens
-      through `dev-issue` (`reference/lessons.md`, the repo it opens in).
+   7. a follow-up task (S-2.16, `reference/follow-ups.md`): the first entry of
+      `follow_ups` (step 2's `sprint_state.py`, read by `follow_ups.py` from every hand-off
+      under `#### משימות המשך`, open and closed issues alike, minus the ones already asked).
+      **One follow-up per window, from all children together**, right after its issue's
+      merge question when that is in the same window, otherwise last; so with one merge they
+      take at most 2 of the 4. The question: the kind, what is wanted, why it was not in
+      the Plan (`מוצר`) or what happened (`תהליך`), the issue and `pr`, and for `תהליך`
+      the repo it opens in; the options of `reference/follow-ups.md`, "לבקלוג, בלי ספרינט"
+      first. After the choice, a comment on the issue, with the marker and on a line of its
+      own `<!-- follow-up: <key> -->`, then the kind, the choice and the proposal's link, so
+      it is not asked again. A proposal opens through `dev-issue`, in the repo of its kind
+      (`reference/lessons.md` for `תהליך`); "בספרינט הנוכחי" in the sprint's repo puts it
+      in `proposals`, and it gets a spec child next check (S-2.14), with no extra step. One
+      line in step 6's summary: the proposal opened, with its link, or rejected. A lesson of
+      a `dev-ship` this session ran is asked the same way, its four fields with the same
+      options (`reference/lessons.md`), and counts toward the same one per window. Every follow-up not yet asked
+      waits for the next check and goes into the `/compact` summary.
    The label moves first, the question after (`chat-decisions.md`, rule 2). Every comment the
    orchestrator writes in an issue, here or anywhere else, opens with the hidden marker
    `<!-- orchestrator -->` on its own line, so it does not wake the watch (`orchestrate.md`,
@@ -261,7 +271,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
 6. **Close the check.** One summary line, always, ending with
    `since <now> expect <N>=<status>,... pipeline_sha <sha> session_sha <sha>`: the next check compares against it,
    and step 3 reads `since` and `expect` from it. The `spec_gaps` lines of step 2 come right
-   above it, one per gap. Nothing to open and nothing to ask: the line says what the sprint waits
+   above it, one per gap, and so do its `follow_up_gaps`, "#N: <message>",
+   only for an issue whose hand-off step 3 already verified. Nothing to open and nothing to ask: the line says what the sprint waits
    for, including a spec ("מחכה לאפיון של #N") or a breakdown ("מחכה לפירוק של #N"). Then, when any child is active, start the background watch: stop the previous one if
    it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
    ```bash
