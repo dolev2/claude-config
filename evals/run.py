@@ -85,6 +85,25 @@ def unreachable(folder: Path) -> str | None:
     return None
 
 
+def new_run_dir(work_dir: Path) -> Path:
+    """A results folder of this run's own under work_dir, named by the start time.
+
+    The mkdir without exist_ok is the lock: two runs that start in the same second
+    cannot both get one name, so the second takes the next free suffix (-2, -3, ...).
+    """
+    work_dir.mkdir(parents=True, exist_ok=True)
+    name = time.strftime("run-%Y%m%d-%H%M%S")
+    suffix = 1
+    while True:
+        folder = work_dir / (name if suffix == 1 else f"{name}-{suffix}")
+        try:
+            folder.mkdir()
+        except FileExistsError:
+            suffix += 1
+        else:
+            return folder
+
+
 def build_plugin(work: Path, holdout: bool) -> Path:
     """The temporary plugin: skills, plugin.json, the cases, and a ~/.claude copy.
 
@@ -221,8 +240,7 @@ def main(argv: list[str] | None = None) -> int:
     if blocked:
         print(f"לא הורץ: {blocked}. הריצו מ-clone מחוץ ל-HOME ול-/tmp.")
         return 2
-    work = args.work_dir / time.strftime("run-%Y%m%d-%H%M%S")
-    work.mkdir(parents=True)
+    work = new_run_dir(args.work_dir)
     plugin = build_plugin(work, args.holdout)
     fake_bin = install_fake_gh(work)
     command = eval_command(plugin, args, [] if args.holdout else tags)
