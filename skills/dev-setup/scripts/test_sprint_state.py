@@ -13,6 +13,7 @@ spec = importlib.util.spec_from_file_location("sprint_state", HERE / "sprint_sta
 sprint_state = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sprint_state)
 import billing_flag  # noqa: E402
+import follow_ups  # noqa: E402
 import issue_body  # noqa: E402
 import pipeline_shas  # noqa: E402
 import sprint_github  # noqa: E402
@@ -391,12 +392,16 @@ def test_ci_summary(runs, summary):
     assert sprint_github.ci_summary(runs) == summary
 
 
+FOLLOW_UPS = {"follow_ups": [{"issue": 1, "key": "0123456789"}], "follow_up_gaps": []}
+
+
 def fake_github(monkeypatch, nodes):
     monkeypatch.setattr(sprint_state, "current_repo", lambda: "acme/widgets")
     monkeypatch.setattr(sprint_state, "open_issue_nodes", lambda repo, with_body: nodes)
     monkeypatch.setattr(sprint_state, "api", lambda path: {"default_branch": "main"})
     monkeypatch.setattr(sprint_state, "repo_specs", lambda base: {})
     monkeypatch.setattr(sprint_state, "spec_prs", lambda repo, number: [])
+    monkeypatch.setattr(follow_ups, "follow_ups", lambda repo, sprint: FOLLOW_UPS)
 
 
 def test_a_failing_git_leaves_null_shas_and_the_rest_of_the_state(
@@ -422,6 +427,33 @@ def test_the_billing_flag_while_it_is_on(tmp_path, monkeypatch, capsys):
     fake_github(monkeypatch, [node(1)])
     sprint_state.main([])
     assert json.loads(capsys.readouterr().out)["billing_flag"] == flag | {"notice": "n"}
+
+
+def test_main_adds_the_follow_ups_and_keeps_the_other_keys(
+    tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(pipeline_shas, "PIPELINE_URL", str(tmp_path / "missing"))
+    monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
+    fake_github(monkeypatch, [node(1)])
+    sprint_state.main([])
+    result = json.loads(capsys.readouterr().out)
+    assert {k: result[k] for k in FOLLOW_UPS} == FOLLOW_UPS
+    assert set(result) - set(FOLLOW_UPS) == {
+        "sprint",
+        "dispatch",
+        "held_by_overlap",
+        "proposals",
+        "blocked",
+        "waiting_dolev",
+        "merge_queue",
+        "umbrellas",
+        "on_hold",
+        "paused",
+        "findings",
+        "pipeline_sha",
+        "session_sha",
+        "billing_flag",
+    }
 
 
 def test_main_without_an_open_milestone_exits(monkeypatch):
