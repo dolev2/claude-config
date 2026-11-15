@@ -1,10 +1,12 @@
-"""Warns on a code or skill file that a PR moved past about 300 lines (S-4.14).
+"""Warns on a code, skill or pipeline file that a PR moved past its line limit.
 
-The size is only a warning light: a file splits for a reason, never for a number
-(rules/code-general.md, "מודולריות"). So the warning shows the split questions, not only
-the count, and it never fails the run. It goes only to a file the PR moved past
-the limit: one that was already over it would warn on every PR that touches it, and a
-warning that always shows is noise. Run in CI on every PR:
+Code and skills: about 300 lines, with the split questions (S-4.14). A pipeline doc
+(skills/dev-setup/reference/*.md): about 150, with the questions of S-1.55 (place,
+redundant, responsibility). The size is only a warning light: a file splits for a
+reason, never for a number (rules/code-general.md, "מודולריות"). So the warning shows
+the questions, not only the count, and it never fails the run. It goes only to a file
+the PR moved past its limit: one that was already over it would warn on every PR
+that touches it, and a warning that always shows is noise. Run in CI on every PR:
 
     python size_check.py --base origin/main
 
@@ -15,17 +17,17 @@ import argparse
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from fnmatch import fnmatchcase
 from pathlib import PurePosixPath
 
-LIMIT = 300
 CODE_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".ps1", ".sh"}
 TEST_PATTERNS = ("test_*.py", "*_test.py", "*.test.*", "*.spec.*")
-# The pipeline docs have a limit of their own, 150 (S-1.55, claude-config #382), and the
-# spec is one file on purpose: neither gets this warning.
-SKIPPED_PREFIXES = ("docs/specs/", "skills/dev-setup/reference/")
+REFERENCE_DIR = PurePosixPath("skills/dev-setup/reference")
+# The spec is one file on purpose (docs/specs/README.md): it never gets the warning.
+SKIPPED_PREFIXES = ("docs/specs/",)
 
-QUESTIONS = (
+SPLIT_QUESTIONS = (
     "מתי מפצלים:",
     "1. נושא אחר: לחלקים יש סיבות שונות להשתנות.",
     "2. גנרי מול ספציפי: חלק שלא יודע כלום על הנושא, וקובץ אחר צריך אותו.",
@@ -37,22 +39,48 @@ QUESTIONS = (
     "נושא אחד: הקובץ נשאר, ומדריך הקבצים אומר למה (rules/code-general.md).",
 )
 
+PIPELINE_QUESTIONS = (
+    "השאלות של מסמך צינור (S-1.55):",
+    "1. מקום: מה בקובץ גנרי, ושייך לקובץ בעלים אחר (reference/owners.md).",
+    "2. מיותר: מה חוזר על מה שכתוב במקום אחר, או לא נחוץ בכלל.",
+    "3. אחריות: האם הקובץ מחזיק יותר מנושא אחד, ואז שאלות הפיצול (S-4.14).",
+    "הכל במקום: המסמך נשאר, והתשובה נכתבת בשורה במסירה של ה-PR.",
+)
 
-def is_checked(path: str) -> bool:
-    """Whether the warning covers this file: code or a skill, not a test or the spec."""
+
+@dataclass(frozen=True)
+class Rule:
+    """The limit of a kind of file, and the questions its warning shows."""
+
+    limit: int
+    questions: tuple[str, ...]
+
+
+CODE_RULE = Rule(300, SPLIT_QUESTIONS)
+PIPELINE_RULE = Rule(150, PIPELINE_QUESTIONS)
+
+
+def rule_for(path: str) -> Rule | None:
+    """The rule that covers this file, or None: tests and the spec are never checked."""
     pure = PurePosixPath(path)
+    if pure.parent == REFERENCE_DIR and pure.suffix == ".md":
+        return PIPELINE_RULE
+    if REFERENCE_DIR in pure.parents:
+        return None
     if path.startswith(SKIPPED_PREFIXES) or "tests" in pure.parts[:-1]:
-        return False
+        return None
     if any(fnmatchcase(pure.name, p) for p in TEST_PATTERNS):
-        return False
+        return None
     if pure.suffix in CODE_SUFFIXES:
-        return True
-    return pure.suffix == ".md" and path.startswith("skills/")
+        return CODE_RULE
+    if pure.suffix == ".md" and path.startswith("skills/"):
+        return CODE_RULE
+    return None
 
 
-def crossed(before: int | None, after: int | None) -> bool:
+def crossed(before: int | None, after: int | None, limit: int) -> bool:
     """Whether the PR moved the file past the limit; None is a missing file."""
-    return after is not None and after > LIMIT and (before is None or before <= LIMIT)
+    return after is not None and after > limit and (before is None or before <= limit)
 
 
 def git(*args: str) -> subprocess.CompletedProcess:
@@ -85,37 +113,45 @@ def changed_paths(name_status: str) -> list[tuple[str, str]]:
     return pairs
 
 
-def findings(
-    base: str, pairs: list[tuple[str, str]]
-) -> list[tuple[str, int | None, int]]:
-    """(path, lines in base, lines at HEAD) for each checked file that crossed."""
+Finding = tuple[str, int | None, int, Rule]
+
+
+def findings(base: str, pairs: list[tuple[str, str]]) -> list[Finding]:
+    """(path, lines in base, lines at HEAD, rule) for each checked file that crossed."""
     found = []
     for old, path in pairs:
-        if not is_checked(path):
+        rule = rule_for(path)
+        if rule is None:
             continue
         before, after = line_count(base, old), line_count("HEAD", path)
-        if crossed(before, after):
-            found.append((path, before, after))
+        if crossed(before, after, rule.limit):
+            found.append((path, before, after, rule))
     return found
 
 
-def warning(path: str, before: int | None, after: int) -> str:
+def warning(path: str, before: int | None, after: int, rule: Rule) -> str:
     """One GitHub annotation; %0A is a line break inside it."""
     was = "קובץ חדש" if before is None else f"{before} שורות"
     head = (
-        f"עבר את הסף של כ-{LIMIT} שורות ({was} ← {after}). זו נורת אזהרה, לא חובה לפצל."
+        f"עבר את הסף של כ-{rule.limit} שורות ({was} ← {after})."
+        " זו נורת אזהרה, לא חובה לשנות את הקובץ."
     )
     escaped = path.replace("%", "%25").replace(":", "%3A").replace(",", "%2C")
-    return f"::warning file={escaped}::" + "%0A".join((head, *QUESTIONS))
+    return f"::warning file={escaped}::" + "%0A".join((head, *rule.questions))
 
 
-def summary(found: list[tuple[str, int | None, int]]) -> str:
-    """The job summary: every file, then the questions once."""
-    rows = [
-        f"- הקובץ `{p}`: {'חדש' if b is None else b} ← {a} שורות" for p, b, a in found
-    ]
-    heading = f"### קבצים שעברו את הסף של כ-{LIMIT} שורות"
-    return "\n".join([heading, *rows, "", *QUESTIONS, ""])
+def summary(found: list[Finding]) -> str:
+    """The job summary: a heading per limit, its files, then its questions once."""
+    out = []
+    for rule in sorted({f[3] for f in found}, key=lambda r: -r.limit):
+        rows = [
+            f"- הקובץ `{p}`: {'חדש' if b is None else b} ← {a} שורות"
+            for p, b, a, r in found
+            if r == rule
+        ]
+        heading = f"### קבצים שעברו את הסף של כ-{rule.limit} שורות"
+        out += [heading, *rows, "", *rule.questions, ""]
+    return "\n".join(out)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -128,10 +164,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     found = findings(args.base, changed_paths(diff.stdout))
     if not found:
-        print(f"אף קובץ לא עבר את הסף של כ-{LIMIT} שורות ב-PR הזה.")
+        print("אף קובץ לא עבר את סף השורות שלו ב-PR הזה.")
         return 0
-    for path, before, after in found:
-        print(warning(path, before, after))
+    for finding in found:
+        print(warning(*finding))
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as out:

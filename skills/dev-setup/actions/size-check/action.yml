@@ -1,7 +1,7 @@
 name: Size check
 description: >
-  Warns on a code or skill file that the PR moved past about 300 lines, with the
-  split questions. Never fails. The rules are in skills/dev-setup/scripts/size_check.py.
+  Warns on a code or skill file that the PR moved past about 300 lines, or a pipeline
+  doc past about 150, with the questions of its kind. Never fails. The rules are in skills/dev-setup/scripts/size_check.py.
 
 # One copy for every repo with the pipeline: each repo's tests.yml calls
 # dolev2/claude-config/skills/dev-setup/actions/size-check@main, so a fix merged here
