@@ -38,6 +38,10 @@ gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5
    לתכנון" (an open spec part already names it, `parts`: it is that part's task, #334).
    While `sprint_state.py` gives a `billing_flag`, its `notice` is the picture's first line,
    as it is (S-1.53, `reference/git-flow.md`, "דגל החיוב").
+   A PR in `merge_queue` with CI `billing`, in any check: `billing_flag.py check --sha <head_sha>`
+   once, then one line in the check's message that the flag is on and which run showed it. A
+   second line `not-written`: the line says the flag was not written, and how Dolev turns it
+   on (`reference/git-flow.md`, "דגל החיוב").
 
 ## Each check
 
@@ -179,7 +183,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       question as it is, even when the rest is shortened for the phone (#238);
    3. a PR ready to merge (`merge_queue`, CI `success`, `mergeable_state` neither `dirty` nor
       `unknown`; `unknown` is asked again next check; CI `billing` is GitHub's billing, not a
-      PR to merge: `billing_flag.py check --sha <head_sha>` turns the flag on): a change
+      PR to merge: below): a change
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
       warns. Only one merge question per window. A spec PR (`kind: "spec"`) is an ordinary

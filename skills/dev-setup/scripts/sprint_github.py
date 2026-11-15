@@ -57,10 +57,13 @@ def billing_failure(
 
 def actions_job(repo: str, job_id: int) -> dict | None:
     """One Actions job; None when the check run is not one (404)."""
-    code, out, err = run_command("gh", "api", f"repos/{repo}/actions/jobs/{job_id}")
-    if code != 0 and "HTTP 404" in err:
+    path = f"repos/{repo}/actions/jobs/{job_id}"
+    code, out, err = run_command("gh", "api", path)
+    if code == 0:
+        return json.loads(out)
+    if "HTTP 404" in err:
         return None
-    return json.loads(out) if code == 0 else api(f"repos/{repo}/actions/jobs/{job_id}")
+    raise SystemExit(f"gh api {path} failed:\n{err}")
 
 
 def billing_run(repo: str, check_runs: list[dict]) -> str | None:

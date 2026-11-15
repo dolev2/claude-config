@@ -254,3 +254,14 @@ def test_pr_status_keeps_an_ordinary_failure(monkeypatch):
     monkeypatch.setattr(sprint_github, "billing_run", lambda repo, runs: None)
     status = sprint_github.pr_status("o/r", {"number": 5, "headSha": "abc"})
     assert status["ci"] == "failure"
+
+
+@pytest.mark.parametrize(
+    ("code", "out", "err", "expected"),
+    [(0, '{"steps": []}', "", {"steps": []}), (1, "", "HTTP 404: Not Found", None)],
+)
+def test_actions_job_is_none_for_a_check_that_is_not_a_job(
+    code, out, err, expected, monkeypatch
+):
+    fake_compare(monkeypatch, code, out, err)
+    assert sprint_github.actions_job("o/r", 7) == expected

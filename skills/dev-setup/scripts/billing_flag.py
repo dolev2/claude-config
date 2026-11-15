@@ -106,14 +106,14 @@ def notice(flag: dict) -> str:
     return NOTICE.format(date=(flag.get("since") or "")[:10], how=how)
 
 
-def current(cache: Path = CACHE) -> dict | None:
+def current(cache: Path | None = None) -> dict | None:
     """The flag while it is on, as {since, source, run, notice}; None when it is off.
 
     None, with a warning on stderr, when git could not read it: a view built on it
     shows nothing rather than fail.
     """
     try:
-        flag = read(cache)
+        flag = read(cache or CACHE)
     except (subprocess.SubprocessError, OSError, ValueError) as err:
         warn_unread(err)
         return None
@@ -128,36 +128,51 @@ def warn_unread(err: Exception) -> None:
     print(f"warning: the billing flag was not read: {detail.strip()}", file=sys.stderr)
 
 
-def turn_on(cache: Path, source: str, run: str | None, now: Callable[[], str]) -> dict:
-    """Turns the flag on; one already on keeps its `since`. Raises NotWrittenError."""
+def read_for_write(cache: Path) -> dict:
+    """read(), with a git failure turned into NotWrittenError."""
     try:
-        flag = read(cache)
+        return read(cache)
     except (subprocess.SubprocessError, OSError, ValueError) as err:
         raise NotWrittenError(f"the flag was not read: {err}") from err
-    if flag.get("blocked"):
+
+
+def settle(cache: Path, wanted: dict, message: str) -> dict:
+    """Brings the flag to `wanted["blocked"]`, and returns it. Raises NotWrittenError.
+
+    A flag already there is left as it is, so an `on` keeps its `since`. A rejected
+    push may be another session that wrote first: when the flag is now where it should
+    be, that is a success, not a `not-written`.
+    """
+    flag = read_for_write(cache)
+    if bool(flag.get("blocked")) == wanted["blocked"]:
         return flag
-    flag = {"blocked": True, "since": now(), "source": source, "run": run}
-    write(cache, flag, f"billing flag on ({source})")
-    return flag
+    try:
+        write(cache, wanted, message)
+    except NotWrittenError:
+        flag = read_for_write(cache)
+        if bool(flag.get("blocked")) == wanted["blocked"]:
+            return flag
+        raise
+    return wanted
+
+
+def turn_on(cache: Path, source: str, run: str | None, now: Callable[[], str]) -> dict:
+    """Turns the flag on; one already on keeps its `since`. Raises NotWrittenError."""
+    wanted = {"blocked": True, "since": now(), "source": source, "run": run}
+    return settle(cache, wanted, f"billing flag on ({source})")
 
 
 def turn_off(cache: Path) -> dict:
     """Turns the flag off; one already off is left as it is. Raises NotWrittenError."""
-    try:
-        flag = read(cache)
-    except (subprocess.SubprocessError, OSError, ValueError) as err:
-        raise NotWrittenError(f"the flag was not read: {err}") from err
-    if flag.get("blocked"):
-        write(cache, dict(OFF), "billing flag off")
-    return dict(OFF)
+    return settle(cache, dict(OFF), "billing flag off")
 
 
 def billing_lines(
-    url: str, cache: Path = CACHE, now: Callable[[], str] | None = None
+    url: str, cache: Path | None = None, now: Callable[[], str] | None = None
 ) -> list[str]:
     """`billing <url>` after turning the flag on; `not-written <why>` if that failed."""
     try:
-        turn_on(cache, "auto", url, now or iso_now)
+        turn_on(cache or CACHE, "auto", url, now or iso_now)
     except NotWrittenError as err:
         return [f"billing {url}", f"not-written {err}"]
     return [f"billing {url}"]

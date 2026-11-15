@@ -143,3 +143,47 @@ def test_script_on_and_off_with_exit_codes(remote, tmp_path):
     assert run("off").stdout == "off\n"
     assert run("status").stdout == "off\n"
     assert run("on").returncode == 2
+
+
+def test_a_rejected_push_after_another_session_turned_it_on_is_a_success(
+    remote, cache, monkeypatch
+):
+    real_write = billing_flag.write
+
+    def other_session_first(cache_path, flag, message):
+        real_write(cache_path, flag | {"since": "2026-11-01T00:00:00"}, "other")
+        raise billing_flag.NotWrittenError("rejected: not a fast-forward")
+
+    monkeypatch.setattr(billing_flag, "write", other_session_first)
+    flag = billing_flag.turn_on(cache, "auto", URL, lambda: "2026-11-15T00:00:00")
+    assert flag["since"] == "2026-11-01T00:00:00"
+
+
+def deny_pushes(remote):
+    hook = remote / "hooks" / "pre-receive"
+    hook.write_text("#!/bin/sh\necho denied >&2\nexit 1\n")
+    hook.chmod(0o755)
+
+
+@pytest.mark.parametrize("argv", [["on", "--manual"], ["off"]])
+def test_a_failed_write_exits_1_with_not_written(
+    argv, remote, cache, monkeypatch, capsys
+):
+    monkeypatch.setattr(billing_flag, "CACHE", cache)
+    if argv == ["off"]:
+        billing_flag.turn_on(cache, "manual", None, lambda: "2026-11-15T00:00:00")
+    deny_pushes(remote)
+    assert billing_flag.main(argv) == 1
+    assert capsys.readouterr().out.startswith("not-written ")
+
+
+def test_check_exits_1_when_the_flag_was_not_written(
+    remote, cache, monkeypatch, capsys
+):
+    monkeypatch.setattr(billing_flag, "CACHE", cache)
+    monkeypatch.setattr(billing_flag, "api", lambda path: {"check_runs": []})
+    monkeypatch.setattr(billing_flag, "billing_run", lambda repo, runs: URL)
+    deny_pushes(remote)
+    assert billing_flag.main(["check", "--sha", "abc1234", "--repo", "o/r"]) == 1
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == f"billing {URL}" and out[1].startswith("not-written ")
