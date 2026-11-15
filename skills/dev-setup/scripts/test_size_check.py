@@ -86,6 +86,7 @@ def test_no_warning_without_crossing(repo, before, after):
         "backend/tests/helpers.py",
         "docs/specs/repo.md",
         "skills/dev-setup/reference/sub/notes.md",
+        "skills/dev-setup/reference/helper.py",
         "data/rows.json",
         "docs/page.html",
     ],

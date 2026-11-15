@@ -65,17 +65,15 @@ def rule_for(path: str) -> Rule | None:
     pure = PurePosixPath(path)
     if pure.parent == REFERENCE_DIR and pure.suffix == ".md":
         return PIPELINE_RULE
+    if REFERENCE_DIR in pure.parents:
+        return None
     if path.startswith(SKIPPED_PREFIXES) or "tests" in pure.parts[:-1]:
         return None
     if any(fnmatchcase(pure.name, p) for p in TEST_PATTERNS):
         return None
     if pure.suffix in CODE_SUFFIXES:
         return CODE_RULE
-    if (
-        pure.suffix == ".md"
-        and path.startswith("skills/")
-        and REFERENCE_DIR not in pure.parents
-    ):
+    if pure.suffix == ".md" and path.startswith("skills/"):
         return CODE_RULE
     return None
 
@@ -136,7 +134,7 @@ def warning(path: str, before: int | None, after: int, rule: Rule) -> str:
     was = "קובץ חדש" if before is None else f"{before} שורות"
     head = (
         f"עבר את הסף של כ-{rule.limit} שורות ({was} ← {after})."
-        " זו נורת אזהרה, לא חובה לפצל."
+        " זו נורת אזהרה, לא חובה לשנות את הקובץ."
     )
     escaped = path.replace("%", "%25").replace(":", "%3A").replace(",", "%2C")
     return f"::warning file={escaped}::" + "%0A".join((head, *rule.questions))
