@@ -81,3 +81,24 @@ def test_demo_repo_can_add_a_worktree(tmp_path):
         check=False,
     )
     assert added.returncode == 0, added.stderr
+
+
+@pytest.mark.parametrize(
+    "name", ["dev-plan-gate-in-sprint", "dev-plan-gate-no-milestone"]
+)
+def test_gate_case_code_agrees_with_its_done_part(tmp_path, name):
+    # The code on main already does what the Done part says, so #12 is not a bug and
+    # the gate is the only right answer (#415).
+    workspace, env = setup_case(tmp_path, name)
+    greeting = subprocess.run(
+        ["python3", "-c", "from greet import greet; print(greet(''))"],
+        cwd=workspace,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert greeting == "Hello, stranger\n"
+    spec = (workspace / "docs" / "specs" / "demo.md").read_text(encoding="utf-8")
+    assert "**מצב:** Done (#11)" in spec
+    assert "#12" not in spec
