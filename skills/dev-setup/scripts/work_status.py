@@ -19,7 +19,8 @@ the session links from the --sessions file, for the status skill to publish.
 The sprint picture comes from sprint_state.state(), the same one the orchestrator
 reads (S-2.2), so nothing here ranks or classifies an issue on its own.
 
-Exit codes: 0 with the tables, or with one sentence when the repo has no pipeline;
+Exit codes: 0 with the tables, with one sentence when the repo has no pipeline, or
+with only the repo under --which;
 1 when GitHub could not be read, with no tables, so a partial picture never looks whole;
 2 when the --sessions file is broken; 3 when there is no repo to show.
 """
@@ -30,7 +31,14 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from gh_rest import api_list, gh_api, open_issue_nodes, recent_done, repo_of_folder
+from gh_rest import (
+    api_list,
+    gh_api,
+    open_issue_nodes,
+    recent_done,
+    repo_from_url,
+    repo_of_folder,
+)
 from pipeline_info import REQUIRED_LABELS
 from rank_issues import current_sprint, parse_issue, rank, with_started_umbrellas
 from spec_check import issue_spec
@@ -68,8 +76,11 @@ def choose_repo(
     """The repo to show (S-1.56): the one asked for, the folder's, then the source's.
 
     The folder wins over the sources, so a session that sits in a repo never shows
-    another one. None means there is no repo to show.
+    another one. A source given as its full GitHub URL is cut to owner/name. None
+    means there is no repo to show.
     """
+    if source_repo:
+        source_repo = repo_from_url(source_repo) or source_repo
     return repo or folder_repo or source_repo or None
 
 
@@ -292,7 +303,9 @@ def read(repo: str) -> tuple[list[str], list[dict], list[dict]]:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
-        "--repo", help="owner/name; defaults to the repo of the current directory"
+        "--repo",
+        help="owner/name; defaults to the repo of the current directory, "
+        "then to --source-repo",
     )
     parser.add_argument(
         "--source-repo",

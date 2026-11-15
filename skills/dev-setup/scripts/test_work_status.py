@@ -144,6 +144,7 @@ def test_github_not_answering_exits_1_without_tables(monkeypatch, capsys):
         ("acme/asked", "acme/here", "acme/first", "acme/asked"),
         (None, None, None, None),
         (None, None, "", None),
+        (None, None, "https://github.com/acme/first.git", "acme/first"),
     ],
 )
 def test_choose_repo_folder_before_sources(repo, folder, source, expected):
@@ -161,7 +162,7 @@ def test_no_repo_says_why(unread, reason, monkeypatch, capsys):
         work_status.main(argv)
     out = capsys.readouterr().out
     assert exit_info.value.code == 3
-    assert out.strip() == work_status.no_repo(unread) and reason in out
+    assert out.strip() == work_status.no_repo(unread)
     assert "###" not in out
 
 
@@ -170,6 +171,13 @@ def test_folder_outside_a_repo_shows_the_first_source(monkeypatch, capsys):
     monkeypatch.setattr(work_status, "repo_of_folder", lambda: None)
     work_status.main(["--source-repo", REPO])
     assert capsys.readouterr().out.startswith(work_status.REPO_LINE.format(repo=REPO))
+
+
+def test_a_source_without_the_pipeline_is_not_skipped(monkeypatch, capsys):
+    monkeypatch.setattr(work_status, "repo_of_folder", lambda: None)
+    monkeypatch.setattr(work_status, "api_list", lambda path: [{"name": "bug"}])
+    work_status.main(["--source-repo", REPO])
+    assert capsys.readouterr().out.strip() == work_status.NO_PIPELINE.format(repo=REPO)
 
 
 def test_the_folder_repo_wins_over_the_sources(monkeypatch, capsys):

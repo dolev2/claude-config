@@ -59,12 +59,12 @@ repo: `גרף החסימות · <name>` (`<name>` without the owner).
 
 ## Step 4: Show the output
 
-Print the script's output exactly as it is: the repo line (`**הריפו:** ...`), five headings, the four tables (each with its
-rows or the line "אין.") and the blocking graph (a `mermaid` block, or one line saying why
-there is none). Do not rebuild, reorder, filter or summarize the rows, and keep the
-`mermaid` block as it is: the app draws it, and the terminal shows it as text. Add nothing
-between the sections. Under the graph, one line: `הגרף הלחיץ: [גרף החסימות · <name>](<url>)`,
-or the line of step 3.
+Print the script's output exactly as it is: the repo line (`**הריפו:** ...`), five
+headings, the four tables (each with its rows or the line "אין.") and the blocking graph
+(a `mermaid` block, or one line saying why there is none). Do not rebuild, reorder, filter
+or summarize the rows, and keep the `mermaid` block as it is: the app draws it, and the
+terminal shows it as text. Add nothing between the sections. Under the graph, one line:
+`הגרף הלחיץ: [גרף החסימות · <name>](<url>)`, or the line of step 3.
 
 - **Exit 0 with one sentence** (the repo has no pipeline): show the sentence, and offer
   `dev-setup`. No page. Never fall back to the session's next repo (S-1.56).
