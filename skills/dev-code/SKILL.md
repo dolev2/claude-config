@@ -197,15 +197,17 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
       ```bash
       python "$HOME/.claude/skills/dev-setup/scripts/wait_ci.py" --sha <sha>
       ```
-      Its first line: `success`, `failure` (then a line per failed check: name, conclusion,
+      Its first line: `success`, `billing-flag <since>` (the billing flag was already on: no
+      wait), `failure` (then a line per failed check: name, conclusion,
       link), `billing <link>` (GitHub failed it for billing and the billing flag is on; a
       second line `not-written <reason>` when it could not be written), `timeout pending`,
       `timeout not-started`, `none` (no `pull_request` workflow in
       the checkout; say "אין CI בריפו" in the hand-off), or `error` (GitHub could not be read;
       then gh's message: run it once more, and a second `error` is a stuck CI, below).
       `billing` is never a test to fix: tell Dolev in one line that the flag is on and which
-      run showed it (an orchestrator's child: in a comment on the issue), and treat it as a
-      stuck CI, below (`reference/git-flow.md`, "דגל החיוב").
+      run showed it (an orchestrator's child: in a comment on the issue). With `not-written`
+      it is a stuck CI, below; without it, and `billing-flag`, the hand-off goes on without CI,
+      on the local checks of step 7 (S-1.54, `reference/git-flow.md`, "דגל החיוב").
     - **A review agent**: the `Agent` tool, no `isolation` (it reads this worktree) and no
       cheaper `model`. Its brief holds the full Plan, the spec part, `<sha>`, the diff command
       `git diff origin/<default>...<sha>`, and pointers to the repo's `CLAUDE.md` and the rules
@@ -263,7 +265,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     No screenshots either.
 
     Go on to step 11 only when the agent has returned, the user-experience check is done, and CI
-    is green on the last push (`wait_ci.py` printed `success` on it; `none`: the agent alone).
+    is green on the last push (`wait_ci.py` printed `success` on it; `none`: the agent alone;
+    `billing-flag`, or `billing` without `not-written`: the agent alone, as for `none`).
 
 11. Hand off:
     ```bash
@@ -275,7 +278,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
     was not checked and why. A "CI" line: green, the head it ran on, and how many fix rounds
-    there were (or "אין CI בריפו"). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
+    there were (or "אין CI בריפו"; with the billing flag on: "ה-CI לא רץ: החיוב חסום (דגל
+    החיוב דולק מ-<since>)"). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
     the lines `evals/run.py` printed, the model, and a line for each case that ran again, with
     its result. The app's outcome from step 10 goes into that comment and into the
     chat message, with one line on what to open in it. After the "סקירת קוד" line, it has the
@@ -298,7 +302,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
     **Then, when Dolev is in the chat, ask in the question window** (`AskUserQuestion`;
     `reference/chat-decisions.md`). The label is already `status:in-review`,
-    so a run nobody answers stays right. One question, naming the issue and its title:
+    so a run nobody answers stays right. One question, naming the issue and its title (with
+    the billing flag on, it also carries the CI line above):
     1. "תמזג את #<N> (מומלץ)": run `dev-ship` on the issue, as if he had typed it. It stops
        the app and cleans up the worktree and branch, so step 12 does not apply.
     2. "אסקור ואחזור": change nothing.
