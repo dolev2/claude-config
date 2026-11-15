@@ -181,7 +181,7 @@ def layout(sprint_nodes: list[dict], nodes: list[dict], status_he: StatusHe) -> 
 def mermaid_lines(shape: dict, extra: Callable[[str], str] | None = None) -> list[str]:
     """The lines of the Mermaid flowchart for a layout().
 
-    `extra` adds raw label text under a node's status (the page's links); without it,
+    `extra` adds raw label text under a node's labels (the page's links); without it,
     the lines are the chat graph's.
     """
     refs, outside, edges = shape["refs"], shape["outside"], shape["edges"]
