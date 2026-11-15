@@ -1,4 +1,6 @@
-"""reference/*.md: every pointer to a reference file is live, and the files stay small.
+"""reference/*.md: every pointer to a reference file is live, and each has a reader.
+
+Their size is a warning in the PR, not a test here (size_check.py, S-1.55).
 
 The skills point at reference files by name, never at a heading inside one
 (claude-config#99), so a renamed heading cannot break a pointer. These tests guard the
@@ -13,7 +15,6 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 REFERENCE = ROOT / "skills" / "dev-setup" / "reference"
 DOCS = sorted(REFERENCE.glob("*.md"))
-MAX_LINES = 150
 POINTER = re.compile(r"reference/([\w-]+\.md)")
 
 
@@ -62,12 +63,6 @@ def test_no_skill_points_at_the_reference_doc_without_a_file_name():
         if where.endswith("SKILL.md") and "reference doc" in text
     ]
     assert vague == []
-
-
-@pytest.mark.parametrize("doc", DOCS, ids=lambda doc: doc.name)
-def test_reference_file_stays_small(doc):
-    lines = doc.read_text(encoding="utf-8").count("\n")
-    assert lines <= MAX_LINES, f"{doc.name}: {lines} lines; split it or cut it"
 
 
 # gh repo too: gh repo edit runs over GraphQL, which is blocked in the cloud (#251).
