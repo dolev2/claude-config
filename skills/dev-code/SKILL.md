@@ -26,7 +26,8 @@ In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label voc
 `issue-body.md` (how to read the full context of an issue, the Plan format), `git-flow.md` (one
 issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`,
 `review-app.md`, `ux.md` (the user-experience check), `specs.md` (marking the part Done),
-`chat-decisions.md` (the hand-off question) and `lessons.md`. Read them before step 1, every run.
+`chat-decisions.md` (the hand-off question), `follow-ups.md` (the follow-up tasks of the
+hand-off) and `lessons.md`. Read them before step 1, every run.
 Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 ## Execute
@@ -227,7 +228,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     cloud session, in a headless Playwright script at 1280 and 375. In every environment, finish
     with the hand-off screenshots of the changed screen, as files (`reference/ux.md`,
     "צילומים למסירה"); step 11 sends them. A gap
-    inside the Plan is fixed like a review finding; one outside it is proposed as a task. No app
+    inside the Plan is fixed like a review finding; one outside it is a product follow-up task
+    (`reference/follow-ups.md`). No app
     (or no browser at all): check what you can (output, messages) and say what was not
     checked. A plan with "אין ממשק", or the short plan of a `size:small` task, skips this.
     The short plan of a bug does not: its "חוויית משתמש" section with content is checked, and
@@ -235,8 +237,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
     **When the agent returns**, check that `git status --porcelain` in the worktree is still
     empty (the agent wrote nothing), then decide each finding: right and inside the Plan: fix
-    it. Wrong: note it with the reason. Right but outside the Plan: do not fix it; propose it
-    as a task in the hand-off. Fixes are committed, the lint and the full suite of each area
+    it. Wrong: note it with the reason. Right but outside the Plan: do not fix it; it is a
+    product follow-up task in the hand-off (`reference/follow-ups.md`); a bug stays a bug. Fixes are committed, the lint and the full suite of each area
     a fix touched run again (a file outside every area: all of step 7), and the
     push is followed by a new `wait_ci.py` on the new head: the first wait may have finished on
     the old one. **One review round only**: a fix is not reviewed again. The app
@@ -276,8 +278,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     there were (or "אין CI בריפו"). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
     the lines `evals/run.py` printed, the model, and a line for each case that ran again, with
     its result. The app's outcome from step 10 goes into that comment and into the
-    chat message, with one line on what to open in it. It also has the lesson, in the four
-    fields of `reference/lessons.md` under `#### לקח מוצע`, or "אין לקח". Both end with the next step, in one
+    chat message, with one line on what to open in it. After the "סקירת קוד" line, it has the
+    fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
+    `תהליך`) and its fields, or "אין משימות המשך" (`reference/follow-ups.md`; a process task
+    passes the filter of `reference/lessons.md`). Both end with the next step, in one
     line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
     `status:needs-repair` with a comment.
 
@@ -301,10 +305,15 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     3. "Other" with what to fix: move the issue `status:in-review` → `status:needs-repair`,
        comment on it with his words quoted, and start the repair round in this session (no WIP
        gate, like every repair).
-    A lesson is a second question in the same call (`reference/lessons.md`); a merge does not
-    cancel it, and its task opens with `dev-issue` before `dev-ship` runs.
-    After the choice, one line in the chat on what changed. No window available, or the run is
-    automated: the comment and chat message above are the hand-off, as before.
+    The merge question is alone in that call. **Then each follow-up task, one per call**, with
+    the options of `reference/follow-ups.md`; a merge does not cancel them, and each proposal
+    opens with `dev-issue` before `dev-ship` runs. After the last one, one comment on the issue:
+    each task's kind, what was chosen, and the proposal's link and repo.
+    After each choice, one line in the chat on what changed. No window available, or the run is
+    automated: the comment and chat message above are the hand-off, as before, and each
+    follow-up task opens as a backlog proposal with no sprint (`reference/follow-ups.md`),
+    followed by the same one comment on the issue, with the proposals that opened. An
+    orchestrator's child opens none: they stay in the comment, for the orchestrator's window.
 
 12. **Unless he chose the merge, keep the worktree until it**: the review app runs from it.
     If you entered it with
