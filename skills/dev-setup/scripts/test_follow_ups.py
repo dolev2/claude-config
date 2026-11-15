@@ -12,10 +12,11 @@ PRODUCT = "**מוצר:** המסך של הלקוחות בלי עיצוב.\\\n   �
 PROCESS = "**תהליך:** מה קרה: ... הכלל המוצע: ... הריפו: dolev2/claude-config."
 
 
-def issue(number, state="open", labels=()):
+def issue(number, state="open", labels=(), created="2026-11-02T00:00:00Z"):
     return {
         "number": number,
         "state": state,
+        "created_at": created,
         "labels": [{"name": name} for name in labels],
     }
 
@@ -118,14 +119,16 @@ def test_main_with_a_milestone_that_does_not_exist_exits(monkeypatch):
 
 
 def test_main_prints_both_keys(monkeypatch, capsys):
+    sent = []
     milestone = {"title": "Sprint 1", "number": 3, "created_at": "2026-11-01T00:00:00Z"}
     lists = {
         "milestones": [milestone],
-        "issues?milestone=3": [issue(1)],
+        "issues?milestone=3": [issue(1, created="2026-10-20T00:00:00Z")],
         "comments": [comment(1, hand_off(PRODUCT))],
     }
 
     def fake_list(path):
+        sent.append(path)
         return next(rows for part, rows in lists.items() if part in path)
 
     monkeypatch.setattr(follow_ups, "pages", fake_list)
@@ -134,6 +137,7 @@ def test_main_prints_both_keys(monkeypatch, capsys):
     result = json.loads(capsys.readouterr().out)
     assert [t["issue"] for t in result["follow_ups"]] == [1]
     assert result["follow_up_gaps"] == []
+    assert "since=2026-10-20T00:00:00Z" in sent[-1]
 
 
 def test_pages_reads_page_after_page_until_a_short_one(monkeypatch):
@@ -149,3 +153,34 @@ def test_pages_reads_page_after_page_until_a_short_one(monkeypatch):
         "repos/x/y/issues?state=all&per_page=100&page=1",
         "repos/x/y/issues?state=all&per_page=100&page=2",
     ]
+
+
+def test_a_hash_inside_a_task_does_not_end_the_section():
+    body = hand_off(PRODUCT + "\n   #338 משכתב את lessons.md", PROCESS)
+    result = run([issue(1)], [comment(1, body)])
+    assert [t["kind"] for t in result["follow_ups"]] == ["מוצר", "תהליך"]
+
+
+def test_a_list_after_the_tasks_is_not_more_tasks():
+    body = hand_off(PRODUCT) + "\n**הצעד הבא:**\n1. לסקור.\n2. למזג."
+    result = run([issue(1)], [comment(1, body)])
+    assert len(result["follow_ups"]) == 1
+    assert result["follow_up_gaps"] == []
+
+
+def test_a_line_after_a_backslash_belongs_to_the_task():
+    body = hand_off("**מוצר:** א.\\\nלמה לא בתוכנית: ב.")
+    result = run([issue(1)], [comment(1, body)])
+    assert "למה לא בתוכנית" in result["follow_ups"][0]["text"]
+
+
+def test_no_follow_ups_as_a_list_item_is_no_gap():
+    result = run([issue(1)], [comment(1, hand_off("אין משימות המשך."))])
+    assert result == {"follow_ups": [], "follow_up_gaps": []}
+
+
+def test_a_closed_issue_and_a_repeated_task_give_no_gap_again():
+    kindless = hand_off("סתם משימה")
+    comments = [comment(1, kindless), comment(1, kindless, cid=2), comment(2, kindless)]
+    result = run([issue(1), issue(2, state="closed")], comments)
+    assert [g["issue"] for g in result["follow_up_gaps"]] == [1]

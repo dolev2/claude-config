@@ -29,9 +29,10 @@ The keys, in the order of the comments:
 
     follow_ups       [{issue, pr, comment_url, kind, key, text}]: pr is the PR that
                      closes the issue, among the 100 PRs updated last, or null
-    follow_up_gaps   [{issue, comment_url, message}]: an issue in status:in-review
-                     with no hand-off under the heading, a heading with no task, or a
-                     task with no kind. The script never guesses a kind
+    follow_up_gaps   [{issue, comment_url, message}], open issues only, each once: an
+                     issue in status:in-review with no hand-off under the heading, a
+                     heading with no task, or a task with no kind. The script never
+                     guesses a kind
 """
 
 import argparse
@@ -48,7 +49,8 @@ PAGE = 100
 HEADING = "#### משימות המשך"
 NONE_LINE = "אין משימות המשך"
 KINDS = ("מוצר", "תהליך")
-ITEM = re.compile(r"^(?:\d+[.)]|[-*+])\s+")
+ITEM = re.compile(r"^ {0,2}(?:\d+[.)]|[-*+])\s+")
+HEADING_LINE = re.compile(r"^ {0,3}#{1,6}\s")
 BOLD = re.compile(r"\*\*(.+?)\*\*")
 ASKED = re.compile(r"<!--\s*follow-up:\s*([0-9a-f]{10})\s*-->")
 
@@ -61,28 +63,32 @@ def section(body: str) -> list[str] | None:
         return None
     found = []
     for line in lines[starts[0] + 1 :]:
-        if line.lstrip().startswith("#"):
+        if HEADING_LINE.match(line):
             break
         found.append(line)
     return found
 
 
 def items(lines: list[str]) -> list[str]:
-    """Each top-level list item with its indented lines, the marker dropped.
+    """Each top-level list item with its lines, the marker dropped.
 
-    A line that is not indented ends the item: the hand-off goes on after the list.
+    An item goes on in indented lines, and in the line after one that ends in `\\`.
+    Any other line that is not indented ends the list, and with it the tasks: the
+    hand-off goes on after it, maybe with a list of its own (the next step).
     """
     found: list[list[str]] = []
-    is_open = False
+    previous = ""
     for line in lines:
+        goes_on = line[:1].isspace() or previous.rstrip().endswith("\\")
         if ITEM.match(line):
             found.append([ITEM.sub("", line, count=1)])
-            is_open = True
-        elif line.strip() and not line[0].isspace():
-            is_open = False
-        elif is_open and line.strip():
+        elif found and line.strip() and goes_on:
             found[-1].append(line.strip())
-    return ["\n".join(item).strip() for item in found]
+        elif found and line.strip():
+            break
+        previous = line
+    texts = ["\n".join(item).strip() for item in found]
+    return [text for text in texts if NONE_LINE not in text]
 
 
 def kind_of(text: str) -> str | None:
@@ -141,6 +147,7 @@ def asked_keys(comments: list[dict]) -> set[tuple[int, str]]:
 def collect(issues: list[dict], comments: list[dict], pulls: list[dict]) -> dict:
     """follow_ups and follow_up_gaps, from the REST issues, comments and PRs."""
     numbers = {i["number"] for i in issues if "pull_request" not in i}
+    is_open = {i["number"] for i in issues if i.get("state") == "open"}
     ours = [c for c in comments if issue_number(c) in numbers]
     seen = asked_keys(ours)
     tasks, gaps, handed_off = [], [], set()
@@ -151,7 +158,13 @@ def collect(issues: list[dict], comments: list[dict], pulls: list[dict]) -> dict
             continue
         handed_off.add(number)
         found, missing = read
-        gaps += missing
+        # A closed issue's gap would come back every check; its tasks still count.
+        known = {(g["issue"], g["message"]) for g in gaps}
+        gaps += [
+            g
+            for g in missing
+            if number in is_open and (g["issue"], g["message"]) not in known
+        ]
         for task in found:
             if (number, task["key"]) in seen:
                 continue
@@ -196,7 +209,9 @@ def follow_ups(repo: str, sprint: str) -> dict:
     """The two keys for the milestone named `sprint`, read from GitHub."""
     milestone = milestone_of(repo, sprint)
     issues = pages(f"repos/{repo}/issues?milestone={milestone['number']}&state=all")
-    comments = pages(f"repos/{repo}/issues/comments?since={milestone['created_at']}")
+    # An issue carried in from an earlier sprint may have handed off before this one.
+    since = min([milestone["created_at"]] + [i["created_at"] for i in issues])
+    comments = pages(f"repos/{repo}/issues/comments?since={since}")
     # The 100 PRs updated last cover a sprint; every PR ever opened is not needed.
     pulls = api(
         f"repos/{repo}/pulls?state=all&sort=updated&direction=desc&per_page=100"

@@ -238,8 +238,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       (`reference/lessons.md` for `תהליך`); "בספרינט הנוכחי" in the sprint's repo puts it
       in `proposals`, and it gets a spec child next check (S-2.14), with no extra step. One
       line in step 6's summary: the proposal opened, with its link, or rejected. A lesson of
-      a `dev-ship` this session ran is asked the same way, its four fields with "open a
-      task" first, and counts toward the same one per window. Every follow-up not yet asked
+      a `dev-ship` this session ran is asked the same way, its four fields with the same
+      options (`reference/lessons.md`), and counts toward the same one per window. Every follow-up not yet asked
       waits for the next check and goes into the `/compact` summary.
    The label moves first, the question after (`chat-decisions.md`, rule 2). Every comment the
    orchestrator writes in an issue, here or anywhere else, opens with the hidden marker
@@ -271,7 +271,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
 6. **Close the check.** One summary line, always, ending with
    `since <now> expect <N>=<status>,... pipeline_sha <sha> session_sha <sha>`: the next check compares against it,
    and step 3 reads `since` and `expect` from it. The `spec_gaps` lines of step 2 come right
-   above it, one per gap, and so do its `follow_up_gaps`, "הערת המסירה של #N לא בפורמט: <message>",
+   above it, one per gap, and so do its `follow_up_gaps`, "#N: <message>",
    only for an issue whose hand-off step 3 already verified. Nothing to open and nothing to ask: the line says what the sprint waits
    for, including a spec ("מחכה לאפיון של #N") or a breakdown ("מחכה לפירוק של #N"). Then, when any child is active, start the background watch: stop the previous one if
    it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
