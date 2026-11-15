@@ -32,7 +32,8 @@ gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5
    parameters, and `set_session_title` only when the title is not that already. The orchestrator
    is a session Dolev opened, not a child, so the call is allowed. The tool is missing: go on.
 4. The first check shows Dolev the opening picture: what opens now, what waits on a blocker or
-   on a shared file, and what waits for him. Then one line per approved proposal (`proposals`,
+   on a shared file, and what waits for him. Opened by a hand-off (item 5), the picture's
+   first line says so: from which session, and why (the prompt's `הסיבה:` line). Then one line per approved proposal (`proposals`,
    S-2.14), with its stage in words: `waiting` "מחכה לבן אפיון", `writing` "בכתיבה",
    `questions` "שאלות", `review` "אפיון לסקירה", `breakdown` "פירוק לאישור", `replan` "חוזרת
    לתכנון" (an open spec part already names it, `parts`: it is that part's task, #334).
@@ -42,6 +43,21 @@ gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5
    once, then one line in the check's message that the flag is on and which run showed it. A
    second line `not-written`: the line says the flag was not written, and how Dolev turns it
    on (`reference/git-flow.md`, "דגל החיוב").
+5. **Opened by a hand-off** (S-2.13): the prompt holds the heading `## מסירה ממתזמר קודם` of
+   `handover_prompt.py`, and its status line (the `~~~text` block) is not
+   `אין: הבדיקה הראשונה`. Then the first check does not start from zero:
+   1. That status line is read as the previous check's line: step 3 runs from its `since` with
+      its `expect`, so it sees every label moved and comment written since, even before this
+      session opened.
+   2. Its `pipeline_sha` and `session_sha` are only noted, never compared (step 2.4): they are
+      from before the commit that caused the hand-off, so a comparison would hand off again,
+      in a loop. This session loaded `main` when it opened; a merge after that is caught by the
+      guard and the next check.
+   3. `subscribe_pr_activity` on every PR under `ה-PRים שהמתזמר הקודם עקב אחריהם`, in this
+      check, even when its label did not move: the old subscription was cancelled, and a PR's
+      events reach one session only.
+   4. `מה מחכה לדולב` and `מה דולב אמר` are context only: what waits for him is rebuilt from
+      GitHub, as in every check (`chat-decisions.md`, rule 3).
 
 ## Each check
 
@@ -58,7 +74,13 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `session_context.sources` holds `git_repository.url` `https://github.com/<repo>`. Another
    orchestrator's child is never counted, claimed or archived: `issue:<N>` alone does not say
    which repo it is.
-   For each child not archived, `get_session`. Read `status_bucket`, `session_status`,
+   A child a previous orchestrator opened is this session's child in every way (the count,
+   `--claimed`, the archive): never `children: true` in `list_sessions`, which keeps only the
+   sessions this one created. The previous orchestrator has no tag, so it is no child, and it
+   archives itself (S-2.12).
+   For each child not archived, `get_session`, in every check: a failed turn is reported only to
+   the session that opened the child, which after a hand-off is archived, so this read is what
+   finds it, at the latest in the next fallback check. Read `status_bucket`, `session_status`,
    `external_metadata.pending_actions`, `post_turn_summary` and
    `rate_limit_info.isUsingOverage` (`orchestrate.md`, "מצב בן"). Active means not archived and
    either working, or blocked on a permission prompt: `pending_actions` not empty, or
@@ -66,7 +88,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    is a child that finished its turn and asks for a decision: not active, not a permission
    prompt, and its state is read from GitHub. `status_bucket` working with `session_status`
    `SESSION_STATUS_IDLE` and no `pending_actions` is also a child that finished its turn:
-   `session_status` decides. Only that pair: a failed child is idle too, and stays failed.
+   `session_status` decides. Only that pair: a failed child (`status_bucket` `failed`) is idle
+   too, and stays failed: not active, and a question in step 5's window (item 6).
    The active ones' `issue:<N>` tags are the claimed list, and only they count toward the 3.
 2. **The sprint.**
    ```bash
@@ -121,11 +144,12 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    3. `pipeline_sha` moved: `python "$HOME/.claude/hooks/cloud_refresh.py" --report`. Exit 1:
       the same hand-off, with `--reason` and the reason in plain words. Exit 0: read this
       skill and the "Read first" files again before going on.
-   4. The first check (no previous line): only note both.
+   4. The first check (no previous line, or a hand-off's line: Start, item 5): only note both.
    The check never leans on an old read.
 3. **Changes.** First note the time, as `<now>` (ISO, UTC). The watch stops at its first change,
    so it may not have seen them all: run it once over every issue of a child that is not
-   archived, from the previous check's `since` (step 6; the first check has none and skips this):
+   archived, from the previous check's `since` (step 6; after a hand-off, the prompt's status
+   line: Start, item 5; any other first check has none and skips this):
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/watch_children.py" \
      --expect <N>=<status>,... --since <previous since> --interval 1 --timeout 1
