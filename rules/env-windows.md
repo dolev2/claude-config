@@ -17,7 +17,7 @@
 
 ## מסמכים
 - **אין pandoc ואין LibreOffice.** לא מתכננים המרה שנשענת עליהם.
-- **Word COM רק לקריאה.** `ExportAsFixedFormat` ו-`SaveAs2` נתקעים ולא חוזרים (לקח מ-MirrorFit).
+- **Word COM רק לקריאה.** `ExportAsFixedFormat` ו-`SaveAs2` נתקעים ולא חוזרים (משימת תהליך מ-MirrorFit).
   יצירה ועריכה של `.docx` נעשות בספריית Python.
 
 ## רינדור

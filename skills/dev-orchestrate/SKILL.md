@@ -18,7 +18,7 @@ In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md`, `orchestrate.
 contract, the tags, what wakes a check and what to check after a change; below, `orchestrate.md` always means
 `reference/orchestrate.md`), `chat-decisions.md`, `cloud.md` (the `gh`
 table and "חלונות אישור בסשן-בן"), `orchestrate-spec.md` (the spec child, S-2.14), `dependencies.md`, `git-flow.md`, `specs.md` (the spec
-gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5). Then the repo's
+gaps, and which proposal is approved for a spec child), and `process-tasks.md` (step 5). Then the repo's
 `CLAUDE.md`. They are read again whenever `pipeline_sha` moves (step 2).
 
 ## Start
@@ -235,11 +235,11 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       first. After the choice, a comment on the issue, with the marker and on a line of its
       own `<!-- follow-up: <key> -->`, then the kind, the choice and the proposal's link, so
       it is not asked again. A proposal opens through `dev-issue`, in the repo of its kind
-      (`reference/lessons.md` for `תהליך`); "בספרינט הנוכחי" in the sprint's repo puts it
+      (`reference/process-tasks.md` for `תהליך`); "בספרינט הנוכחי" in the sprint's repo puts it
       in `proposals`, and it gets a spec child next check (S-2.14), with no extra step. One
-      line in step 6's summary: the proposal opened, with its link, or rejected. A lesson of
-      a `dev-ship` this session ran is asked the same way, its four fields with the same
-      options (`reference/lessons.md`), and counts toward the same one per window. Every follow-up not yet asked
+      line in step 6's summary: the proposal opened, with its link, or rejected. A process task of
+      a `dev-ship` this session ran is asked the same way, its five fields with the same
+      options (`reference/process-tasks.md`), and counts toward the same one per window. Every follow-up not yet asked
       waits for the next check and goes into the `/compact` summary.
    The label moves first, the question after (`chat-decisions.md`, rule 2). Every comment the
    orchestrator writes in an issue, here or anywhere else, opens with the hidden marker

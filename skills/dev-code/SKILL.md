@@ -27,7 +27,7 @@ In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the label voc
 issue per run, the worktree, the branch/PR convention, rebase and CI before a merge), `tests.md`,
 `review-app.md`, `ux.md` (the user-experience check), `specs.md` (marking the part Done),
 `chat-decisions.md` (the hand-off question), `follow-ups.md` (the follow-up tasks of the
-hand-off) and `lessons.md`. Read them before step 1, every run.
+hand-off) and `process-tasks.md`. Read them before step 1, every run.
 Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 ## Execute
@@ -289,7 +289,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     from step 10 goes into that comment and into the chat message, with one line on what to
     open in it. After the "סקירת קוד" line, it has the fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
     `תהליך`) and its fields, or "אין משימות המשך" (`reference/follow-ups.md`; a process task
-    passes the filter of `reference/lessons.md`). Both end with the next step, in one
+    passes the filter of `reference/process-tasks.md`). Both end with the next step, in one
     line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
     `status:needs-repair` with a comment.
 

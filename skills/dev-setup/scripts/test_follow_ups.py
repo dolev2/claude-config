@@ -156,7 +156,7 @@ def test_pages_reads_page_after_page_until_a_short_one(monkeypatch):
 
 
 def test_a_hash_inside_a_task_does_not_end_the_section():
-    body = hand_off(PRODUCT + "\n   #338 משכתב את lessons.md", PROCESS)
+    body = hand_off(PRODUCT + "\n   #338 משכתב את process-tasks.md", PROCESS)
     result = run([issue(1)], [comment(1, body)])
     assert [t["kind"] for t in result["follow_ups"]] == ["מוצר", "תהליך"]
 
