@@ -165,3 +165,54 @@ def test_running_the_file_with_bad_input_exits_2():
     )
     assert result.returncode == 2
     assert "not a commit sha" in result.stderr
+
+
+def test_a_billing_failure_prints_billing_with_the_link():
+    clock = FakeClock()
+    runs = [run("tests", conclusion="failure")]
+    lines = wait_ci.wait(
+        lambda: runs,
+        30,
+        1800,
+        clock.sleep,
+        clock,
+        billing_of=lambda got: ["billing https://github.com/o/r/runs/tests"],
+    )
+    assert lines == ["billing https://github.com/o/r/runs/tests"]
+
+
+def test_an_ordinary_failure_still_prints_failure_with_a_billing_check():
+    clock = FakeClock()
+    runs = [run("tests", conclusion="failure")]
+    lines = wait_ci.wait(
+        lambda: runs, 30, 1800, clock.sleep, clock, billing_of=lambda got: None
+    )
+    assert lines == ["failure", "tests failure https://github.com/o/r/runs/tests"]
+
+
+@pytest.mark.parametrize(
+    ("written", "expected"),
+    [
+        (True, "billing https://github.com/o/r/runs/tests\n"),
+        (
+            False,
+            "billing https://github.com/o/r/runs/tests\nnot-written no push rights\n",
+        ),
+    ],
+)
+def test_main_turns_the_flag_on_for_a_billing_failure(
+    written, expected, tmp_path, monkeypatch, capsys
+):
+    root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
+    failed = run("tests", conclusion="failure")
+    monkeypatch.setattr(wait_ci, "api", lambda path: {"check_runs": [failed]})
+    monkeypatch.setattr(wait_ci, "billing_run", lambda repo, runs: failed["html_url"])
+
+    def turn_on(cache, source, url, now):
+        if not written:
+            raise wait_ci.billing_flag.NotWrittenError("no push rights")
+        return {}
+
+    monkeypatch.setattr(wait_ci.billing_flag, "turn_on", turn_on)
+    wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
+    assert capsys.readouterr().out == expected

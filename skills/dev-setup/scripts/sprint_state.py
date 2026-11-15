@@ -40,6 +40,7 @@ The keys:
                      and its open sub-issues (#N, or owner/name#N in another repo)
     waiting_dolev    plan questions, plans to approve, PRs to review
     merge_queue      in review with an open PR: its head, mergeable_state and CI.
+                     CI "billing" is a failure GitHub caused by billing (S-1.53).
                      mergeable_state "unknown" means GitHub is still computing it:
                      not yet, ask again next check (cloud.md). overlaps: the other
                      work in flight that shares a file the PR changes,
@@ -57,6 +58,9 @@ The keys:
                      loads once, at its start (pipeline_shas.py): when it moves, the
                      orchestrator hands the sprint to a new orchestrator (S-2.12,
                      orchestrate.md, "שינוי בצינור באמצע ספרינט")
+    billing_flag     null while the billing flag is off (or could not be read, with a
+                     warning); while it is on, {since, source, run, notice}, notice
+                     being the line Dolev sees (billing_flag.py, S-1.53)
     spec_gaps        only with --spec: spec_check.py's gaps between ALL open issues and
                      the specs on origin/<default>, as [{path, line, message}]. An
                      error in a spec file is not here: that is CI's job (spec_check.py).
@@ -70,6 +74,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
+import billing_flag
 from audit_sprint import SprintIssue, audit, is_shared_doc, sprint_issue
 from gh_rest import api, current_repo, open_issue_nodes
 from issue_body import SPECS_DIR, plan_branch, sections
@@ -372,6 +377,7 @@ def main(argv: list[str] | None = None) -> None:
         open_parts(files),
     )
     result |= pipeline_shas(CACHE)
+    result["billing_flag"] = billing_flag.current(CACHE)
     if args.spec:
         warning = {"path": None, "line": None, "message": unread}
         result["spec_gaps"] = [warning] if unread else spec_gaps(nodes, files)

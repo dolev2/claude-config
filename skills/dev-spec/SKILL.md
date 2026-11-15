@@ -153,7 +153,9 @@ every run.
    over, with a "CI" line (green, the head, the fix rounds); `none` hands over at once, saying
    "אין CI בריפו". In an orchestrator's child (S-2.15): `failure` is fixed on the same branch
    from the failed job's log, pushed, and waited for again, with no limit on the rounds; a
-   failure the branch cannot fix, `timeout pending`, `timeout not-started` or a second `error` is a comment on
+   failure the branch cannot fix, `billing` (never a test to fix: say the billing flag is on and
+   which run showed it, `reference/git-flow.md`, "דגל החיוב"), `timeout pending`,
+   `timeout not-started` or a second `error` is a comment on
    the issue (what failed, what was tried, the check's link), and the turn ends with no
    hand-off.
 

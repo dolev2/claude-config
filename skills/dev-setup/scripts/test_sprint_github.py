@@ -188,3 +188,80 @@ def test_a_spec_pr_that_only_mentions_the_issue_is_not_its_spec_pr(monkeypatch):
         },
     )
     assert [p["number"] for p in sprint_github.spec_prs("o/r", 9)] == [25]
+
+
+BILLING = (
+    "The job was not started because recent account payments have failed or your "
+    "spending limit needs to be increased. Please check the 'Billing & plans' section."
+)
+
+
+def check(conclusion="failure", run_id=1):
+    return {"id": run_id, "conclusion": conclusion, "html_url": f"https://x/{run_id}"}
+
+
+@pytest.mark.parametrize(
+    ("runs", "message", "job", "expected"),
+    [
+        ([check()], BILLING, {"steps": []}, "https://x/1"),
+        ([check()], BILLING, {"steps": [{"name": "pytest"}]}, None),
+        ([check()], BILLING, None, None),
+        ([check()], "Process completed with exit code 1.", {"steps": []}, None),
+        ([check("success")], BILLING, {"steps": []}, None),
+        ([], BILLING, {"steps": []}, None),
+    ],
+    ids=[
+        "billing",
+        "message-but-the-job-ran",
+        "not-an-actions-job",
+        "ordinary-failure",
+        "green",
+        "no-checks",
+    ],
+)
+def test_billing_failure(runs, message, job, expected):
+    found = sprint_github.billing_failure(
+        runs, lambda run_id: [{"message": message}], lambda run_id: job
+    )
+    assert found == expected
+
+
+def test_pr_status_names_a_billing_failure(monkeypatch):
+    fake_api(
+        monkeypatch,
+        {
+            "repos/o/r/pulls/5": {"mergeable_state": "clean"},
+            "repos/o/r/commits/abc/check-runs?per_page=100": {
+                "check_runs": [check() | {"status": "completed"}]
+            },
+        },
+    )
+    monkeypatch.setattr(sprint_github, "billing_run", lambda repo, runs: "https://x/1")
+    status = sprint_github.pr_status("o/r", {"number": 5, "headSha": "abc"})
+    assert status == {"mergeable_state": "clean", "ci": "billing"}
+
+
+def test_pr_status_keeps_an_ordinary_failure(monkeypatch):
+    fake_api(
+        monkeypatch,
+        {
+            "repos/o/r/pulls/5": {"mergeable_state": "clean"},
+            "repos/o/r/commits/abc/check-runs?per_page=100": {
+                "check_runs": [check() | {"status": "completed"}]
+            },
+        },
+    )
+    monkeypatch.setattr(sprint_github, "billing_run", lambda repo, runs: None)
+    status = sprint_github.pr_status("o/r", {"number": 5, "headSha": "abc"})
+    assert status["ci"] == "failure"
+
+
+@pytest.mark.parametrize(
+    ("code", "out", "err", "expected"),
+    [(0, '{"steps": []}', "", {"steps": []}), (1, "", "HTTP 404: Not Found", None)],
+)
+def test_actions_job_is_none_for_a_check_that_is_not_a_job(
+    code, out, err, expected, monkeypatch
+):
+    fake_compare(monkeypatch, code, out, err)
+    assert sprint_github.actions_job("o/r", 7) == expected

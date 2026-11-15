@@ -6,6 +6,7 @@ takes these readers as functions (claude-config #203).
 
 import json
 import re
+from collections.abc import Callable
 from datetime import UTC, datetime
 from urllib.parse import quote
 
@@ -14,6 +15,10 @@ from gh_rest import run as run_command
 
 SPEC_BRANCH = "claude/spec-"
 FAILED = {"failure", "timed_out", "cancelled", "action_required", "startup_failure"}
+# GitHub's own annotation on a job it refused to start for billing (S-1.53).
+BILLING_MESSAGE = (
+    "recent account payments have failed or your spending limit needs to be increased"
+)
 
 
 def ci_summary(check_runs: list[dict]) -> str:
@@ -27,14 +32,60 @@ def ci_summary(check_runs: list[dict]) -> str:
     return "success"
 
 
+def billing_failure(
+    check_runs: list[dict],
+    annotations_of: Callable[[int], list[dict]],
+    job_of: Callable[[int], dict | None],
+) -> str | None:
+    """The html_url of the first check GitHub failed for billing, or None.
+
+    Two signs together, so a test that prints the sentence never counts: GitHub's
+    annotation, and a job with no steps. An `::error::` annotation needs a step that
+    ran. `job_of` gives None for a check that is not an Actions job.
+    """
+    for run in check_runs:
+        if run.get("conclusion") not in FAILED:
+            continue
+        messages = (a.get("message") or "" for a in annotations_of(run["id"]))
+        if not any(BILLING_MESSAGE in m.lower() for m in messages):
+            continue
+        job = job_of(run["id"])
+        if job is not None and not job.get("steps"):
+            return run.get("html_url") or ""
+    return None
+
+
+def actions_job(repo: str, job_id: int) -> dict | None:
+    """One Actions job; None when the check run is not one (404)."""
+    path = f"repos/{repo}/actions/jobs/{job_id}"
+    code, out, err = run_command("gh", "api", path)
+    if code == 0:
+        return json.loads(out)
+    if "HTTP 404" in err:
+        return None
+    raise SystemExit(f"gh api {path} failed:\n{err}")
+
+
+def billing_run(repo: str, check_runs: list[dict]) -> str | None:
+    """billing_failure() over GitHub: the check's annotations and its Actions job."""
+    return billing_failure(
+        check_runs,
+        lambda run_id: api_list(f"repos/{repo}/check-runs/{run_id}/annotations"),
+        lambda run_id: actions_job(repo, run_id),
+    )
+
+
 def pr_status(repo: str, pr: dict) -> dict:
-    """mergeable_state and CI of one open PR, from GitHub."""
+    """mergeable_state and CI of one open PR, from GitHub.
+
+    A failure GitHub caused by billing is "billing", not "failure" (S-1.53).
+    """
     pull = api(f"repos/{repo}/pulls/{pr['number']}")
     checks = api(f"repos/{repo}/commits/{pr['headSha']}/check-runs?per_page=100")
-    return {
-        "mergeable_state": pull["mergeable_state"],
-        "ci": ci_summary(checks["check_runs"]),
-    }
+    ci = ci_summary(checks["check_runs"])
+    if ci == "failure" and billing_run(repo, checks["check_runs"]) is not None:
+        ci = "billing"
+    return {"mergeable_state": pull["mergeable_state"], "ci": ci}
 
 
 def pr_files(repo: str, number: int) -> set[str]:
