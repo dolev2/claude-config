@@ -9,7 +9,7 @@ import re
 from datetime import UTC, datetime
 from urllib.parse import quote
 
-from gh_rest import api, api_list, gh_api, other_repo
+from gh_rest import api, api_list, closing_prs, gh_api, other_repo
 from gh_rest import run as run_command
 
 SPEC_BRANCH = "claude/spec-"
@@ -150,3 +150,16 @@ def issue_summary(repo: str, number: int) -> dict:
     labels = [label["name"] for label in issue.get("labels", [])]
     status = next((n for n in labels if n.startswith("status:")), None)
     return {"number": number, "title": issue["title"], "status": status}
+
+
+def open_prs_of(repo: str, numbers: list[int]) -> dict[int, int]:
+    """Each issue of `numbers` that an open PR closes (`Closes #N`) → that PR.
+
+    A repair child's issue is not in the merge queue, but its PR is still open and
+    followed, so the hand-off reads it here (handover_prompt.py).
+    """
+    if not numbers:
+        return {}
+    pulls = api_list(f"repos/{repo}/pulls?state=open&per_page=100")
+    found = {n: closing_prs(n, pulls) for n in numbers}
+    return {n: prs[0]["number"] for n, prs in found.items() if prs}

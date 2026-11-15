@@ -63,8 +63,10 @@ def test_a_full_state_gives_every_section_in_order(tmp_path):
     text = handover_prompt.prompt(args, args.state_data, ISSUES.__getitem__, merged)
 
     lines = text.splitlines()
+    assert "1. PR #40 של #15" in text
     assert lines[0] == "תריץ את הספרינט"
-    assert f"```text\n{LINE}\n```" in text
+    assert f"~~~text\n{LINE}\n~~~" in text
+    assert "```" not in text
     assert f"/commit/{SHA}" in text
     assert "`session_old`" in text
     assert "`session_a`: #12 plan it (`status:explore`), תכנון." in text
@@ -95,6 +97,40 @@ def test_an_empty_state_says_none_in_every_section(tmp_path):
 
     assert text.count("\nאין.\n") == 5
     assert text.endswith("\nאין.\n")
+
+
+def test_a_repair_childs_open_pr_is_shown_and_followed(tmp_path):
+    issues = {12: {"number": 12, "title": "fix it", "status": "status:needs-repair"}}
+    args = args_for(tmp_path, FULL_STATE, "--children", "s_a=12", "--moved", SHA)
+
+    text = handover_prompt.prompt(
+        args, args.state_data, issues.__getitem__, [], {12: 55}
+    )
+
+    assert "`s_a`: #12 fix it (`status:needs-repair`), תיקון, PR #55." in text
+    assert "1. PR #55 של #12\n2. PR #40 של #15" in text
+
+
+def test_a_started_that_is_not_iso_exits(tmp_path, capsys):
+    argv = ["--status-line", LINE, "--state", str(write_state(tmp_path, {}))]
+    argv += ["--session", "s", "--started", "yesterday", "--moved", SHA]
+
+    with pytest.raises(SystemExit) as stop:
+        handover_prompt.parse(argv)
+
+    assert stop.value.code == 2
+    assert "--started" in capsys.readouterr().err
+
+
+def test_open_prs_of_maps_each_issue_to_the_pr_that_closes_it(monkeypatch):
+    pulls = [
+        {"number": 55, "body": "Closes #12", "head": {"sha": "a"}},
+        {"number": 56, "body": "Refs #13", "head": {"sha": "b"}},
+    ]
+    monkeypatch.setattr(sprint_github, "api_list", lambda path: pulls)
+
+    assert sprint_github.open_prs_of("o/r", [12, 13]) == {12: 55}
+    assert sprint_github.open_prs_of("o/r", []) == {}
 
 
 def test_a_failed_refresh_gives_its_reason_instead_of_a_commit(tmp_path):
@@ -192,6 +228,7 @@ def test_issue_summary_reads_the_status_label(monkeypatch):
 def test_main_prints_the_prompt(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(handover_prompt, "done_since", lambda *_: [])
     monkeypatch.setattr(handover_prompt, "issue_summary", lambda _, n: ISSUES[n])
+    monkeypatch.setattr(handover_prompt, "open_prs_of", lambda *_: {})
     argv = [
         "--status-line", LINE,
         "--state", str(write_state(tmp_path, FULL_STATE)),

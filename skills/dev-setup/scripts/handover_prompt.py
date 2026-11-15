@@ -27,7 +27,7 @@ from pathlib import Path
 
 from gh_rest import current_repo
 from pipeline_shas import PIPELINE_URL
-from sprint_github import done_since, issue_summary
+from sprint_github import done_since, issue_summary, moment, open_prs_of
 
 OPENING = "תריץ את הספרינט"
 NONE = "אין."
@@ -105,13 +105,17 @@ def prompt(
     state: dict,
     issue_of: Callable[[int], dict],
     merged: list[dict],
+    child_prs: dict[int, int] | None = None,
 ) -> str:
-    """The whole prompt, in the order of S-2.12; GitHub reads are passed in."""
+    """The whole prompt, in the order of S-2.12; GitHub reads are passed in.
+
+    `child_prs` maps a child's issue to its open PR, for one outside the merge queue
+    (a repair round); the PRs followed are both.
+    """
     prs = {q["number"]: q["pr"] for q in state.get("merge_queue", [])}
+    prs = (child_prs or {}) | prs
     children = [child_line(s, issue_of(n), prs) for s, n in args.children]
-    followed = [
-        f"PR #{q['pr']} של #{q['number']}" for q in state.get("merge_queue", [])
-    ]
+    followed = [f"PR #{pr} של #{n}" for n, pr in sorted(prs.items())]
     notes = args.notes.read_text(encoding="utf-8").strip() if args.notes else ""
     parts = [
         OPENING,
@@ -127,9 +131,10 @@ def prompt(
         "",
         "### שורת המצב של הבדיקה האחרונה",
         "",
-        "```text",
+        # ~~~, not ```: Dolev may get the whole prompt in one ``` block to paste.
+        "~~~text",
         args.status_line,
-        "```",
+        "~~~",
         "",
         "### הבנים שרצים",
         "",
@@ -176,6 +181,10 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
         parser.error(f"--state is not a readable JSON file: {err}")
     if not isinstance(args.state_data, dict):
         parser.error("--state is not the JSON object sprint_state.py prints")
+    try:
+        moment(args.started)
+    except ValueError:
+        parser.error(f"--started is not an ISO time: {args.started}")
     if args.notes and not args.notes.is_file():
         parser.error(f"--notes is not a file: {args.notes}")
     return args
@@ -186,7 +195,8 @@ def main(argv: list[str] | None = None) -> None:
     repo = args.repo or current_repo()
     state = args.state_data
     merged = done_since(repo, state.get("sprint", ""), args.started)
-    text = prompt(args, state, lambda n: issue_summary(repo, n), merged)
+    child_prs = open_prs_of(repo, [n for _, n in args.children])
+    text = prompt(args, state, lambda n: issue_summary(repo, n), merged, child_prs)
     sys.stdout.write(text)
 
 

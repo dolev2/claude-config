@@ -95,7 +95,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
          ```
          `--children`: the repo's children that are not archived (step 1). `--session` and
          `--started`: `get_session` with no `session_id`. A failed refresh (step 2.3) passes
-         `--reason "<why>"` instead of `--moved`.
+         `--reason "<why>"` instead of `--moved`. No previous line yet (a block in the
+         first check): `--status-line "אין: הבדיקה הראשונה"`.
       4. **Open the new orchestrator:** `create_session` with `title`
          `<name>: מתזמר הספרינט` (so its own start does not call `set_session_title`),
          `source_url` of the repo, and `prompt` from the file. No `tags` with
@@ -112,8 +113,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       A block from `guard_stale_orchestrator.py` (opening a child, a merge, or the end of the
       turn) is the same state: the rules this session loaded are stale. Do the same hand-off.
    3. `pipeline_sha` moved: `python "$HOME/.claude/hooks/cloud_refresh.py" --report`. Exit 1:
-      the same hand-off, with `--reason` and the reason in plain words. Exit 0: read this skill and the "Read
-      first" files again before going on.
+      the same hand-off, with `--reason` and the reason in plain words. Exit 0: read this
+      skill and the "Read first" files again before going on.
    4. The first check (no previous line): only note both.
    The check never leans on an old read.
 3. **Changes.** First note the time, as `<now>` (ISO, UTC). The watch stops at its first change,
