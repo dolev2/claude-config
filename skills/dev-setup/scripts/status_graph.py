@@ -8,13 +8,15 @@ A node per open issue of the sprint, with its number, a short title, its status 
 other labels (S-1.58); an arrow from each open blocker to the issue that waits for it.
 An open blocker outside the sprint (another milestone or repo) is a dashed node.
 A closed blocker blocks nothing, so it is left out.
+An issue with an active session comes first in its row, marked "פעיל" (S-1.57).
 """
 
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from itertools import pairwise
 
 from rank_issues import parse_issue
+from status_sessions import ACTIVE_MARK
 
 StatusHe = Callable[[str | None], str]
 
@@ -149,15 +151,24 @@ def node_labels(ref: str, by_ref: dict[str, dict]) -> list[str]:
     return [name for name in names if not name.startswith("status:")]
 
 
-def layout(sprint_nodes: list[dict], nodes: list[dict], status_he: StatusHe) -> dict:
+def layout(
+    sprint_nodes: list[dict],
+    nodes: list[dict],
+    status_he: StatusHe,
+    active: Collection[int] = (),
+) -> dict:
     """The graph as data: the refs, the blockers outside the sprint, the arrows, and
     each ref's title, status and labels.
 
     `sprint_nodes` are the sprint's open issues in the table's order. `nodes` are all
     the open issues of the repo, so a blocker in another milestone still shows its
-    status. The chat graph and the page (status_page.py) both draw from this.
+    status. `active` are the issues with an active session: they come first, in the
+    same order among themselves, and their status is marked; a blocker outside the
+    sprint is marked but stays where it is. The chat graph and the page
+    (status_page.py) both draw from this.
     """
     by_ref = {f"#{n['number']}": n for n in nodes}
+    sprint_nodes = sorted(sprint_nodes, key=lambda n: n["number"] not in active)
     issues = [parse_issue(n) for n in sprint_nodes]
     refs = [f"#{i.number}" for i in issues]
     edges = [
@@ -173,7 +184,11 @@ def layout(sprint_nodes: list[dict], nodes: list[dict], status_he: StatusHe) -> 
         "titles": {
             r: by_ref[r]["title"] if r in by_ref else "" for r in refs + outside
         },
-        "statuses": {r: node_status(r, by_ref, status_he) for r in refs + outside},
+        "statuses": {
+            r: node_status(r, by_ref, status_he)
+            + (ACTIVE_MARK if r.startswith("#") and int(r[1:]) in active else "")
+            for r in refs + outside
+        },
         "labels": {r: node_labels(r, by_ref) for r in refs + outside},
     }
 
@@ -206,16 +221,19 @@ def mermaid_lines(shape: dict, extra: Callable[[str], str] | None = None) -> lis
 
 
 def graph(
-    sprint_nodes: list[dict] | None, nodes: list[dict], status_he: StatusHe
+    sprint_nodes: list[dict] | None,
+    nodes: list[dict],
+    status_he: StatusHe,
+    active: Collection[int] = (),
 ) -> str:
     """The graph section: a heading, then a Mermaid block or one line saying why not.
 
     `sprint_nodes` are the sprint's open issues in the table's order, None with no
-    sprint.
+    sprint; `active` as in layout().
     """
     if sprint_nodes is None:
         return f"{HEADING}\n\n{NO_SPRINT}"
     if not sprint_nodes:
         return f"{HEADING}\n\n{EMPTY}"
-    lines = mermaid_lines(layout(sprint_nodes, nodes, status_he))
+    lines = mermaid_lines(layout(sprint_nodes, nodes, status_he, active))
     return f"{HEADING}\n\n```mermaid\n" + "\n".join(lines) + "\n```"

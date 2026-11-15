@@ -210,7 +210,7 @@ def test_which_runs_and_prints_only_the_repo(tmp_path):
 
 
 def test_the_repo_line_opens_the_output():
-    text = work_status.render(REPO, [node(1)], [])
+    text = work_status.render(REPO, [node(1)], [], sessions={})
     first, rest = text.split("\n\n", 1)
     assert first == "**הריפו:** [acme/widgets](https://github.com/acme/widgets)"
     assert rest.startswith("### ")
@@ -291,22 +291,98 @@ def fake_github(monkeypatch, nodes):
     monkeypatch.setattr(work_status, "read_anchors", lambda repo, issues: {})
 
 
-def test_page_flag_writes_the_page_and_keeps_the_chat_output(
-    monkeypatch, capsys, tmp_path
-):
+def test_page_flag_writes_the_page_with_the_active_mark(monkeypatch, capsys, tmp_path):
     fake_github(monkeypatch, [node(1)])
-    work_status.main(["--repo", REPO])
-    plain = capsys.readouterr().out
     sessions = tmp_path / "sessions.json"
-    sessions.write_text('{"1": [{"url": "https://claude.ai/code/s1"}]}')
+    sessions.write_text(
+        '[{"id": "s1", "title": "widgets: claude/issue-1-x", "tags": [], '
+        '"session_status": "SESSION_STATUS_IDLE", "created_at": null}]'
+    )
     target = tmp_path / "page.html"
     work_status.main(
         ["--repo", REPO, "--page", str(target), "--sessions", str(sessions)]
     )
-    assert capsys.readouterr().out == plain
+    out = capsys.readouterr().out
+    assert "מוכן לקוד · פעיל |" in out
+    assert work_status.SESSIONS_NOT_READ not in out
     text = target.read_text(encoding="utf-8")
     assert "https://github.com/acme/widgets/issues/1" in text
     assert "https://claude.ai/code/s1" in text
+    assert "מוכן לקוד · פעיל" in text
+
+
+def test_without_the_sessions_file_main_says_they_were_not_read(monkeypatch, capsys):
+    fake_github(monkeypatch, [node(1)])
+    work_status.main(["--repo", REPO])
+    out = capsys.readouterr().out
+    assert out.index(work_status.SESSIONS_NOT_READ) < out.index("### ")
+    assert "פעיל |" not in out
+
+
+ACTIVE_SESSION = [{"url": "https://claude.ai/code/s", "title": "", "created_at": None}]
+
+
+def sprint_order(text: str) -> list[int]:
+    """The issue numbers of the sprint table, top down."""
+    lines = section(text, "מה פתוח בספרינט").splitlines()
+    return [int(line.split("[#")[1].split("]")[0]) for line in lines if "[#" in line]
+
+
+def test_an_active_issue_comes_first_in_the_sprint_table_with_the_mark():
+    nodes = [node(1), node(2), node(3)]
+    text = work_status.render(REPO, nodes, [], sessions={3: ACTIVE_SESSION})
+    assert sprint_order(text) == [3, 1, 2]
+    sprint = section(text, "מה פתוח בספרינט")
+    assert "| מוכן לקוד · פעיל |" in sprint
+    assert sprint.count("פעיל") == 1
+    assert work_status.SESSIONS_NOT_READ not in text
+
+
+def test_several_active_issues_keep_the_sprint_order_between_them():
+    nodes = [node(1), node(2), node(3), node(4)]
+    sessions = {4: ACTIVE_SESSION, 2: ACTIVE_SESSION}
+    text = work_status.render(REPO, nodes, [], sessions=sessions)
+    assert sprint_order(text) == [2, 4, 1, 3]
+
+
+def test_no_active_issue_keeps_the_order_and_has_no_mark():
+    nodes = [node(1), node(2)]
+    text = work_status.render(REPO, nodes, [], sessions={})
+    assert sprint_order(text) == [1, 2]
+    assert "פעיל" not in text
+    assert work_status.SESSIONS_NOT_READ not in text
+
+
+def test_sessions_not_read_say_so_under_the_repo_line_with_no_mark():
+    text = work_status.render(REPO, [node(1)], [], sessions=None)
+    lines = text.split("\n\n")
+    assert lines[0].startswith("**הריפו:**")
+    assert lines[1] == work_status.SESSIONS_NOT_READ
+    assert "פעיל |" not in text
+
+
+def test_the_mark_reaches_the_blocked_and_waiting_tables_without_a_column():
+    nodes = [
+        node(1),
+        node(2, blocked_by=[(1, "OPEN")]),
+        node(3, status="waiting-approval"),
+        node(4, status="waiting-approval"),
+    ]
+    sessions = {2: ACTIVE_SESSION, 4: ACTIVE_SESSION}
+    text = work_status.render(REPO, nodes, [], sessions=sessions)
+    assert "| מחכה ל-#1 · פעיל |" in section(text, "מה חסום")
+    waiting = section(text, "מה מחכה לדולב")
+    assert waiting.index("[#4]") < waiting.index("[#3]")
+    rows = [line for line in text.splitlines() if line.startswith("| [#")]
+    assert all(line.count(" | ") == 3 for line in rows)
+
+
+def test_the_merged_table_does_not_move():
+    merged = [done(8, "2026-11-10"), done(9, "2026-11-09")]
+    text = work_status.render(REPO, [], merged, sessions={9: ACTIVE_SESSION})
+    table_text = section(text, "מה מוזג לאחרונה")
+    assert table_text.index("[#8]") < table_text.index("[#9]")
+    assert "פעיל" not in table_text
 
 
 def test_no_page_without_the_pipeline(monkeypatch, tmp_path):
@@ -318,7 +394,7 @@ def test_no_page_without_the_pipeline(monkeypatch, tmp_path):
 
 @pytest.mark.parametrize(
     "content",
-    ["not json", "[1, 2]", '{"x": []}', '{"1": [5]}', '{"1": [{"title": "t"}]}'],
+    ["not json", "[1, 2]", '{"1": []}', '[{"title": "t"}]'],
 )
 def test_a_broken_sessions_file_exits_2(content, capsys, tmp_path):
     sessions = tmp_path / "sessions.json"

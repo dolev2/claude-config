@@ -111,3 +111,12 @@ def test_the_page_is_rtl_with_both_themes():
     assert '<div lang="he" dir="rtl">' in text
     assert "prefers-color-scheme: dark" in text
     assert ':root[data-theme="dark"]' in text
+
+
+def test_the_active_mark_reaches_the_page():
+    nodes = [node(1), node(2)]
+    shape = layout(nodes, nodes, status_he, {2})
+    sessions = {2: [session("https://claude.ai/code/s2", "2026-11-01T00:00:00Z")]}
+    text = page(REPO, shape, nodes, sessions, "now")
+    assert "· פעיל" in node_line(text, 2)
+    assert "פעיל" not in node_line(text, 1)
