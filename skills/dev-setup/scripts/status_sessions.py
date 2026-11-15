@@ -71,6 +71,10 @@ def read_sessions(path: str, repo: str) -> Sessions:
         for row in rows:
             if not isinstance(row, dict) or not isinstance(row.get("id"), str):
                 raise ValueError(f"a session without an id: {row!r}")
+            if not isinstance(row.get("title") or "", str):
+                raise ValueError(f"a session whose title is not text: {row!r}")
+            if not isinstance(row.get("tags") or [], list):
+                raise ValueError(f"a session whose tags are not a list: {row!r}")
         return by_issue(rows, repo)
     except (OSError, ValueError) as error:
         print(f"קובץ הסשנים {path} לא נקרא: {error}", file=sys.stderr)

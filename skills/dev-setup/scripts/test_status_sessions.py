@@ -71,7 +71,15 @@ def test_read_sessions_reads_the_raw_rows(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "content", ["not json", '{"1": []}', "[5]", '[{"title": "no id"}]']
+    "content",
+    [
+        "not json",
+        '{"1": []}',
+        "[5]",
+        '[{"title": "no id"}]',
+        '[{"id": "s", "title": 5}]',
+        '[{"id": "s", "tags": "repo:acme/widgets"}]',
+    ],
 )
 def test_a_broken_file_exits_2(content, tmp_path, capsys):
     path = tmp_path / "sessions.json"
