@@ -55,8 +55,8 @@ The keys:
                      orchestrator refreshes ~/.claude and reads the skills again
     session_sha      the last commit on the pipeline's main that touched what a session
                      loads once, at its start (pipeline_shas.py): when it moves, the
-                     orchestrator asks for a new orchestrator session and stops
-                     (orchestrate.md, "שינוי בצינור באמצע ספרינט")
+                     orchestrator hands the sprint to a new orchestrator (S-2.12,
+                     orchestrate.md, "שינוי בצינור באמצע ספרינט")
     spec_gaps        only with --spec: spec_check.py's gaps between ALL open issues and
                      the specs on origin/<default>, as [{path, line, message}]. An
                      error in a spec file is not here: that is CI's job (spec_check.py).

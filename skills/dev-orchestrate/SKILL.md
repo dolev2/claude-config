@@ -75,18 +75,46 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    1. A sha is `null` (git failed, with a warning on stderr): tell Dolev in one line that the
       pipeline-change check did not run this time, keep the previous shas for the next
       comparison, and skip 2–4.
-   2. `session_sha` moved: what a session loads once changed. Tell Dolev in one message what
-      changed (the group, the commit with its link), that it loads only when a session opens,
-      to open a new orchestrator session and say "תריץ את הספרינט" (nothing is lost: the state
-      is on GitHub and in the children's tags), and that this orchestrator stopped while the
-      running children go on. Then `TaskStop` the background watch, `unsubscribe_pr_activity`
-      on every PR this session follows (so the new orchestrator gets their events),
-      `ScheduleWakeup` with `stop`, and end the check: no children opened, no merge asked.
+   2. `session_sha` moved: what a session loads once changed. Hand the sprint to a new
+      orchestrator, at once (S-2.12; `orchestrate.md`, "שינוי בצינור באמצע ספרינט"): no
+      child opened, no merge asked, no wait for children mid-turn.
+      1. **One line to Dolev:** what changed (the group, the commit with its link), and that
+         two permission windows come, the opening and the archive. No question in the window:
+         the two windows are the approval.
+      2. **Stop listening:** `TaskStop` the background watch, `unsubscribe_pr_activity` on
+         every PR this session follows (so the new orchestrator gets their events), and
+         `ScheduleWakeup` with `stop`.
+      3. **Build the prompt**, never by hand: write what Dolev said in the chat and is not on
+         GitHub to a file (none: no `--notes`), save this check's `sprint_state.py` output to
+         a file, and run, with the output to a file in the scratchpad:
+         ```bash
+         python "$HOME/.claude/skills/dev-setup/scripts/handover_prompt.py" \
+           --status-line "<the last check's summary line>" --state <state.json> \
+           --children <session_id>=<N>,... --session <this session's id> \
+           --started <its created_at> --moved <the commit> [--notes <notes.md>]
+         ```
+         `--children`: the repo's children that are not archived (step 1). `--session` and
+         `--started`: `get_session` with no `session_id`. A failed refresh (step 2.3) passes
+         `--reason "<why>"` instead of `--moved`. No previous line yet (a block in the
+         first check): `--status-line "אין: הבדיקה הראשונה"`.
+      4. **Open the new orchestrator:** `create_session` with `title`
+         `<name>: מתזמר הספרינט` (so its own start does not call `set_session_title`),
+         `source_url` of the repo, and `prompt` from the file. No `tags` with
+         `claude-config:orchestrated`, no `environment_id`, no `extra_allowed_tools`: without
+         the tag the guard lets it open and marks the hand-off.
+      5. **It is up** when `create_session` returned an id and `get_session` on it is not
+         `failed`. Then one line to Dolev with the link to the new session, and
+         `archive_session` on this session (its id from `get_session` with no `session_id`),
+         as the turn's last call.
+      6. **The opening failed, or Dolev declined its window:** no archive. Write the prompt
+         to Dolev in one code block, ready to paste into a session he opens, and end the
+         turn. The guard blocks that end once; its reason says this case ends the turn, so
+         no second try and no second window.
       A block from `guard_stale_orchestrator.py` (opening a child, a merge, or the end of the
-      turn) is the same state: the rules this session loaded are stale. Do the same stop.
+      turn) is the same state: the rules this session loaded are stale. Do the same hand-off.
    3. `pipeline_sha` moved: `python "$HOME/.claude/hooks/cloud_refresh.py" --report`. Exit 1:
-      the same stop, with its reason in plain words. Exit 0: read this skill and the "Read
-      first" files again before going on.
+      the same hand-off, with `--reason` and the reason in plain words. Exit 0: read this
+      skill and the "Read first" files again before going on.
    4. The first check (no previous line): only note both.
    The check never leans on an old read.
 3. **Changes.** First note the time, as `<now>` (ISO, UTC). The watch stops at its first change,
