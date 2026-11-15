@@ -6,7 +6,14 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from status_graph import EMPTY, NO_SPRINT, OTHER_REPO, graph  # noqa: E402
+from status_graph import (  # noqa: E402
+    EMPTY,
+    NO_SPRINT,
+    OTHER_REPO,
+    TITLE_LIMIT,
+    graph,
+    labels_text,
+)
 from test_sprint_state import node  # noqa: E402
 
 
@@ -29,7 +36,7 @@ def mermaid(text: str) -> list[str]:
 
 
 def test_a_node_per_sprint_issue_with_its_status():
-    lines = mermaid(draw([node(1, "explore"), node(2)]))
+    lines = mermaid(draw([node(1, "explore", labels=()), node(2, labels=())]))
     assert lines[0] == "flowchart TD"
     assert '  n1["#1<br>issue 1<br>בתכנון"]' in lines
     assert '  n2["#2<br>issue 2<br>מוכן לקוד"]' in lines
@@ -51,9 +58,12 @@ def test_a_closed_blocker_is_left_out():
 
 
 def test_a_blocker_in_another_milestone_is_a_dashed_node_with_its_status():
-    nodes = [node(1, "explore", milestone="W2"), node(2, blocked_by=[(1, "OPEN")])]
+    nodes = [
+        node(1, "explore", labels=("bug", "area:scripts"), milestone="W2"),
+        node(2, blocked_by=[(1, "OPEN")]),
+    ]
     lines = mermaid(draw(nodes))
-    assert '  n1["#1<br>issue 1<br>בתכנון"]' in lines
+    assert '  n1["#1<br>issue 1<br>בתכנון<br>bug · area:scripts"]' in lines
     assert "  n1 --> n2" in lines
     assert "  class n1 outside" in lines
 
@@ -64,6 +74,7 @@ def test_a_blocker_in_another_repo_is_a_dashed_node():
         {"number": 7, "state": "OPEN", "repository": "acme/other"}
     ]
     lines = mermaid(draw([blocked]))
+    # Another repo is not read: no status and no labels line.
     assert f'  nacme_other_7["acme/other#7<br>{OTHER_REPO}"]' in lines
     assert "  nacme_other_7 --> n2" in lines
     assert "  class nacme_other_7 outside" in lines
@@ -144,3 +155,26 @@ def test_a_branching_chain_stacks_under_its_deepest_issue():
 def test_a_local_blocker_that_was_not_read_has_no_status():
     lines = mermaid(draw([node(2, blocked_by=[(9, "OPEN")])]))
     assert '  n9["#9<br>בלי סטטוס"]' in lines
+
+
+def test_the_labels_go_under_the_status_without_the_status_label():
+    lines = mermaid(draw([node(1, labels=("task", "area:skills", "process"))]))
+    assert '  n1["#1<br>issue 1<br>מוכן לקוד<br>task · area:skills · process"]' in lines
+    assert "status:" not in lines[1]
+
+
+def test_many_labels_wrap_and_none_is_cut():
+    names = ("task", "area:skills", "area:scripts", "process", "costs-money")
+    rows = labels_text(names).split("<br>")
+    assert rows == ["task · area:skills", "area:scripts · process", "costs-money"]
+    assert all(len(row) <= TITLE_LIMIT for row in rows)
+    assert "…" not in "".join(rows)
+
+
+def test_one_long_label_stays_whole_on_its_own_line():
+    long = "a-label-that-is-much-longer-than-the-limit"
+    assert labels_text(["task", long]).split("<br>") == ["task", long]
+
+
+def test_a_label_with_codes_is_written_safe():
+    assert labels_text(['p#1 "x"']) == "p#35;1 #quot;x#quot;"

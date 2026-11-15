@@ -5,8 +5,8 @@ work_status.py --page writes it from the same layout as the chat graph
 publishes it to the repo's one fixed page. Nothing here reads GitHub or the sessions:
 the PRs come from the issue nodes, and the sessions are passed in.
 
-On each node, under its status, up to three kinds of link: the issue (always), its
-open PR (when there is one), and each session of the issue that is not archived.
+On each node, under its status and labels, up to three kinds of link: the issue
+(always), its open PR (when there is one), and each session that is not archived.
 """
 
 import html
@@ -54,7 +54,7 @@ def link(url: str, word: str) -> str:
 def node_links(
     repo: str, prs: dict[str, list[int]], sessions: Sessions | None
 ) -> Callable[[str], str]:
-    """For a ref, the links that go under its status on the page."""
+    """For a ref, the links that go under its status and labels on the page."""
 
     def links(ref: str) -> str:
         if "/" in ref:
