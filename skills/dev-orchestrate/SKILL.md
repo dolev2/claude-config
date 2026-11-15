@@ -32,8 +32,9 @@ gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5
    parameters, and `set_session_title` only when the title is not that already. The orchestrator
    is a session Dolev opened, not a child, so the call is allowed. The tool is missing: go on.
 4. The first check shows Dolev the opening picture: what opens now, what waits on a blocker or
-   on a shared file, and what waits for him. Opened by a hand-off (item 5), the picture's
-   first line says so: from which session, and why (the prompt's `הסיבה:` line). Then one line per approved proposal (`proposals`,
+   on a shared file, and what waits for him. Opened by a hand-off (item 5), a line says so,
+   first after the `billing_flag` notice below: from which session (the prompt's
+   `המתזמר הקודם:` line), and why (its `הסיבה:` line). Then one line per approved proposal (`proposals`,
    S-2.14), with its stage in words: `waiting` "מחכה לבן אפיון", `writing` "בכתיבה",
    `questions` "שאלות", `review` "אפיון לסקירה", `breakdown` "פירוק לאישור", `replan` "חוזרת
    לתכנון" (an open spec part already names it, `parts`: it is that part's task, #334).
@@ -44,19 +45,19 @@ gaps, and which proposal is approved for a spec child), and `lessons.md` (step 5
    second line `not-written`: the line says the flag was not written, and how Dolev turns it
    on (`reference/git-flow.md`, "דגל החיוב").
 5. **Opened by a hand-off** (S-2.13): the prompt holds the heading `## מסירה ממתזמר קודם` of
-   `handover_prompt.py`, and its status line (the `~~~text` block) is not
-   `אין: הבדיקה הראשונה`. Then the first check does not start from zero:
-   1. That status line is read as the previous check's line: step 3 runs from its `since` with
-      its `expect`, so it sees every label moved and comment written since, even before this
-      session opened.
-   2. Its `pipeline_sha` and `session_sha` are only noted, never compared (step 2.4): they are
-      from before the commit that caused the hand-off, so a comparison would hand off again,
-      in a loop. This session loaded `main` when it opened; a merge after that is caught by the
-      guard and the next check.
+   `handover_prompt.py`. Then the first check does not start from zero:
+   1. Its status line (the `~~~text` block) is read as the previous check's line, unless it is
+      `אין: הבדיקה הראשונה`: step 3 runs from its `since` with its `expect`, so it sees every
+      label moved and comment written since, even before this session opened.
+   2. Its `pipeline_sha` and `session_sha` are never compared, nor kept as the previous shas
+      (step 2.4; also when this check's shas are `null`, step 2.1, so the next check only notes
+      its own): they are from before the commit that caused the hand-off, so a comparison would
+      hand off again, in a loop. This session loaded `main` when it opened; a merge after that
+      is caught by the guard and the next check.
    3. `subscribe_pr_activity` on every PR under `ה-PRים שהמתזמר הקודם עקב אחריהם`, in this
       check, even when its label did not move: the old subscription was cancelled, and a PR's
       events reach one session only.
-   4. `מה מחכה לדולב` and `מה דולב אמר` are context only: what waits for him is rebuilt from
+   4. `מה מחכה לדולב` and `מה דולב אמר בשיחה ולא נכתב ב-GitHub` are context only: what waits for him is rebuilt from
       GitHub, as in every check (`chat-decisions.md`, rule 3).
 
 ## Each check
@@ -103,7 +104,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    step 6), in this order (`orchestrate.md`, "שינוי בצינור באמצע ספרינט"):
    1. A sha is `null` (git failed, with a warning on stderr): tell Dolev in one line that the
       pipeline-change check did not run this time, keep the previous shas for the next
-      comparison, and skip 2–4.
+      comparison (none after a hand-off: Start, item 5), and skip 2–4.
    2. `session_sha` moved: what a session loads once changed. Hand the sprint to a new
       orchestrator, at once (S-2.12; `orchestrate.md`, "שינוי בצינור באמצע ספרינט"): no
       child opened, no merge asked, no wait for children mid-turn.
