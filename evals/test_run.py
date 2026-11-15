@@ -221,7 +221,7 @@ def test_no_result_is_not_run(ready, monkeypatch):
 @pytest.fixture
 def same_second(monkeypatch):
     """time.strftime fixed, as if every run started in the same second."""
-    monkeypatch.setattr(run.time, "strftime", lambda fmt: "run-20261115-120000")
+    monkeypatch.setattr(run.time, "strftime", lambda fmt, *rest: "run-20261115-120000")
 
 
 def test_two_runs_in_the_same_second_get_two_folders(tmp_path, same_second):
