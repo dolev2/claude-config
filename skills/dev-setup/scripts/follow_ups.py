@@ -40,10 +40,11 @@ import json
 import re
 import sys
 
-from gh_rest import api, api_list, closing_prs, current_repo, open_issue_nodes
+from gh_rest import api, closing_prs, current_repo, open_issue_nodes
 from rank_issues import current_sprint
 from watch_children import MARKER
 
+PAGE = 100
 HEADING = "#### משימות המשך"
 NONE_LINE = "אין משימות המשך"
 KINDS = ("מוצר", "תהליך")
@@ -168,9 +169,24 @@ def gap(number: int, url: str | None, message: str) -> dict:
     return {"issue": number, "comment_url": url, "message": message}
 
 
+def pages(path: str) -> list:
+    """Every item of a REST list, page by page through `page=`.
+
+    `gh api --paginate` follows GitHub's next links, which name the repository by id
+    (`repositories/<id>/...`), and the cloud proxy refuses those (HTTP 403).
+    """
+    found: list = []
+    for page in range(1, 1000):
+        rows = api(f"{path}&per_page={PAGE}&page={page}")
+        found += rows
+        if len(rows) < PAGE:
+            return found
+    return found
+
+
 def milestone_of(repo: str, title: str) -> dict:
     """The milestone named `title`, open or closed; exits when there is none."""
-    for milestone in api_list(f"repos/{repo}/milestones?state=all&per_page=100"):
+    for milestone in pages(f"repos/{repo}/milestones?state=all"):
         if milestone["title"] == title:
             return milestone
     sys.exit(f"No milestone named {title!r} in {repo}.")
@@ -179,12 +195,8 @@ def milestone_of(repo: str, title: str) -> dict:
 def follow_ups(repo: str, sprint: str) -> dict:
     """The two keys for the milestone named `sprint`, read from GitHub."""
     milestone = milestone_of(repo, sprint)
-    issues = api_list(
-        f"repos/{repo}/issues?milestone={milestone['number']}&state=all&per_page=100"
-    )
-    comments = api_list(
-        f"repos/{repo}/issues/comments?since={milestone['created_at']}&per_page=100"
-    )
+    issues = pages(f"repos/{repo}/issues?milestone={milestone['number']}&state=all")
+    comments = pages(f"repos/{repo}/issues/comments?since={milestone['created_at']}")
     # The 100 PRs updated last cover a sprint; every PR ever opened is not needed.
     pulls = api(
         f"repos/{repo}/pulls?state=all&sort=updated&direction=desc&per_page=100"
