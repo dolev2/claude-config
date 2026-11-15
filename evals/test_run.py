@@ -216,3 +216,37 @@ def test_no_result_is_not_run(ready, monkeypatch):
     code, out = ready()
     assert code == 2
     assert "בלי תוצאה" in out
+
+
+@pytest.fixture
+def same_second(monkeypatch):
+    """time.strftime fixed, as if every run started in the same second."""
+    monkeypatch.setattr(run.time, "strftime", lambda fmt: "run-20261115-120000")
+
+
+def test_two_runs_in_the_same_second_get_two_folders(tmp_path, same_second):
+    first = run.new_run_dir(tmp_path)
+    second = run.new_run_dir(tmp_path)
+    assert first != second
+    assert first.is_dir() and second.is_dir()
+
+
+def test_run_folder_takes_the_next_free_suffix(tmp_path, same_second):
+    assert run.new_run_dir(tmp_path).name == "run-20261115-120000"
+    (tmp_path / "run-20261115-120000-2").mkdir()
+    assert run.new_run_dir(tmp_path).name == "run-20261115-120000-3"
+
+
+def test_run_folder_creates_a_missing_parent(tmp_path, same_second):
+    folder = run.new_run_dir(tmp_path / "results" / "nested")
+    assert folder.parent == tmp_path / "results" / "nested"
+    assert folder.is_dir()
+
+
+def test_run_beside_one_that_started_the_same_second(ready, tmp_path, same_second):
+    busy = tmp_path / "run-20261115-120000"
+    (busy / "marker").mkdir(parents=True)
+    code, out = ready("--all", "--dry-run")
+    assert code == 0
+    assert out.startswith("claude plugin eval")
+    assert (busy / "marker").is_dir()

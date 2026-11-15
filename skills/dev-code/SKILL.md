@@ -176,7 +176,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    in `evals/holdout/`); a failed case of a skill the diff does not touch first runs on
    `<default>`, as `reference/tests.md` says, and one that fails there too is not fixed
    here. Run each failed case again, in a run of its own (`--case <name>`,
-   `reference/tests.md`). A stop at the cost
+   `reference/tests.md`), one after the other, never at the same time. A stop at the cost
    ceiling is not a failure: say what ran. On Windows it does not run: say so in the
    hand-off.
 
@@ -284,7 +284,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     החיוב דולק מ-<since>)"; after `billing`, `<since>` is the date of
     `billing_flag.py status`). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
     the lines `evals/run.py` printed, the model, and a line for each case that ran again, with
-    its result; a case that also failed on `<default>` is marked there as existing, with
+    its result; a case that failed in the full run and passed again with no code change between
+    the two is marked "לא יציב", with its skill, and points to its open issue or to its follow-up
+    task (`reference/tests.md`); a case that also failed on `<default>` is marked there as existing, with
     the commit it ran on and its result, and is a follow-up task below. The app's outcome
     from step 10 goes into that comment and into the chat message, with one line on what to
     open in it. After the "סקירת קוד" line, it has the fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
