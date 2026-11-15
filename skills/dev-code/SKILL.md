@@ -311,7 +311,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     each task's kind, what was chosen, and the proposal's link and repo.
     After each choice, one line in the chat on what changed. No window available, or the run is
     automated: the comment and chat message above are the hand-off, as before, and each
-    follow-up task opens as a backlog proposal with no sprint (`reference/follow-ups.md`). An
+    follow-up task opens as a backlog proposal with no sprint (`reference/follow-ups.md`),
+    followed by the same one comment on the issue, with the proposals that opened. An
     orchestrator's child opens none: they stay in the comment, for the orchestrator's window.
 
 12. **Unless he chose the merge, keep the worktree until it**: the review app runs from it.

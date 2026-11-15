@@ -91,8 +91,8 @@ _אין שאלות פתוחות._
 **The `אפיון:` line** names the part the task implements (the format:
 `$HOME/.claude/docs/specs/README.md`). **A task opens only with this line, to an open part**
 (`reference/specs.md`, "מתי נכתב אפיון"): read the spec in `docs/specs/` on `origin/<default>`
-and find the part. This holds for every task, a manual task and a lesson's included; a bug, a
-backlog idea, an umbrella and a decision are not tasks here.
+and find the part. This holds for every task, a manual task included; a bug, a backlog idea, a
+follow-up task (a backlog proposal, below), an umbrella and a decision are not tasks here.
 1. **An open part fits:** the line names it, and the task opens as in step 3.
 2. **No open part fits, or the task changes a part that is already Done:** it opens as a
    backlog idea instead (`status:backlog`, no milestone, no `אפיון:` line), and the report of
