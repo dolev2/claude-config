@@ -76,7 +76,8 @@ python -m pytest skills/dev-setup/scripts hooks evals
 python .github/holdout_check.py
 ```
 בסביבה נקייה: קודם `pip install pytest ruff==0.17.2`.
-**גם כש-`ruff` כבר מותקן, בודקים את הגרסה:** `ruff --version` שונה מ-`0.17.2`: מריצים `pip install ruff==0.17.2` לפני הבדיקות, כי גרסה אחרת מפילה בדיקות שאין בהן באג (משימת תהליך מ-#335, PR #409, 15.11.2026).
+
+**גם כש-`ruff` כבר מותקן, בודקים את הגרסה:** כש-`ruff --version` מחזיר גרסה אחרת מהנעוצה בשורה שלמעלה, מתקינים את הנעוצה לפני הבדיקות, כי גרסה אחרת מפילה בדיקות שאין בהן באג (משימת תהליך מ-#335, PR #409, 15.11.2026).
 
 **חבילה מותנית, תרחישי הסקילים:** `python evals/run.py --model <המודל של הסשן>`, כשה-diff נוגע בסקיל מכוסה, ב-`skills/dev-setup/reference/` או ב-`evals/`.
 היא מריצה את הסקילים מול GitHub מדומה, ורצה בענן וב-Linux בלבד (`bubblewrap`, `socat`). מתי ואיך: `skills/dev-setup/reference/tests.md`.
