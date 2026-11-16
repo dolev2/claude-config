@@ -115,7 +115,7 @@ def test_no_pull_request_workflow_prints_none_without_reading_github(
     tmp_path, monkeypatch, capsys
 ):
     root = workflows(tmp_path, **{"sync.yml": "on:\n  issues:\n"})
-    monkeypatch.setattr(wait_ci, "api", lambda path: pytest.fail("read GitHub"))
+    monkeypatch.setattr(wait_ci, "api_list", lambda path, key: pytest.fail("read"))
     wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
     assert capsys.readouterr().out == "none\n"
 
@@ -124,14 +124,14 @@ def test_main_reads_the_check_runs_of_the_given_sha(tmp_path, monkeypatch, capsy
     root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
     paths = []
 
-    def api(path):
-        paths.append(path)
-        return {"check_runs": [run("tests")]}
+    def api_list(path, key):
+        paths.append((path, key))
+        return [run("tests")]
 
-    monkeypatch.setattr(wait_ci, "api", api)
+    monkeypatch.setattr(wait_ci, "api_list", api_list)
     wait_ci.main(["--sha", "ABC1234", "--root", str(root), "--repo", "o/r"])
     assert capsys.readouterr().out == "success\n"
-    assert paths == ["repos/o/r/commits/abc1234/check-runs?per_page=100"]
+    assert paths == [("repos/o/r/commits/abc1234/check-runs", "check_runs")]
 
 
 def test_unreadable_check_runs_print_error_with_the_message(
@@ -139,10 +139,10 @@ def test_unreadable_check_runs_print_error_with_the_message(
 ):
     root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
 
-    def api(path):
+    def api_list(path, key):
         raise SystemExit(f"gh api {path} failed:\nHTTP 403")
 
-    monkeypatch.setattr(wait_ci, "api", api)
+    monkeypatch.setattr(wait_ci, "api_list", api_list)
     wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
     out = capsys.readouterr().out.splitlines()
     assert out[0] == "error"
@@ -212,7 +212,7 @@ def test_main_turns_the_flag_on_for_a_billing_failure(
 ):
     root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
     failed = run("tests", conclusion="failure")
-    monkeypatch.setattr(wait_ci, "api", lambda path: {"check_runs": [failed]})
+    monkeypatch.setattr(wait_ci, "api_list", lambda path, key: [failed])
     monkeypatch.setattr(wait_ci, "billing_run", lambda repo, runs: failed["html_url"])
 
     def turn_on(cache, source, url, now):
@@ -231,7 +231,7 @@ def test_flag_on_prints_billing_flag_without_reading_the_check_runs(
     root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
     since = "2026-11-15T10:00:00+00:00"
     monkeypatch.setattr(wait_ci.billing_flag, "current", lambda: {"since": since})
-    monkeypatch.setattr(wait_ci, "api", lambda path: pytest.fail("read GitHub"))
+    monkeypatch.setattr(wait_ci, "api_list", lambda path, key: pytest.fail("read"))
     wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
     assert capsys.readouterr().out == f"billing-flag {since}\n"
 
@@ -245,8 +245,8 @@ def test_flag_on_prints_billing_flag_without_reading_the_check_runs(
 )
 def test_flag_off_waits_as_before(conclusion, expected, tmp_path, monkeypatch, capsys):
     root = workflows(tmp_path, **{"tests.yml": "on:\n  pull_request:\n"})
-    checks = {"check_runs": [run("tests", conclusion=conclusion)]}
-    monkeypatch.setattr(wait_ci, "api", lambda path: checks)
+    checks = [run("tests", conclusion=conclusion)]
+    monkeypatch.setattr(wait_ci, "api_list", lambda path, key: checks)
     monkeypatch.setattr(wait_ci, "billing_run", lambda repo, runs: None)
     wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
     assert capsys.readouterr().out == expected
@@ -260,7 +260,7 @@ def test_an_unread_flag_warns_and_waits_as_before(tmp_path, monkeypatch, capsys)
 
     monkeypatch.setattr(wait_ci.billing_flag, "current", REAL_CURRENT)
     monkeypatch.setattr(wait_ci.billing_flag, "read", read)
-    monkeypatch.setattr(wait_ci, "api", lambda path: {"check_runs": [run("tests")]})
+    monkeypatch.setattr(wait_ci, "api_list", lambda path, key: [run("tests")])
     wait_ci.main(["--sha", "abc1234", "--root", str(root), "--repo", "o/r"])
     out = capsys.readouterr()
     assert out.out == "success\n"

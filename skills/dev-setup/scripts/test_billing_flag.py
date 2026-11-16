@@ -107,7 +107,7 @@ def test_git_that_does_not_answer_is_unknown(monkeypatch, tmp_path, capsys):
     [(URL, f"billing {URL}\n"), (None, "not-billing\n")],
 )
 def test_check_prints_billing_or_not(url, expected, monkeypatch, capsys):
-    monkeypatch.setattr(billing_flag, "api", lambda path: {"check_runs": []})
+    monkeypatch.setattr(billing_flag, "api_list", lambda path, key: [])
     monkeypatch.setattr(billing_flag, "billing_run", lambda repo, runs: url)
     monkeypatch.setattr(billing_flag, "turn_on", lambda *args: {})
     assert billing_flag.main(["check", "--sha", "abc1234", "--repo", "o/r"]) == 0
@@ -181,7 +181,7 @@ def test_check_exits_1_when_the_flag_was_not_written(
     remote, cache, monkeypatch, capsys
 ):
     monkeypatch.setattr(billing_flag, "CACHE", cache)
-    monkeypatch.setattr(billing_flag, "api", lambda path: {"check_runs": []})
+    monkeypatch.setattr(billing_flag, "api_list", lambda path, key: [])
     monkeypatch.setattr(billing_flag, "billing_run", lambda repo, runs: URL)
     deny_pushes(remote)
     assert billing_flag.main(["check", "--sha", "abc1234", "--repo", "o/r"]) == 1

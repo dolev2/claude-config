@@ -33,7 +33,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import billing_flag
-from gh_rest import api, current_repo
+from gh_rest import api_list, current_repo
 from sprint_github import FAILED, billing_run, ci_summary
 
 SHA = re.compile(r"[0-9a-f]{7,40}")
@@ -132,8 +132,8 @@ def main(argv: list[str] | None = None) -> None:
     repo = args.repo or current_repo()
 
     def read_runs() -> list[dict]:
-        path = f"repos/{repo}/commits/{args.sha}/check-runs?per_page=100"
-        return api(path)["check_runs"]
+        path = f"repos/{repo}/commits/{args.sha}/check-runs"
+        return api_list(path, key="check_runs")
 
     def billing_of(runs: list[dict]) -> list[str] | None:
         url = billing_run(repo, runs)

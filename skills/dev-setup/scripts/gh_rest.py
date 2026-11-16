@@ -9,6 +9,11 @@ the cloud: one code path, tested once (claude-config #133, #138).
 fetch (`labels.nodes`, `milestone`, `blockedBy.nodes`, ...), so their logic and tests
 stay as they were. Links are fetched per issue, and only for issues whose REST summary
 says they have any.
+
+Every full list is read through `api_list`, page by page through `page=`, never with
+`gh api --paginate`: that follows GitHub's next links, which name the repository by
+id (`repositories/<id>/...`), and the cloud proxy refuses those (HTTP 403, #418).
+A read of the 100 updated last (`recent_done`) is one `api` page on purpose.
 """
 
 import json
@@ -25,6 +30,9 @@ TRANSIENT = re.compile(
     r"HTTP 5\d\d|timeout|connection reset|connection refused|\bEOF\b", re.IGNORECASE
 )
 RETRY_DELAYS = (2, 4)
+PAGE_SIZE = 100
+MAX_PAGES = 1000
+PER_PAGE = re.compile(r"([?&])per_page=[^&]*&?")
 
 
 def run(*args: str) -> tuple[int, str, str]:
@@ -97,10 +105,32 @@ def api(path: str) -> object:
     return json.loads(gh_api(path))
 
 
-def api_list(path: str) -> list:
-    """Every item of a paginated REST list, all pages flattened into one list."""
-    pages = json.loads(gh_api(path, "--paginate", "--slurp"))
-    return [item for page in pages for item in page]
+def page_path(path: str, page: int) -> str:
+    """`path` asking for page `page` of PAGE_SIZE items; a per_page it had is replaced.
+
+    The size is always PAGE_SIZE, so a short page reliably means the last one.
+    """
+    base = PER_PAGE.sub(r"\1", path).rstrip("?&")
+    joiner = "&" if "?" in base else "?"
+    return f"{base}{joiner}per_page={PAGE_SIZE}&page={page}"
+
+
+def api_list(path: str, key: str | None = None) -> list:
+    """Every item of a REST list, read page by page until a short page (S-5.9).
+
+    `key` names the list inside a wrapping object (`check-runs` answers
+    `{"check_runs": [...]}`); without it the answer is the list itself. A failed page
+    exits through gh_api, so a caller never gets half a list. MAX_PAGES stops a
+    broken answer from looping forever.
+    """
+    found: list = []
+    for page in range(1, MAX_PAGES + 1):
+        answer = api(page_path(path, page))
+        rows = answer[key] if key else answer
+        found += rows
+        if len(rows) < PAGE_SIZE:
+            break
+    return found
 
 
 def latest_done(issues: list[dict], count: int = 5) -> list[dict]:
@@ -115,6 +145,7 @@ def latest_done(issues: list[dict], count: int = 5) -> list[dict]:
 
 def recent_done(repo: str, count: int = 5) -> list[dict]:
     """The last `count` issues that reached status:done, newest first (S-1.41)."""
+    # One page on purpose: the 100 updated last hold the last done, not a full list.
     page = api(
         f"repos/{repo}/issues?state=closed&labels=status:done"
         "&sort=updated&direction=desc&per_page=100"

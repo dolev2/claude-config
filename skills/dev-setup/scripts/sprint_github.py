@@ -81,9 +81,10 @@ def pr_status(repo: str, pr: dict) -> dict:
     A failure GitHub caused by billing is "billing", not "failure" (S-1.53).
     """
     pull = api(f"repos/{repo}/pulls/{pr['number']}")
-    checks = api(f"repos/{repo}/commits/{pr['headSha']}/check-runs?per_page=100")
-    ci = ci_summary(checks["check_runs"])
-    if ci == "failure" and billing_run(repo, checks["check_runs"]) is not None:
+    path = f"repos/{repo}/commits/{pr['headSha']}/check-runs"
+    checks = api_list(path, key="check_runs")
+    ci = ci_summary(checks)
+    if ci == "failure" and billing_run(repo, checks) is not None:
         ci = "billing"
     return {"mergeable_state": pull["mergeable_state"], "ci": ci}
 

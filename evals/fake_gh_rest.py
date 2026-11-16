@@ -301,6 +301,23 @@ def matching_refs(state: State, branch: str) -> list[dict]:
     return [{"ref": r} for r in refs.splitlines() if r.startswith(prefix)]
 
 
+def paged(result: object, query: dict) -> object:
+    """One page of a list when `page` is asked for, as GitHub cuts it (S-5.9).
+
+    Without `page` the whole list comes back, so a call that never pages sees it all.
+    A wrapped list (`{"check_runs": [...]}`) is cut inside its object.
+    """
+    if "page" not in query:
+        return result
+    size = int(query.get("per_page", ["30"])[0])
+    start = (int(query["page"][0]) - 1) * size
+    if isinstance(result, list):
+        return result[start : start + size]
+    if isinstance(result, dict) and isinstance(result.get("check_runs"), list):
+        return result | {"check_runs": result["check_runs"][start : start + size]}
+    return result
+
+
 def handle(args: list[str], state: State) -> object:
     """Answer one `gh api` call; GhError for a 404 or an unknown route."""
     path, method, body, slurp = parse(args)
@@ -317,6 +334,6 @@ def handle(args: list[str], state: State) -> object:
     for pattern, handler in routes(state, method, body):
         match = re.fullmatch(pattern, rest)
         if match:
-            result = handler(match, query)
+            result = paged(handler(match, query), query)
             return [result] if slurp else result
     raise GhError(f"fake gh: unsupported: api {method} {path}", unsupported=True)
