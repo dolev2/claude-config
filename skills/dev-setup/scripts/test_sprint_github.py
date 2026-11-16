@@ -22,6 +22,16 @@ def fake_api(monkeypatch, answers):
     return calls
 
 
+def fake_check_runs(monkeypatch, runs):
+    """api_list answering the check runs of commit abc, the only list asked here."""
+
+    def api_list(path, key):
+        assert (path, key) == ("repos/o/r/commits/abc/check-runs", "check_runs")
+        return runs
+
+    monkeypatch.setattr(sprint_github, "api_list", api_list)
+
+
 REF = "repos/o/r/git/matching-refs/heads/claude/issue-7-x"
 COMPARE = "repos/o/r/compare/main...claude/issue-7-x"
 
@@ -231,11 +241,9 @@ def test_pr_status_names_a_billing_failure(monkeypatch):
         monkeypatch,
         {
             "repos/o/r/pulls/5": {"mergeable_state": "clean"},
-            "repos/o/r/commits/abc/check-runs?per_page=100": {
-                "check_runs": [check() | {"status": "completed"}]
-            },
         },
     )
+    fake_check_runs(monkeypatch, [check() | {"status": "completed"}])
     monkeypatch.setattr(sprint_github, "billing_run", lambda repo, runs: "https://x/1")
     status = sprint_github.pr_status("o/r", {"number": 5, "headSha": "abc"})
     assert status == {"mergeable_state": "clean", "ci": "billing"}
@@ -246,11 +254,9 @@ def test_pr_status_keeps_an_ordinary_failure(monkeypatch):
         monkeypatch,
         {
             "repos/o/r/pulls/5": {"mergeable_state": "clean"},
-            "repos/o/r/commits/abc/check-runs?per_page=100": {
-                "check_runs": [check() | {"status": "completed"}]
-            },
         },
     )
+    fake_check_runs(monkeypatch, [check() | {"status": "completed"}])
     monkeypatch.setattr(sprint_github, "billing_run", lambda repo, runs: None)
     status = sprint_github.pr_status("o/r", {"number": 5, "headSha": "abc"})
     assert status["ci"] == "failure"

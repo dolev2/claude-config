@@ -31,7 +31,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pipeline_shas
-from gh_rest import api, current_repo
+from gh_rest import api_list, current_repo
 from pipeline_shas import CACHE, ensure_clone, git
 from sprint_github import billing_run
 
@@ -219,7 +219,7 @@ def turn_on_manual() -> dict:
 def check_commit(sha: str, repo: str | None) -> int:
     """The `check` command: billing <url> (and the flag on), or not-billing."""
     repo = repo or current_repo()
-    runs = api(f"repos/{repo}/commits/{sha}/check-runs?per_page=100")["check_runs"]
+    runs = api_list(f"repos/{repo}/commits/{sha}/check-runs", key="check_runs")
     url = billing_run(repo, runs)
     lines = ["not-billing"] if url is None else billing_lines(url)
     print("\n".join(lines))

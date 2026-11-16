@@ -39,7 +39,7 @@ import tomllib
 from pathlib import Path
 
 import sprint_rule
-from gh_rest import current_repo
+from gh_rest import api_list, current_repo
 from gh_rest import run as gh_run
 from lint_check import all_gaps, tracked_files
 
@@ -143,18 +143,21 @@ def netlify_gaps(root: Path) -> list[str]:
     return []
 
 
+def read_list(path: str) -> list | None:
+    """Every item of the REST list at `path` (gh_rest.api_list); None when unreadable.
+
+    This report never stops on a list it cannot read: it says what it could not find.
+    """
+    try:
+        return api_list(path)
+    except SystemExit:
+        return None
+
+
 def current_sprint(repo: str) -> str | None:
     """The current sprint by the shared rule (sprint_rule.py); None when unreadable."""
-    code, out = run(
-        "gh",
-        "api",
-        f"repos/{repo}/issues?state=open&per_page=100",
-        "--paginate",
-        "--slurp",
-    )
-    if code != 0:
-        return None
-    return sprint_rule.current_sprint([i for page in json.loads(out) for i in page])
+    issues = read_list(f"repos/{repo}/issues?state=open")
+    return None if issues is None else sprint_rule.current_sprint(issues)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -173,15 +176,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(f"gh api repos/{repo} failed:\n{err}")
 
     root = repo_root() if not args.repo else None
-    _, labels_raw = run(
-        "gh",
-        "api",
-        "--paginate",
-        f"repos/{repo}/labels?per_page=100",
-        "--jq",
-        ".[].name",
-    )
-    labels = set(labels_raw.splitlines())
+    labels = {label["name"] for label in read_list(f"repos/{repo}/labels") or []}
     missing = [name for name in REQUIRED_LABELS if name not in labels]
     code, project = run("gh", "variable", "get", "PROJECT_NUMBER", "--repo", repo)
     forms = issue_forms(root, repo)

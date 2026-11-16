@@ -4,6 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 
+import gh_rest
 import pytest
 
 SCRIPT = Path(__file__).resolve().parent / "pipeline_info.py"
@@ -21,8 +22,6 @@ def fake_gh(monkeypatch, *, defaults=True, root=None):
             return (0, str(root), "") if root else (1, "", "")
         if args[:3] == ("gh", "api", "repos/acme/widgets"):
             return 0, "main", ""
-        if args[:3] == ("gh", "api", "--paginate") and "/labels" in args[3]:
-            return 0, "\n".join(pipeline_info.REQUIRED_LABELS), ""
         if args[:2] == ("gh", "api") and "/contents/" in args[2]:
             asked.append(args[2])
             if defaults == "blocked":
@@ -32,7 +31,13 @@ def fake_gh(monkeypatch, *, defaults=True, root=None):
             return 1, "", "Not Found (HTTP 404)"
         return 1, "", "HTTP 403: blocked"
 
+    def api_list(path):
+        if path.endswith("/labels"):
+            return [{"name": name} for name in pipeline_info.REQUIRED_LABELS]
+        raise SystemExit("gh api failed:\nHTTP 403: blocked")
+
     monkeypatch.setattr(pipeline_info, "gh_run", gh_run)
+    monkeypatch.setattr(pipeline_info, "api_list", api_list)
     monkeypatch.setattr(pipeline_info, "current_repo", lambda: "acme/widgets")
     return asked
 
@@ -91,6 +96,18 @@ def test_missing_forms_are_reported_for_a_remote_repo(monkeypatch, capsys):
     fake_gh(monkeypatch, defaults=False)
     info = run_main(monkeypatch, capsys, ("--json", "--repo", "acme/widgets"))
     assert info["missing_files"] == [".github/ISSUE_TEMPLATE (repo or acme/.github)"]
+
+
+def test_unreadable_labels_are_all_missing_without_stopping(monkeypatch, capsys):
+    fake_gh(monkeypatch)
+
+    def blocked(path):
+        raise SystemExit("gh api failed:\nHTTP 403: blocked")
+
+    monkeypatch.setattr(pipeline_info, "api_list", blocked)
+    info = run_main(monkeypatch, capsys, ("--json", "--repo", "acme/widgets"))
+    assert info["missing_labels"] == list(pipeline_info.REQUIRED_LABELS)
+    assert info["current_sprint"] is None
 
 
 def write_readme(root, text):
@@ -206,15 +223,35 @@ def test_current_sprint_skips_a_milestone_with_only_an_open_pr(monkeypatch):
 
     asked = []
 
-    def gh_run(*args):
-        asked.append(args)
-        return 0, json.dumps([[issue(1, pr=True)], [issue(2)]]), ""
+    def api_list(path):
+        asked.append(path)
+        return [issue(1, pr=True), issue(2)]
 
-    monkeypatch.setattr(pipeline_info, "gh_run", gh_run)
+    monkeypatch.setattr(pipeline_info, "api_list", api_list)
     assert pipeline_info.current_sprint("acme/widgets") == "M2"
-    assert "--paginate" in asked[0] and "--slurp" in asked[0]
+    assert asked == ["repos/acme/widgets/issues?state=open"]
+
+
+def test_the_sprint_is_read_from_every_page(monkeypatch):
+    # The open issues of M1 fill the first page; M2 has only one, on the second.
+    rows = [
+        {"state": "open", "milestone": {"number": 2, "title": "M2", "state": "open"}}
+    ] + [
+        {"state": "open", "milestone": {"number": 1, "title": "M1", "state": "open"}}
+    ] * 100
+
+    def run(*args):
+        page = int(args[-1].rsplit("page=", 1)[1])
+        return 0, json.dumps(rows[(page - 1) * 100 : page * 100]), ""
+
+    monkeypatch.setattr(gh_rest, "run", run)
+    issues = pipeline_info.read_list("repos/acme/widgets/issues?state=open")
+    assert len(issues) == 101
 
 
 def test_unreadable_issues_mean_no_sprint(monkeypatch):
-    monkeypatch.setattr(pipeline_info, "gh_run", lambda *args: (1, "", "HTTP 403"))
+    def blocked(path):
+        raise SystemExit("gh api failed:\nHTTP 403")
+
+    monkeypatch.setattr(pipeline_info, "api_list", blocked)
     assert pipeline_info.current_sprint("acme/widgets") is None

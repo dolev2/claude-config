@@ -187,6 +187,20 @@ def test_rest_reads(folder, capsys, argv, expected):
     assert gh(capsys, *argv)[:2] == (0, expected)
 
 
+@pytest.mark.parametrize(
+    ("page", "expected"),
+    [("1", "11\n"), ("2", "12\n"), ("3", "")],
+)
+def test_a_list_is_cut_by_page(folder, capsys, page, expected):
+    path = f"repos/acme/demo/issues?state=open&per_page=1&page={page}"
+    assert gh(capsys, "api", path, "--jq", ".[].number")[:2] == (0, expected)
+
+
+def test_check_runs_are_cut_inside_their_object(folder, capsys):
+    path = "repos/acme/demo/commits/abc123/check-runs?per_page=100&page=2"
+    assert gh(capsys, "api", path, "--jq", ".check_runs | length")[:2] == (0, "0\n")
+
+
 def test_rest_label_add_and_remove(folder, capsys):
     path = "repos/acme/demo/issues/12/labels"
     assert gh(capsys, "api", "-X", "POST", path, "-f", "labels[]=status:done")[0] == 0

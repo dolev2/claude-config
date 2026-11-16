@@ -113,7 +113,7 @@ def test_the_section_ends_at_the_next_heading():
 
 
 def test_main_with_a_milestone_that_does_not_exist_exits(monkeypatch):
-    monkeypatch.setattr(follow_ups, "pages", lambda path: [{"title": "Sprint 1"}])
+    monkeypatch.setattr(follow_ups, "api_list", lambda path: [{"title": "Sprint 1"}])
     with pytest.raises(SystemExit, match="No milestone named"):
         follow_ups.main(["--repo", "acme/widgets", "--milestone", "Sprint 9"])
 
@@ -131,28 +131,13 @@ def test_main_prints_both_keys(monkeypatch, capsys):
         sent.append(path)
         return next(rows for part, rows in lists.items() if part in path)
 
-    monkeypatch.setattr(follow_ups, "pages", fake_list)
+    monkeypatch.setattr(follow_ups, "api_list", fake_list)
     monkeypatch.setattr(follow_ups, "api", lambda path: [])
     follow_ups.main(["--repo", "acme/widgets", "--milestone", "Sprint 1"])
     result = json.loads(capsys.readouterr().out)
     assert [t["issue"] for t in result["follow_ups"]] == [1]
     assert result["follow_up_gaps"] == []
     assert "since=2026-10-20T00:00:00Z" in sent[-1]
-
-
-def test_pages_reads_page_after_page_until_a_short_one(monkeypatch):
-    sent = []
-
-    def api(path):
-        sent.append(path)
-        return [{"n": 1}] * (follow_ups.PAGE if path.endswith("page=1") else 2)
-
-    monkeypatch.setattr(follow_ups, "api", api)
-    assert len(follow_ups.pages("repos/x/y/issues?state=all")) == follow_ups.PAGE + 2
-    assert sent == [
-        "repos/x/y/issues?state=all&per_page=100&page=1",
-        "repos/x/y/issues?state=all&per_page=100&page=2",
-    ]
 
 
 def test_a_hash_inside_a_task_does_not_end_the_section():

@@ -56,16 +56,96 @@ def test_current_repo_without_remote_exits_with_the_hint(monkeypatch):
         gh_rest.current_repo()
 
 
-def test_api_list_flattens_the_pages(monkeypatch):
+def paged_gh(monkeypatch, total, key=None, errors=None):
+    """`gh api` over a list of `total` items, cut by `page=`; records the paths asked.
+
+    `errors` maps a page number to the stderr its first try fails with.
+    """
     sent = []
+    errors = dict(errors or {})
+    monkeypatch.setattr(gh_rest.time, "sleep", lambda seconds: None)
 
     def run(*args):
-        sent.append(args)
-        return 0, json.dumps([[{"n": 1}, {"n": 2}], [{"n": 3}]]), ""
+        path = args[-1]
+        sent.append(path)
+        page = int(path.rsplit("page=", 1)[1])
+        if page in errors:
+            return 1, "", errors.pop(page)
+        start = (page - 1) * gh_rest.PAGE_SIZE
+        rows = [{"n": n} for n in range(start, min(start + gh_rest.PAGE_SIZE, total))]
+        return 0, json.dumps({key: rows} if key else rows), ""
 
     monkeypatch.setattr(gh_rest, "run", run)
-    assert gh_rest.api_list("repos/x/y/labels") == [{"n": 1}, {"n": 2}, {"n": 3}]
-    assert sent == [("gh", "api", "--paginate", "--slurp", "repos/x/y/labels")]
+    return sent
+
+
+def test_api_list_reads_every_page_in_order(monkeypatch):
+    sent = paged_gh(monkeypatch, 230)
+    assert gh_rest.api_list("repos/x/y/issues?state=open") == [
+        {"n": n} for n in range(230)
+    ]
+    assert sent == [
+        f"repos/x/y/issues?state=open&per_page=100&page={page}" for page in (1, 2, 3)
+    ]
+
+
+@pytest.mark.parametrize(("total", "calls"), [(0, 1), (99, 1), (100, 2), (200, 3)])
+def test_api_list_stops_at_the_first_short_page(monkeypatch, total, calls):
+    sent = paged_gh(monkeypatch, total)
+    assert len(gh_rest.api_list("repos/x/y/labels")) == total
+    assert len(sent) == calls
+
+
+@pytest.mark.parametrize(
+    ("path", "first"),
+    [
+        ("repos/x/y/labels", "repos/x/y/labels?per_page=100&page=1"),
+        ("repos/x/y/labels?per_page=30", "repos/x/y/labels?per_page=100&page=1"),
+        (
+            "repos/x/y/issues?per_page=30&state=open",
+            "repos/x/y/issues?state=open&per_page=100&page=1",
+        ),
+        (
+            "repos/x/y/issues?state=open&per_page=100",
+            "repos/x/y/issues?state=open&per_page=100&page=1",
+        ),
+    ],
+)
+def test_api_list_asks_for_pages_of_one_size(monkeypatch, path, first):
+    sent = paged_gh(monkeypatch, 3)
+    gh_rest.api_list(path)
+    assert sent == [first]
+
+
+def test_api_list_reads_a_list_inside_an_object(monkeypatch):
+    sent = paged_gh(monkeypatch, 150, key="check_runs")
+    runs = gh_rest.api_list("repos/x/y/commits/abc/check-runs", key="check_runs")
+    assert len(runs) == 150
+    assert len(sent) == 2
+
+
+def test_a_blocked_page_exits_without_half_a_list(monkeypatch):
+    paged_gh(monkeypatch, 250, errors={2: "HTTP 403: blocked"})
+    with pytest.raises(SystemExit, match="HTTP 403: blocked"):
+        gh_rest.api_list("repos/x/y/issues/1/comments")
+
+
+def test_a_transient_failure_on_a_later_page_is_tried_again(monkeypatch):
+    sent = paged_gh(monkeypatch, 150, errors={2: "HTTP 502: Bad Gateway"})
+    assert len(gh_rest.api_list("repos/x/y/issues/1/comments")) == 150
+    assert [path[-6:] for path in sent] == ["page=1", "page=2", "page=2"]
+
+
+def test_api_list_never_uses_paginate(monkeypatch):
+    seen = []
+
+    def run(*args):
+        seen.append(args)
+        return 0, "[]", ""
+
+    monkeypatch.setattr(gh_rest, "run", run)
+    gh_rest.api_list("repos/x/y/labels")
+    assert "--paginate" not in seen[0]
 
 
 def test_api_failure_exits_with_gh_error(monkeypatch):
