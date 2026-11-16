@@ -125,7 +125,7 @@ def test_the_active_mark_reaches_the_page():
 
 
 def test_mermaid_measures_the_labels_in_the_page_font():
-    """A label measured in one font and shown in another is cut at the box edge (#427)."""
+    """A label measured in one font and shown in another is cut at the edge (#427)."""
     text = build([node(1)])
     assert f"font-family: {FONT};" in text
     assert f"fontFamily: {json.dumps(FONT)}" in text
