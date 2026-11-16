@@ -38,6 +38,7 @@
 - שינוי בתבנית ב-`skills/dev-setup/templates/` משפיע על כל ריפו חדש. ריפואים שכבר הותקנו לא מתעדכנים לבד: מציינים את זה ב-PR.
 - שינוי בטופס ב-`dolev2/.github` מגיע לכל הריפואים מיד. שינוי בכותרת מחייב עדכון של מסמכי הצינור ושל הסקילים באותו זמן.
 - סיומות שורה LF (`.gitattributes`).
+- **סקריפט שקורא את רשימת הקבצים של diff קורא נכון שינוי שם ונתיב עם רווח** (`git diff --name-status -M -z`, כמו `size_check.py`), וסקירה של סקריפט חדש שקורא diff בודקת מולו (משימת תהליך מ-#369, PR #385, 15.11.2026).
 - **שינוי בכלל של הצינור: קודם בקובץ הבעלים שלו**, לפי `skills/dev-setup/reference/owners.md`. מקום אחר מפנה אליו, ולא מעתיק.
 
 ## צינור העבודה
@@ -75,6 +76,7 @@ python -m pytest skills/dev-setup/scripts hooks evals
 python .github/holdout_check.py
 ```
 בסביבה נקייה: קודם `pip install pytest ruff==0.17.2`.
+**גם כש-`ruff` כבר מותקן, בודקים את הגרסה:** `ruff --version` שונה מ-`0.17.2`: מריצים `pip install ruff==0.17.2` לפני הבדיקות, כי גרסה אחרת מפילה בדיקות שאין בהן באג (משימת תהליך מ-#335, PR #409, 15.11.2026).
 
 **חבילה מותנית, תרחישי הסקילים:** `python evals/run.py --model <המודל של הסשן>`, כשה-diff נוגע בסקיל מכוסה, ב-`skills/dev-setup/reference/` או ב-`evals/`.
 היא מריצה את הסקילים מול GitHub מדומה, ורצה בענן וב-Linux בלבד (`bubblewrap`, `socat`). מתי ואיך: `skills/dev-setup/reference/tests.md`.
