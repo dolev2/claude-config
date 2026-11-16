@@ -18,6 +18,9 @@ from status_graph import EMPTY, NO_SPRINT, mermaid_lines
 PAGE_TITLE = "גרף החסימות · {name}"
 SESSIONS_NOT_READ = "רשימת הסשנים לא נקראה, ולכן אין קישורי סשן."
 MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+# One font for the page and the graph: Mermaid sizes each box by the label it
+# measures, so a label shown in another font is cut at the box edge (#427).
+FONT = "system-ui, sans-serif"
 ISSUE_WORD = "משימה"
 PR_WORD = "PR"
 SESSION_WORD = "סשן"
@@ -113,6 +116,8 @@ def page(
         body=body,
         edges=json.dumps(edges),
         mermaid=MERMAID_URL,
+        font=FONT,
+        font_js=json.dumps(FONT),
     )
 
 
@@ -133,13 +138,16 @@ TEMPLATE = """<title>{title}</title>
 body {{ margin: 0; padding-block: 16px; background: var(--bg); color: var(--fg);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  font-family: system-ui, sans-serif; }}
+  font-family: {font}; }}
 h1 {{ font-size: 1.25rem; margin: 0 0 4px; }}
 .note {{ color: var(--muted); margin: 0 0 4px; font-size: .9rem; }}
 .frame {{ direction: ltr; margin-top: 12px; overflow-x: auto; background: var(--frame);
   border: 1px solid var(--edge); border-radius: 8px; padding: 8px; }}
 .graph {{ direction: ltr; margin: 0; width: max-content; text-align: left; }}
 .lnk {{ color: var(--link); display: inline-block; padding: 8px 6px; }}
+/* A safety net: text wider than its measured box spills over the node's own
+   padding instead of being cut. */
+.graph foreignObject {{ overflow: visible; }}
 .hot path, path.hot {{ stroke: var(--hot) !important; stroke-width: 3px !important; }}
 </style>
 <div lang="he" dir="rtl">
@@ -171,22 +179,26 @@ function highlight(id) {{
   for (const [a, b] of EDGES.map(e => e.map(nodeId)))
     if (a === id || b === id) edgePaths(a, b).forEach(p => p.classList.add("hot"));
 }}
-if (window.mermaid) {{
+async function draw() {{
+  // A font that loads after Mermaid measures a label widens the text, but not
+  // the box already drawn around it.
+  if (document.fonts) await document.fonts.ready;
   mermaid.initialize({{ startOnLoad: false, securityLevel: "loose",
     theme: dark ? "dark" : "default",
+    fontFamily: {font_js}, themeVariables: {{ fontFamily: {font_js} }},
     // Natural size, not shrunk to the screen: on a phone the frame scrolls
     // sideways, and the links stay big enough to tap (S-1.50).
     flowchart: {{ htmlLabels: true, useMaxWidth: false }} }});
-  mermaid.run({{ querySelector: "pre.graph" }}).then(() => {{
-    document.querySelectorAll("g.node").forEach(g => {{
-      const id = (g.id.match(/(n[A-Za-z0-9_]+?)-\\d+$/) || [])[1];
-      g.addEventListener("mouseenter", () => highlight(id));
-      g.addEventListener("mouseleave", () => highlight(null));
-      g.addEventListener("click", e => {{
-        if (!e.target.closest("a")) highlight(id);
-      }});
+  await mermaid.run({{ querySelector: "pre.graph" }});
+  document.querySelectorAll("g.node").forEach(g => {{
+    const id = (g.id.match(/(n[A-Za-z0-9_]+?)-\\d+$/) || [])[1];
+    g.addEventListener("mouseenter", () => highlight(id));
+    g.addEventListener("mouseleave", () => highlight(null));
+    g.addEventListener("click", e => {{
+      if (!e.target.closest("a")) highlight(id);
     }});
   }});
 }}
+if (window.mermaid) draw();
 </script>
 """

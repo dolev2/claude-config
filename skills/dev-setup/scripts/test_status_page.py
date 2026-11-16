@@ -1,11 +1,13 @@
 """status_page.py: the clickable blocking graph of /status (S-1.50)."""
 
+import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from status_graph import EMPTY, NO_SPRINT, layout  # noqa: E402
 from status_page import (  # noqa: E402
+    FONT,
     SESSIONS_NOT_READ,
     page,
     page_title,
@@ -120,3 +122,22 @@ def test_the_active_mark_reaches_the_page():
     text = page(REPO, shape, nodes, sessions, "now")
     assert "· פעיל" in node_line(text, 2)
     assert "פעיל" not in node_line(text, 1)
+
+
+def test_mermaid_measures_the_labels_in_the_page_font():
+    """A label measured in one font and shown in another is cut at the edge (#427)."""
+    text = build([node(1)])
+    assert f"font-family: {FONT};" in text
+    assert f"fontFamily: {json.dumps(FONT)}" in text
+    assert f"themeVariables: {{ fontFamily: {json.dumps(FONT)} }}" in text
+
+
+def test_the_graph_is_drawn_after_the_fonts_load():
+    """A font that arrives after the measurement widens text the box no longer fits."""
+    text = build([node(1)])
+    assert "document.fonts.ready" in text
+    assert text.index("document.fonts.ready") < text.index("mermaid.run(")
+
+
+def test_a_label_that_still_overflows_stays_visible():
+    assert ".graph foreignObject { overflow: visible; }" in build([node(1)])
