@@ -1,6 +1,6 @@
 ---
 name: dev-next
-description: Picks the next issue to work on in the current repo — the first open issue of the current sprint (milestone) in its order (bugs, process tasks, the sub-issues of an umbrella that has started, then the rest; in each group the one fewest sprint issues wait on through "Blocked by" links), never one Dolev paused — and routes it to dev-plan or dev-code by its status, or says plainly when it is waiting for Dolev. Use in any of Dolev's repos whenever he says "let's work on the next task", "בוא נעבוד על המשימה הבאה", "מה הבא", "what's next", or asks what is blocking the sprint. Also use it when he asks to review or fix the order of the sprint ("תבדוק את סדר הספרינט", "review the sprint order"): a full review of the sprint's "Blocked by" links that proposes links to add or remove and issues to merge. Works in any repo that has the pipeline labels; if the repo has its own repo-specific next-issue skill, use that instead.
+description: Picks the next issue to work on in the current repo — the first open issue of the current sprint (milestone) in its order (bugs, tasks Dolev labelled priority:high, process tasks, the sub-issues of an umbrella that has started, then the rest; in each group the one fewest sprint issues wait on through "Blocked by" links), never one Dolev paused — and routes it to dev-plan or dev-code by its status, or says plainly when it is waiting for Dolev. Use in any of Dolev's repos whenever he says "let's work on the next task", "בוא נעבוד על המשימה הבאה", "מה הבא", "what's next", or asks what is blocking the sprint. Also use it when he asks to review or fix the order of the sprint ("תבדוק את סדר הספרינט", "review the sprint order"): a full review of the sprint's "Blocked by" links that proposes links to add or remove and issues to merge. Works in any repo that has the pipeline labels; if the repo has its own repo-specific next-issue skill, use that instead.
 ---
 
 # The next issue
@@ -24,9 +24,9 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
 
 In **`$HOME/.claude/skills/dev-setup/reference/`**: `pipeline.md` (the labels, the sprint) and `dependencies.md`: the
 ranking rule and why this skill ranks without status tiers, while the phases put the status
-tier first. In both, a `bug` comes before any new task, then `process` issues, then the sub-issues
+tier first. In both, a `bug` comes before any new task, then `priority:high` issues (a bug with it stays a bug, S-1.62), then `process` issues, then the sub-issues
 of an umbrella that has started, then the rest, and in each group the lowest weight comes first
-(a repair, `needs-repair`, stays first in the phases). Why: a topic is finished before the next (S-1.3).
+(a repair, `needs-repair`, stays first in the phases; there `priority:high` also goes above the tier, like a bug). Why: a topic is finished before the next (S-1.3).
 Its sub-section "בדיקת הסדר" holds what the audit below finds, and the rule for merging.
 The review of the sprint order edits issue bodies, so it also reads `issue-body.md` there.
 Asking Dolev for his step in the question window (step 4) follows `chat-decisions.md`.
@@ -37,10 +37,11 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/rank_issues.py"
    ```
-   `bug` issues come first, then `process` issues, then the sub-issues of an umbrella that has
+   `bug` issues come first, then `priority:high` issues, then `process` issues, then the sub-issues of an umbrella that has
    started, then the rest; in each group, the fewest waiting first. Each row is `#N`, how many
    sprint issues wait on it, its status, its kind (`process`, `bug` or `-`), its title,
-   `FROM STARTED UMBRELLA #U` for a sub-issue of a started umbrella, and
+   `FROM STARTED UMBRELLA #U` for a sub-issue of a started umbrella, `HIGH PRIORITY` for an issue
+   labelled `priority:high`, and
    `BLOCKED by #…` if it has an open blocker (`#M (paused)` for a blocker Dolev paused). The first line names the sprint. Issues
    labelled `costs-money` are not ranked, and a line lists them
    (`On hold, costs-money: …`). Issues labelled `paused` are not ranked either, and the line
@@ -73,7 +74,7 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    - is not a `decision` issue (no status) with `0 waiting`, unless nothing
      else is left. A decision that others wait on is a real bottleneck and stays a candidate.
 
-   Next to the pick, say why it was picked, from its row: "באג", "process", "ממטרייה #U שהתחילה"
+   Next to the pick, say why it was picked, from its row: "באג", "עדיפות גבוהה" (`HIGH PRIORITY`, not a bug), "process", "ממטרייה #U שהתחילה"
    (`FROM STARTED UMBRELLA #U`), or "הכי פחות חוסמת" (none of these).
 
    When the bottleneck is an issue on hold (a row is `BLOCKED by` one), say so: the hold is
@@ -96,7 +97,7 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
    | `backlog` | Dolev | his "תכתוב אפיון ל-#N", which runs **dev-spec** (`reference/specs.md`) |
 
    Before routing, tell Dolev in Hebrew, in one or two lines, which issue you picked and why: whether it
-   is a bug (say "באג: נבחר לפני משימה חדשה") or a `process` issue, how many issues wait on it, and the next one or two below it.
+   is a bug (say "באג: נבחר לפני משימה חדשה"), labelled `priority:high` (say "עדיפות גבוהה: דולב סימן אותה לראש הסדר"), or a `process` issue, how many issues wait on it, and the next one or two below it.
    Next to the issue, its part in the spec: the id and the part's name, from the `אפיון:` line
    of its body (`gh issue view <N> --json body`) and the heading in that file on
    `origin/<default>`; no line: "בלי אפיון". The ranking does not change for it. Then invoke the phase skill with the
