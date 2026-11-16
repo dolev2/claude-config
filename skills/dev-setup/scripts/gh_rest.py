@@ -10,9 +10,10 @@ fetch (`labels.nodes`, `milestone`, `blockedBy.nodes`, ...), so their logic and 
 stay as they were. Links are fetched per issue, and only for issues whose REST summary
 says they have any.
 
-Every list is read through `api_list`, page by page through `page=`, never with
+Every full list is read through `api_list`, page by page through `page=`, never with
 `gh api --paginate`: that follows GitHub's next links, which name the repository by
 id (`repositories/<id>/...`), and the cloud proxy refuses those (HTTP 403, #418).
+A read of the 100 updated last (`recent_done`) is one `api` page on purpose.
 """
 
 import json

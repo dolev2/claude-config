@@ -233,20 +233,19 @@ def test_current_sprint_skips_a_milestone_with_only_an_open_pr(monkeypatch):
 
 
 def test_the_sprint_is_read_from_every_page(monkeypatch):
-    # The open issues of M1 fill the first page; M2 has only one, on the second.
-    rows = [
-        {"state": "open", "milestone": {"number": 2, "title": "M2", "state": "open"}}
-    ] + [
-        {"state": "open", "milestone": {"number": 1, "title": "M1", "state": "open"}}
-    ] * 100
+    # The issues of M2 fill the first page; M1, the sprint, has one, on the second.
+    def issue(number):
+        milestone = {"number": number, "title": f"M{number}", "state": "open"}
+        return {"state": "open", "milestone": milestone}
+
+    rows = [issue(2)] * 100 + [issue(1)]
 
     def run(*args):
         page = int(args[-1].rsplit("page=", 1)[1])
         return 0, json.dumps(rows[(page - 1) * 100 : page * 100]), ""
 
     monkeypatch.setattr(gh_rest, "run", run)
-    issues = pipeline_info.read_list("repos/acme/widgets/issues?state=open")
-    assert len(issues) == 101
+    assert pipeline_info.current_sprint("acme/widgets") == "M1"
 
 
 def test_unreadable_issues_mean_no_sprint(monkeypatch):
