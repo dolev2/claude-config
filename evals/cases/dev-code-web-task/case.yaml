@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-code-web-task
+description: "An approved issue that adds a small HTML page: the hand-off has a מדריכי ווב: line."
+tags: [dev-code]
+context:
+  scaffold_script: setup.sh
