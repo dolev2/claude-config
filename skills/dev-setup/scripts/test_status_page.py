@@ -1,6 +1,8 @@
 """status_page.py: the clickable blocking graph of /status (S-1.50)."""
 
+import html
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -9,6 +11,7 @@ from status_graph import EMPTY, NO_SPRINT, layout  # noqa: E402
 from status_page import (  # noqa: E402
     FONT,
     SESSIONS_NOT_READ,
+    link_lines,
     page,
     page_title,
     session_order,
@@ -141,3 +144,56 @@ def test_the_graph_is_drawn_after_the_fonts_load():
 
 def test_a_label_that_still_overflows_stays_visible():
     assert ".graph foreignObject { overflow: visible; }" in build([node(1)])
+
+
+def shown_lines(text: str) -> list[str]:
+    """The link lines as the reader sees them: tags dropped, one string per line."""
+    return [html.unescape(re.sub("<[^>]+>", "", part)) for part in text.split("<br>")]
+
+
+def busy_node_links() -> str:
+    """The links of a node with three PRs and three sessions, as the page writes them."""
+    sessions = {
+        1: [
+            session(f"https://claude.ai/code/s{i}", f"2026-11-0{i}T00:00:00Z")
+            for i in (1, 2, 3)
+        ]
+    }
+    line = html.unescape(node_line(build([node(1, prs=[437, 438, 439])], sessions), 1))
+    return line[
+        line.index("<span class='lnks'>") : line.rindex("</span>") + len("</span>")
+    ]
+
+
+def test_a_single_link_is_one_line_with_no_dot():
+    text = link_lines([("https://x/1", "משימה")])
+    assert "<br>" not in text
+    assert shown_lines(text) == ["משימה"]
+
+
+def test_links_that_fit_share_one_line_with_dots():
+    text = link_lines([("u1", "משימה"), ("u2", "PR 7"), ("u3", "סשן")])
+    assert shown_lines(text) == ["משימה · PR 7 · סשן"]
+
+
+def test_a_busy_node_breaks_between_links_only():
+    lines = shown_lines(busy_node_links())
+    assert len(lines) > 1
+    for line in lines:
+        assert not line.startswith("·") and not line.endswith("·")
+        assert not line.startswith(" ") and not line.endswith(" ")
+
+
+def test_every_link_is_whole_on_one_line_inside_a_lnks_span():
+    text = busy_node_links()
+    parts = text.split("<br>")
+    for part in parts:
+        assert part.startswith("<span class='lnks'>") and part.endswith("</span>")
+    words = [w for part in shown_lines(text) for w in part.split(" · ")]
+    assert words == ["משימה", "PR 437", "PR 438", "PR 439", "סשן", "סשן 2", "סשן 3"]
+
+
+def test_links_and_their_lines_do_not_wrap_again():
+    text = build([node(1)])
+    assert re.search(r"\.lnk \{[^}]*white-space: nowrap;", text)
+    assert ".lnks { white-space: nowrap; }" in text
