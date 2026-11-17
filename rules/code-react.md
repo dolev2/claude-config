@@ -26,6 +26,10 @@ paths:
 - חסר token? מוסיפים אותו למקור ה-tokens, ולא כותבים ערך במקום.
 - בלי `style={{...}}` לעיצוב קבוע; רק לערך שמחושב בזמן ריצה.
 
+## מדריכי הדפדפנים
+- **קוד ווב נכתב לפי Modern Web Guidance:** יכולת מובנית של הדפדפן קודמת לספרייה, ומדריך שסותר נוהל כאן הוא שאלה לדולב.
+  הכלל המלא: `skills/dev-setup/reference/web-guidance.md`. למה כך: `~/.claude/docs/decisions/456-modern-web-guidance.md`.
+
 ## בדיקות
 מה בודקים בכל שינוי: `code-tests.md`. כאן רק הפרטים של Vitest ו-Testing Library.
 - קובץ `<Component>.test.jsx` (או `.tsx`, כמו הקומפוננטה) ליד הקומפוננטה.

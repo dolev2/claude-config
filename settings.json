@@ -1,6 +1,7 @@
 {
   "env": {
-    "PYTHONIOENCODING": "utf-8"
+    "PYTHONIOENCODING": "utf-8",
+    "DISABLE_TELEMETRY": "1"
   },
   "modelSettings": {
     "claude-opus-5-5": {
@@ -36,7 +37,8 @@
       "mcp__claude-code-remote__unsubscribe_pr_activity",
       "mcp__github__create_pull_request",
       "mcp__github__update_pull_request",
-      "mcp__github__add_issue_comment"
+      "mcp__github__add_issue_comment",
+      "Bash(npx -y modern-web-guidance@1.0.1 *)"
     ]
   },
   "hooks": {

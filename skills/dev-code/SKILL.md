@@ -28,6 +28,7 @@ issue per run, the worktree, the branch/PR convention, rebase and CI before a me
 `review-app.md`, `ux.md` (the user-experience check), `specs.md` (marking the part Done),
 `chat-decisions.md` (the hand-off question), `follow-ups.md` (the follow-up tasks of the
 hand-off) and `process-tasks.md`. Read them before step 1, every run.
+`web-guidance.md` only when the task writes or changes web code (its "מתי זה חל").
 Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
 ## Execute
@@ -118,6 +119,11 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 5. Implement, following the Plan and the repair comments, and the repo's `CLAUDE.md`. Add
    tests as the Plan's "בדיקות" lists them, by the table in `~/.claude/rules/code-tests.md`,
    unless the repo's CLAUDE.md defines a manual check instead of a suite (`reference/tests.md`).
+
+   **A task with web code** (HTML, CSS, JavaScript, React; `reference/web-guidance.md`, "מתי זה
+   חל"): before writing it, search and retrieve the guides, write by them, and run the
+   legacy scan on the changed web files before the hand-off, as that file says. A guide that
+   contradicts a rule of the repo stops the part it touches: ask, as that file says.
 
    **A "החלטה רוחבית" sub-heading in the Plan becomes a decision page in the same PR**
    (`~/.claude/rules/code-general.md`, "ב-`docs/decisions/`"): `docs/decisions/<N>-<slug>.md`,
@@ -279,7 +285,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     should look at. On a repair round, say which of his points each change addresses. The
     comment has a "סקירת קוד" line: how many findings, which were fixed, and which were not and
     why, and a "חוויית משתמש" line: what was checked, at which widths, what was fixed, and what
-    was not checked and why. A "CI" line: green, the head it ran on, and how many fix rounds
+    was not checked and why. A task with web code adds the `מדריכי ווב:` line, with its scan
+    warnings (`reference/web-guidance.md`, "שורת המסירה"). A "CI" line: green, the head it ran on, and how many fix rounds
     there were (or "אין CI בריפו"; with the billing flag on: "ה-CI לא רץ: החיוב חסום (דגל
     החיוב דולק מ-<since>)"; after `billing`, `<since>` is the date of
     `billing_flag.py status`). When the skill evals ran (step 7), a "תרחישי הסקילים" line:
