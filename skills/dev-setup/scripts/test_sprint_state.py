@@ -591,6 +591,16 @@ def test_dispatch_follows_the_new_order():
     assert numbers(result["dispatch"]) == [3, 2, 1]
 
 
+def test_a_priority_task_goes_out_first_among_the_ready():
+    """S-1.62 (#451): the orchestrator gets the new order through the ranking."""
+    result = run(
+        node(1, "ready-to-execute"),
+        node(2, "ready-to-execute", labels=("process",)),
+        node(3, "ready-to-execute", labels=("task", "priority:high")),
+    )
+    assert numbers(result["dispatch"]) == [3, 2, 1]
+
+
 def test_an_issue_both_paused_and_costing_money_is_only_paused():
     result = run(node(1, labels=("task", "paused", "costs-money")))
     assert result["paused"] == [1]

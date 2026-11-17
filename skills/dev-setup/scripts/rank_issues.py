@@ -16,6 +16,7 @@ The rule is in ../reference/dependencies.md (S-1.3, claude-config #295). In shor
 an issue's weight is the number of open issues in the sprint that wait on it through
 "Blocked by" links, directly or through other issues. Order: a repair
 (`needs-repair`, when it is in --status) first, then every `bug` before any new task,
+then a task labelled `priority:high` (a bug with it stays with the bugs, S-1.62),
 then the order of --status (the tier), then `process` issues before the rest, then the
 sub-issues of an umbrella that has started, then weight, LOWEST first, then issue
 number. An umbrella has started when one of its sub-issues is closed, or open in
@@ -52,6 +53,8 @@ REPAIR = "needs-repair"
 NOT_ACTIVE = (None, "backlog", "done")
 ON_HOLD_LABEL = "costs-money"
 PAUSED_LABEL = "paused"
+# Dolev's "this one first": right after a repair and a bug (S-1.62, #451).
+PRIORITY_LABEL = "priority:high"
 # A sub-issue in one of these has code written: its umbrella has started (#295).
 STARTED_STATUSES = ("in-review", "needs-repair")
 
@@ -70,6 +73,7 @@ class Issue:
     outside_blockers: list[str] = field(default_factory=list)
     open_subs: list[str] = field(default_factory=list)
     paused: bool = False
+    priority_high: bool = False
     umbrella_of: int | None = None
 
     @property
@@ -86,7 +90,14 @@ class Issue:
 
     @property
     def reason(self) -> str:
-        """Why the issue stands where it is: bug, process, umbrella, fewest-waiting."""
+        """Why the issue stands where it is.
+
+        One of: bug, priority, process, umbrella, fewest-waiting.
+        """
+        if self.kind == "bug":
+            return "bug"
+        if self.priority_high:
+            return "priority"
         if self.kind:
             return self.kind
         return "umbrella" if self.umbrella_of else "fewest-waiting"
@@ -142,6 +153,7 @@ def parse_issue(node: dict) -> Issue:
         kind=next((kind for kind in FIRST_KINDS if kind in labels), None),
         costs_money=ON_HOLD_LABEL in labels,
         paused=PAUSED_LABEL in labels,
+        priority_high=PRIORITY_LABEL in labels,
         open_blockers=open_local(node["blockedBy"]),
         blocking=open_local(node["blocking"]),
         outside_blockers=sorted(
@@ -215,20 +227,22 @@ def rank(issues: list[Issue], statuses: list[str] | None = None) -> list[Issue]:
     """Filters to the given statuses, and orders them.
 
     The key: a repair first (it is no new task, and its PR is aging), then a bug
-    before any new task, then the tier, then `process`, then a sub-issue of a started
-    umbrella (`umbrella_of`, filled by with_started_umbrellas), then weight, lowest
+    before any new task, then a `priority:high` issue that is not a bug, then the
+    tier, then `process`, then a sub-issue of a started umbrella (`umbrella_of`,
+    filled by with_started_umbrellas), then weight, lowest
     first, then number (S-1.3). A blocker may so stand below what it blocks: the pick
     is always the first row that is not blocked.
     """
     with_waiting(issues)
     picked = [issue for issue in issues if not statuses or issue.status in statuses]
 
-    def key(issue: Issue) -> tuple[int, int, int, int, int, int, int]:
+    def key(issue: Issue) -> tuple[int, int, int, int, int, int, int, int]:
         tier = statuses.index(issue.status) if statuses else 0
         repair_first = bool(statuses) and issue.status == REPAIR
         return (
             0 if repair_first else 1,
             0 if issue.kind == "bug" else 1,
+            0 if issue.priority_high and issue.kind != "bug" else 1,
             tier,
             0 if issue.kind == "process" else 1,
             0 if issue.umbrella_of else 1,
@@ -308,6 +322,7 @@ def main(argv: list[str] | None = None) -> None:
                 "status": i.status,
                 "kind": i.kind,
                 "costs_money": i.costs_money,
+                "priority_high": i.priority_high,
                 "waiting": i.waiting,
                 "open_blockers": i.open_blockers,
                 "outside_blockers": i.outside_blockers,
@@ -354,6 +369,7 @@ def print_ranking(
     for i in ranked:
         blockers = blocker_refs(i, paused_numbers)
         blocked = f"  BLOCKED by {', '.join(blockers)}" if i.blocked else ""
+        high = "  HIGH PRIORITY" if i.priority_high else ""
         started = f"  FROM STARTED UMBRELLA #{i.umbrella_of}" if i.umbrella_of else ""
         umbrella = (
             f"  UMBRELLA, open sub-issues {', '.join(i.open_subs)}"
@@ -363,7 +379,7 @@ def print_ranking(
         print(
             f"#{i.number:<4} {len(i.waiting):>2} waiting  "
             f"{i.status or '-':<24} {i.kind or '-':<7} "
-            f"{i.title}{started}{blocked}{umbrella}"
+            f"{i.title}{started}{high}{blocked}{umbrella}"
         )
     if on_hold:
         held = ", ".join(f"#{i.number} {i.title}" for i in on_hold)

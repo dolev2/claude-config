@@ -573,3 +573,108 @@ def test_the_json_output_carries_paused_and_the_reason(monkeypatch, capsys):
     assert rows[2]["paused_blockers"] == [1]
     assert (rows[3]["reason"], rows[3]["umbrella_of"]) == ("umbrella", 10)
     assert (rows[10]["reason"], rows[10]["umbrella_of"]) == ("fewest-waiting", None)
+
+
+# S-1.62 (#451): `priority:high` moves a task up, right after a repair and a bug.
+
+HIGH = ("task", "priority:high")
+
+
+def test_the_issue_scenario_bug_then_priority_then_process_then_the_rest():
+    ranked = rank_issues.rank(
+        issues(
+            node(1),
+            node(2, labels=("process",)),
+            node(3, labels=HIGH),
+            node(4, labels=("bug",)),
+        )
+    )
+    assert numbers(ranked) == [4, 3, 2, 1]
+    assert [i.reason for i in ranked] == [
+        "bug",
+        "priority",
+        "process",
+        "fewest-waiting",
+    ]
+
+
+def test_a_bug_with_the_label_stays_with_the_bugs():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, labels=("bug",), blocking=[5]),
+            node(2, labels=("bug", "priority:high"), blocking=[5, 6]),
+            node(3, labels=("bug",)),
+            node(4, labels=HIGH),
+            node(5),
+            node(6),
+        )
+    )
+    assert numbers(ranked)[:4] == [3, 1, 2, 4]
+    assert by_number(ranked)[2].reason == "bug"
+
+
+def test_a_process_issue_with_the_label_is_in_the_priority_group():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, labels=("process",)), node(2, labels=("process", "priority:high"))
+        )
+    )
+    assert numbers(ranked) == [2, 1]
+    assert by_number(ranked)[2].reason == "priority"
+
+
+def test_among_priority_issues_fewest_waiting_then_number():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, labels=HIGH, blocking=[4]),
+            node(2, labels=HIGH),
+            node(3, labels=HIGH),
+            node(4),
+        )
+    )
+    assert numbers(ranked) == [2, 3, 1, 4]
+
+
+def test_priority_is_above_the_tier_but_a_repair_stays_first():
+    ranked = rank_issues.rank(
+        issues(
+            node(1, status="ready-to-execute"),
+            node(2, status="explore", labels=HIGH),
+            node(3, status="needs-repair"),
+        ),
+        statuses=EXECUTE_AND_PLAN,
+    )
+    assert numbers(ranked) == [3, 2, 1]
+
+
+def test_a_blocked_priority_issue_is_flagged_and_not_the_first_unblocked():
+    ranked = rank_issues.rank(
+        issues(node(1, labels=HIGH, blocked_by=[(2, "OPEN")]), node(2, blocking=[1]))
+    )
+    assert numbers(ranked) == [1, 2]
+    assert ranked[0].blocked
+    assert next(i for i in ranked if not i.blocked).number == 2
+
+
+@pytest.mark.parametrize("hold", ["paused", "costs-money"])
+def test_a_held_priority_issue_leaves_the_ranking(hold):
+    ranked = rank_issues.rank(issues(node(1, labels=(*HIGH, hold)), node(2)))
+    kept, _, _ = rank_issues.split_on_hold(ranked)
+    assert numbers(kept) == [2]
+
+
+PRIORITY_NODES = [node(1), node(2, labels=HIGH)]
+
+
+def test_the_text_output_marks_high_priority(monkeypatch, capsys):
+    lines = run_main(monkeypatch, capsys, PRIORITY_NODES).splitlines()
+    assert lines[1].startswith("#2 ")
+    assert lines[1].endswith("issue 2  HIGH PRIORITY")
+    assert "HIGH PRIORITY" not in lines[2]
+
+
+def test_the_json_output_carries_priority_high_and_the_reason(monkeypatch, capsys):
+    payload = json.loads(run_main(monkeypatch, capsys, PRIORITY_NODES, "--json"))
+    rows = {row["number"]: row for row in payload["issues"]}
+    assert (rows[2]["priority_high"], rows[2]["reason"]) == (True, "priority")
+    assert (rows[1]["priority_high"], rows[1]["reason"]) == (False, "fewest-waiting")
