@@ -13,7 +13,7 @@ import html
 import json
 from collections.abc import Callable
 
-from status_graph import EMPTY, NO_SPRINT, mermaid_lines
+from status_graph import EMPTY, LABEL_SEPARATOR, NO_SPRINT, TITLE_LIMIT, mermaid_lines
 
 PAGE_TITLE = "גרף החסימות · {name}"
 SESSIONS_NOT_READ = "רשימת הסשנים לא נקראה, ולכן אין קישורי סשן."
@@ -24,6 +24,8 @@ FONT = "system-ui, sans-serif"
 ISSUE_WORD = "משימה"
 PR_WORD = "PR"
 SESSION_WORD = "סשן"
+# A link's padding takes room the text length does not show; counted in characters.
+LINK_PADDING = 2
 
 Sessions = dict[int, list[dict]]
 
@@ -54,6 +56,31 @@ def link(url: str, word: str) -> str:
     return f"<a class='lnk' href='{safe}' target='_blank' rel='noopener'>{word}</a>"
 
 
+def link_lines(links: list[tuple[str, str]], limit: int = TITLE_LIMIT) -> str:
+    """The (url, word) links as lines that break only between two links (S-1.63).
+
+    Links are joined by ` · ` while a line fits `limit`; a link that would pass it
+    starts a new line, so no line starts or ends with the dot. Each line is one
+    `lnks` span that the browser does not break again.
+    """
+    lines: list[list[tuple[str, str]]] = []
+    width = 0
+    for url, word in links:
+        size = len(word) + LINK_PADDING
+        if lines and width + len(LABEL_SEPARATOR) + size <= limit:
+            lines[-1].append((url, word))
+            width += len(LABEL_SEPARATOR) + size
+        else:
+            lines.append([(url, word)])
+            width = size
+    return "<br>".join(
+        "<span class='lnks'>"
+        + LABEL_SEPARATOR.join(link(url, word) for url, word in line)
+        + "</span>"
+        for line in lines
+    )
+
+
 def node_links(
     repo: str, prs: dict[str, list[int]], sessions: Sessions | None
 ) -> Callable[[str], str]:
@@ -62,17 +89,18 @@ def node_links(
     def links(ref: str) -> str:
         if "/" in ref:
             owner_repo, number = ref.split("#")
-            return link(f"https://github.com/{owner_repo}/issues/{number}", ISSUE_WORD)
+            url = f"https://github.com/{owner_repo}/issues/{number}"
+            return link_lines([(url, ISSUE_WORD)])
         number = int(ref.lstrip("#"))
-        parts = [link(f"https://github.com/{repo}/issues/{number}", ISSUE_WORD)]
+        parts = [(f"https://github.com/{repo}/issues/{number}", ISSUE_WORD)]
         parts += [
-            link(f"https://github.com/{repo}/pull/{pr}", f"{PR_WORD} {pr}")
+            (f"https://github.com/{repo}/pull/{pr}", f"{PR_WORD} {pr}")
             for pr in prs.get(ref, [])
         ]
         for index, entry in enumerate(session_order((sessions or {}).get(number, []))):
             word = SESSION_WORD if index == 0 else f"{SESSION_WORD} {index + 1}"
-            parts.append(link(entry["url"], word))
-        return " · ".join(parts)
+            parts.append((entry["url"], word))
+        return link_lines(parts)
 
     return links
 
@@ -144,7 +172,10 @@ h1 {{ font-size: 1.25rem; margin: 0 0 4px; }}
 .frame {{ direction: ltr; margin-top: 12px; overflow-x: auto; background: var(--frame);
   border: 1px solid var(--edge); border-radius: 8px; padding: 8px; }}
 .graph {{ direction: ltr; margin: 0; width: max-content; text-align: left; }}
-.lnk {{ color: var(--link); display: inline-block; padding: 8px 6px; }}
+.lnk {{ color: var(--link); display: inline-block; padding: 8px 6px;
+  white-space: nowrap; }}
+/* One line of links: the code chose where it breaks (S-1.63). */
+.lnks {{ white-space: nowrap; }}
 /* A safety net: text wider than its measured box spills over the node's own
    padding instead of being cut. */
 .graph foreignObject {{ overflow: visible; }}
