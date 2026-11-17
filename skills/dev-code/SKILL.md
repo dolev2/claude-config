@@ -362,7 +362,7 @@ of step 11 does the same in this session.
   `status:plan-questions` (Dolev's turn; his answer sends it back to `status:explore` for a
   plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
-  `needs-repair`), except for what Dolev chose in the question window of step 11.
+  `needs-repair`, and the old `waiting-approval`, read as ready), except for what Dolev chose in the question window of step 11.
 - One issue per run, and the WIP gate before a new one (`reference/git-flow.md`). The
   issues one `dev-plan` run planned are several runs in one session, one after the other (the
   exception there).

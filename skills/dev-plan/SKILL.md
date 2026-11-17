@@ -237,8 +237,7 @@ keeps them: edit it in the headings it already has.
    ```bash
    gh issue edit <N> --add-label "status:ready-to-execute" --remove-label "status:explore"
    ```
-   Then one line in the chat: the plan is written and the code starts, with the issue's link.
-   The code itself starts in step 8.
+   The code itself starts in step 8, with its line in the chat.
 
    **Question path**: you would otherwise be guessing. Post the questions as a comment in
    Hebrew (numbered, each with the options you see and your recommendation, so Dolev can answer
@@ -272,6 +271,8 @@ keeps them: edit it in the headings it already has.
    each with its own PR and hand-off (`reference/git-flow.md`, "כמה issues בריצה אחת"). There
    is no approval question: Dolev approves the code in the review of the PR, and a comment on
    the plan after the code started comes there too. A run with nobody in the chat does the same.
+   Before each, one line in the chat: the plan is written and the code starts, with the issue's
+   link. The exceptions below get their own line instead.
    - **Blocked meanwhile** (an open "Blocked by" link on an issue Dolev named and asked to plan
      anyway, or one added between the plan and the code): it stays `status:ready-to-execute`,
      one line in the chat with its blocker, and on to the next. `dev-code` skips it until the

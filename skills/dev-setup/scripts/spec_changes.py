@@ -21,7 +21,7 @@ IMPROVED_BARE = re.compile(r"[,;]?\s*" + IMPROVED)
 BEFORE_CODE = {
     "status:explore",
     "status:plan-questions",
-    # The old "ready to execute" label (S-1.64): an issue may still carry it.
+    # The old plan-approval label (S-1.64): read as ready, an issue may still carry it.
     "status:waiting-approval",
     "status:ready-to-execute",
 }

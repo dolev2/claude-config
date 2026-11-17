@@ -38,7 +38,7 @@ flowchart TD
       PW -.-> COST(["נדרשת הוצאה<br/>costs-money<br/>מושהית עד שדולב מסיר"]):::gate
     end
 
-    PQ -- "לא" --> RDY["status:ready-to-execute<br/>התור של Claude<br/>בלי אישור תוכנית<br/>הקידוד מתחיל מיד, באותו סשן"]:::routine
+    PQ -- "לא<br/>בלי אישור תוכנית<br/>הקידוד מתחיל מיד, באותו סשן" --> RDY["status:ready-to-execute<br/>התור של Claude"]:::routine
     PQ -- "כן" --> QQ["status:plan-questions<br/>התור של דולב<br/>השאלות נרשמות כתיבות סימון<br/>גם משימה ידנית, שרק דולב יכול לבצע"]:::human
 
     QQ --> ANS(["דולב עונה בתגובה<br/>ומחזיר ל-status:explore<br/>או עונה בחלון השאלות בצ'אט<br/>והתכנון ממשיך באותה ריצה<br/>ואז הקוד, בלי אישור"]):::human
