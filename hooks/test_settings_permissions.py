@@ -4,6 +4,7 @@ The list applies on Dolev's computer too, so a tool joins it only together
 with this test (#155). The one exception is CHILD_TOOLS, the write tools the
 orchestrator's child needs: the service passes a child only tools that are
 pre-approved for its parent, so they must be on the list too (#150).
+The other is REVIEWED_COMMANDS, single Bash commands pinned to an exact version (#456).
 """
 
 import json
@@ -44,6 +45,11 @@ SESSION_ONLY = [
     "subscribe_pr_activity",
     "unsubscribe_pr_activity",
 ]
+# Bash rules reviewed one by one: the wildcard spans only the arguments of one command
+# pinned to an exact version (#456), never the program or the version.
+REVIEWED_COMMANDS = [
+    re.compile(r"Bash\(npx -y modern-web-guidance@\d+\.\d+\.\d+ \*\)"),
+]
 ALLOWED_TOOLS = (
     {f"mcp__github__{name}" for name in GITHUB_READ}
     | {f"mcp__claude-code-remote__{name}" for name in SESSION_ONLY}
@@ -69,6 +75,8 @@ def allow_problems(allow: list[str], merge_matchers: list[str]) -> list[str]:
     """Every reason the allow list breaks the rules; empty when it is fine."""
     problems = []
     for rule in allow:
+        if any(command.fullmatch(rule) for command in REVIEWED_COMMANDS):
+            continue
         if "*" in rule:
             problems.append(f"{rule}: a wildcard pre-approves tools nobody reviewed")
         elif rule not in ALLOWED_TOOLS:
@@ -87,6 +95,11 @@ def test_current_allow_list_is_valid():
     allow = settings["permissions"]["allow"]
     assert allow_problems(allow, merge_hook_matchers(settings)) == []
     assert len(allow) == len(set(allow))
+
+
+def test_pinned_command_is_accepted():
+    rule = "Bash(npx -y modern-web-guidance@1.0.1 *)"
+    assert allow_problems([rule], merge_hook_matchers(load_settings())) == []
 
 
 def test_every_child_tool_is_pre_approved():
@@ -110,6 +123,9 @@ def test_merge_hook_is_still_wired():
         ("mcp__github__merge_pull_request", "ask_before_merge.py"),
         ("Bash(gh api *)", "wildcard"),
         ("Bash", "not in ALLOWED_TOOLS"),
+        ("Bash(npx *)", "wildcard"),
+        ("Bash(npx -y modern-web-guidance@latest *)", "wildcard"),
+        ("Bash(npx -y modern-web-guidance@1.0.1 * && rm *)", "wildcard"),
     ],
 )
 def test_bad_rule_is_rejected(rule, reason):
