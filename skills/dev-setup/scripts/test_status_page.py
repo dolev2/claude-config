@@ -152,7 +152,7 @@ def shown_lines(text: str) -> list[str]:
 
 
 def busy_node_links() -> str:
-    """The links of a node with three PRs and three sessions, as the page writes them."""
+    """The links of a node with three PRs and three sessions, as on the page."""
     sessions = {
         1: [
             session(f"https://claude.ai/code/s{i}", f"2026-11-0{i}T00:00:00Z")
