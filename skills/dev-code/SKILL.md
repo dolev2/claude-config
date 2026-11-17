@@ -122,8 +122,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
    **A task with web code** (HTML, CSS, JavaScript, React; `reference/web-guidance.md`, "מתי זה
    חל"): before writing it, search and retrieve the guides, write by them, and run the
-   legacy scan on the changed web files before the hand-off, as that file says. A guide that
-   contradicts a rule of the repo stops the part it touches: ask, as that file says.
+   legacy scan on the changed web files once the code is committed, before step 6, as that
+   file says. A guide that contradicts a rule of the repo stops the run before that part, with
+   no PR: ask, as that file says.
 
    **A "החלטה רוחבית" sub-heading in the Plan becomes a decision page in the same PR**
    (`~/.claude/rules/code-general.md`, "ב-`docs/decisions/`"): `docs/decisions/<N>-<slug>.md`,
