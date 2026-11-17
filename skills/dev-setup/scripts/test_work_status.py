@@ -52,7 +52,7 @@ def test_all_four_tables_with_their_rows():
         node(1, status="ready-to-execute"),
         node(2, status="explore", blocked_by=[(1, "OPEN")]),
         node(3, status="ready-to-execute", labels=("task", "costs-money")),
-        node(4, status="waiting-approval"),
+        node(4, status="plan-questions"),
         node(5, status="explore", milestone="W2"),
     ]
     nodes[-1]["milestone"]["number"] = 2  # a later sprint
@@ -66,7 +66,15 @@ def test_all_four_tables_with_their_rows():
     held = section(text, "מה חסום")
     assert "| מחכה ל-#1 |" in held and "| עולה כסף, מחכה לאישור |" in held
     assert "[#4]" in section(text, "מה מחכה לדולב")
-    assert "תוכנית לאישור" in section(text, "מה מחכה לדולב")
+    assert "שאלות לדולב" in section(text, "מה מחכה לדולב")
+
+
+def test_the_old_approval_label_shows_as_ready_to_code():
+    # S-1.64 (#466): no issue waits for a plan approval any more.
+    text = work_status.render(REPO, [node(1, status="waiting-approval")], [])
+    assert "מוכן לקוד" in section(text, "מה פתוח בספרינט")
+    assert "[#1]" not in section(text, "מה מחכה לדולב")
+    assert "תוכנית לאישור" not in text
 
 
 def test_sprint_table_follows_the_sprint_order():
@@ -365,8 +373,8 @@ def test_the_mark_reaches_the_blocked_and_waiting_tables_without_a_column():
     nodes = [
         node(1),
         node(2, blocked_by=[(1, "OPEN")]),
-        node(3, status="waiting-approval"),
-        node(4, status="waiting-approval"),
+        node(3, status="plan-questions"),
+        node(4, status="plan-questions"),
     ]
     sessions = {2: ACTIVE_SESSION, 4: ACTIVE_SESSION}
     text = work_status.render(REPO, nodes, [], sessions=sessions)

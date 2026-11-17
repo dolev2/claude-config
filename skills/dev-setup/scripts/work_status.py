@@ -57,7 +57,6 @@ RAW = "Accept: application/vnd.github.raw"
 STATUS_HE = {
     "explore": "בתכנון",
     "plan-questions": "שאלות לדולב",
-    "waiting-approval": "תוכנית לאישור",
     "ready-to-execute": "מוכן לקוד",
     "needs-repair": "לתיקון",
     "in-review": "PR לסקירה",

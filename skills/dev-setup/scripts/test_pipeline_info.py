@@ -254,3 +254,12 @@ def test_unreadable_issues_mean_no_sprint(monkeypatch):
 
     monkeypatch.setattr(pipeline_info, "api_list", blocked)
     assert pipeline_info.current_sprint("acme/widgets") is None
+
+
+def test_the_old_approval_label_is_not_required(monkeypatch, capsys, tmp_path):
+    # S-1.64 (#466): the plan is no gate, so a repo without the label is ready.
+    assert "status:waiting-approval" not in pipeline_info.REQUIRED_LABELS
+    fake_gh(monkeypatch, root=tmp_path)
+    info = run_main(monkeypatch, capsys)
+    assert info["missing_labels"] == []
+    assert info["ready"] is True

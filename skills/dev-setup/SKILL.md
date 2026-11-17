@@ -70,7 +70,6 @@ description differs from the one below, show both to Dolev and change it only on
 L() { gh label create "$1" --color "$2" --description "$3" || echo "FAILED $1"; }
 L "status:explore"          c5def5 "Claude חוקר וכותב תוכנית"
 L "status:plan-questions"   f9d0c4 "שאלה פתוחה על התוכנית"
-L "status:waiting-approval" fef2c0 "ממתין לאישור התוכנית מדולב"
 L "status:ready-to-execute" 0e8a16 "מוכן לביצוע ע\"י Claude"
 L "status:needs-repair"     d93f0b "חזר ל-Claude לתיקון"
 L "status:in-review"        bfd4f2 "Claude סיים, בבדיקת דולב עד בקשת מיזוג"
@@ -82,7 +81,6 @@ L "process"                 c2e0c6 "ניהול עבודה, נהלים ויישו
 L "costs-money"             fbca04 "דורש הוצאה כספית; מושהה עד שדולב מאשר"
 L "paused"                  cfd3d7 "מושהה בהחלטת דולב; הסיבה בתגובה 'סיבת השהיה:'"
 L "priority:high"           b60205 "עדיפות גבוהה: עולה לראש הסדר בספרינט, אחרי תיקון ובאג"
-L "size:small"              c5def5 "משימה קטנה: עוברת לביצוע בלי אישור תוכנית"
 L "has-open-questions"      d93f0b "עבר לסקירה עם שאלה שלא נסגרה"
 L "area:backend"            1d76db "צד שרת"
 L "area:frontend"           b60205 "צד לקוח"
@@ -90,7 +88,7 @@ L "area:both"               5319e7 "גם וגם"
 L "area:infra"              006b75 "תשתית/כלים"
 ```
 
-Use the `area:*` list Dolev agreed to, not necessarily these four. What each label means (`costs-money`, `paused`, `size:small`, `process`): the vocabulary in `reference/pipeline.md`.
+Use the `area:*` list Dolev agreed to, not necessarily these four. What each label means (`costs-money`, `paused`, `process`): the vocabulary in `reference/pipeline.md`.
 
 ## Step 3: Files
 

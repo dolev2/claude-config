@@ -16,7 +16,7 @@ LINE = "since 2026-11-15T09:00:00Z expect 12=explore pipeline_sha a1 session_sha
 SHA = "c0ffee1234567890"
 FULL_STATE = {
     "sprint": "Sprint 4",
-    "waiting_dolev": [{"number": 20, "title": "plan me", "status": "waiting-approval"}],
+    "waiting_dolev": [{"number": 20, "title": "plan me", "status": "plan-questions"}],
     "merge_queue": [
         {"number": 15, "pr": 40, "ci": "success", "mergeable_state": "clean"}
     ],
@@ -73,7 +73,7 @@ def test_a_full_state_gives_every_section_in_order(tmp_path):
     assert "`session_b`: #15 code it (`status:in-review`), מחכה לדולב, PR #40." in text
     assert "1. PR #40 של #15" in text
     assert "1. #9 done one" in text
-    assert "#20 plan me (`status:waiting-approval`)" in text
+    assert "#20 plan me (`status:plan-questions`)" in text
     assert "למיזוג: PR #40 של #15, CI success" in text
     assert "הצעה #30 idea: PR של אפיון לסקירה" in text
     assert "#31" not in text

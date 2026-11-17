@@ -221,21 +221,16 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="215" y="60" text-anchor="middle" class="s">Claude asked, Dolev answers</text>
       <line x1="140" y1="118" x2="150" y2="80" class="edge" marker-start="url(#ah)" marker-end="url(#ah)"/>
       <path d="M262 118 Q213 90 170 118" class="edge" marker-end="url(#ah)"/>
-      <text x="300" y="102" text-anchor="start" class="s">Answer or objection: back to explore</text>
+      <text x="300" y="102" text-anchor="start" class="s">Answer: back to explore, then the code</text>
 
-      <rect x="20" y="120" width="160" height="62" rx="8" class="n-claude"/>
-      <text x="100" y="146" text-anchor="middle" class="m">explore</text>
-      <text x="100" y="166" text-anchor="middle" class="s">Waiting for a plan</text>
-
-      <line x1="182" y1="151" x2="226" y2="151" class="edge" marker-end="url(#ah)"/>
-      <rect x="230" y="120" width="160" height="62" rx="8" class="n-human"/>
-      <text x="310" y="146" text-anchor="middle" class="m">waiting-approval</text>
-      <text x="310" y="166" text-anchor="middle" class="s">Dolev reads and approves</text>
+      <rect x="20" y="120" width="370" height="62" rx="8" class="n-claude"/>
+      <text x="205" y="146" text-anchor="middle" class="m">explore</text>
+      <text x="205" y="166" text-anchor="middle" class="s">Waiting for a plan. No question: the code starts at once</text>
 
       <line x1="392" y1="151" x2="436" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="440" y="120" width="160" height="62" rx="8" class="n-claude"/>
       <text x="520" y="146" text-anchor="middle" class="m">ready-to-execute</text>
-      <text x="520" y="166" text-anchor="middle" class="s">Approved, or a small task</text>
+      <text x="520" y="166" text-anchor="middle" class="s">Ready, with no approval</text>
 
       <line x1="602" y1="151" x2="646" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="650" y="120" width="160" height="62" rx="8" class="n-human"/>
@@ -264,10 +259,6 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <rect x="850" y="230" width="180" height="62" rx="8" class="n-gate"/>
       <text x="940" y="256" text-anchor="middle" class="m">open-questions-gate</text>
       <text x="940" y="276" text-anchor="middle" class="s">Unchecked box? It warns</text>
-
-      <path d="M60 184 V262 H460 V186" class="edge" marker-end="url(#ah)"/>
-      <text x="260" y="254" text-anchor="middle" class="m">size:small</text>
-      <text x="260" y="282" text-anchor="middle" class="s">A small task: no plan approval</text>
 
       <path d="M20 196 V204 H390 V196" class="bracket"/>
       <text x="205" y="222" text-anchor="middle" class="m" style="fill:var(--claude)">dev-plan</text>
@@ -502,13 +493,11 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="stage-head"><span class="idx">Stage 4</span><h3>Plan</h3><span class="who claude">Claude</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
-        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
+        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
+        <p>No plan approval: the code starts at once, in the same session.</p>
         <p>Or, when a blocking question remains:</p>
         <div class="flowline"><span class="label h">plan-questions</span></div>
         <p>So does a manual task, one only Dolev can carry out (Claude has no access): what he must check is written as checkboxes, and no child or coding session takes it.</p>
-        <p>Or, for a small task (about 3 files at most, nothing a user sees, no deletion, no contract change):</p>
-        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
-        <p>With the <code>size:small</code> label, and no plan approval.</p>
         <p>Or, for a task with no open spec part:</p>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">backlog</span></div>
         <p>A plan that needs an expense (a cloud service, a paid API, a subscription) also gets:</p>
@@ -517,7 +506,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
         <p><b class="mono">dev-plan</b>: up to 3 issues per run.</p>
-        <ul><li>Reads the spec part first, by the issue's spec line.</li><li>Writes a short Plan in the issue body: a three-line summary (the spec part, a few sentences that tell the change as a story, in its context in the spec, and the decisions waiting for Dolev), then technical detail. No user-experience section: it lives in the spec part.</li><li>An issue with no open spec part, and not a bug: no plan, and it goes back to the backlog as a proposal: in the sprint's milestone the orchestrator writes its spec, otherwise "write a spec for #N".</li><li>A bug back in planning (it deletes something or changes a contract): the full plan.</li><li>Questions are written as checkboxes.</li><li>Appends to a change log and never deletes it.</li><li>A small task gets a short plan, and a line of its own in the summary: "went straight to Execute".</li><li>A decision other tasks will follow (a tool, an architecture, a work rule): a draft under a "cross-task decision" sub-heading, which Dolev approves with the plan.</li></ul>
+        <ul><li>Reads the spec part first, by the issue's spec line.</li><li>Writes a short Plan in the issue body: a three-line summary (the spec part, a few sentences that tell the change as a story, in its context in the spec, and the decisions waiting for Dolev), then technical detail. No user-experience section: it lives in the spec part.</li><li>An issue with no open spec part, and not a bug: no plan, and it goes back to the backlog as a proposal: in the sprint's milestone the orchestrator writes its spec, otherwise "write a spec for #N".</li><li>A bug back in planning (it deletes something or changes a contract): the full plan.</li><li>Questions are written as checkboxes.</li><li>Appends to a change log and never deletes it.</li><li>A plan with no open question: a line in the chat, and dev-code on the same task at once. Several tasks in a run: one after the other, each with its own PR.</li><li>A decision other tasks will follow (a tool, an architecture, a work rule): a draft under a "cross-task decision" sub-heading, which Dolev approves in the review of the PR.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>Creates the branch on the remote, with no checkout.</p>
@@ -528,28 +517,24 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">Stage 5</span><h3>Questions and approval</h3><span class="who human">Dolev</span></div>
+    <div class="stage-head"><span class="idx">Stage 5</span><h3>Questions</h3><span class="who human">Dolev</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <p>Answers a question:</p>
         <div class="flowline"><span class="label h">plan-questions</span><span class="arrow">→</span><span class="label c">explore</span></div>
-        <p>Objects to the plan:</p>
-        <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">explore</span></div>
-        <p>Approves:</p>
-        <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
-        <p>Stops a small task before code is written, and removes <code>size:small</code>. dev-plan writes the plan of the normal path:</p>
-        <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label c">explore</span></div>
+        <p>There is no plan approval. To stop a task before the code, Dolev pauses it:</p>
+        <div class="flowline"><span class="label h">paused</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
-        <p>Dolev's decision. An answer or an objection sends it back to dev-plan.</p>
-        <p>When Dolev is in the chat, dev-plan asks at the end of its run in the question window, recommendation first. Clicking "approve, start coding" (or approving in free text) moves it to <code>ready-to-execute</code>, with a line in the plan log, and the code starts at once in the same session. Several plans approved together are coded one after the other. An approval on GitHub waits for the next dev-code run. Answering the questions continues the planning in the same run.</p>
+        <p>Dolev's decision. An answer sends it back to dev-plan.</p>
+        <p>When Dolev is in the chat, dev-plan asks the questions in the question window, recommendation first. An answer in the window continues the planning in the same run, and the code starts after it with no approval question. An answer on GitHub comes back in dev-plan's next scan, the same way.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>
         <p>No action.</p>
         <p>The branch waits on the remote, empty.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>Gate:</strong> no code is written on a plan Dolev has not approved, except a small task (<code>size:small</code>) and a bug. <span class="owner">Full rule: <code>pipeline.md</code>, "the small path" · <code>specs.md</code>, "a bug"</span></div>
+    <div class="gate-row"><strong>Gate:</strong> an open question is the only stop between the plan and the code. Dolev approves the spec by merging it, and the code in the review. An issue that still carries the old <code>waiting-approval</code> label is treated as ready to execute. <span class="owner">Full rule: <code>pipeline.md</code>, "the plan is not a gate" · <code>specs.md</code>, "a bug"</span></div>
   </article>
 
   <article class="stage">
@@ -558,11 +543,11 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">Labels</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
         <p>A fix (<code>needs-repair</code>), then a bug, is taken before a new task. After them a task labelled <code>priority:high</code>, even above the status level.</p>
-        <p>Then the status level: an approved plan before a plan still to write. Inside a level, <code>process</code> first, then a task of an umbrella that has started, and in each group whatever the fewest tasks wait on.</p>
+        <p>Then the status level: a ready plan before a plan still to write. Inside a level, <code>process</code> first, then a task of an umbrella that has started, and in each group whatever the fewest tasks wait on.</p>
         <p>A task labelled <code>costs-money</code> or <code>paused</code> leaves the ranking, unless Dolev named it. <code>paused</code> is added and removed only by Dolev's decision: he adds it himself, or asks Claude to. If he said why, Claude writes the reason in a comment that starts with the fixed prefix <code>סיבת השהיה:</code> ("pause reason:"), kept as is because Claude reads it back. When Dolev asks for a paused task by number, Claude asks in the question window, with the reason, before anything starts: remove <code>paused</code> and go on, go on without removing it, or do not start.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">Skill</span>
-        <p><b class="mono">dev-code</b>: exactly one issue per run. Plans Dolev approved together in the chat are coded one after the other in the same session, each with its own PR.</p>
+        <p><b class="mono">dev-code</b>: exactly one issue per run. The tasks one dev-plan run planned are coded one after the other in the same session, each with its own PR.</p>
         <ul><li>Implements the plan and adds a test for every change.</li><li>In the same PR: a status line, <code>Done (#N)</code>, under the part's heading in the spec, then <code>spec_check.py --toc</code> (the table of contents shows the status) and <code>--no-issues</code>.</li><li>A part several tasks build (<code>פתוח (#12, #13)</code>): each task deletes only its own number, and the last one writes Done. A bug points at the part it breaks, and marks nothing.</li><li>The plan has a cross-task decision: writes it as a page in <code>docs/decisions/</code> in the same PR, and the rule that relies on it points there.</li><li>A bug without a Plan: writes a short plan first. A bug that changes a contract or deletes something goes back to planning.</li><li>Splits work across agents only when the Plan has a "parallel work" section.</li><li>Walks the feature in the browser against the user experience in the spec part (or the plan), at desktop and phone width. In a cloud session: with Playwright.</li><li>Hands over a PR with a link to the review app. In a cloud session: the app runs in the session.</li><li>In the hand-off: a link to the PR's changes at the top of the message, screenshots in the chat (desktop, plus phone in a cloud session). No screenshot: one line saying why.</li><li>Follow-up tasks, under the fixed heading <code>#### משימות המשך</code> in the hand-off comment: one item each, opening with its kind, product (a review or browser-check finding outside the plan) or process (a process task from what happened in the run, with its source, in claude-config). None: "no follow-up tasks". Each is a question in a window of its own after the merge question, one at a time: to the backlog, to the backlog in the current sprint, reject, or other wording. Approving opens a backlog proposal, and no rule changes until its PR is merged. Nobody in the chat: a backlog proposal with no sprint.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">Git</span>

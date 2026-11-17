@@ -14,7 +14,7 @@ after --since. The first round that finds a change prints one line per change an
 check that wrote --expect and this run. After --timeout it prints `timeout` and exits 0.
 Bad input exits 2.
 
-    #184 status explore -> waiting-approval
+    #184 status explore -> ready-to-execute
     #181 comment https://github.com/<repo>/issues/181#issuecomment-1
 
 A comment the orchestrator wrote itself does not wake it: every comment is written from

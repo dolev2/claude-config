@@ -22,10 +22,10 @@
 | פקודות הבדיקה של claude-config | `.claude/CLAUDE.md`, "בדיקות" | `README.md` מחזיק עותק מלא בכוונה. בדיקה משווה את שניהם ל-`tests.yml` (`skills/dev-setup/scripts/test_doc_drift.py`) |
 | בדיקה ידנית בדפדפן וצילומי מסך: Edge, Playwright, הרוחבים, הצילומים למסירה | `ux.md` | `~/.claude/rules/code-tests.md`, `tests.md`, `~/.claude/rules/env-windows.md` (רק עובדות Edge), `~/.claude/rules/env-cloud.md`, `dev-code` שלב 10 |
 | פרסום מחדש של עמוד Artifact אחרי מיזוג: קריאה, השוואה, `publish` בלי `icon` ובלי `force`, השלד | `after-merge.md`, "פרסום מחדש של עמוד Artifact" | `.claude/CLAUDE.md` של claude-config (העמודים והקישורים), `~/.claude/rules/erd.md`, `dev-ship` |
-| אות המיזוג: בקשה אחת של דולב בצ'אט, על ה-issue הספציפי | `pipeline.md`, "הכללים שלא משתנים" | `chat-decisions.md` כלל 7, `dev-code`, `dev-ship` |
-| ארבעת התנאים של משימה קטנה | `pipeline.md`, "המסלול הקטן" | `dev-plan` שלב 7, `dev-code` שלב 8 |
-| issue אחד בכל ריצת קוד, והחריג של תוכניות שאושרו יחד | `git-flow.md`, "כמה issues בריצה אחת" | `dev-code`, `dev-next`, `after-merge.md`, `chat-decisions.md` כלל 5 |
-| אישור תוכנית בצ'אט מתחיל קידוד באותו סשן | `chat-decisions.md` כלל 5 | `dev-plan` שלב 8, `dev-code`, `dev-next` שלב 4, `pipeline.md`, התרשים ושני העמודים |
+| אות המיזוג: בקשה אחת של דולב בצ'אט, על ה-issue הספציפי | `pipeline.md`, "הכללים שלא משתנים" | `chat-decisions.md` כלל 5, `dev-code`, `dev-ship` |
+| מתי באג חוזר לתכנון מלא: מחיקה, שינוי חוזה או תלות חדשה | `specs.md`, "באג" | `dev-code` צעד 3, `issue-body.md` |
+| issue אחד בכל ריצת קוד, והחריג של כמה משימות שתוכננו באותה ריצה | `git-flow.md`, "כמה issues בריצה אחת" | `dev-code`, `dev-plan` שלב 8, `after-merge.md` |
+| התוכנית היא לא שער: תוכנית בלי שאלה מתחילה קידוד באותו סשן, שאלה פתוחה היא העצירה היחידה, ו-`status:waiting-approval` הישנה נקראת כמוכנה לביצוע (S-1.64) | `pipeline.md`, הפסקה "התוכנית היא לא שער" ואוצר המילים | `dev-plan` שלבים 7–8, `dev-code`, `dev-next` שלב 4, `chat-decisions.md`, `orchestrate.md`, `rank_issues.py` (`LEGACY_READY`), התרשים ושני העמודים |
 | מחיקת branch אחרי מיזוג: ההגדרה של GitHub, בלי `--delete-branch`, ומה עושים כשהיא כבויה | `git-flow.md`, "מוסכמת branches ו-PR" | `dev-ship`, `dev-setup`, `cloud.md` (רק הפקודה ב-REST), `~/.claude/rules/env-cloud.md` |
 | `costs-money`: מה היא עושה, מי מוסיף ומי מסיר | `pipeline.md`, אוצר המילים | `dependencies.md` (רק ההשפעה על הדירוג), `dev-plan`, `dev-next`, `dev-orchestrate`, `dev-setup` |
 | משימה מושהית שדולב ביקש במספר: שאלה בחלון לפני כל צעד, הסיבה מ-`pause_reason.py`, שלוש האפשרויות, ובלי חלון לא מתחילים (S-1.44) | `chat-decisions.md`, "משימה מושהית שדולב ביקש במספר" | `pipeline.md` (שורת `paused`), `dev-plan` שלב 1, `dev-code` שלב 2, `dev-next` שלבים 1 ו-3, התרשים ושני העמודים |

@@ -95,7 +95,7 @@ from sprint_github import branch_files, pr_files, pr_status, spec_prs
 from sprint_proposals import proposals, spec_merge_queue, spec_split
 
 DISPATCH_ORDER = ["needs-repair", "ready-to-execute", "explore"]
-DOLEV_TURN = ["plan-questions", "waiting-approval", "in-review"]
+DOLEV_TURN = ["plan-questions", "in-review"]
 PROMPTS = {
     "explore": "תחקור את #{}",
     "ready-to-execute": "תקודד את #{}",
