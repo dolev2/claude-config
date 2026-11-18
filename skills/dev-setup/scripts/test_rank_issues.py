@@ -678,3 +678,31 @@ def test_the_json_output_carries_priority_high_and_the_reason(monkeypatch, capsy
     rows = {row["number"]: row for row in payload["issues"]}
     assert (rows[2]["priority_high"], rows[2]["reason"]) == (True, "priority")
     assert (rows[1]["priority_high"], rows[1]["reason"]) == (False, "fewest-waiting")
+
+
+# S-1.64 (#466): the plan is no gate; the old approval label reads as ready.
+
+
+@pytest.mark.parametrize(
+    ("status", "read_as"),
+    [
+        ("waiting-approval", "ready-to-execute"),
+        ("ready-to-execute", "ready-to-execute"),
+        ("explore", "explore"),
+    ],
+)
+def test_the_old_approval_label_is_read_as_ready(status, read_as):
+    assert rank_issues.parse_issue(node(1, status=status)).status == read_as
+
+
+def test_an_issue_without_a_status_label_has_none():
+    bare = node(1)
+    bare["labels"]["nodes"] = [{"name": "task"}]
+    assert rank_issues.parse_issue(bare).status is None
+
+
+def test_a_scan_for_ready_picks_the_old_approval_label(monkeypatch, capsys):
+    nodes = [node(1, status="waiting-approval"), node(2, status="explore")]
+    out = run_main(monkeypatch, capsys, nodes, "--status", "ready-to-execute", "--json")
+    rows = json.loads(out)["issues"]
+    assert [(row["number"], row["status"]) for row in rows] == [(1, "ready-to-execute")]

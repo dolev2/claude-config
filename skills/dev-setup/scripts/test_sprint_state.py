@@ -151,7 +151,7 @@ def test_dolev_turn_keeps_the_tier_first_even_for_a_bug():
         node(1, subs=[5]),
         node(1, "backlog", labels=("bug",)),
         node(1, "done"),
-        node(1, "waiting-approval"),
+        node(1, "plan-questions"),
     ],
     ids=["blocked", "costs-money", "umbrella", "backlog-bug", "done", "dolev-turn"],
 )
@@ -241,11 +241,19 @@ def test_readme_and_claude_md_are_not_an_overlap():
 
 
 def test_waiting_dolev_lists_his_turn():
-    result = run(node(1, "plan-questions"), node(2, "waiting-approval"))
+    result = run(node(1, "plan-questions"), node(2, "in-review"))
     assert result["waiting_dolev"] == [
         {"number": 1, "title": "issue 1", "status": "plan-questions"},
-        {"number": 2, "title": "issue 2", "status": "waiting-approval"},
+        {"number": 2, "title": "issue 2", "status": "in-review"},
     ]
+
+
+def test_the_old_approval_label_gets_a_coding_child_not_dolev():
+    # S-1.64 (#466): a plan is no gate, so the old label reads as ready to execute.
+    result = run(node(1, "waiting-approval"))
+    [row] = result["dispatch"]
+    assert row["prompt"] == "תקודד את #1"
+    assert result["waiting_dolev"] == []
 
 
 def test_merge_queue_carries_the_pr_head_and_its_checks():

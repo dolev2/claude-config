@@ -19,7 +19,6 @@ DEFAULT_LABELS = [
         for name in (
             "explore",
             "plan-questions",
-            "waiting-approval",
             "ready-to-execute",
             "needs-repair",
             "in-review",

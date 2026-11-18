@@ -20,7 +20,7 @@ The keys:
     dispatch         ready for a child session: Claude's turn, no open blocker, not an
                      umbrella, not costs-money, not paused, not claimed, no file shared
                      with work in flight. A spec child first (status "spec", one at a
-                     time, S-2.14), then repairs, then bugs, then approved plans, then
+                     time, S-2.14), then repairs, then bugs, then ready plans, then
                      plans to write; in each, the order of S-1.3 (rank_issues.py)
     held_by_overlap  would be in dispatch, but shares a planned file with work in flight
                      (claimed, in review, or earlier in dispatch), so it runs after it.
@@ -95,7 +95,7 @@ from sprint_github import branch_files, pr_files, pr_status, spec_prs
 from sprint_proposals import proposals, spec_merge_queue, spec_split
 
 DISPATCH_ORDER = ["needs-repair", "ready-to-execute", "explore"]
-DOLEV_TURN = ["plan-questions", "waiting-approval", "in-review"]
+DOLEV_TURN = ["plan-questions", "in-review"]
 PROMPTS = {
     "explore": "תחקור את #{}",
     "ready-to-execute": "תקודד את #{}",

@@ -46,7 +46,6 @@ from lint_check import all_gaps, tracked_files
 REQUIRED_LABELS = [
     "status:explore",
     "status:plan-questions",
-    "status:waiting-approval",
     "status:ready-to-execute",
     "status:needs-repair",
     "status:in-review",

@@ -223,22 +223,17 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <text x="215" y="60" text-anchor="middle" class="s">שאלה לדולב, הוא עונה</text>
       <line x1="140" y1="118" x2="150" y2="80" class="edge" marker-start="url(#ah)" marker-end="url(#ah)"/>
       <path d="M262 118 Q213 90 170 118" class="edge" marker-end="url(#ah)"/>
-      <text x="300" y="102" text-anchor="start" class="s">תשובה או הסתייגות: חזרה לתכנון</text>
+      <text x="300" y="102" text-anchor="start" class="s">תשובה: חזרה לתכנון, ואז הקוד</text>
 
       <!-- main row, left to right -->
-      <rect x="20" y="120" width="160" height="62" rx="8" class="n-claude"/>
-      <text x="100" y="146" text-anchor="middle" class="m">explore</text>
-      <text x="100" y="166" text-anchor="middle" class="s">ממתין לתכנון</text>
-
-      <line x1="182" y1="151" x2="226" y2="151" class="edge" marker-end="url(#ah)"/>
-      <rect x="230" y="120" width="160" height="62" rx="8" class="n-human"/>
-      <text x="310" y="146" text-anchor="middle" class="m">waiting-approval</text>
-      <text x="310" y="166" text-anchor="middle" class="s">דולב קורא ומאשר</text>
+      <rect x="20" y="120" width="370" height="62" rx="8" class="n-claude"/>
+      <text x="205" y="146" text-anchor="middle" class="m">explore</text>
+      <text x="205" y="166" text-anchor="middle" class="s">ממתין לתכנון. תוכנית בלי שאלה: הקוד מתחיל מיד</text>
 
       <line x1="392" y1="151" x2="436" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="440" y="120" width="160" height="62" rx="8" class="n-claude"/>
       <text x="520" y="146" text-anchor="middle" class="m">ready-to-execute</text>
-      <text x="520" y="166" text-anchor="middle" class="s">מאושר, או משימה קטנה</text>
+      <text x="520" y="166" text-anchor="middle" class="s">מוכן לביצוע, בלי אישור</text>
 
       <line x1="602" y1="151" x2="646" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="650" y="120" width="160" height="62" rx="8" class="n-human"/>
@@ -269,11 +264,6 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <rect x="850" y="230" width="180" height="62" rx="8" class="n-gate"/>
       <text x="940" y="256" text-anchor="middle" class="m">open-questions-gate</text>
       <text x="940" y="276" text-anchor="middle" class="s">תיבה לא מסומנת? מתריע</text>
-
-      <!-- small path: explore straight to ready-to-execute -->
-      <path d="M60 184 V262 H460 V186" class="edge" marker-end="url(#ah)"/>
-      <text x="260" y="254" text-anchor="middle" class="m">size:small</text>
-      <text x="260" y="282" text-anchor="middle" class="s">משימה קטנה: בלי אישור תוכנית</text>
 
       <!-- skill brackets -->
       <path d="M20 196 V204 H390 V196" class="bracket"/>
@@ -523,13 +513,11 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="stage-head"><span class="idx">שלב 4</span><h3>תכנון</h3><span class="who claude">Claude</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
-        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">waiting-approval</span></div>
+        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
+        <p>בלי אישור תוכנית: הקוד מתחיל מיד, באותו סשן.</p>
         <p>או, כשנשארה שאלה שחוסמת:</p>
         <div class="flowline"><span class="label h">plan-questions</span></div>
         <p>כך גם משימה ידנית, שרק דולב יכול לבצע (אין ל-Claude גישה): מה שעליו לבדוק כתוב כתיבות סימון, ושום בן או סשן קוד לא לוקח אותה.</p>
-        <p>או, למשימה קטנה (עד כ-3 קבצים, בלי שינוי שמשתמש רואה, בלי מחיקה, בלי שינוי חוזה):</p>
-        <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
-        <p>עם התווית <code>size:small</code>, ובלי אישור תוכנית.</p>
         <p>או, למשימה בלי חלק פתוח באפיון:</p>
         <div class="flowline"><span class="label c">explore</span><span class="arrow">→</span><span class="label h">backlog</span></div>
         <p>תוכנית שדורשת הוצאה כספית (שירות ענן, API בתשלום, מנוי) מקבלת גם:</p>
@@ -538,7 +526,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p><b class="mono">dev-plan</b>: עד 3 issues בריצה.</p>
-        <ul><li>קורא קודם את החלק באפיון, לפי שורת "אפיון:" של ה-issue.</li><li>כותב Plan מקוצר בגוף ה-issue: "בקצרה" בשלוש שורות (החלק באפיון, כמה משפטים שמספרים את השינוי כסיפור, בהקשר שלו באפיון, וההחלטות שמחכות לדולב), ואחריהן "פירוט טכני". בלי "חוויית משתמש": היא כתובה בחלק באפיון.</li><li>issue בלי חלק פתוח באפיון, ואינו באג: לא מקבל תוכנית, וחוזר לבקלוג כהצעה: ב-milestone של הספרינט המתזמר כותב לו אפיון, ואחרת "תכתוב אפיון ל-#N".</li><li>באג שחזר לתכנון (מוחק או משנה חוזה): התוכנית המלאה.</li><li>שאלות נרשמות כתיבות סימון.</li><li>מוסיף יומן שינויים, ולא מוחק אותו.</li><li>משימה קטנה מקבלת תוכנית מקוצרת, ובסיכום שורה "עברו ישר לביצוע".</li><li>החלטה שמשימות אחרות ימשיכו לפיה (כלי, ארכיטקטורה, כלל עבודה): טיוטה בתת-כותרת "החלטה רוחבית", שדולב מאשר עם התוכנית.</li></ul>
+        <ul><li>קורא קודם את החלק באפיון, לפי שורת "אפיון:" של ה-issue.</li><li>כותב Plan מקוצר בגוף ה-issue: "בקצרה" בשלוש שורות (החלק באפיון, כמה משפטים שמספרים את השינוי כסיפור, בהקשר שלו באפיון, וההחלטות שמחכות לדולב), ואחריהן "פירוט טכני". בלי "חוויית משתמש": היא כתובה בחלק באפיון.</li><li>issue בלי חלק פתוח באפיון, ואינו באג: לא מקבל תוכנית, וחוזר לבקלוג כהצעה: ב-milestone של הספרינט המתזמר כותב לו אפיון, ואחרת "תכתוב אפיון ל-#N".</li><li>באג שחזר לתכנון (מוחק או משנה חוזה): התוכנית המלאה.</li><li>שאלות נרשמות כתיבות סימון.</li><li>מוסיף יומן שינויים, ולא מוחק אותו.</li><li>תוכנית בלי שאלה פתוחה: שורה בצ'אט, ומיד dev-code על אותה משימה. כמה משימות בריצה: אחת אחרי השנייה, כל אחת עם PR משלה.</li><li>החלטה שמשימות אחרות ימשיכו לפיה (כלי, ארכיטקטורה, כלל עבודה): טיוטה בתת-כותרת "החלטה רוחבית", שדולב מאשר בסקירה של ה-PR.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>יוצר את ה-branch ב-remote, בלי checkout.</p>
@@ -549,28 +537,24 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 5</span><h3>שאלות ואישור</h3><span class="who human">דולב</span></div>
+    <div class="stage-head"><span class="idx">שלב 5</span><h3>שאלות</h3><span class="who human">דולב</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <p>עונה על שאלה:</p>
         <div class="flowline"><span class="label h">plan-questions</span><span class="arrow">→</span><span class="label c">explore</span></div>
-        <p>מסתייג מהתוכנית:</p>
-        <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">explore</span></div>
-        <p>מאשר:</p>
-        <div class="flowline"><span class="label h">waiting-approval</span><span class="arrow">→</span><span class="label c">ready-to-execute</span></div>
-        <p>עוצר משימה קטנה לפני שנכתב קוד, ומסיר את <code>size:small</code>. dev-plan כותב תוכנית למסלול הרגיל:</p>
-        <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label c">explore</span></div>
+        <p>אין אישור תוכנית. מי שרוצה לעצור משימה לפני הקוד משהה אותה:</p>
+        <div class="flowline"><span class="label h">paused</span></div>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
-        <p>ההחלטה של דולב. תשובה או הסתייגות מחזירות ל-dev-plan.</p>
-        <p>כשדולב בצ'אט, dev-plan שואל בסוף הריצה בחלון השאלות, עם ההמלצה ראשונה. לחיצה על "מאשר, תתחיל לקודד" (או אישור במלל) מעבירה ל-<code>ready-to-execute</code>, עם שורה ביומן התוכנית, והקידוד מתחיל מיד באותו סשן. כמה תוכניות שאושרו יחד נכתבות אחת אחרי השנייה. אישור ב-GitHub מחכה לריצה הבאה של dev-code. תשובה לשאלות ממשיכה את התכנון באותה ריצה.</p>
+        <p>ההחלטה של דולב. תשובה מחזירה ל-dev-plan.</p>
+        <p>כשדולב בצ'אט, dev-plan שואל את השאלות בחלון השאלות, עם ההמלצה ראשונה. תשובה בחלון ממשיכה את התכנון באותה ריצה, והקוד מתחיל אחריה בלי שאלת אישור. תשובה ב-GitHub חוזרת בסריקה הבאה של dev-plan, באותו מסלול.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>אין פעולה.</p>
         <p>ה-branch מחכה ב-remote, ריק.</p>
       </div>
     </div>
-    <div class="gate-row"><strong>שער:</strong> שום קוד לא נכתב על תוכנית שדולב לא אישר, חוץ ממשימה קטנה (<code>size:small</code>) ומבאג. <span class="owner">הכלל המלא: <code>pipeline.md</code>, "המסלול הקטן" · <code>specs.md</code>, "באג"</span></div>
+    <div class="gate-row"><strong>שער:</strong> שאלה פתוחה היא העצירה היחידה בין התוכנית לקוד. דולב מאשר את האפיון במיזוג שלו, ואת הקוד בסקירה. issue שעוד נושא את התווית הישנה <code>waiting-approval</code> מטופל כמוכן לביצוע. <span class="owner">הכלל המלא: <code>pipeline.md</code>, "התוכנית היא לא שער" · <code>specs.md</code>, "באג"</span></div>
   </article>
 
   <article class="stage">
@@ -579,11 +563,11 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label c">ready-to-execute</span><span class="arrow">→</span><span class="label h">in-review</span></div>
         <p>תיקון (<code>needs-repair</code>), ואחריו באג, נלקחים לפני משימה חדשה. אחריהם משימה עם <code>priority:high</code>, גם מעל רמת הסטטוס.</p>
-        <p>אחר כך רמת הסטטוס: תוכנית מאושרת לפני תוכנית לכתוב. בתוך הרמה קודם <code>process</code>, ואז משימה ממטרייה שהתחילה, ובכל קבוצה מה שהכי פחות משימות מחכות לו.</p>
+        <p>אחר כך רמת הסטטוס: תוכנית מוכנה לפני תוכנית לכתוב. בתוך הרמה קודם <code>process</code>, ואז משימה ממטרייה שהתחילה, ובכל קבוצה מה שהכי פחות משימות מחכות לו.</p>
         <p>משימה עם <code>costs-money</code> או <code>paused</code> יוצאת מהדירוג, חוץ ממשימה שדולב נקב בשמה. את <code>paused</code> שמים ומסירים רק בהחלטה של דולב: הוא שם בעצמו, או מבקש מ-Claude. אם אמר למה, Claude כותב את הסיבה בתגובה שמתחילה ב-<code>סיבת השהיה:</code>. דולב מבקש משימה מושהית במספר: לפני שמשהו מתחיל, Claude שואל בחלון, עם הסיבה, אם להסיר את <code>paused</code>, להמשיך בלי להסיר, או לא להתחיל.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
-        <p><b class="mono">dev-code</b>: issue אחד בדיוק בריצה. תוכניות שדולב אישר יחד בצ'אט נכתבות אחת אחרי השנייה באותו סשן, כל אחת עם PR משלה.</p>
+        <p><b class="mono">dev-code</b>: issue אחד בדיוק בריצה. המשימות שריצה אחת של dev-plan תכננה נכתבות אחת אחרי השנייה באותו סשן, כל אחת עם PR משלה.</p>
         <ul><li>מממש את התוכנית ומוסיף טסט לכל שינוי.</li><li>באותו PR: שורת מצב <code>Done (#N)</code> מתחת לכותרת של החלק באפיון, ואז <code>spec_check.py --toc</code> (תוכן העניינים מראה את המצב) ו-<code>--no-issues</code>.</li><li>חלק עם כמה משימות (<code>פתוח (#12, #13)</code>): המשימה מוחקת רק את המספר שלה, והאחרונה כותבת Done. באג מצביע על החלק שהוא שובר, ולא מסמן כלום.</li><li>יש בתוכנית "החלטה רוחבית": כותב ממנה דף ב-<code>docs/decisions/</code> באותו PR, והכלל שנשען עליה מפנה אליו.</li><li>באג בלי Plan: כותב קודם תוכנית מקוצרת. באג שמשנה חוזה או מוחק חוזר לתכנון.</li><li>חלוקה לסוכנים רק כשב-Plan יש "עבודה במקביל".</li><li>עובר על הפיצ'ר בדפדפן מול חוויית המשתמש שבחלק באפיון (או בתוכנית), במחשב ובטלפון. בסשן ענן: ב-Playwright.</li><li>מוסר PR עם קישור לאפליקציית הסקירה. בסשן ענן: האפליקציה רצה בסשן.</li><li>במסירה: קישור לשינויים ב-PR בראש ההודעה, צילומי מסך בצ'אט (מחשב, ובסשן ענן גם טלפון). אין צילום: שורה שאומרת למה.</li><li>משימות המשך, תחת הכותרת הקבועה <code>#### משימות המשך</code> בהערת המסירה: לכל אחת סעיף שמתחיל בסוג שלה, מוצר (ממצא של הסקירה או של הבדיקה בדפדפן מחוץ לתוכנית) או תהליך (משימת תהליך ממה שקרה בריצה, עם מקור, ב-claude-config). אין: "אין משימות המשך". כל אחת שאלה בחלון משלה אחרי שאלת המיזוג, אחת בכל פעם: לבקלוג, לבקלוג בספרינט הנוכחי, לדחות, או ניסוח אחר. אישור פותח הצעה בבקלוג, ושום כלל לא משתנה עד שה-PR שלה ממוזג. בלי אדם בצ'אט: הצעה בבקלוג, בלי ספרינט.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>

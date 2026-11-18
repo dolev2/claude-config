@@ -88,10 +88,9 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
 
    | status | whose turn | what to do |
    |---|---|---|
-   | `explore` | Claude | run **dev-plan** on this issue only |
+   | `explore` | Claude | run **dev-plan** on this issue only (a plan with no open question then starts the code, S-1.64) |
    | `ready-to-execute`, `needs-repair` | Claude | run **dev-code** on this issue |
    | none (`decision`) | Dolev | his decision, closed with a comment |
-   | `waiting-approval` | Dolev | his approval of the plan |
    | `plan-questions` | Dolev | his answers, in the issue's "שאלות פתוחות"; then it goes back to `status:explore` |
    | `in-review` | Dolev | his review of the PR, then a fix (`needs-repair`) or his request in the chat to merge it (dev-ship) |
    | `backlog` | Dolev | his "תכתוב אפיון ל-#N", which runs **dev-spec** (`reference/specs.md`) |
@@ -108,10 +107,11 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
 4. **When the top issue waits for Dolev, do not route around it silently.** Say what it
    waits for (the table above), with a link to the issue, then name the first row in Claude's
    turn below it that step 2 would pick, and ask whether to work on that one meanwhile. Doing
-   his part (approving, answering, merging, relabelling) is never yours. You may ask him for it
+   his part (answering, merging, relabelling) is never yours. You may ask him for it
    in the question window and carry out what he chooses there
-   (`reference/chat-decisions.md`); never decide it for him. A plan he approves there starts
-   the code at once: route it to `dev-code` (rule 5 there).
+   (`reference/chat-decisions.md`); never decide it for him. An answer he gives there sends
+   the issue back to `status:explore`: route it to `dev-plan`, which finishes the plan and starts
+   the code.
 
 5. If the ranking shows an issue in `status:needs-repair` that you did not
    pick, mention it: a repair is work Dolev already reviewed, and `dev-code` on its own would

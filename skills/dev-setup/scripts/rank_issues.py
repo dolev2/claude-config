@@ -57,6 +57,9 @@ PAUSED_LABEL = "paused"
 PRIORITY_LABEL = "priority:high"
 # A sub-issue in one of these has code written: its umbrella has started (#295).
 STARTED_STATUSES = ("in-review", "needs-repair")
+# The old "plan waits for approval" label: the plan is no gate any more, so an issue
+# that still carries it is ready to execute (S-1.64, #466).
+LEGACY_READY = {"waiting-approval": "ready-to-execute"}
 
 
 @dataclass
@@ -110,6 +113,12 @@ def label_value(labels: Iterable[str], prefix: str) -> str | None:
     return None
 
 
+def issue_status(labels: Iterable[str]) -> str | None:
+    """The issue's `status:` label without the prefix, the old label read as ready."""
+    status = label_value(labels, "status:")
+    return LEGACY_READY.get(status, status) if status else None
+
+
 def is_local(ref: dict) -> bool:
     """True for a linked issue of the same repo; gh_rest.py marks the others."""
     return not ref.get("repository")
@@ -148,7 +157,7 @@ def parse_issue(node: dict) -> Issue:
     return Issue(
         number=node["number"],
         title=node["title"],
-        status=label_value(labels, "status:"),
+        status=issue_status(labels),
         milestone=milestone["title"] if milestone else None,
         kind=next((kind for kind in FIRST_KINDS if kind in labels), None),
         costs_money=ON_HOLD_LABEL in labels,
@@ -174,7 +183,7 @@ def started_umbrellas(nodes: list[dict]) -> dict[int, int]:
     an umbrella nor is moved up; only the direct umbrella counts.
     """
     status = {
-        n["number"]: label_value((x["name"] for x in n["labels"]["nodes"]), "status:")
+        n["number"]: issue_status(x["name"] for x in n["labels"]["nodes"])
         for n in nodes
     }
     found: dict[int, int] = {}

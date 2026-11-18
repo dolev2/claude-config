@@ -53,7 +53,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    **A named issue labelled `paused`:** before anything else, even the WIP gate of step 1 and
    the blocked check, ask the question of `reference/chat-decisions.md` ("משימה מושהית שדולב
    ביקש במספר"; the reason: `pause_reason.py <N>`), unless it was already asked for this request (rule 5
-   there: `dev-next` asked, or a plan approved in the window after "להמשיך בלי להסיר").
+   there: `dev-next` asked, or `dev-plan` asked before the plan that started this code).
    "לא להתחיל": the chat line of rule 4 there, and stop. No window: write the question and
    stop (rule 6 there).
 
@@ -62,8 +62,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    itself, `reference/dependencies.md`). Name each row you skipped, with its open blockers or
    sub-issues, in the run summary. Do not relabel it. If every row is skipped, say so and stop.
 
-   **Take exactly one issue per run** (`reference/git-flow.md`; plans approved together run
-   one after the other, each a run of its own: the exception there).
+   **Take exactly one issue per run** (`reference/git-flow.md`; the issues one `dev-plan` run
+   planned run one after the other, each a run of its own: the exception there).
+   An issue that still carries the old `status:waiting-approval` is ready to execute
+   (`reference/pipeline.md`; `rank_issues.py` already reads it so).
 
 3. **Read the whole thread before touching code**: body (including Plan), every comment,
    every sub-issue. A `needs-repair` issue carries the reason in the newest comments; a
@@ -86,11 +88,11 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    1. **Context:** also read the task named in the form's "משימה קשורה" field, at least its
       goal and its Plan. That is usually where it says what the code was meant to do.
    2. **Scope check:** the fix deletes a file, a feature or data, changes a contract, or adds a
-      dependency (conditions 3–4 of "המסלול הקטן", `reference/pipeline.md`): stop before any
+      dependency (`reference/specs.md`, "באג", item 4): stop before any
       code. Move `status:ready-to-execute` → `status:explore`, comment saying which condition,
-      and open no PR; `dev-plan` writes it a full Plan, which goes through approval.
-      Conditions 1–2 (the number of files, a change the user sees) do not stop a bug: most bugs
-      are visible. A bug that is unclear goes to `status:plan-questions` with the question
+      and open no PR; `dev-plan` writes it a full Plan, and its code then starts with no
+      approval, like any plan. The number of files, or a change the user sees, does not stop
+      a bug: most bugs are visible. A bug that is unclear goes to `status:plan-questions` with the question
       (golden rules).
    3. **The slug:** from the title, in English, 2–5 kebab-case words
       (`claude/issue-<N>-<slug>`, `reference/git-flow.md`). A Hebrew title is translated for its
@@ -187,10 +189,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    ceiling is not a failure: say what ran. On Windows it does not run: say so in the
    hand-off.
 
-8. A `size:small` task that turns out to break one of its four conditions (`reference/pipeline.md`):
-   stop, remove `size:small`, move it to `status:explore` with a comment saying which condition,
-   and open no PR.
-   If the plan turns out to be wrong mid-implementation, do not silently deviate. Update the
+8. If the plan turns out to be wrong mid-implementation, do not silently deviate. Update the
    Plan in the issue body (read it fresh first) and add a line to the plan log.
 
 9. Open a PR against `<default>` whose body contains `Closes #<N>`. If a PR is already open
@@ -242,7 +241,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     inside the Plan is fixed like a review finding; one outside it is a product follow-up task
     (`reference/follow-ups.md`). No app
     (or no browser at all): check what you can (output, messages) and say what was not
-    checked. A plan with "אין ממשק", or the short plan of a `size:small` task, skips this.
+    checked. A plan with "אין ממשק" skips this.
     The short plan of a bug does not: its "חוויית משתמש" section with content is checked, and
     only its "אין ממשק" line skips this. The screenshots follow the same rule.
 
@@ -281,6 +280,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     ```bash
     gh issue edit <N> --add-label "status:in-review" --remove-label "status:ready-to-execute"
     # (or --remove-label "status:needs-repair" on a repair round)
+    # (and --remove-label "status:waiting-approval" when the issue still carries that old label)
     ```
     Then comment on the issue, in Hebrew, with what changed, what you tested, and anything Dolev
     should look at. On a repair round, say which of his points each change addresses. The
@@ -362,9 +362,9 @@ of step 11 does the same in this session.
   `status:plan-questions` (Dolev's turn; his answer sends it back to `status:explore` for a
   plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
-  `needs-repair`), except for what Dolev chose in the question window of step 11.
-- One issue per run, and the WIP gate before a new one (`reference/git-flow.md`). Plans
-  Dolev approved together are several runs in one session, one after the other (the
+  `needs-repair`, and the old `waiting-approval`, read as ready), except for what Dolev chose in the question window of step 11.
+- One issue per run, and the WIP gate before a new one (`reference/git-flow.md`). The
+  issues one `dev-plan` run planned are several runs in one session, one after the other (the
   exception there).
 - Never start an issue that has an open "Blocked by" link.
 - The sprint scope holds: a scan stays in the current milestone, and Claude never assigns

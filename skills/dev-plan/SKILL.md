@@ -1,13 +1,15 @@
 ---
 name: dev-plan
-description: Runs the Plan phase of Dolev's Claude-assisted GitHub pipeline in the current repo — reads issues labelled status:explore (new ones, and plans Dolev answered or sent back), researches feasibility, and writes a plan into the issue body. Use in any of Dolev's repos whenever he asks to run/process the Plan phase, to plan a specific issue ("תתכנן את #12"), or to check what is waiting for Claude to plan. Works in any repo that has the pipeline labels; if the repo has its own repo-specific plan skill, use that instead. Pairs with dev-code, which handles Execute; dev-ship merges.
+description: Runs the Plan phase of Dolev's Claude-assisted GitHub pipeline in the current repo — reads issues labelled status:explore (new ones, and plans Dolev answered), researches feasibility, writes a plan into the issue body, and starts the code at once (dev-code) when the plan has no open question. Use in any of Dolev's repos whenever he asks to run/process the Plan phase, to plan a specific issue ("תתכנן את #12"), or to check what is waiting for Claude to plan. Works in any repo that has the pipeline labels; if the repo has its own repo-specific plan skill, use that instead. Pairs with dev-code, which handles Execute; dev-ship merges.
 ---
 
 # Plan phase
 
 Part 1 of 2 of Dolev's GitHub × Claude Code pipeline (the other half is `dev-code`, covering
 Execute, up to a PR in review; `dev-ship` merges). This phase reads issues, researches feasibility, and writes a plan: **no
-feature code, and no branch switching in the working copy**.
+feature code, and no branch switching in the working copy**. The plan is not a gate (S-1.64,
+`reference/pipeline.md`): a plan with no open question goes straight to `dev-code`, in this
+session (step 8).
 
 ## Step 0: Orient
 
@@ -49,7 +51,7 @@ keeps them: edit it in the headings it already has.
    **A named issue labelled `paused`:** before anything else here, even the blocked check,
    ask the question of `reference/chat-decisions.md` ("משימה מושהית שדולב ביקש במספר";
    the reason: `pause_reason.py <N>`), unless it was already asked for this request (rule 5
-   there: `dev-next` asked, or a plan approved in the window after "להמשיך בלי להסיר").
+   there: `dev-next` asked).
    "לא להתחיל": the chat line of rule 4 there, and stop. No window: write the question and
    stop (rule 6 there).
 
@@ -62,8 +64,8 @@ keeps them: edit it in the headings it already has.
    **Up to three issues per run**: the top three unblocked rows. The fourth would be planned in a
    compacted context. The WIP gate applies to Execute, not here.
 
-   `status:plan-questions` is Dolev's turn, never scanned here. When he answers, or sends a
-   plan back, he moves the issue to `status:explore`, and this scan finds it like any other.
+   `status:plan-questions` is Dolev's turn, never scanned here. When he answers, he moves the
+   issue to `status:explore`, and this scan finds it like any other.
    When he answers in the chat with you, move it to `status:explore` yourself and go on.
 
 2. For each issue, **read the whole thread first**: body, every comment, sub-issues, linked
@@ -85,19 +87,17 @@ keeps them: edit it in the headings it already has.
      want that removes the milestone;
    - **no milestone, or another one:** "תכתוב אפיון ל-#N", as before.
    It
-   does not count toward the three issues of the run, and it is none of the three hand-off
+   does not count toward the three issues of the run, and it is none of the two hand-off
    paths of step 7: the summary gives it a line of its own (step 8).
 
    Two situations look alike but are not:
    - **a fresh issue**: no Plan content yet. Plan it from scratch.
-   - **an issue with a Plan already**: Dolev answered or sent it back; revise the plan in place
+   - **an issue with a Plan already**: Dolev answered, or the spec changed; revise the plan in place
      and add a line to the plan log saying what changed and why, citing where it came from: the
      comment, or Dolev's words in chat (quoted, with the date). An objection that arrived in chat
      is cited from chat; never post a comment just to have something to cite. The newest
      comment, or the chat, says which of two things arrived:
      - **Dolev answered your questions** (it came from `status:plan-questions`).
-     - **Dolev read a plan at `status:waiting-approval` and sent it back** with an objection.
-       Treat no part of the plan as settled. Address the objection itself.
      - **The part it builds changed in the spec** (`dev-issue`, "עדכון אחרי שינוי באפיון";
        claude-config #244): the newest comment says so and links the spec PR. Read the part
        again from `origin/<default>`, treat no part of the plan as settled, and cite that PR in
@@ -152,7 +152,7 @@ keeps them: edit it in the headings it already has.
    and which issue has it, where the task sits in the spec, and what waits for him. Business language only, no file or function
    names, at most 8 lines. Then "חוויית משתמש", also for the decision: the user, the flow, and
    what they see in each state, from the checklist in `reference/ux.md`. Every full plan has it
-   (not the short Plan of an issue with a spec line, nor the short plan of a small task, step 7);
+   (not the short Plan of an issue with a spec line);
    work with nothing a user sees or touches gets one line saying so and why. Then "פירוט טכני"
    for the execution. No sections outside the format; a boundary with another issue is a line
    in "בקצרה", not a section of its own (`reference/issue-body.md`).
@@ -165,8 +165,7 @@ keeps them: edit it in the headings it already has.
    list and not a dry summary: the chapter and the group the part sits in and what the chapter
    does, what problem the part solves and why it matters, and what comes before or after it, when
    there is any (the spec's "תלוי ב-S-x.y" lines and the issue's Blocked by). One sentence per
-   line, each ending with `\`; they do not count toward the 8-line limit. The short plan of a small task
-   has it too. The short plan of a bug (written by `dev-code`) does not: it points at a Done part
+   line, each ending with `\`; they do not count toward the 8-line limit. The short plan of a bug (written by `dev-code`) does not: it points at a Done part
    it breaks (`reference/issue-body.md`).
 
    **The "בדיקות" sub-heading follows the table in `~/.claude/rules/code-tests.md`**: one line
@@ -181,14 +180,15 @@ keeps them: edit it in the headings it already has.
    **Does it decide something other tasks will follow?** A tool, an architecture or a work
    rule that outlives this task (`~/.claude/rules/code-general.md`, "ב-`docs/decisions/`"):
    write the "החלטה רוחבית" sub-heading, the draft of its decision page
-   (`reference/issue-body.md`). Dolev approves it with the plan; `dev-code` writes the page in
-   the same PR. If it replaces an existing page in `docs/decisions/`, name that page. A choice
+   (`reference/issue-body.md`). Dolev approves it in the review of the PR; `dev-code` writes the
+   page in the same PR. If it replaces an existing page in `docs/decisions/`, name that page. A choice
    that holds for this task alone stays in "הגישה".
 
    **Check the scope before writing the plan.** These questions, every issue:
    - **Wider than its part?** The request goes beyond the part on the spec line (another screen,
      another rule): propose to Dolev to update the spec first, through `dev-spec`, and do not
-     widen the plan past the part.
+     widen the plan past the part. The code does not start: the proposal is the open question
+     of the question path (step 7), so the issue waits for Dolev at `status:plan-questions`.
    - **Too big?** If the issue holds more than one PR that can be reviewed on its own, propose a
      split in chat: each sub-issue's title, one line of scope, and the blockers between them.
      On Dolev's OK, split it with `dev-issue`, which holds the split rules; then plan the parts
@@ -208,7 +208,7 @@ keeps them: edit it in the headings it already has.
      to `status:explore`, and the plan goes on from there.
 
    A change to an issue whose status is not Claude's turn (`reference/pipeline.md`) is a step
-   of this plan, made in Execute once Dolev approves.
+   of this plan, made in Execute.
 
    **Keep the dependencies true.** If exploration shows the issue needs something another issue
    delivers and no link says so, add the "Blocked by" link and the `#B` on the dependency line
@@ -222,32 +222,22 @@ keeps them: edit it in the headings it already has.
    decision another task relies on is a line in its Plan section, for whoever plans it to build
    on; a question it must answer is an unticked box in its open-questions section. The
    human-written sections stay byte-identical. If that issue's status is not Claude's turn, the
-   edit is a step of this plan, made in Execute once Dolev approves.
+   edit is a step of this plan, made in Execute.
 
 6. Set `area:*` if it is missing and the exploration made it obvious (only labels that exist).
    Likewise add `process` when the issue turns out to be work-management, rules or
    claude-config alignment work (the vocabulary table in `reference/pipeline.md`). Leave its milestone as it is.
-   Add `costs-money` when the plan needs an expense, and say so in "בקצרה" (what the label
-   does and who lifts it: `reference/pipeline.md`).
+   Add `costs-money` when the plan needs an expense, and say in "בקצרה" that the expense waits
+   for Dolev (what the label does and who lifts it: `reference/pipeline.md`). That is an
+   approval of the expense, not of the plan.
 
-7. Hand off, exactly one of three paths:
+7. Hand off, exactly one of two paths:
 
-   **Small path**: the task meets all four conditions of "המסלול הקטן" in `reference/pipeline.md`.
-   Any doubt: the normal path. The plan is the short plan from
-   `reference/issue-body.md`, and the task goes straight to Execute, without Dolev's approval:
+   **Ready path**: the plan stands on its own, with no open question:
    ```bash
-   gh label create "size:small" --color c5def5 --description "משימה קטנה: עוברת לביצוע בלי אישור תוכנית" 2>/dev/null || true
-   gh issue edit <N> --add-label "size:small,status:ready-to-execute" --remove-label "status:explore"
+   gh issue edit <N> --add-label "status:ready-to-execute" --remove-label "status:explore"
    ```
-   The label is created only when missing (without `--force`, so an existing description stays).
-   A short plan back at `status:explore` without `size:small` is a task Dolev stopped: write the
-   Plan of the normal path (with its spec line, the short Plan above) and take that path. Never
-   small-path it again.
-
-   **Normal path**: the plan stands on its own:
-   ```bash
-   gh issue edit <N> --add-label "status:waiting-approval" --remove-label "status:explore"
-   ```
+   The code itself starts in step 8, with its line in the chat.
 
    **Question path**: you would otherwise be guessing. Post the questions as a comment in
    Hebrew (numbered, each with the options you see and your recommendation, so Dolev can answer
@@ -264,41 +254,33 @@ keeps them: edit it in the headings it already has.
    label moves first, so a run nobody answers is still in the right state. His answer in the
    window counts like an answer in the issue: tick the questions in the open-questions section
    with his decision, move the issue to `status:explore`, and finish the plan in this same run
-   (step 2, "Dolev answered your questions"). It then ends on the normal or small path, and
-   step 8 asks for the approval.
+   (step 2, "Dolev answered your questions"). It then ends on the ready path, with no question
+   about approving it. An answer that arrives in GitHub instead comes back through the scan of
+   step 1 and ends the same way.
 
-8. End the run with a summary in Hebrew: which issues moved to `status:waiting-approval` with
+8. End the run with a summary in Hebrew: which issues moved to `status:ready-to-execute` with
    their branch, and which moved to `status:plan-questions` and what was asked. Blocked issues
    get a line of their own, "דולגו, חסומות", each with its open blockers (step 1). Issues the
    gate sent back get a line of their own, "חזרו לבקלוג: אין חלק באפיון", each with what comes
    next as its comment says (step 2): "המתזמר יכתוב לה אפיון" in the current sprint, otherwise
-   "תכתוב אפיון ל-#N". Small-path
-   issues get a line of their own, "עברו ישר לביצוע (קטנות)", each with its link and the reason
-   it is small, so Dolev can stop one before code is written: he moves it to
-   `status:explore` and removes `size:small`, and the next run writes the normal plan. Confirm with
-   `git status --short --branch` that the working copy is exactly as you found it.
+   "תכתוב אפיון ל-#N". Confirm with `git status --short --branch` that the working copy is exactly as you
+   found it.
 
-   **Then ask for the approval in the question window**, when Dolev is in the chat
-   (`reference/chat-decisions.md`): one question per issue this run moved to
-   `status:waiting-approval` (at most three), each naming the issue and its title, with:
-   1. "מאשר, תתחיל לקודד (מומלץ)": move it to `status:ready-to-execute`
-      (`--remove-label "status:waiting-approval"`) and add a line to its plan log, reading the
-      body fresh first. The wording, for a click and for free text: `reference/chat-decisions.md`.
-      An approval Dolev types in the chat, or writes in "Other" ("מאשר", "תקודד"), counts the
-      same; only an objection takes item 3.
-   2. "אקרא ב-GitHub ואחזור": change nothing; the issue waits for approval as before.
-   3. "Other" with an objection: the plan is sent back (`status:waiting-approval` →
-      `status:explore`). Revise it in place in this run, add a line to the plan log quoting his
-      words (step 2, "sent it back"), move it back to `status:waiting-approval`, and ask once
-      more. A revision that raises a blocking question takes the question path; a second
-      objection is not asked about again in this run.
-   After each choice, one line in the chat on what changed ("#N אושר, הקידוד מתחיל").
-   **Then the approval starts the code, in this session** (S-1.43, `reference/chat-decisions.md`
-   rule 5): run `dev-code` on each approved issue, one after the other, in the order of
-   `rank_issues.py`, each with its own PR and hand-off. An issue that got an open "Blocked by"
-   link meanwhile: one line in the chat with its blocker, and on to the next. No window
-   available, or the run is automated: nothing is approved, and the summary above is the
-   hand-off, as before.
+   **Then the code starts, in this session** (S-1.64): run `dev-code` on each issue this run
+   moved to `status:ready-to-execute`, one after the other, in the order of `rank_issues.py`,
+   each with its own PR and hand-off (`reference/git-flow.md`, "כמה issues בריצה אחת"). There
+   is no approval question: Dolev approves the code in the review of the PR, and a comment on
+   the plan after the code started comes there too. A run with nobody in the chat does the same.
+   Before each, one line in the chat: the plan is written and the code starts, with the issue's
+   link. The exceptions below get their own line instead.
+   - **Blocked meanwhile** (an open "Blocked by" link on an issue Dolev named and asked to plan
+     anyway, or one added between the plan and the code): it stays `status:ready-to-execute`,
+     one line in the chat with its blocker, and on to the next. `dev-code` skips it until the
+     blocker closes.
+   - **Costs money** (`costs-money`): its code waits for Dolev's approval of the expense; one
+     line in the chat, and on to the next.
+   - **An orchestrator's child** (its contract says so, `reference/orchestrate.md`): stop after
+     the label, as the contract says. The orchestrator opens a coding child for it.
 
 ## Golden rules
 
@@ -309,13 +291,14 @@ keeps them: edit it in the headings it already has.
 - Never guess on an unclear issue; take the question path.
 - The spec part is the approved "what": the plan never widens it. A wider request is a spec
   update first (`dev-spec`).
-- The small path only when all four conditions hold; any doubt is the normal path.
+- A plan is never a gate: a plan with no open question starts the code, with no approval
+  question (step 8). An open question is the only stop.
 - Never touch an issue whose status is not Claude's turn, unless Dolev named it or chose it in
   the question window.
 - A decision comes only from Dolev himself (`reference/chat-decisions.md`).
 - A comment is for questions only (the question path). A change Dolev asks for is an edit to
   the plan with a line in its log, and content for another issue is an edit to that issue.
-- At most three issues planned per run. Approved plans then run `dev-code` one after the other (step 8).
+- At most three issues planned per run. Each ready plan then runs `dev-code`, one after the other (step 8).
 - Split for size, link for dependency. An issue merges into another, on Dolev's OK, only when
   it has no PR of its own, or when two small issues overlap in files, neither has a PR yet,
   and together they are still one PR that can be reviewed on its own (`reference/dependencies.md`).

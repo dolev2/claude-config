@@ -39,8 +39,8 @@ def changes(expected, issues, comments=None):
 
 
 def test_status_that_moved_is_reported():
-    lines = changes({184: "explore"}, {184: issue("waiting-approval")})
-    assert lines == ["#184 status explore -> waiting-approval"]
+    lines = changes({184: "explore"}, {184: issue("ready-to-execute")})
+    assert lines == ["#184 status explore -> ready-to-execute"]
 
 
 def test_unchanged_status_and_no_comments_is_quiet():
