@@ -42,7 +42,7 @@ The keys:
                      blockers Dolev paused, so the wait is his
     umbrellas        would be in dispatch, but a sub-issue is still open: the issue
                      and its open sub-issues (#N, or owner/name#N in another repo)
-    waiting_dolev    plan questions, plans to approve, PRs to review
+    waiting_dolev    plan questions and PRs to review
     merge_queue      in review with an open PR: its head, mergeable_state and CI.
                      CI "billing" is a failure GitHub caused by billing (S-1.53).
                      mergeable_state "unknown" means GitHub is still computing it:
