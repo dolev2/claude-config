@@ -279,8 +279,22 @@ keeps them: edit it in the headings it already has.
      blocker closes.
    - **Costs money** (`costs-money`): its code waits for Dolev's approval of the expense; one
      line in the chat, and on to the next.
-   - **An orchestrator's child** (its contract says so, `reference/orchestrate.md`): stop after
-     the label, as the contract says. The orchestrator opens a coding child for it.
+   - **An orchestrator's child** (its contract says so, `reference/orchestrate.md`) goes on to
+     `dev-code` like any run (S-2.17), with no chat line. The exceptions above (blocked,
+     costs money) write their line as a comment on the issue instead, so the orchestrator sees
+     that the child stopped before the code. Before the code, one check of what the
+     orchestrator sees, in the background (`run_in_background`, with a `timeout` of 2400000,
+     40 minutes: the default stops a background command at 30, before `--wait 30` prints):
+     ```bash
+     python "$HOME/.claude/skills/dev-setup/scripts/sprint_state.py" --may-code <N> --wait 30
+     ```
+     Exit 0: `dev-code` on it, skipping its step 1 (the gate was just checked). Exit 1, its JSON
+     says why: `wip.open` false (three or more in review), or `overlaps` still there after 30
+     minutes (the other issues and their files). Then a comment on the issue with that reason,
+     the label stays `status:ready-to-execute`, and the turn ends: the orchestrator asks about
+     the gate in its window, or opens a coding child once the overlap ends. Exit 2 (the issue
+     is not open, bad input): a comment with the error, and the turn ends.
+     Outside an orchestrator nothing changes: `dev-code` checks the gate in its step 1.
 
 ## Golden rules
 

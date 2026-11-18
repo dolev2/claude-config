@@ -40,7 +40,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
    ```
    **Three or more: do not start without asking.** List them for Dolev and ask whether to go
    ahead anyway. Continue only on an explicit yes. The gate (what counts, what is exempt, and
-   why an orchestrator child skips this step): `reference/git-flow.md`.
+   why an orchestrator child skips this step: the orchestrator checked it, or, for a child
+   that planned the issue in this turn, `sprint_state.py --may-code` did, `dev-plan` step 8):
+   `reference/git-flow.md`.
 
 2. Find the work. If Dolev named a specific issue, take that one, even outside the current
    sprint (say so); a named issue labelled `paused` is asked about first (below). Otherwise, **inside the current sprint only**, repair first, then bugs,
