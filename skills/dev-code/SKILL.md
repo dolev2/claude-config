@@ -318,7 +318,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
 
     **Then, when Dolev is in the chat: the follow-up tasks first, then the merge** (S-3.13;
     `reference/chat-decisions.md`). The label is already `status:in-review`, so a run nobody
-    answers stays right.
+    answers stays right. **"Dolev is in the chat" has one test: `AskUserQuestion` is among this
+    session's tools and the follow-up windows were actually shown to him.** A prompt that reads
+    like his is not the test. No such tool, a call to it refused, or an orchestrator's child: no
+    one is in the chat, and the merge never runs (item 4).
     1. **Each follow-up task, one per question window** (`AskUserQuestion`), with the options
        of `reference/follow-ups.md`; each proposal opens with `dev-issue`. After the last one,
        one comment on the issue: each task's kind, what was chosen, and the proposal's link and
@@ -327,8 +330,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
        (`reference/follow-ups.md`), followed by the same one comment, with the proposals that
        opened. An orchestrator's child opens none: they stay in the comment, for the
        orchestrator's window.
-    2. **The merge is not asked in the question window.** When all four conditions of S-3.13
-       hold (the hand-off above is done; CI is green on the last push, or the billing flag is
+    2. **The merge is not asked in the question window.** Only when Dolev is in the chat (the
+       test above) and all four conditions of S-3.13 hold (the hand-off above is done; CI is green on the last push, or the billing flag is
        on or the repo has no CI (`none`) and the local checks of step 7 passed; no unticked box in the open-questions section
        of the issue or the PR; the follow-up tasks were asked), write the message below in the
        chat, then run `dev-ship` on the issue at once. The merge's permission window is the
@@ -338,8 +341,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     3. **The message before the window:** the PR and the issue, the link to the PR's changes,
        the CI state (or "ה-CI לא רץ: החיוב חסום"), and the fixed line
        "החלון שקופץ עכשיו הוא שאלת המיזוג: אישור ממזג, דחייה משאירה בסקירה".
-    4. **When `dev-ship` does not run:** an unticked box (wait for his answer); no question
-       window, or an automated run (nobody answers the window); an orchestrator's child (its
+    4. **When `dev-ship` does not run:** an unticked box (wait for his answer); no
+       `AskUserQuestion` tool, or an automated run (nobody answers the window, and the follow-up
+       tasks were not asked in one, so condition 4 fails); an orchestrator's child (its
        contract forbids a merge; the orchestrator's merge is S-2.18). There the comment and
        chat message above are the hand-off, as before.
     5. **A fix** he asks for in words in the chat: move the issue `status:in-review` →

@@ -171,7 +171,8 @@ every run.
    message, in Hebrew: the link to the PR's changes first, the parts it adds, the open questions
    left, and the next step: he reads the file in the PR and approves the merge's permission
    window, or asks for fixes in words. **The merge is the approval of the "what".**
-   The merge is not asked in the question window (S-3.13). When Dolev is in the chat, CI is
+   The merge is not asked in the question window (S-3.13). When Dolev is in the chat (the test:
+   `AskUserQuestion` is among this session's tools; without it, no merge runs), CI is
    green on the last push (or the billing flag is on, or the repo has no CI, and the local
    checks passed), and no unticked box is left in the PR body's open questions: the chat
    message ends with the PR's number, the CI state (or "ה-CI לא רץ: החיוב חסום") and the fixed
