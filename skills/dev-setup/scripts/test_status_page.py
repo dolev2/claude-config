@@ -100,6 +100,10 @@ def test_every_page_says_how_to_refresh_right_after_the_time_line():
     assert pages[2].index(HOW_TO_REFRESH) < pages[2].index(SESSIONS_NOT_READ)
 
 
+def test_the_refresh_command_keeps_its_slash_in_a_right_to_left_line():
+    assert "<code dir='ltr'>/status</code>" in HOW_TO_REFRESH
+
+
 def test_a_blocker_outside_the_sprint_keeps_its_link():
     blocked = node(2, blocked_by=[(3, "OPEN")])
     outside = node(3, milestone="W2")

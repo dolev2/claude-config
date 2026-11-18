@@ -21,7 +21,8 @@ from status_graph import EMPTY, LABEL_SEPARATOR, NO_SPRINT, TITLE_LIMIT, mermaid
 
 PAGE_TITLE = "גרף החסימות · {name}"
 SESSIONS_NOT_READ = "רשימת הסשנים לא נקראה, ולכן אין קישורי סשן."
-HOW_TO_REFRESH = "כדי לרענן, מריצים <code>/status</code> בסשן של הריפו."
+# dir="ltr" isolates the command: in a right-to-left line the slash jumps to its end.
+HOW_TO_REFRESH = "כדי לרענן, מריצים <code dir='ltr'>/status</code> בסשן של הריפו."
 MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
 # One font for the page and the graph: Mermaid sizes each box by the label it
 # measures, so a label shown in another font is cut at the box edge (#427).
