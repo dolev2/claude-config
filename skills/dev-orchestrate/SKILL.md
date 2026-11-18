@@ -174,8 +174,10 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    in step 4's message, or in a message of its own when step 4 opens nobody: it never works again, since an answer, a send-back or a fix opens a new
    child (`orchestrate.md`, "בן שסיים").
    A child that plans also codes in the same turn (S-2.17): its issue moving to
-   `status:ready-to-execute` with no such comment is the middle of its turn. It is still
-   active (`get_session`), so it is neither archived nor given a coding child.
+   `status:ready-to-execute` with no such comment is the middle of its turn: its code, or its
+   background `sprint_state.py --may-code --wait` (it may show `SESSION_STATUS_IDLE` while it
+   waits). Its issue goes into `--claimed` and the child is neither archived nor given a
+   coding child, until its PR or its comment that it stopped (`orchestrate.md`, "מצב בן").
    A bug, link or split a child wrote in a comment: `orchestrate.md`, "באג, קישור או פיצול שבן מצא".
    An issue a planning child sent to `status:backlog` (no open spec part, `dev-plan` step 2) is
    a line in the summary of step 6, "חזר לבקלוג: אין חלק באפיון". Its milestone stays, so
@@ -188,7 +190,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `dispatch` entry, top down, as `orchestrate.md`, "פתיחת בן" says. `held_by_overlap` waits; say
    on which issue. A spec child (`status: "spec"`, always first, one at a time) opens as
    `reference/orchestrate-spec.md` says: its own branch name and the spec version of the
-   contract's items 1 and 5. It is exempt from the WIP gate, like planning. Any earlier child of the same issue that is not archived gets
+   contract's items 1 and 5. It is exempt from the WIP gate. Any earlier child of the same issue that is not archived gets
    `archive_session` first: one child per issue.
    **The WIP gate is checked here, not in the child** (the gate: `reference/git-flow.md`; `orchestrate.md`, "פתיחת בן"): before
    a coding child for a new issue (`ready-to-execute`; `needs-repair` is exempt, and a child

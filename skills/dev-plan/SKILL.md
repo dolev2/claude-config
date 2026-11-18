@@ -280,8 +280,11 @@ keeps them: edit it in the headings it already has.
    - **Costs money** (`costs-money`): its code waits for Dolev's approval of the expense; one
      line in the chat, and on to the next.
    - **An orchestrator's child** (its contract says so, `reference/orchestrate.md`) goes on to
-     `dev-code` like any run (S-2.17), with no chat line and the exceptions above. Before the
-     code, one check of what the orchestrator sees, in the background (`run_in_background`):
+     `dev-code` like any run (S-2.17), with no chat line. The exceptions above (blocked,
+     costs money) write their line as a comment on the issue instead, so the orchestrator sees
+     that the child stopped before the code. Before the code, one check of what the
+     orchestrator sees, in the background (`run_in_background`, with a `timeout` of 2400000,
+     40 minutes: the default stops a background command at 30, before `--wait 30` prints):
      ```bash
      python "$HOME/.claude/skills/dev-setup/scripts/sprint_state.py" --may-code <N> --wait 30
      ```

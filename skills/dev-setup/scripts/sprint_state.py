@@ -455,7 +455,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit("No open milestone has open issues.")
     base = api(f"repos/{repo}")["default_branch"]
     if args.may_code is not None:
-        print_may_code(repo, base, sprint, args.may_code, args.wait or 0)
+        print_may_code(repo, base, sprint, args.may_code, args.wait or 0, nodes)
     # Read on every run, not only with --spec: a proposal an open part already names
     # is a task to replan, not a spec to write (#334).
     files, unread = specs_or_warning(base)
@@ -479,15 +479,19 @@ def main(argv: list[str] | None = None) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
-def print_may_code(repo: str, base: str, sprint: str, number: int, wait: float) -> None:
+def print_may_code(
+    repo: str, base: str, sprint: str, number: int, wait: float, nodes: list[dict]
+) -> None:
     """--may-code: print the answer and exit 0 (may code) or 1; 2 when #N is not open.
 
-    Each round of --wait reads the issues again: the overlap ends on GitHub.
+    The first round uses `nodes`, already read; each later round of --wait reads the
+    issues again: the overlap ends on GitHub.
     """
+    rounds = iter([nodes])
 
     def check() -> dict:
-        nodes = open_issue_nodes(repo, with_body=True)
-        return may_code(nodes, sprint, number, lambda b: branch_files(repo, base, b))
+        fresh = next(rounds, None) or open_issue_nodes(repo, with_body=True)
+        return may_code(fresh, sprint, number, lambda b: branch_files(repo, base, b))
 
     try:
         result = wait_to_code(check, wait)
