@@ -6,7 +6,7 @@ description: Runs the Execute phase of Dolev's Claude-assisted GitHub pipeline i
 # Execute phase
 
 Part 2 of 2 of Dolev's GitHub × Claude Code pipeline (the other half is `dev-plan`). This
-phase writes actual code, in a worktree, and hands the PR to Dolev. The merge, on his request,
+phase writes actual code, in a worktree, and hands the PR to Dolev. The merge, on his approval,
 is `dev-ship`'s.
 
 ## Step 0: Orient
@@ -300,9 +300,10 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     open in it. After the "סקירת קוד" line, it has the fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
     `תהליך`) and its fields, or "אין משימות המשך" (`reference/follow-ups.md`; a process task
     passes the filter of `reference/process-tasks.md`). Both end with the next step, in one
-    line: to merge, Dolev approves the merge's permission window (S-3.13, below) or says
-    "תמזג את #<N>" in the chat; for a fix, he moves the issue to `status:needs-repair` with a
-    comment.
+    line: to merge, Dolev says "תמזג את #<N>" in the chat (when the run of S-3.13 below follows,
+    the chat message adds that the permission window about to open is the merge question); for a
+    fix, he moves the issue to `status:needs-repair` with a comment. An orchestrator's child
+    writes "המיזוג: בחלון של המתזמר" instead.
 
     **Bring the result to Dolev**, right after the comment, in this order:
     1. **The chat message opens with the link to the PR's changes**,
@@ -321,10 +322,14 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     1. **Each follow-up task, one per question window** (`AskUserQuestion`), with the options
        of `reference/follow-ups.md`; each proposal opens with `dev-issue`. After the last one,
        one comment on the issue: each task's kind, what was chosen, and the proposal's link and
-       repo. After each choice, one line in the chat on what changed.
+       repo. After each choice, one line in the chat on what changed. No window available, or
+       the run is automated: each task opens as a backlog proposal with no sprint
+       (`reference/follow-ups.md`), followed by the same one comment, with the proposals that
+       opened. An orchestrator's child opens none: they stay in the comment, for the
+       orchestrator's window.
     2. **The merge is not asked in the question window.** When all four conditions of S-3.13
        hold (the hand-off above is done; CI is green on the last push, or the billing flag is
-       on and the local checks of step 7 passed; no unticked box in the open-questions section
+       on or the repo has no CI (`none`) and the local checks of step 7 passed; no unticked box in the open-questions section
        of the issue or the PR; the follow-up tasks were asked), write the message below in the
        chat, then run `dev-ship` on the issue at once. The merge's permission window is the
        question: approving it merges, and `dev-ship` stops the app and cleans up the worktree
@@ -340,10 +345,6 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     5. **A fix** he asks for in words in the chat: move the issue `status:in-review` →
        `status:needs-repair`, comment on it with his words quoted, and start the repair round in
        this session (no WIP gate, like every repair).
-    No window available, or the run is automated: each follow-up task opens as a backlog
-    proposal with no sprint (`reference/follow-ups.md`), followed by the same one comment on
-    the issue, with the proposals that opened. An orchestrator's child opens none: they stay
-    in the comment, for the orchestrator's window.
 
 12. **Unless the merge went through, keep the worktree until it**: the review app runs from it.
     If you entered it with

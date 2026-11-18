@@ -1,6 +1,6 @@
 ---
 name: dev-ship
-description: Ships a finished branch in the current repo end to end — commits outstanding work, rebases onto the default branch, runs the test suite, opens a PR, waits for CI, squash-merges it, moves the linked issue to status:done so the board lands it in Done, and cleans up the branch. This is the pipeline's only merge path: an issue in status:in-review merges when Dolev asks for it in the chat ("תמזג את #12"). Use in any of Dolev's repos whenever he asks to ship, merge and clean up, finish or close out a branch, or to merge a specific issue ("תשחרר", "תמזג ותנקה", "תמזג את #N", "ship it"). Works with or without the pipeline labels (without them it skips the issue step). Prefer this over the generic pr-ship skill; if the repo has its own repo-specific ship skill, use that instead.
+description: Ships a finished branch in the current repo end to end — commits outstanding work, rebases onto the default branch, runs the test suite, opens a PR, waits for CI, squash-merges it, moves the linked issue to status:done so the board lands it in Done, and cleans up the branch. This is the pipeline's only merge path: an issue in status:in-review merges when Dolev asks for it in the chat ("תמזג את #12"), or approves the merge's permission prompt when dev-code or dev-spec runs this right after a hand-off. Use in any of Dolev's repos whenever he asks to ship, merge and clean up, finish or close out a branch, or to merge a specific issue ("תשחרר", "תמזג ותנקה", "תמזג את #N", "ship it"). Works with or without the pipeline labels (without them it skips the issue step). Prefer this over the generic pr-ship skill; if the repo has its own repo-specific ship skill, use that instead.
 ---
 
 # Ship a branch
@@ -169,8 +169,9 @@ gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].n
 For each issue, read its "שאלות פתוחות" section (`issue-body.md`). A spec PR (branch
 `claude/spec-*`) also has that section in its own body: read it there too. A box still unticked: list
 it and ask Dolev whether to merge anyway; stop until he answers. In the run of S-3.13 (from
-`dev-code` or `dev-spec`, with no typed request), an unticked box stops with no question: that
-caller already checked it, and this is the safety net. Do not tick boxes on his behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
+`dev-code` or `dev-spec`, with no typed request), an unticked box stops with no question: say
+in one line which box is open and that the PR waits for review, and leave the issue in
+`status:in-review`. That caller already checked it, and this is the safety net. Do not tick boxes on his behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
 this is the last look before the merge.
 
 ## Step 5: Squash-merge

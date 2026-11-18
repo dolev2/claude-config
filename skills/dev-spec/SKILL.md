@@ -172,9 +172,10 @@ every run.
    left, and the next step: he reads the file in the PR and approves the merge's permission
    window, or asks for fixes in words. **The merge is the approval of the "what".**
    The merge is not asked in the question window (S-3.13). When Dolev is in the chat, CI is
-   green on the last push (or the billing flag is on), and no unticked box is left in the PR
-   body's open questions: the chat message ends with the PR's number and the fixed line
-   "החלון שקופץ עכשיו הוא שאלת המיזוג: אישור ממזג, דחייה משאירה בסקירה", then run `dev-ship`
+   green on the last push (or the billing flag is on, or the repo has no CI, and the local
+   checks passed), and no unticked box is left in the PR body's open questions: the chat
+   message ends with the PR's number, the CI state (or "ה-CI לא רץ: החיוב חסום") and the fixed
+   line "החלון שקופץ עכשיו הוא שאלת המיזוג: אישור ממזג, דחייה משאירה בסקירה", then run `dev-ship`
    on the PR at once; its permission window is the question, and declining it leaves the PR
    for review (`dev-ship`, step 5). An unticked box: wait for his answer. No window, an
    automated run, or an orchestrator's child: the message is the hand-off. A fix he asks for in
