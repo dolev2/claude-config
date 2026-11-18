@@ -92,6 +92,22 @@ def test_an_empty_section_passes():
     assert failing(body_with([])) == set()
 
 
+def test_a_section_at_the_end_of_the_body_is_checked_by_its_lines():
+    body = "### Plan\n\n#### בקצרה\n" + "\n".join(GOOD)
+    assert failing(body) == set()
+    assert failing(f"{body}\n- **הבעיה:** greet שבורה.") == {
+        "summary-no-function-names"
+    }
+
+
+def test_a_bold_spec_word_with_no_colon_is_an_ordinary_line():
+    line = "- **אפיון** greet.py"
+    assert failing(body_with([line, *GOOD[1:]])) == {
+        "summary-no-file-names",
+        "summary-no-function-names",
+    }
+
+
 @pytest.mark.parametrize("name", BRIEF)
 def test_the_message_says_where_the_line_is(name):
     """The rule the report prints: the section is missing, or where the line is."""
