@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from status_graph import EMPTY, NO_SPRINT, layout  # noqa: E402
 from status_page import (  # noqa: E402
     FONT,
+    HOW_TO_REFRESH,
     SESSIONS_NOT_READ,
     link_lines,
     page,
@@ -85,6 +86,22 @@ def test_sessions_not_read_says_so():
     text = build([node(1)], None)
     assert SESSIONS_NOT_READ in text
     assert SESSIONS_NOT_READ not in build([node(1)], {})
+
+
+def test_every_page_says_how_to_refresh_right_after_the_time_line():
+    pages = [
+        build([node(1)], {}),
+        page(REPO, None, [], {}, "now"),
+        page(REPO, layout([], [], status_he), [], None, "now"),
+    ]
+    for text in pages:
+        assert text.count(HOW_TO_REFRESH) == 1
+        assert text.index("id='updated'") < text.index(HOW_TO_REFRESH)
+    assert pages[2].index(HOW_TO_REFRESH) < pages[2].index(SESSIONS_NOT_READ)
+
+
+def test_the_refresh_command_keeps_its_slash_in_a_right_to_left_line():
+    assert "<code dir='ltr'>/status</code>" in HOW_TO_REFRESH
 
 
 def test_a_blocker_outside_the_sprint_keeps_its_link():
