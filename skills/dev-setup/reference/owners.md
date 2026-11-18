@@ -22,7 +22,7 @@
 | פקודות הבדיקה של claude-config | `.claude/CLAUDE.md`, "בדיקות" | `README.md` מחזיק עותק מלא בכוונה. בדיקה משווה את שניהם ל-`tests.yml` (`skills/dev-setup/scripts/test_doc_drift.py`) |
 | בדיקה ידנית בדפדפן וצילומי מסך: Edge, Playwright, הרוחבים, הצילומים למסירה | `ux.md` | `~/.claude/rules/code-tests.md`, `tests.md`, `~/.claude/rules/env-windows.md` (רק עובדות Edge), `~/.claude/rules/env-cloud.md`, `dev-code` שלב 10 |
 | פרסום מחדש של עמוד Artifact אחרי מיזוג: קריאה, השוואה, `publish` בלי `icon` ובלי `force`, השלד | `after-merge.md`, "פרסום מחדש של עמוד Artifact" | `.claude/CLAUDE.md` של claude-config (העמודים והקישורים), `~/.claude/rules/erd.md`, `dev-ship` |
-| אות המיזוג: בקשה אחת של דולב בצ'אט, על ה-issue הספציפי | `pipeline.md`, "הכללים שלא משתנים" | `chat-decisions.md` כלל 5, `dev-code`, `dev-ship` |
+| אות המיזוג: בקשה מוקלדת של דולב, או אישור בחלון ההרשאה אחרי מסירה (S-3.13), על ה-issue הספציפי | `pipeline.md`, "הכללים שלא משתנים" | `chat-decisions.md` כלל 5, `dev-code`, `dev-ship`, `dev-spec`, `rules/git.md` |
 | מתי באג חוזר לתכנון מלא: מחיקה, שינוי חוזה או תלות חדשה | `specs.md`, "באג" | `dev-code` צעד 3, `issue-body.md` |
 | issue אחד בכל ריצת קוד, והחריג של כמה משימות שתוכננו באותה ריצה | `git-flow.md`, "כמה issues בריצה אחת" | `dev-code`, `dev-plan` שלב 8, `after-merge.md` |
 | התוכנית היא לא שער: תוכנית בלי שאלה מתחילה קידוד באותו סשן, שאלה פתוחה היא העצירה היחידה, ו-`status:waiting-approval` הישנה נקראת כמוכנה לביצוע (S-1.64) | `pipeline.md`, הפסקה "התוכנית היא לא שער" ואוצר המילים | `dev-plan` שלבים 7–8, `dev-code`, `dev-next` שלב 4, `chat-decisions.md`, `orchestrate.md`, `rank_issues.py` (`LEGACY_READY`), התרשים ושני העמודים |

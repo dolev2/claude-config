@@ -300,8 +300,9 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     open in it. After the "סקירת קוד" line, it has the fixed heading `#### משימות המשך`: one item per task, opening with its kind (`מוצר` or
     `תהליך`) and its fields, or "אין משימות המשך" (`reference/follow-ups.md`; a process task
     passes the filter of `reference/process-tasks.md`). Both end with the next step, in one
-    line: to merge, Dolev says "תמזג את #<N>" in the chat; for a fix, he moves the issue to
-    `status:needs-repair` with a comment.
+    line: to merge, Dolev approves the merge's permission window (S-3.13, below) or says
+    "תמזג את #<N>" in the chat; for a fix, he moves the issue to `status:needs-repair` with a
+    comment.
 
     **Bring the result to Dolev**, right after the comment, in this order:
     1. **The chat message opens with the link to the PR's changes**,
@@ -314,45 +315,60 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     3. **The diff pane:** open it only if the session has a tool for it (`show_pane`); otherwise
        the link above is the way in, with no line about it.
 
-    **Then, when Dolev is in the chat, ask in the question window** (`AskUserQuestion`;
-    `reference/chat-decisions.md`). The label is already `status:in-review`,
-    so a run nobody answers stays right. One question, naming the issue and its title (with
-    the billing flag on, it also carries the CI line above):
-    1. "תמזג את #<N> (מומלץ)": run `dev-ship` on the issue, as if he had typed it. It stops
-       the app and cleans up the worktree and branch, so step 12 does not apply.
-    2. "אסקור ואחזור": change nothing.
-    3. "Other" with what to fix: move the issue `status:in-review` → `status:needs-repair`,
-       comment on it with his words quoted, and start the repair round in this session (no WIP
-       gate, like every repair).
-    The merge question is alone in that call. **Then each follow-up task, one per call**, with
-    the options of `reference/follow-ups.md`; a merge does not cancel them, and each proposal
-    opens with `dev-issue` before `dev-ship` runs. After the last one, one comment on the issue:
-    each task's kind, what was chosen, and the proposal's link and repo.
-    After each choice, one line in the chat on what changed. No window available, or the run is
-    automated: the comment and chat message above are the hand-off, as before, and each
-    follow-up task opens as a backlog proposal with no sprint (`reference/follow-ups.md`),
-    followed by the same one comment on the issue, with the proposals that opened. An
-    orchestrator's child opens none: they stay in the comment, for the orchestrator's window.
+    **Then, when Dolev is in the chat: the follow-up tasks first, then the merge** (S-3.13;
+    `reference/chat-decisions.md`). The label is already `status:in-review`, so a run nobody
+    answers stays right.
+    1. **Each follow-up task, one per question window** (`AskUserQuestion`), with the options
+       of `reference/follow-ups.md`; each proposal opens with `dev-issue`. After the last one,
+       one comment on the issue: each task's kind, what was chosen, and the proposal's link and
+       repo. After each choice, one line in the chat on what changed.
+    2. **The merge is not asked in the question window.** When all four conditions of S-3.13
+       hold (the hand-off above is done; CI is green on the last push, or the billing flag is
+       on and the local checks of step 7 passed; no unticked box in the open-questions section
+       of the issue or the PR; the follow-up tasks were asked), write the message below in the
+       chat, then run `dev-ship` on the issue at once. The merge's permission window is the
+       question: approving it merges, and `dev-ship` stops the app and cleans up the worktree
+       and branch, so step 12 does not apply. Declining it leaves the issue in `status:in-review`
+       (`dev-ship`, step 5).
+    3. **The message before the window:** the PR and the issue, the link to the PR's changes,
+       the CI state (or "ה-CI לא רץ: החיוב חסום"), and the fixed line
+       "החלון שקופץ עכשיו הוא שאלת המיזוג: אישור ממזג, דחייה משאירה בסקירה".
+    4. **When `dev-ship` does not run:** an unticked box (wait for his answer); no question
+       window, or an automated run (nobody answers the window); an orchestrator's child (its
+       contract forbids a merge; the orchestrator's merge is S-2.18). There the comment and
+       chat message above are the hand-off, as before.
+    5. **A fix** he asks for in words in the chat: move the issue `status:in-review` →
+       `status:needs-repair`, comment on it with his words quoted, and start the repair round in
+       this session (no WIP gate, like every repair).
+    No window available, or the run is automated: each follow-up task opens as a backlog
+    proposal with no sprint (`reference/follow-ups.md`), followed by the same one comment on
+    the issue, with the proposals that opened. An orchestrator's child opens none: they stay
+    in the comment, for the orchestrator's window.
 
-12. **Unless he chose the merge, keep the worktree until it**: the review app runs from it.
+12. **Unless the merge went through, keep the worktree until it**: the review app runs from it.
     If you entered it with
     `EnterWorktree`, leave it with `ExitWorktree` and keep it. The branch stays on the remote.
 
 ## After the hand-off: the merge is dev-ship's
 
 The issue stays in `status:in-review` while Dolev reviews the PR. **The merge signal is his
-request in the chat** ("תמזג את #N"), typed or chosen in the question window of step 11 (the
-rule: `reference/pipeline.md`; what counts as his decision: `reference/chat-decisions.md`).
+request in the chat** ("תמזג את #N", typed), **or his approval in the merge's permission window**
+after the run of S-3.13 in step 11 (the rule: `reference/pipeline.md`; what counts as his
+decision: `reference/chat-decisions.md`).
 On that request, run **`dev-ship`** on the issue: it finds the issue's open PR, checks the open questions, rebases, tests, waits for CI, merges,
 moves the issue to `status:done` and cleans up. This skill does not merge.
 
+**After he declined the window**, do not run the same merge again on your own: it comes up
+again only after a new hand-off of that PR (a repair round), or on his typed request.
+
 A fix he asks for instead goes the other way: he moves the issue to `status:needs-repair`, and
-the next run of this skill takes it as a repair round. A fix he writes in the question window
-of step 11 does the same in this session.
+the next run of this skill takes it as a repair round. A fix he writes in the chat after the
+hand-off of step 11 does the same in this session.
 
 ## Golden rules
 
-- Never merge here; the merge is `dev-ship`'s, on Dolev's explicit request for that issue.
+- Never merge here; the merge is `dev-ship`'s, on Dolev's typed request for that issue or his
+  approval in the permission window after the run of S-3.13 (step 11).
 - Never switch branches in the shared working copy; code is written in a worktree (in a
   cloud session, in its own clone).
 - Never start an issue without reading its sub-issues.
@@ -362,7 +378,7 @@ of step 11 does the same in this session.
   `status:plan-questions` (Dolev's turn; his answer sends it back to `status:explore` for a
   plan update), and flag it in the summary.
 - Never touch an issue whose status is not Claude's turn (`ready-to-execute`,
-  `needs-repair`, and the old `waiting-approval`, read as ready), except for what Dolev chose in the question window of step 11.
+  `needs-repair`, and the old `waiting-approval`, read as ready), except for what Dolev chose or asked for after the hand-off of step 11.
 - One issue per run, and the WIP gate before a new one (`reference/git-flow.md`). The
   issues one `dev-plan` run planned are several runs in one session, one after the other (the
   exception there).

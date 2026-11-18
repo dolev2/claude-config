@@ -238,7 +238,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <line x1="602" y1="151" x2="646" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="650" y="120" width="160" height="62" rx="8" class="n-human"/>
       <text x="730" y="146" text-anchor="middle" class="m">in-review</text>
-      <text x="730" y="166" text-anchor="middle" class="s">דולב סוקר, ומבקש מיזוג</text>
+      <text x="730" y="166" text-anchor="middle" class="s">דולב סוקר, ומאשר בחלון</text>
 
       <line x1="812" y1="151" x2="856" y2="151" class="edge" marker-end="url(#ah)"/>
       <rect x="860" y="120" width="160" height="62" rx="8" class="n-claude"/>
@@ -432,7 +432,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <li><span class="num">6</span><div><b>עדכון מול main, לפני הבדיקות</b>הפעם מורידים את main, לא את ה-branch של ה-issue:<br><code>git fetch origin main</code><br><code>git rebase origin/main</code><br>ה-commits נבנים מחדש על main העדכני, עם מזהה חדש.<br>התנגשות: <code>git rebase --abort</code>, תגובה ב-issue, ואין PR.</div></li>
     <li><span class="num">7</span><div><b>בדיקה מלאה, push ראשון ו-PR</b>lint ואז כל החבילות, פעם אחת, במקביל.<br>push רגיל מספיק: ב-GitHub עוד אין commits לדרוס.<br><code>gh pr create</code> עם <code>Closes #42</code>, ואז CI, סוכן סקירה ואפליקציית סקירה, ובה בדיקת חוויית משתמש.<br>ל-CI מחכים ב-<code>wait_ci.py</code> ברקע. CI אדום: תיקון וחזרה להמתנה. ‏PR אדום לא נמסר.<br>CI שנכשל בהודעת החיוב של GitHub מדליק את דגל החיוב (<code>billing</code>), ולא מתקנים בדיקה.<br>כשהדגל דולק (<code>billing-flag</code>), לא מחכים ל-CI: המסירה נשענת על הבדיקות המקומיות, והערת המסירה אומרת שה-CI לא רץ כי החיוב חסום.<br><code>Closes #42</code> רק מקשר את ה-PR ל-issue. ה-issue נסגר לבד רק כשה-PR ממוזג, בשלב 9.</div></li>
     <li><span class="num">8</span><div><b>סבב תיקון, אם צריך</b>באותו worktree, ושוב rebase.<br>ה-rebase בנה מחדש commits שכבר ב-GitHub, ולכן צריך כוח:<br><code>git push --force-with-lease</code><br>הוא מסרב אם מישהו אחר דחף בינתיים, למשל עריכה בממשק של GitHub.</div></li>
-    <li><span class="num">9</span><div><b>squash merge, רק כשדולב מבקש בצ'אט</b><code>gh pr checks --watch --fail-fast</code><br><code>gh pr merge --squash</code><br>בסשן ענן: כלי ה-MCP של GitHub, <code>merge_pull_request</code>.<br>בקשה של דולב בהודעה האחרונה שלו ("תמזג את #N") עוברת בלי חלון נוסף. בלי בקשה כזו, חלון אישור קופץ, בכל דרך.<br>ה-branch ב-GitHub נמחק לבד, בהגדרה Automatically delete head branches של הריפו.</div></li>
+    <li><span class="num">9</span><div><b>squash merge, רק באישור של דולב</b><code>gh pr checks --watch --fail-fast</code><br><code>gh pr merge --squash</code><br>בסשן ענן: כלי ה-MCP של GitHub, <code>merge_pull_request</code>.<br>בקשה של דולב בהודעה האחרונה שלו ("תמזג את #N") עוברת בלי חלון נוסף. בלי בקשה כזו, חלון אישור קופץ, בכל דרך.<br>אחרי מסירה עם CI ירוק, Claude מריץ את המיזוג בלי לשאול, וחלון האישור הוא השאלה. דחייה: ה-PR נשאר בסקירה.<br>ה-branch ב-GitHub נמחק לבד, בהגדרה Automatically delete head branches של הריפו.</div></li>
     <li><span class="num">10</span><div><b>ניקוי במחשב</b>עוצרים את אפליקציית הסקירה, ואז <code>git worktree remove</code>.<br><code>git fetch --prune</code>, ו-<code>git pull --ff-only</code> בתיקייה הראשית, רק כשהיא על main ונקייה. ואז מוחקים את ה-branch המקומי.<br>בסשן ענן אין worktree להסיר: <code>git checkout --detach origin/main</code>, ומחיקת ה-branch המקומי.</div></li>
   </ol>
 </section>
@@ -584,13 +584,15 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <p>נדרש תיקון:</p>
         <div class="flowline"><span class="label c">needs-repair</span></div>
-        <p>תקין: נשאר ב-<code>in-review</code>, ודולב מבקש בצ'אט "תמזג את #N".</p>
+        <p>תקין: דולב מאשר את חלון ההרשאה של המיזוג, או מבקש בצ'אט "תמזג את #N".</p>
+        <p>דחייה בחלון: נשאר ב-<code>in-review</code>, והמיזוג לא חוזר מעצמו.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">סקיל</span>
         <p>דולב בודק את ה-PR ואת האפליקציה שרצה מה-worktree.</p>
         <p>תיקון חוזר ל-dev-code, ופטור משער ה-3.</p>
-        <p>בסוף המסירה, dev-code שואל בחלון השאלות: "תמזג את #N", "אסקור ואחזור", או מה לתקן במלל חופשי. תיקון שנכתב בחלון מעביר ל-<code>needs-repair</code>, וסבב התיקון מתחיל באותו סשן.</p>
-        <p>אין Approve: GitHub לא מאפשר אותו ל-PR שנפתח מהחשבון של דולב. הבקשה בצ'אט היא האישור.</p>
+        <p>בסוף המסירה, dev-code שואל קודם על משימות ההמשך, אחת בכל חלון. אחר כך, כשה-CI ירוק ואין תיבה לא מסומנת, הוא כותב בצ'אט שהחלון שקופץ הוא שאלת המיזוג, ומריץ את <code>dev-ship</code>. בלי אדם בצ'אט אין מיזוג.</p>
+        <p>תיקון דולב מבקש במילים בצ'אט: עובר ל-<code>needs-repair</code>, וסבב התיקון מתחיל באותו סשן.</p>
+        <p>אין Approve: GitHub לא מאפשר אותו ל-PR שנפתח מהחשבון של דולב. האישור בחלון, או הבקשה בצ'אט, הם האישור.</p>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
         <p>תיקון נכתב באותו worktree.</p>
@@ -601,7 +603,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
   </article>
 
   <article class="stage">
-    <div class="stage-head"><span class="idx">שלב 8</span><h3>מיזוג וסגירה</h3><span class="who claude">Claude, כשדולב מבקש</span></div>
+    <div class="stage-head"><span class="idx">שלב 8</span><h3>מיזוג וסגירה</h3><span class="who claude">Claude, באישור של דולב</span></div>
     <div class="lanes">
       <div class="lane-cell"><span class="eyebrow">תוויות</span>
         <div class="flowline"><span class="label h">in-review</span><span class="arrow">→</span><span class="label c">done</span></div>
@@ -613,7 +615,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
         <ul><li>בודק את השאלות הפתוחות לפני המיזוג.</li><li>בסוף: הצעה לסשן חדש עם המשימה הבאה.</li><li>משימות תהליך ממה שקרה במיזוג (rebase שהתנגש, CI שנפל, ניקוי שנכשל), בלי מגבלה, אחת בכל חלון, באותם כללים כמו בקוד. גם כשהריצה נעצרה בגללם: אז הן באות בדיווח על העצירה.</li><li>אחרי מיזוג של אפיון (<code>claude/spec-*</code>): במקום זה, רשימה אחת בחלון השאלות: הפירוק של החלקים החדשים, והעדכון של ה-issues של חלקים שהשתנו או נמחקו. מבצע <code>dev-issue</code>, אחרי האישור.</li></ul>
       </div>
       <div class="lane-cell"><span class="eyebrow">git</span>
-        <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI. כשדגל החיוב דולק לא מחכים, ושאלת המיזוג אומרת "ה-CI לא רץ: החיוב חסום".</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch המקומי.</li><li>ה-branch ב-GitHub נמחק בהגדרה Automatically delete head branches. כבויה: מציעים <code>gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true</code>, וב-403 נותנים לדולב את דף ההגדרות (בענן לא נבדק, #251).</li></ul>
+        <ul><li>rebase על ה-branch הראשי, ואז הבדיקות.</li><li>push, ואז פותחים PR או משתמשים בפתוח.</li><li>מחכים ל-CI. כשדגל החיוב דולק לא מחכים, וההודעה שלפני חלון המיזוג אומרת "ה-CI לא רץ: החיוב חסום".</li><li>לא MERGEABLE: חוזרים ל-rebase.</li><li>squash merge.</li><li>ניקוי: האפליקציה, ה-worktree, ה-branch המקומי.</li><li>ה-branch ב-GitHub נמחק בהגדרה Automatically delete head branches. כבויה: מציעים <code>gh api -X PATCH repos/{owner}/{repo} -F delete_branch_on_merge=true</code>, וב-403 נותנים לדולב את דף ההגדרות (בענן לא נבדק, #251).</li></ul>
         <span class="owner">הכלל המלא: <code>git-flow.md</code>, "מוסכמת branches ו-PR"</span>
       </div>
     </div>
@@ -633,7 +635,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
       <tr><td>אפיון (<code>dev-spec</code>)</td><td>כן</td><td>כן</td><td>PR כמו כל PR. רץ כשדולב מבקש, או מבן של המתזמר להצעה בבקלוג ששויכה ל-milestone של הספרינט.</td></tr>
       <tr><td>ביצוע (<code>dev-code</code>)</td><td>ב-worktree</td><td>בלי worktree</td><td>ה-branch של המשימה ב-clone של הסשן. השם, <code>&lt;repo&gt;: &lt;branch&gt;</code>, נקבע ב-<code>set_session_title</code>, ו-CI מעיר את הסשן דרך <code>wait_ci.py</code> ברקע. אירועי PR (<code>subscribe_pr_activity</code>) רק לסשן שממזג.</td></tr>
       <tr><td>אפליקציה לסקירה ובדיקת חוויית משתמש</td><td>קישור localhost ודפדפן מובנה</td><td>בתוך הסשן</td><td>צילומי מסך ב-Playwright, ברוחב 1280 ו-375. פקודה של Windows בלבד: הבדיקה נשארת למחשב.</td></tr>
-      <tr><td>מיזוג (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>כלי ה-MCP של GitHub</td><td>בלי חלון כשדולב ביקש בהודעה האחרונה, וחלון אישור בלי בקשה, בשתי הסביבות. בניקוי: <code>git checkout --detach origin/main</code>.</td></tr>
+      <tr><td>מיזוג (<code>dev-ship</code>)</td><td><code>gh pr merge</code></td><td>כלי ה-MCP של GitHub</td><td>בלי חלון כשדולב ביקש בהודעה האחרונה, וחלון אישור בלי בקשה, בשתי הסביבות. אחרי מסירה, החלון הוא שאלת המיזוג. בניקוי: <code>git checkout --detach origin/main</code>.</td></tr>
       <tr><td>המתזמר (<code>dev-orchestrate</code>)</td><td>לא</td><td>כן</td><td>סשנים-בנים במקביל, ומעקב ב-GitHub: בדיקה ברקע של ה-issues שלהם, אירועי PR ובדיקת גיבוי. הסעיף הבא.</td></tr>
       <tr><td>פרסום העמוד הזה</td><td>כן</td><td>כשכלי Artifact זמין</td><td>לא זמין: מדווחים לדולב שהפרסום מחכה.</td></tr>
       <tr><td>הלוח והקמת הצינור (<code>dev-setup</code>)</td><td>כן</td><td>לא</td><td>חסומים גם ב-REST (claude-config #140).</td></tr>
@@ -684,7 +686,7 @@ a:focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
     <div class="rule"><h3>rebase לפני הבדיקות</h3><p>קודם rebase, ואז הבדיקות.</p><p>כך נתפסת התנגשות סמויה: שני שינויים תקינים ששוברים יחד.</p><span class="enf">נוהל</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
     <div class="rule"><h3>rebase, לא merge</h3><p>ההיסטוריה לינארית.</p><p>כל PR נסגר ב-squash.</p><span class="enf">נוהל</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
     <div class="rule"><h3>רק force-with-lease</h3><p><code>--force</code> דורס בשקט commits של אחרים.</p><span class="enf hook">נאכף: block_force_push.py</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
-    <div class="rule"><h3>merge רק באישור</h3><p>הבקשה של דולב בצ'אט, עם המספר, היא האישור, ועוברת בלי חלון נוסף. בלי בקשה, חלון אישור קופץ לפני כל מיזוג: <code>gh pr merge</code>, <code>gh api</code> או כלי ה-MCP.</p><p>דולב דחה: עוצרים, ולא עוקפים.</p><span class="enf hook">נאכף: hook שקורא את ההודעה האחרונה</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
+    <div class="rule"><h3>merge רק באישור</h3><p>הבקשה של דולב בצ'אט, עם המספר, היא האישור, ועוברת בלי חלון נוסף. בלי בקשה, חלון אישור קופץ לפני כל מיזוג: <code>gh pr merge</code>, <code>gh api</code> או כלי ה-MCP.</p><p>אחרי מסירה עם CI ירוק, Claude מריץ את המיזוג בלי לשאול, והחלון הוא השאלה.</p><p>דולב דחה: עוצרים, ולא עוקפים, ולא מריצים שוב מעצמנו.</p><span class="enf hook">נאכף: hook שקורא את ההודעה האחרונה</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
     <div class="rule"><h3>אחרי מיזוג: הצעה ל-<code>/compact</code></h3><p>ההודעה האחרונה של התור נגמרת ב"מה פתוח" עם בלוק <code>/compact</code> מלא.</p><p>שכח: עוד הודעה אחת עם הבלוק. ההחלטה לדחוס נשארת של דולב.</p><span class="enf hook">נאכף: compact_after_merge.py</span><span class="owner">הכלל המלא: <code>CLAUDE.md</code>, "סוף כל תשובה"</span></div>
     <div class="rule"><h3>התנגשות היא עצירה</h3><p><code>git rebase --abort</code>, ודיווח על הקבצים.</p><p>לא פותרים בלקיחת צד אחד.</p><span class="enf">נוהל</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "לפני push או PR"</span></div>
     <div class="rule"><h3>לא מחליפים branch בתיקייה הראשית</h3><p>סשן אחר או דולב עובדים בה.</p><p>עובדים ב-worktree.</p><span class="enf hook">נאכף ב-~/.claude: guard_main_folder.py</span><span class="owner">הכלל המלא: <code>rules/git.md</code>, "התיקייה המשותפת"</span></div>
