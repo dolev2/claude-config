@@ -160,6 +160,8 @@ def issue_update(state: State, number: int, method: str, body: dict) -> dict:
     if "labels" in body:
         issue["labels"] = []
         state.add_labels(number, list(body["labels"]))
+    if "milestone" in body:
+        state.set_milestone(number, milestone_title(state, body["milestone"]))
     return issue_rest(state, number)
 
 
@@ -300,20 +302,24 @@ def issues_route(state: State, method: str, body: dict, query: dict) -> object:
     """GET issues lists them; POST opens one (the milestone by its number)."""
     if method != "POST":
         return read_only(method, lambda: issues_list(state, query))
-    milestone = body.get("milestone")
-    if milestone is not None:
-        titles = state.milestone_titles()
-        index = int(milestone) - 1 if str(milestone).isdigit() else -1
-        if not 0 <= index < len(titles):
-            raise GhError("gh: Validation Failed: milestone (HTTP 422)")
-        milestone = titles[index]
     number = state.create_issue(
         title=str(body.get("title", "")),
         body=str(body.get("body", "")),
         labels=[str(x) for x in body.get("labels", [])],
-        milestone=milestone,
+        milestone=milestone_title(state, body.get("milestone")),
     )
     return issue_rest(state, number)
+
+
+def milestone_title(state: State, number: object) -> str | None:
+    """The title of milestone N, as REST takes it; None clears, unknown is 422."""
+    if number is None:
+        return None
+    titles = state.milestone_titles()
+    index = int(str(number)) - 1 if str(number).isdigit() else -1
+    if not 0 <= index < len(titles):
+        raise GhError("gh: Validation Failed: milestone (HTTP 422)")
+    return titles[index]
 
 
 def milestones(state: State) -> list[dict]:

@@ -161,6 +161,11 @@ def issue_command(sub: str, args: list[str], state: State) -> str:
             state.add_labels(number, label.split(","))
         for label in take(args, "--remove-label", many=True) or []:
             state.remove_labels(number, label.split(","))
+        milestone = take(args, "--milestone") or take(args, "-m")
+        if milestone is not None:
+            state.set_milestone(number, milestone)
+        if has(args, "--remove-milestone"):
+            state.set_milestone(number, None)
         body = body_arg(args)
         if body is not None:
             state.set_body(number, body)

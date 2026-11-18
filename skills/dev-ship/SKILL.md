@@ -322,8 +322,9 @@ update: `dev-setup` moves the `אפיון:` lines itself.
    own in the same call (up to three, after the list question: the window takes four), naming the issue: "להשאיר בקוד, ולהוסיף תגובה על
    השינוי (מומלץ)", "להחזיר לתכנון", and "Other". More than three: the rest are asked in
    the next window, and stay untouched until then.
-4. **`no spec changes`, or only new parts that already have an issue, and nothing to update:**
-   the offer below, as for any merge.
+4. **Nothing to update** (`no spec changes`, only new parts, or only new parts that already
+   have an issue): the offer below, as for any merge, after the breakdown's report when item 1
+   ran.
 
 Otherwise, follow `reference/after-merge.md`: pick the next issue the way `dev-next` does, without routing it,
 and offer it as a session card whose opening prompt is `תחקור את #<N>` or `תקודד את #<N>`.

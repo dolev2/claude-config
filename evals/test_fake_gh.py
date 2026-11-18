@@ -435,3 +435,54 @@ def test_rest_patch_closes_the_issue(folder, capsys):
     code, _, _ = gh(capsys, "api", "-X", "PATCH", path, *argv)
     assert code == 0
     assert (folder / "issues" / "11.state").read_text() == "closed\n"
+
+
+@pytest.mark.parametrize(
+    ("fields", "message"),
+    [
+        (["-F", "milestone=9"], "422"),
+        (["-f", "labels[]=no-such"], "no-such"),
+    ],
+)
+def test_rest_issue_create_fails_like_github(folder, capsys, fields, message):
+    path = "repos/acme/demo/issues"
+    code, _, err = gh(capsys, "api", "-X", "POST", path, "-f", "title=x", *fields)
+    assert code == 1
+    assert message in err
+    assert not (folder / "issues" / "14.labels").exists()
+
+
+def test_rest_milestone_without_title_fails(folder, capsys):
+    path = "repos/acme/demo/milestones"
+    code, _, err = gh(capsys, "api", "-X", "POST", path, "-f", "title=")
+    assert code == 1
+    assert "422" in err
+
+
+def test_issue_edit_sets_and_removes_the_milestone(folder, capsys):
+    assert gh(capsys, "issue", "edit", "11", "--milestone", "Sprint 1")[0] == 0
+    assert (folder / "issues" / "11.milestone").read_text("utf-8") == "Sprint 1\n"
+    assert gh(capsys, "issue", "edit", "11", "--remove-milestone")[0] == 0
+    assert (folder / "issues" / "11.milestone").read_text("utf-8") == "\n"
+    code, _, err = gh(capsys, "issue", "edit", "11", "--milestone", "Nope")
+    assert code == 1
+    assert "milestone" in err
+
+
+def test_rest_patch_sets_the_milestone_by_number(folder, capsys):
+    path = "repos/acme/demo/issues/11"
+    code, out, _ = gh(
+        capsys,
+        "api",
+        "-X",
+        "PATCH",
+        path,
+        "-F",
+        "milestone=1",
+        "--jq",
+        ".milestone.title",
+    )
+    assert (code, out) == (0, "Sprint 1\n")
+    code, _, err = gh(capsys, "api", "-X", "PATCH", path, "-F", "milestone=7")
+    assert code == 1
+    assert "422" in err

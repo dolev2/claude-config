@@ -260,6 +260,12 @@ class State:
         if other not in linked:
             linked.append(other)
 
+    def set_milestone(self, number: int, title: str | None) -> None:
+        """Set or clear an issue's milestone; an unknown title fails, as on GitHub."""
+        if title and title not in self.milestone_titles():
+            raise GhError(f"could not add to milestone '{title}': not found")
+        self.issue(number)["milestone"] = title or None
+
     def set_body(self, number: int, body: str) -> None:
         self.issue(number)["body"] = body
 

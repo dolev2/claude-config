@@ -207,6 +207,11 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    אישור בסשן-בן"): open the children of one check, and archive the ones step 3 verified as done,
    in one message, and say before it how many prompts are coming and that they are permission
    prompts, not questions.
+   **A breakdown** (`proposals`, stage `breakdown`: its spec PR merged and the proposal is still
+   open, say because `dev-ship` stopped before the breakdown): `dev-issue` breaks the spec down
+   in this check, with no question ("פירוק אפיון", S-1.66), the new tasks in the proposal's
+   milestone, and closes the proposal; one line in step 6's summary with the links. A split a
+   child proposed opens the same way (`orchestrate.md`, "באג, קישור או פיצול שבן מצא").
 5. **Dolev's window.** Everything that waits for him goes into one `AskUserQuestion` call, up to 4
    questions, most important first (`chat-decisions.md`):
    1. a plan's open questions: the questions themselves. A spec PR's open questions
@@ -222,7 +227,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       breakdown with no question (S-1.66);
    3. a proposal in stage `replan`: it is the task of the parts in `parts`, never a
       breakdown, so "להחזיר לתכנון (מומלץ)" first, then "להוריד מהספרינט" (#334). A proposal
-      in stage `breakdown` is not a question (S-1.66): see "A breakdown" below;
+      in stage `breakdown` is not a question (S-1.66): step 4 breaks it down;
    4. the coding children held by the WIP gate (step 4): one question, the issues in
       `status:in-review`, and which held issues to open anyway (`multiSelect`, one option
       per issue), with "wait" first;
@@ -247,13 +252,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    The label moves first, the question after (`chat-decisions.md`, rule 2). Every comment the
    orchestrator writes in an issue, here or anywhere else, opens with the hidden marker
    `<!-- orchestrator -->` on its own line, so it does not wake the watch (`orchestrate.md`,
-   "איך המתזמר יודע שבן התקדם").
-   **A breakdown** (`proposals`, stage `breakdown`: its spec PR merged and the proposal is still
-   open, say because `dev-ship` stopped before the breakdown): `dev-issue` breaks the spec down
-   in this check, with no question ("פירוק אפיון", S-1.66), the new tasks in the proposal's
-   milestone, and closes the proposal; one line in step 6's summary with the links. A split a
-   child proposed opens the same way (`orchestrate.md`, "באג, קישור או פיצול שבן מצא").
-   After his choice:
+   "איך המתזמר יודע שבן התקדם"). After his choice:
    An answer to a plan's question: `status:explore`, his words quoted in a comment, and a new
    child that updates the plan and goes on to code in the same turn (S-2.17). An answer to a spec PR's question: its box is ticked with the decision in
    the PR body, his words go in a comment on the issue, and a new spec child opens in this

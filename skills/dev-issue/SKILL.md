@@ -153,7 +153,8 @@ gh issue create --title "<title>" --body-file <file> \
 ```
 
 The milestone is Dolev's call: use, in this order, the one he named, the one the parent
-carries, or the proposal's (a breakdown from the orchestrator). A bug or a `process` issue goes
+carries, or the proposal's, when the breakdown has a proposal with a milestone (from the
+orchestrator, or after any spec merge). A bug or a `process` issue goes
 into `current_sprint`, without asking (the sprint rule: `reference/pipeline.md`).
 **No source, in a list that opens with no question** (step 1, item 1; S-1.66, "מה נפתח" 5):
 an issue never opens without a milestone.
@@ -163,10 +164,10 @@ an issue never opens without a milestone.
 2. None fits: open one named for the topic, in English, since milestone titles are
    (`reference/pipeline.md`, "ספרינטים"):
    `gh api -X POST repos/{owner}/{repo}/milestones -f title="<topic>"`.
-   A new milestone gets a high number, so it does not become the current sprint.
-3. The report of step 5 says which milestone each issue went into, that a milestone was opened,
-   and, when the chosen one is numbered below the current sprint, that it becomes the current
-   sprint.
+3. The report of step 5 says which milestone each issue went into, and that a milestone was
+   opened. Then `pipeline_info.py` again: when its `current_sprint` is now the chosen milestone
+   (it is numbered below the old one, or no lower milestone still has an open issue), the
+   report says it became the current sprint.
 In a list that agrees first (step 1, item 2), a missing milestone is part of the question. If the repo numbers its tasks in titles, sub-issues continue the
 parent's numbering (`13א.`, `13ב.`), so the board reads in order.
 
@@ -234,8 +235,8 @@ into issues. It opens with no question (step 1, item 1). The rules: `reference/s
    ```
    The rows in state "אין issue" are the parts to open.
 2. **Open them, with no list to approve first:** one issue per part, the title is the part's
-   name. The milestone as step 3: the one Dolev named, or, in a breakdown run from the
-   orchestrator (S-2.14), the proposal's, which he already chose (`reference/pipeline.md`,
+   name. The milestone as step 3: the one Dolev named, or the proposal's, which he already
+   chose (S-2.14, from the orchestrator; or a proposal that carries one) (`reference/pipeline.md`,
    "ספרינטים"); otherwise one that fits the topic, or a new one named for it. A blocker comes
    **only** from a dependency written in the spec ("תלוי ב-S-1.2": blocked by the issue of
    S-1.2, new or existing). **A dependency that seems missing** is never a guessed link: the
@@ -290,5 +291,5 @@ Only after Dolev approved the list in `dev-ship` step 8, and only on that list. 
 - In a breakdown, a link comes only from a dependency written in the spec; never guess one.
 - A task opens only with an `אפיון:` line to an open part; without one, it is a backlog idea.
 - Never assign a milestone on your own judgement, except `current_sprint` for a bug or a
-  `process` issue, the proposal's milestone in a breakdown run from the orchestrator, and a
+  `process` issue, the proposal's milestone in a breakdown, and a
   milestone with no source in a list that opens with no question (step 3).
