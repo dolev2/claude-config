@@ -1,6 +1,6 @@
 ---
 name: dev-ship
-description: Ships a finished branch in the current repo end to end — commits outstanding work, rebases onto the default branch, runs the test suite, opens a PR, waits for CI, squash-merges it, moves the linked issue to status:done so the board lands it in Done, and cleans up the branch. This is the pipeline's only merge path: an issue in status:in-review merges when Dolev asks for it in the chat ("תמזג את #12"). Use in any of Dolev's repos whenever he asks to ship, merge and clean up, finish or close out a branch, or to merge a specific issue ("תשחרר", "תמזג ותנקה", "תמזג את #N", "ship it"). Works with or without the pipeline labels (without them it skips the issue step). Prefer this over the generic pr-ship skill; if the repo has its own repo-specific ship skill, use that instead.
+description: Ships a finished branch in the current repo end to end — commits outstanding work, rebases onto the default branch, runs the test suite, opens a PR, waits for CI, squash-merges it, moves the linked issue to status:done so the board lands it in Done, and cleans up the branch. This is the pipeline's only merge path: an issue in status:in-review merges when Dolev asks for it in the chat ("תמזג את #12"), or approves the merge's permission prompt when dev-code or dev-spec runs this right after a hand-off. Use in any of Dolev's repos whenever he asks to ship, merge and clean up, finish or close out a branch, or to merge a specific issue ("תשחרר", "תמזג ותנקה", "תמזג את #N", "ship it"). Works with or without the pipeline labels (without them it skips the issue step). Prefer this over the generic pr-ship skill; if the repo has its own repo-specific ship skill, use that instead.
 ---
 
 # Ship a branch
@@ -30,10 +30,13 @@ Read in `$HOME/.claude/skills/dev-setup/reference/`: `tests.md`, `git-flow.md` a
 ## Relationship to dev-code
 
 This skill is the **only merge path**. `dev-code` opens the PR and leaves the issue in
-`status:in-review`; Dolev reviews it and asks for the merge in the chat ("תמזג את #N"), or
-chooses it in the question window. That request *is* the go-ahead, so no second confirmation
-is needed (the merge signal: `reference/pipeline.md`; what counts as his decision:
-`reference/chat-decisions.md`). Never ship an issue Dolev has not asked about.
+`status:in-review`; Dolev reviews it and asks for the merge in the chat ("תמזג את #N"). That
+request *is* the go-ahead, so no second confirmation is needed (the merge signal:
+`reference/pipeline.md`; what counts as his decision: `reference/chat-decisions.md`).
+Never ship an issue Dolev has not asked about. The one exception is the run of S-3.13: `dev-code`
+(step 11) or `dev-spec` (step 9) runs this skill right after a hand-off in the same session,
+with Dolev in the chat, and the merge's permission window is the question (step 5). A question
+like "#12 מוכן?" still runs no merge.
 `status:done` is set here, after the merge, and means "merged", never "approved".
 
 ## Step 0b: Entry from an issue (pipeline repos only)
@@ -165,8 +168,10 @@ gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].n
 
 For each issue, read its "שאלות פתוחות" section (`issue-body.md`). A spec PR (branch
 `claude/spec-*`) also has that section in its own body: read it there too. A box still unticked: list
-it and ask Dolev whether to merge anyway; stop until he answers. Do not tick boxes on his
-behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
+it and ask Dolev whether to merge anyway; stop until he answers. In the run of S-3.13 (from
+`dev-code` or `dev-spec`, with no typed request), an unticked box stops with no question: say
+in one line which box is open and that the PR waits for review, and leave the issue in
+`status:in-review`. That caller already checked it, and this is the safety net. Do not tick boxes on his behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
 this is the last look before the merge.
 
 ## Step 5: Squash-merge
@@ -199,11 +204,13 @@ In a cloud session `gh pr merge` does not run (`reference/cloud.md`). Merge with
 that steps 3–4b checked, and no `commit_title` (a hook blocks it, like `--subject`).
 
 Either way, `hooks/ask_before_merge.py` reads Dolev's last message in the session: when it
-asks to merge this PR or the issue it closes ("תמזג את #N", typed or chosen in the question
-window), the merge passes with no second window (S-3.11). A request with no number: ask once
-in the question window, "תמזג את #<N>", with the number, before this step. Otherwise an
-approval window opens. If he declines it, stop and report which step you stopped at; never
-merge another way.
+asks to merge this PR or the issue it closes ("תמזג את #N", typed), the merge passes with no
+second window (S-3.11). Otherwise the permission window opens, and it is the question (S-3.13):
+a request with no number, and the run of S-3.13, are not asked in the question window first;
+run the merge and let the window ask.
+**Declined:** stop, say in one line that the PR waits for review, and leave the issue in
+`status:in-review`; never merge another way. Do not run the same merge again on your own: it
+comes up again only after a new hand-off of that PR (a repair round), or on his typed request.
 
 If the merge is blocked (required reviews, protection, conflicts), stop and report the exact
 reason `gh` or the MCP tool gives. Do not retry blindly and do not force anything.

@@ -13,7 +13,7 @@ flowchart TD
 
     subgraph SG["שלב האפיון — לפני התכנון"]
       SPEC["dev-spec<br/>docs/specs/repo.md<br/>branch claude/spec-slug<br/>spec_check.py --no-issues<br/>PR: Refs #N for a proposal"]:::routine
-      SPEC --> SREV(["דולב סוקר ומבקש מיזוג<br/>המיזוג הוא האישור של המה"]):::human
+      SPEC --> SREV(["דולב סוקר ומאשר את חלון המיזוג<br/>המיזוג הוא האישור של המה"]):::human
       SREV --> SSHIP["dev-ship<br/>squash merge<br/>מציע את הפירוק<br/>ואת העדכון של ה-issues"]:::routine
       SSHIP --> SPLIT["dev-issue<br/>משימה לכל חלק פתוח<br/>שורת אפיון בכל משימה<br/>Blocked by<br/>לפי הסדר באפיון<br/>ההצעה נסגרת<br/>שורת פתוח בכל חלק<br/>small PR, Dolev merges it"]:::routine
     end
@@ -64,17 +64,18 @@ flowchart TD
       WCI --> HAND["מסירה: קישור לשינויים<br/>צילומי מסך בצ'אט<br/>טלפון רק בענן"]:::routine
     end
 
-    HAND --> LESS(["משימות המשך: מוצר ותהליך<br/>כותרת קבועה בהערת המסירה<br/>אחת בכל חלון, אחרי שאלת המיזוג<br/>אישור פותח הצעה בבקלוג<br/>בלי אדם: הצעה בבקלוג, בלי ספרינט<br/>בן: בהערת המסירה<br/>כלל משתנה רק במיזוג שלה"]):::human
+    HAND --> LESS(["משימות המשך: מוצר ותהליך<br/>כותרת קבועה בהערת המסירה<br/>אחת בכל חלון, לפני המיזוג<br/>אישור פותח הצעה בבקלוג<br/>בלי אדם: הצעה בבקלוג, בלי ספרינט<br/>בן: בהערת המסירה<br/>כלל משתנה רק במיזוג שלה"]):::human
     HAND --> REV["status:in-review<br/>התור של דולב"]:::human
     REV -.-> GATE["open-questions-gate.yml<br/>shared action in claude-config<br/>בודק את סעיף השאלות הפתוחות"]:::auto
     GATE -.-> WARN["נשארה תיבה לא מסומנת<br/>תגובה ותווית אזהרה<br/>הפלת ריצה שולחת מייל"]:::gate
 
     REV --> RC(["Dolev reviews the PR"]):::human
-    RC -- "נדרש תיקון<br/>בתווית או בחלון השאלות" --> REP["status:needs-repair<br/>התור של Claude"]:::routine
+    RC -- "נדרש תיקון<br/>בתווית או במילים בצ'אט" --> REP["status:needs-repair<br/>התור של Claude"]:::routine
     REP --> EXEC
-    RC -- "תקין" --> ASK(["דולב מבקש מיזוג בצ'אט<br/>תמזג את #N<br/>בהקלדה או בחלון השאלות"]):::human
+    RC -- "תקין<br/>החלון קופץ כבר בסוף המסירה" --> ASK(["חלון ההרשאה הוא שאלת המיזוג<br/>אחרי מסירה עם CI ירוק, בלי שאלה פתוחה<br/>ואחרי משימות ההמשך: Claude מריץ, החלון שואל<br/>בקשה מוקלדת: תמזג את #N, בלי חלון<br/>בלי אדם בצ'אט: אין מיזוג"]):::human
+    ASK -- "דחייה<br/>לא חוזר מעצמו" --> REV
 
-    ASK --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
+    ASK -- "אישור" --> SHIP["dev-ship<br/>הדרך היחידה למיזוג"]:::routine
     SHIP --> MERGE["rebase onto the default branch<br/>runs the tests<br/>push, then opens or reuses the PR<br/>waits for CI checks<br/>דגל החיוב דולק: לא מחכים<br/>בודק את השאלות הפתוחות<br/>not MERGEABLE: back to the rebase<br/>squash merge"]:::routine
     MERGE -. "ממה שקרה במיזוג" .-> LESS
     MERGE --> DONE(["dev-ship sets status:done<br/>status:done = merged<br/>Closes #N closes the issue<br/>the card lands in Done<br/>ניקוי במחשב<br/>app, worktree, local branch<br/>ניקוי בענן<br/>checkout --detach, local branch"]):::routine

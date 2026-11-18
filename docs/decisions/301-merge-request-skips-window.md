@@ -1,6 +1,6 @@
 # בקשת המיזוג של דולב היא האישור היחיד
 
-**מצב:** בתוקף · **תאריך:** 2026-11-11 · **issue:** #301
+**מצב:** הוחלף ב-[471-permission-window-is-merge-question.md](471-permission-window-is-merge-question.md) · **תאריך:** 2026-11-11 · **issue:** #301
 
 **מחליף:** [108-merge-signal-chat.md](108-merge-signal-chat.md)
 
