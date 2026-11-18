@@ -14,8 +14,8 @@ flowchart TD
     subgraph SG["שלב האפיון — לפני התכנון"]
       SPEC["dev-spec<br/>docs/specs/repo.md<br/>branch claude/spec-slug<br/>spec_check.py --no-issues<br/>PR: Refs #N for a proposal"]:::routine
       SPEC --> SREV(["דולב סוקר ומאשר את חלון המיזוג<br/>המיזוג הוא האישור של המה"]):::human
-      SREV --> SSHIP["dev-ship<br/>squash merge<br/>מציע את הפירוק<br/>ואת העדכון של ה-issues"]:::routine
-      SSHIP --> SPLIT["dev-issue<br/>משימה לכל חלק פתוח<br/>שורת אפיון בכל משימה<br/>Blocked by<br/>לפי הסדר באפיון<br/>ההצעה נסגרת<br/>שורת פתוח בכל חלק<br/>small PR, Dolev merges it"]:::routine
+      SREV --> SSHIP["dev-ship<br/>squash merge<br/>מריץ את הפירוק<br/>מציע את העדכון של ה-issues"]:::routine
+      SSHIP --> SPLIT["dev-issue<br/>משימה לכל חלק פתוח<br/>בלי שאלת אישור<br/>milestone לכל issue<br/>שורת אפיון בכל משימה<br/>Blocked by<br/>לפי הסדר באפיון<br/>ההצעה נסגרת<br/>שורת פתוח בכל חלק<br/>small PR, Dolev merges it"]:::routine
     end
 
     SPLIT -- "status:explore" --> PLAN
@@ -83,7 +83,7 @@ flowchart TD
     ORCGO(["דולב: תריץ את הספרינט<br/>רק בסשן ענן"]):::human --> ORC
 
     subgraph OG["המתזמר — סשן ענן אחד"]
-      ORC["dev-orchestrate<br/>sprint_state.py --spec<br/>בונה את התמונה מחדש בכל בדיקה<br/>פער מול האפיון: אזהרה בלבד<br/>הצעה בבקלוג עם milestone של הספרינט: בן אפיון ראשון, אחד בכל פעם<br/>חלק פתוח כבר מצביע עליה: שאלה, להחזיר לתכנון<br/>מיזוג האפיון והפירוק: בחלון"]:::routine
+      ORC["dev-orchestrate<br/>sprint_state.py --spec<br/>בונה את התמונה מחדש בכל בדיקה<br/>פער מול האפיון: אזהרה בלבד<br/>הצעה בבקלוג עם milestone של הספרינט: בן אפיון ראשון, אחד בכל פעם<br/>חלק פתוח כבר מצביע עליה: שאלה, להחזיר לתכנון<br/>מיזוג האפיון: בחלון<br/>הפירוק: בלי שאלה"]:::routine
       ORC --> KID["סשן-בן לכל משימה שלא חסומה<br/>עד 3 במקביל, לכל ריפו<br/>tags: repo:owner/name, issue:N<br/>בן אחד מהתוכנית ועד המסירה<br/>חפיפת קבצים: אחת אחרי השנייה<br/>שער WIP לפני בן קוד למשימה חדשה: המתזמר שואל<br/>בן שמתכנן בודק לפני הקוד<br/>sprint_state.py --may-code<br/>סגור, או חפיפה שלא נגמרה: עוצר לפני הקוד"]:::routine
       KID --> REPORT["הבן כותב ב-GitHub<br/>תווית, תגובה, PR<br/>המתזמר מתעורר מהבדיקה ברקע"]:::routine
       REPORT --> CHECK["המתזמר בודק את התוצאה<br/>ושואל את דולב בחלון אחד<br/>כללים שזזו מאז הפתיחה: נאכף<br/>אין בן ואין מיזוג עד המסירה<br/>המסירה: מתזמר חדש עם המצב בפרומפט, הישן לארכיון<br/>החדש מאמץ את הבנים, ומתחיל משורת המצב שבפרומפט<br/>פתיחה שנכשלה: הפרומפט לדולב<br/>משימת המשך אחת בכל חלון מכל הבנים<br/>הבחירה נרשמת בתגובה ולא נשאלת שוב"]:::routine

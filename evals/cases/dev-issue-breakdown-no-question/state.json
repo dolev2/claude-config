@@ -1,0 +1,23 @@
+{
+  "repo": "acme/demo",
+  "default_branch": "main",
+  "milestones": [
+    {
+      "title": "Sprint 1"
+    }
+  ],
+  "issues": {
+    "12": {
+      "title": "ברכה לפי שם",
+      "labels": [
+        "task",
+        "area:core",
+        "status:done"
+      ],
+      "milestone": "Sprint 1",
+      "state": "closed",
+      "body": "### מה רוצים\n\nברכה לפי שם.\n\n### הקשר / קישורים\n\nאפיון: docs/specs/demo.md S-1.1\n\n---\n### Plan\n\n_טרם נכתבה תוכנית._\n\n### שאלות פתוחות\n\n_אין שאלות פתוחות._\n"
+    }
+  },
+  "pulls": {}
+}

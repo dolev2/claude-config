@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: dev-issue-breakdown-no-question
+description: "Dolev asks to break down a merged spec: two issues open with no approval question, each with its spec line and a milestone, one Blocked by link from the spec, and the PR of the open lines (S-1.66)."
+tags: [dev-issue]
+context:
+  scaffold_script: setup.sh

@@ -41,13 +41,21 @@ python "$HOME/.claude/skills/dev-setup/scripts/pipeline_info.py"
   clone instead, which the session's git proxy serves for a public repo without attaching it:
   `git clone --depth 1 https://github.com/<owner>/.github <scratchpad>/owner-github`.
 
-## Step 1: Agree on the list before creating anything
+## Step 1: Open directly, or agree on the list first
 
-Opening issues writes to the board Dolev works from, and deleting an issue is not something
-this pipeline does. So first show Dolev, in chat, the issues you intend to open: title, one
-line of scope, kind (a task shows its part, "משימה (S-x.y)"; a bug; a backlog idea; a task with
-no open part shows "הצעה בבקלוג: אין חלק", step 2), milestone, parent, and blockers. Create them only
-after he agrees. When he has already dictated the exact list, that is the agreement.
+The list of a breakdown or a split is the "how" of what Dolev already approved, not a gate
+(S-1.66; why: `~/.claude/docs/decisions/485-breakdown-is-not-a-gate.md`). Deleting an issue
+is not something this pipeline does, so the rule is which lists open with no question:
+1. **Open with no question:** a breakdown of a merged spec (after the merge, or "תפרק את
+   האפיון"), a split Dolev asked for ("תפרק את #N"), a split a child proposed in the
+   orchestrator (S-2.8), and a list Dolev dictated. The report of step 5 comes after the
+   opening. An issue he does not want, he closes; a change to the split itself is a change to
+   the spec (S-1.34).
+2. **Agree first:** issues Claude proposes on its own, with no request and no merged spec
+   behind them (the size split `dev-plan` proposes in its step 5 among them). Show Dolev, in
+   chat, the issues you intend to open: title, one line of scope, kind (a task shows its part,
+   "משימה (S-x.y)"; a bug; a backlog idea; a task with no open part shows "הצעה בבקלוג: אין
+   חלק", step 2), milestone, parent, and blockers. Create them only after he agrees.
 
 How to split a task, when that is the request:
 - **One issue = one PR that can be reviewed on its own.** Split by user-visible capability (a
@@ -98,7 +106,7 @@ follow-up task (a backlog proposal, below), an umbrella and a decision are not t
    backlog idea instead (`status:backlog`, no milestone, no `אפיון:` line), and the report of
    step 5 offers "תכתוב אפיון ל-#N". A change to a Done part is first a change to the spec.
 
-Step 1 already shows which of the two each item is: "משימה (S-x.y)", or "הצעה בבקלוג: אין חלק".
+The list of step 1, or the report of step 5, shows which of the two each item is: "משימה (S-x.y)", or "הצעה בבקלוג: אין חלק".
 `dev-plan` sends a task without an open part back to the backlog, so a task opened without
 the line only waits there.
 A backlog idea gets no line: it is a proposal, and gets its spec when Dolev asks for one (`dev-spec`).
@@ -144,9 +152,22 @@ gh issue create --title "<title>" --body-file <file> \
   --milestone "<milestone>"
 ```
 
-The milestone is Dolev's call: use the one he named or the one the parent carries, and ask
-when neither exists. A bug or a `process` issue goes into `current_sprint`, without asking
-(the sprint rule: `reference/pipeline.md`). If the repo numbers its tasks in titles, sub-issues continue the
+The milestone is Dolev's call: use, in this order, the one he named, the one the parent
+carries, or the proposal's (a breakdown from the orchestrator). A bug or a `process` issue goes
+into `current_sprint`, without asking (the sprint rule: `reference/pipeline.md`).
+**No source, in a list that opens with no question** (step 1, item 1; S-1.66, "מה נפתח" 5):
+an issue never opens without a milestone.
+1. Read the open milestones: `gh api "repos/{owner}/{repo}/milestones?state=open&per_page=100"`.
+   Pick the one whose title is the topic of the parts (the spec chapter, or the proposal's
+   name).
+2. None fits: open one named for the topic, in English, since milestone titles are
+   (`reference/pipeline.md`, "ספרינטים"):
+   `gh api -X POST repos/{owner}/{repo}/milestones -f title="<topic>"`.
+   A new milestone gets a high number, so it does not become the current sprint.
+3. The report of step 5 says which milestone each issue went into, that a milestone was opened,
+   and, when the chosen one is numbered below the current sprint, that it becomes the current
+   sprint.
+In a list that agrees first (step 1, item 2), a missing milestone is part of the question. If the repo numbers its tasks in titles, sub-issues continue the
 parent's numbering (`13א.`, `13ב.`), so the board reads in order.
 
 ## Step 4: Link
@@ -194,15 +215,17 @@ gh api repos/{owner}/{repo}/issues/<N>/dependencies/blocked_by --jq '[.[].number
 gh issue view <N> --json labels,milestone --jq '[.labels[].name], .milestone.title'
 ```
 
-Report each new issue to Dolev, in Hebrew, as a link with its title, milestone and blockers.
+Report each new issue to Dolev, in Hebrew, one line each: a link with its title, its part
+(`S-x.y`), its milestone and its blockers; then a line for each milestone this run opened
+(step 3).
 A task that opened as a backlog idea for lack of an open part gets the offer "תכתוב אפיון ל-#N"
 (step 2), and the PR of the "פתוח" lines, when step 4b opened one, gets its link. If the repo has
 `sync-project.yml`, a board column that has not updated yet catches up within a few hours.
 
 ## Mode: breaking down a spec (פירוק אפיון)
 
-After a spec PR merges (`dev-ship` offers it, step 8), or when Dolev asks to break a spec into
-issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
+Right after a spec PR merges (`dev-ship` runs it, step 8), or when Dolev asks to break a spec
+into issues. It opens with no question (step 1, item 1). The rules: `reference/specs.md`, "הפירוק ל-issues".
 
 1. **Read the merged file** from `origin/<default>` (`git fetch` first), and list its open parts
    that no open issue points at:
@@ -210,14 +233,16 @@ issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
    python "$HOME/.claude/skills/dev-setup/scripts/spec_check.py" --table --ref origin/<default>
    ```
    The rows in state "אין issue" are the parts to open.
-2. **Step 1 of this skill, unchanged:** show Dolev the list before creating anything, one issue
-   per part: the title (the part's name), the part's id, the milestone (his call, as always),
-   and the blockers. **The exception: a breakdown run from the orchestrator** (S-2.14), of a
-   proposal in the sprint's milestone: each new task takes the proposal's milestone, which
-   Dolev already chose (`reference/pipeline.md`, "ספרינטים"), and the list says so. A blocker comes **only** from a dependency written in the spec ("תלוי
-   ב-S-1.2": blocked by the issue of S-1.2, new or existing). A dependency that seems missing is
-   a question to him, never a guessed link; if he agrees, the spec is updated first
-   (`dev-spec`).
+2. **Open them, with no list to approve first:** one issue per part, the title is the part's
+   name. The milestone as step 3: the one Dolev named, or, in a breakdown run from the
+   orchestrator (S-2.14), the proposal's, which he already chose (`reference/pipeline.md`,
+   "ספרינטים"); otherwise one that fits the topic, or a new one named for it. A blocker comes
+   **only** from a dependency written in the spec ("תלוי ב-S-1.2": blocked by the issue of
+   S-1.2, new or existing). **A dependency that seems missing** is never a guessed link: the
+   issues open without it, and after the report it is a question in the question window. "כן"
+   updates the spec first (`dev-spec`), and the link is made only after that merge. No window
+   (an automated run): the question is text in the report (`reference/chat-decisions.md`,
+   rule 6), and the issues are already open.
 3. **Each body** follows step 2: "מה רוצים" says in a line or two which part it implements and
    how Dolev will know it works, without copying the part; "הקשר / קישורים" links the proposal
    and holds the `תלוי ב:` and `אפיון:` lines. Labels and milestone as step 3 (a task); links
@@ -230,7 +255,8 @@ issues. The rules: `reference/specs.md`, "הפירוק ל-issues".
    ```
    A spec written for a task (like claude-config #230) has no proposal: nothing to close.
 5. **The PR of the "פתוח" lines**, as step 4b.
-6. Report as in step 5, with the part id next to each new issue and the link to that PR.
+6. Report as in step 5: a line per new issue (link, title, part, milestone, blockers), a line
+   per milestone opened, the link to that PR, and the questions left, in the window.
 
 ## Mode: update after a spec change (עדכון אחרי שינוי באפיון)
 
@@ -255,11 +281,14 @@ Only after Dolev approved the list in `dev-ship` step 8, and only on that list. 
 
 ## Golden rules
 
-- Never create issues Dolev has not agreed to, and never delete one. Close one only in the
+- Create only issues Dolev asked for, or that a merged spec or a child in the orchestrator
+  justifies (step 1, item 1); what Claude proposes on its own waits for his agreement. Never
+  delete one. Close one only in the
   "עדכון אחרי שינוי באפיון" mode, on the list he approved.
 - Never invent business data in an issue; missing data is an unticked open question.
 - Every `תלוי ב:` entry has a matching "Blocked by" link, and the other way round.
 - In a breakdown, a link comes only from a dependency written in the spec; never guess one.
 - A task opens only with an `אפיון:` line to an open part; without one, it is a backlog idea.
 - Never assign a milestone on your own judgement, except `current_sprint` for a bug or a
-  `process` issue, and the proposal's milestone in a breakdown run from the orchestrator.
+  `process` issue, the proposal's milestone in a breakdown run from the orchestrator, and a
+  milestone with no source in a list that opens with no question (step 3).

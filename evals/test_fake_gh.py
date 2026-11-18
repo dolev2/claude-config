@@ -302,7 +302,7 @@ def test_rest_body_from_input(folder, capsys, tmp_path, monkeypatch):
 @pytest.mark.parametrize(
     "argv",
     [
-        ["api", "-X", "POST", "repos/acme/demo/issues", "-f", "title=x"],
+        ["api", "-X", "DELETE", "repos/acme/demo/issues/12/sub_issues"],
         ["api", "repos/acme/demo/issues/12", "-f", "body=new"],
         ["api", "-X", "PATCH", "repos/acme/demo/pulls/13", "-f", "title=x"],
     ],
@@ -312,3 +312,126 @@ def test_rest_write_that_is_not_modelled_fails(folder, capsys, argv):
     assert code == 1
     assert "unsupported" in err
     assert not (folder / "issues" / "12.body.md").exists()
+
+
+def test_issue_create_takes_the_next_number_and_is_written(folder, capsys, tmp_path):
+    body = tmp_path / "body.md"
+    body.write_text("### מה רוצים\nחדש", encoding="utf-8")
+    code, out, _ = gh(
+        capsys,
+        "issue",
+        "create",
+        "--title",
+        "חדש",
+        "--body-file",
+        str(body),
+        "--label",
+        "task,area:core",
+        "-l",
+        "status:explore",
+        "--milestone",
+        "Sprint 1",
+    )
+    assert (code, out) == (0, "https://github.com/acme/demo/issues/14\n")
+    assert (folder / "issues" / "14.body.md").read_text("utf-8") == body.read_text(
+        "utf-8"
+    )
+    labels = (folder / "issues" / "14.labels").read_text().split()
+    assert labels == ["area:core", "status:explore", "task"]
+    assert (folder / "issues" / "14.milestone").read_text("utf-8") == "Sprint 1\n"
+    assert (folder / "issues" / "11.milestone").read_text("utf-8") == "\n"
+
+
+@pytest.mark.parametrize(
+    ("flags", "message"),
+    [
+        (["--milestone", "Nope"], "milestone"),
+        (["--label", "no-such"], "no-such"),
+        ([], "no title"),
+    ],
+)
+def test_issue_create_fails_like_github(folder, capsys, flags, message):
+    title = [] if message == "no title" else ["--title", "x"]
+    code, _, err = gh(capsys, "issue", "create", *title, "--body", "b", *flags)
+    assert code == 1
+    assert message in err
+    assert not (folder / "issues" / "14.labels").exists()
+
+
+def test_rest_issue_create_takes_the_milestone_by_number(folder, capsys):
+    code, out, _ = gh(
+        capsys,
+        "api",
+        "-X",
+        "POST",
+        "repos/acme/demo/issues",
+        "-f",
+        "title=חדש",
+        "-f",
+        "labels[]=task",
+        "-F",
+        "milestone=1",
+        "--jq",
+        ".number, .milestone.title",
+    )
+    assert (code, out) == (0, "14\nSprint 1\n")
+
+
+def test_rest_milestone_post_adds_one(folder, capsys):
+    code, out, _ = gh(
+        capsys,
+        "api",
+        "-X",
+        "POST",
+        "repos/acme/demo/milestones",
+        "-f",
+        "title=Breakdown",
+        "--jq",
+        ".number",
+    )
+    assert (code, out) == (0, "2\n")
+    code, out, _ = gh(capsys, "api", "repos/acme/demo/milestones", "--jq", ".[].title")
+    assert out == "Sprint 1\nBreakdown\n"
+    code, _, err = gh(
+        capsys,
+        "api",
+        "-X",
+        "POST",
+        "repos/acme/demo/milestones",
+        "-f",
+        "title=Breakdown",
+    )
+    assert code == 1
+    assert "422" in err
+
+
+@pytest.mark.parametrize(
+    ("route", "field", "key"),
+    [
+        ("sub_issues", "sub_issue_id", "sub_issues"),
+        ("dependencies/blocked_by", "issue_id", "blocked_by"),
+    ],
+)
+def test_rest_link_post_is_read_back(folder, capsys, route, field, key):
+    path = f"repos/acme/demo/issues/11/{route}"
+    code, _, _ = gh(capsys, "api", "-X", "POST", path, "-F", f"{field}=1012")
+    assert code == 0
+    code, out, _ = gh(capsys, "api", path, "--jq", "[.[].number]")
+    assert json.loads(out) == [12]
+    state = json.loads((folder / "state.json").read_text("utf-8"))
+    assert state["issues"]["11"][key] == [12]
+
+
+def test_rest_link_to_a_missing_issue_is_404(folder, capsys):
+    path = "repos/acme/demo/issues/11/sub_issues"
+    code, _, err = gh(capsys, "api", "-X", "POST", path, "-F", "sub_issue_id=1099")
+    assert code == 1
+    assert "404" in err
+
+
+def test_rest_patch_closes_the_issue(folder, capsys):
+    path = "repos/acme/demo/issues/11"
+    argv = ["-f", "state=closed", "-f", "state_reason=completed"]
+    code, _, _ = gh(capsys, "api", "-X", "PATCH", path, *argv)
+    assert code == 0
+    assert (folder / "issues" / "11.state").read_text() == "closed\n"

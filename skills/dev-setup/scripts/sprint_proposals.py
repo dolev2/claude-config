@@ -18,8 +18,8 @@ is tested without a network:
                it is that part's task, sent back to the backlog by the planning gate
                before the part existed. Not broken down and no spec child: the
                orchestrator asks Dolev to send it back to planning (#334)
-    breakdown  a merged spec PR, and the proposal is still open: the breakdown waits
-               for Dolev's approval
+    breakdown  a merged spec PR, and the proposal is still open: it waits to be
+               broken down, which the orchestrator does with no question (S-1.66)
 """
 
 import re

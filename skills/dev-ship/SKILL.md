@@ -296,7 +296,7 @@ it, republish it after the cleanup, before step 8, as `reference/after-merge.md`
 
 Only after the merge and the cleanup both succeeded.
 
-**A spec PR** (branch `claude/spec-*`): offer the breakdown and the update of the issues
+**A spec PR** (branch `claude/spec-*`): run the breakdown, then offer the update of the issues,
 instead of the next-issue session (`reference/specs.md`, "אחרי שינוי באפיון"). List what the
 merge changed, from the squash commit and its parent (the main folder may not have been
 pulled in step 7):
@@ -308,21 +308,22 @@ A line per part (`new`, `changed`, `deleted`), and under a changed or deleted pa
 per open issue that points at it, with its action: `close`, `explore` or `ask`. A `close`
 issue that has an open PR: mark it in the list, since that PR stays open for Dolev
 (`gh pr list --search "Closes #<I>" --state open`). Exit 1 means the issues were not read: say
-so and offer nothing, neither the update nor the breakdown, until they are.
+so and run nothing, neither the breakdown nor the update, until they are.
 **A spec PR that merges several spec files into one** (`dev-setup`, step 8, item 5): every
-part reads as deleted from the old file and new in the new one. Offer no update and no
-breakdown: `dev-setup` moves the `אפיון:` lines itself.
-1. **New parts with no issue, or issues to update:** one question in the question window
-   with the whole list: the breakdown of the new parts, and for each issue what will happen
-   to it. "לבצע (מומלץ)" runs `dev-issue` here: first its "עדכון אחרי שינוי באפיון" mode,
-   then its "פירוק אפיון" mode, whose own step 1 still shows its list before anything is
-   created. "Other" corrects the list.
-2. **An `ask` issue** (in the code or in review, or with no status label): a question of its
+part reads as deleted from the old file and new in the new one. Run no breakdown and offer no
+update: `dev-setup` moves the `אפיון:` lines itself.
+1. **New parts with no issue: the breakdown runs here, at once, with no question** (S-1.66):
+   `dev-issue` in its "פירוק אפיון" mode, which opens the issues and reports them.
+2. **Issues to update** (`close` or `explore`), after the breakdown: one question in the
+   question window with the whole list, and for each issue what will happen to it.
+   "לבצע (מומלץ)" runs `dev-issue`'s "עדכון אחרי שינוי באפיון" mode here. "Other" corrects
+   the list. The update closes issues, so it stays Dolev's (S-1.34).
+3. **An `ask` issue** (in the code or in review, or with no status label): a question of its
    own in the same call (up to three, after the list question: the window takes four), naming the issue: "להשאיר בקוד, ולהוסיף תגובה על
    השינוי (מומלץ)", "להחזיר לתכנון", and "Other". More than three: the rest are asked in
    the next window, and stay untouched until then.
-3. **`no spec changes`, or only new parts that already have an issue:** the offer below, as
-   for any merge.
+4. **`no spec changes`, or only new parts that already have an issue, and nothing to update:**
+   the offer below, as for any merge.
 
 Otherwise, follow `reference/after-merge.md`: pick the next issue the way `dev-next` does, without routing it,
 and offer it as a session card whose opening prompt is `תחקור את #<N>` or `תקודד את #<N>`.
@@ -331,7 +332,7 @@ that issue in this session.
 
 **Process tasks** (`reference/process-tasks.md`), only from steps 1–7 of this run: every one
 that passes the filter, with no limit, each a question in a question window of its own (after
-the breakdown question, when there is one). From the orchestrator, they
+the update question, when there is one). From the orchestrator, they
 go into the orchestrator's next window (`dev-orchestrate`, step 5).
 
 ## Reporting back
