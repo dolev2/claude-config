@@ -749,3 +749,148 @@ def test_main_reads_the_open_parts_with_or_without_the_flag(
     result = json.loads(capsys.readouterr().out)
     assert result["proposals"][0]["stage"] == "replan"
     assert result["dispatch"] == []
+
+
+# --may-code: the child that planned an issue checks the state before its code (S-2.17).
+
+
+def may(*nodes, number=1, branches=None):
+    branches = branches or {}
+    return sprint_state.may_code(
+        list(nodes), "W1", number, lambda branch: set(branches.get(branch, ()))
+    )
+
+
+def test_an_overlap_with_a_pr_in_review_holds_the_code():
+    result = may(node(1, files=["a.py"]), node(2, "in-review", files=["a.py", "b.py"]))
+    assert result["may_code"] is False
+    assert result["overlaps"] == [{"number": 2, "files": ["a.py"]}]
+
+
+def test_an_overlap_with_a_branch_that_already_changed_files_holds_the_code():
+    result = may(
+        node(1, files=["a.py"]),
+        node(2, files=["b.py"], branch="claude/issue-2-x"),
+        branches={"claude/issue-2-x": ["a.py"]},
+    )
+    assert result["overlaps"] == [{"number": 2, "files": ["a.py"]}]
+    assert result["may_code"] is False
+
+
+def test_a_ready_issue_with_no_commits_does_not_hold_the_code():
+    result = may(
+        node(1, files=["a.py"]), node(2, files=["a.py"], branch="claude/issue-2-x")
+    )
+    assert result == {
+        "may_code": True,
+        "wip": {"in_review": [], "open": True},
+        "overlaps": [],
+    }
+
+
+def test_no_overlap_may_code():
+    result = may(node(1, files=["a.py"]), node(2, "in-review", files=["b.py"]))
+    assert result["may_code"] is True
+
+
+def test_three_in_review_close_the_gate_even_without_an_overlap():
+    reviews = [
+        node(n, "in-review", files=["z.py"], milestone="other") for n in (2, 3, 4)
+    ]
+    result = may(node(1, files=["a.py"]), *reviews)
+    assert result == {
+        "may_code": False,
+        "wip": {"in_review": [2, 3, 4], "open": False},
+        "overlaps": [],
+    }
+
+
+def test_two_in_review_leave_the_gate_open():
+    reviews = [node(n, "in-review", files=["z.py"]) for n in (2, 3)]
+    result = may(node(1, files=["a.py"]), *reviews)
+    assert result["wip"] == {"in_review": [2, 3], "open": True}
+    assert result["may_code"] is True
+
+
+def test_a_plan_without_files_may_code():
+    result = may(node(1), node(2, "in-review", files=["a.py"]))
+    assert result["may_code"] is True
+
+
+def test_an_issue_that_is_not_open_is_an_error():
+    with pytest.raises(ValueError, match="#9"):
+        may(node(1), number=9)
+
+
+class FakeClock:
+    """A clock that moves only when the code sleeps."""
+
+    def __init__(self):
+        self.now = 0.0
+
+    def __call__(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
+
+
+def answers(*results):
+    replies = iter(results)
+    return lambda: next(replies)
+
+
+HELD = {"may_code": False, "wip": {"in_review": [], "open": True}, "overlaps": [{}]}
+FREE = {"may_code": True, "wip": {"in_review": [], "open": True}, "overlaps": []}
+CLOSED = {"may_code": False, "wip": {"in_review": [2, 3, 4], "open": False}}
+
+
+def test_an_overlap_that_ends_in_the_second_round_may_code():
+    clock = FakeClock()
+    result = sprint_state.wait_to_code(answers(HELD, FREE), 30, clock.sleep, clock)
+    assert result is FREE
+    assert clock.now == 5 * 60
+
+
+def test_an_overlap_that_does_not_end_is_held_when_the_time_is_up():
+    clock = FakeClock()
+    result = sprint_state.wait_to_code(lambda: HELD, 30, clock.sleep, clock)
+    assert result is HELD
+    assert clock.now == 30 * 60
+
+
+def test_a_closed_gate_does_not_wait():
+    clock = FakeClock()
+    result = sprint_state.wait_to_code(answers(CLOSED), 30, clock.sleep, clock)
+    assert result is CLOSED
+    assert clock.now == 0
+
+
+def test_main_may_code_prints_the_answer_and_its_exit_code(monkeypatch, capsys):
+    fake_github(
+        monkeypatch, [node(1, files=["a.py"]), node(2, "in-review", files=["a.py"])]
+    )
+    monkeypatch.setattr(sprint_state, "branch_files", lambda repo, base, branch: set())
+    with pytest.raises(SystemExit) as exit_:
+        sprint_state.main(["--may-code", "1"])
+    assert exit_.value.code == 1
+    result = json.loads(capsys.readouterr().out)
+    assert result["overlaps"] == [{"number": 2, "files": ["a.py"]}]
+
+
+def test_main_may_code_exits_0_when_it_may(monkeypatch, capsys):
+    fake_github(monkeypatch, [node(1, files=["a.py"])])
+    with pytest.raises(SystemExit) as exit_:
+        sprint_state.main(["--may-code", "1"])
+    assert exit_.value.code == 0
+    assert json.loads(capsys.readouterr().out)["may_code"] is True
+
+
+@pytest.mark.parametrize(
+    "argv", [["--may-code", "abc"], ["--wait", "30"], ["--may-code", "9"]]
+)
+def test_main_may_code_bad_input_exits_2(monkeypatch, argv):
+    fake_github(monkeypatch, [node(1)])
+    with pytest.raises(SystemExit) as exit_:
+        sprint_state.main(argv)
+    assert exit_.value.code == 2

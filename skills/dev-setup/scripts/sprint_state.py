@@ -7,6 +7,8 @@ Run from anywhere inside the repo, with any Python 3.11+ (stdlib only) and a log
     python "$S/sprint_state.py"                    # nothing claimed yet
     python "$S/sprint_state.py" --claimed 164,172  # issues that already have a session
     python "$S/sprint_state.py" --spec             # plus spec_gaps (claude-config #227)
+    python "$S/sprint_state.py" --may-code 467     # may this child code #467 now?
+    python "$S/sprint_state.py" --may-code 467 --wait 30
 
 The orchestrator (claude-config #150) keeps no memory between checks: every check runs
 this and rebuilds its picture from GitHub. Which issue already has a child session is
@@ -21,7 +23,9 @@ The keys:
                      umbrella, not costs-money, not paused, not claimed, no file shared
                      with work in flight. A spec child first (status "spec", one at a
                      time, S-2.14), then repairs, then bugs, then ready plans, then
-                     plans to write; in each, the order of S-1.3 (rank_issues.py)
+                     plans to write; in each, the order of S-1.3 (rank_issues.py). A
+                     child that plans also codes, in the same turn (S-2.17): before the
+                     code it checks the same state itself, with --may-code
     held_by_overlap  would be in dispatch, but shares a planned file with work in flight
                      (claimed, in review, or earlier in dispatch), so it runs after it.
                      Work in flight counts its planned files and the files its Plan's
@@ -68,12 +72,21 @@ The keys:
                      the specs on origin/<default>, as [{path, line, message}]. An
                      error in a spec file is not here: that is CI's job (spec_check.py).
                      Specs that could not be read are one gap that says so
+
+--may-code <N> prints only {may_code, wip: {in_review, open}, overlaps} and exits 0 when
+the child that just planned #N may code it, 1 when not (S-2.17). The WIP gate comes
+first: three or more issues of the repo in `status:in-review` close it, and then the
+overlaps are not read. A child does not know which issues are claimed (session tags are
+not its to read), so the work in flight is every other sprint issue in review, and every
+other sprint issue whose Plan's branch already changed files. --wait <minutes> checks
+again every 5 minutes while only an overlap holds it, until it may code or time is up.
 """
 
 import argparse
 import json
 import subprocess
 import sys
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -96,6 +109,8 @@ from sprint_proposals import proposals, spec_merge_queue, spec_split
 
 DISPATCH_ORDER = ["needs-repair", "ready-to-execute", "explore"]
 DOLEV_TURN = ["plan-questions", "in-review"]
+WIP_LIMIT = 3  # in review at once before a new issue waits (git-flow.md, "שער WIP")
+WAIT_INTERVAL = 5 * 60  # seconds between two checks of --may-code --wait
 PROMPTS = {
     "explore": "תחקור את #{}",
     "ready-to-execute": "תקודד את #{}",
@@ -291,6 +306,65 @@ def state(
     }
 
 
+def may_code(
+    nodes: list[dict],
+    sprint: str,
+    number: int,
+    files_of_branch: Callable[[str], set[str]] = no_files,
+) -> dict:
+    """May the child that planned #number code it now: {may_code, wip, overlaps}.
+
+    The gate counts the whole repo, as dev-code does; the overlap reads only the
+    sprint, the work a child of the same orchestrator may be doing.
+    """
+    by_number = {n["number"]: n for n in nodes}
+    if number not in by_number:
+        raise ValueError(f"#{number} is not an open issue")
+    in_review = sorted(
+        i.number
+        for i in map(parse_issue, nodes)
+        if i.status == "in-review" and i.number != number
+    )
+    wip = {"in_review": in_review, "open": len(in_review) < WIP_LIMIT}
+    if not wip["open"]:
+        return {"may_code": False, "wip": wip, "overlaps": []}
+    others = [
+        n
+        for n in nodes
+        if n["number"] != number
+        and n["milestone"]
+        and n["milestone"]["title"] == sprint
+    ]
+    files = {number: sprint_issue(by_number[number]).files}
+    in_flight = []
+    for node in others:
+        branch = plan_branch(sections(node.get("body") or "").get("plan", ""))
+        changed = files_of_branch(branch) if branch else set()
+        files[node["number"]] = sprint_issue(node).files | changed
+        if changed or parse_issue(node).status == "in-review":
+            in_flight.append(node["number"])
+    found = overlaps(number, files[number], files, in_flight)
+    return {"may_code": not found, "wip": wip, "overlaps": found}
+
+
+def wait_to_code(
+    check: Callable[[], dict],
+    minutes: float,
+    sleep: Callable[[float], None] = time.sleep,
+    clock: Callable[[], float] = time.monotonic,
+) -> dict:
+    """check() again every WAIT_INTERVAL while only an overlap holds the code.
+
+    A closed WIP gate returns at once: waiting is the orchestrator's, in its window.
+    """
+    deadline = clock() + minutes * 60
+    while True:
+        result = check()
+        if result["may_code"] or not result["wip"]["open"] or clock() >= deadline:
+            return result
+        sleep(min(WAIT_INTERVAL, max(deadline - clock(), 0)))
+
+
 def spec_gaps(nodes: list[dict], files: dict[str, str]) -> list[dict]:
     """spec_check's gaps between the open issues `nodes` and the spec `files`.
 
@@ -358,7 +432,21 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--spec", action="store_true", help="add spec_gaps (the specs on origin)"
     )
+    parser.add_argument(
+        "--may-code",
+        type=int,
+        metavar="N",
+        help="only: may the child that planned #N code it now (exit 0) or not (1)",
+    )
+    parser.add_argument(
+        "--wait",
+        type=float,
+        metavar="MINUTES",
+        help="with --may-code: check again every 5 minutes while an overlap holds it",
+    )
     args = parser.parse_args(argv)
+    if args.wait is not None and args.may_code is None:
+        parser.error("--wait needs --may-code")
 
     repo = args.repo or current_repo()
     nodes = open_issue_nodes(repo, with_body=True)
@@ -366,6 +454,8 @@ def main(argv: list[str] | None = None) -> None:
     if sprint is None:
         sys.exit("No open milestone has open issues.")
     base = api(f"repos/{repo}")["default_branch"]
+    if args.may_code is not None:
+        print_may_code(repo, base, sprint, args.may_code, args.wait or 0)
     # Read on every run, not only with --spec: a proposal an open part already names
     # is a task to replan, not a spec to write (#334).
     files, unread = specs_or_warning(base)
@@ -387,6 +477,25 @@ def main(argv: list[str] | None = None) -> None:
         warning = {"path": None, "line": None, "message": unread}
         result["spec_gaps"] = [warning] if unread else spec_gaps(nodes, files)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def print_may_code(repo: str, base: str, sprint: str, number: int, wait: float) -> None:
+    """--may-code: print the answer and exit 0 (may code) or 1; 2 when #N is not open.
+
+    Each round of --wait reads the issues again: the overlap ends on GitHub.
+    """
+
+    def check() -> dict:
+        nodes = open_issue_nodes(repo, with_body=True)
+        return may_code(nodes, sprint, number, lambda b: branch_files(repo, base, b))
+
+    try:
+        result = wait_to_code(check, wait)
+    except ValueError as err:
+        print(err, file=sys.stderr)
+        sys.exit(2)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    sys.exit(0 if result["may_code"] else 1)
 
 
 if __name__ == "__main__":
