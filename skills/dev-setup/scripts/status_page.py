@@ -7,6 +7,10 @@ the PRs come from the issue nodes, and the sessions are passed in.
 
 On each node, under its status and labels, up to three kinds of link: the issue
 (always), its open PR (when there is one), and each session that is not archived.
+
+The page does not refresh itself: it runs in a sandbox with no GitHub and no sessions.
+Right after the time line, on every page, a fixed sentence says that /status refreshes
+it (S-1.59).
 """
 
 import html
@@ -17,6 +21,7 @@ from status_graph import EMPTY, LABEL_SEPARATOR, NO_SPRINT, TITLE_LIMIT, mermaid
 
 PAGE_TITLE = "גרף החסימות · {name}"
 SESSIONS_NOT_READ = "רשימת הסשנים לא נקראה, ולכן אין קישורי סשן."
+HOW_TO_REFRESH = "כדי לרענן, מריצים <code>/status</code> בסשן של הריפו."
 MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
 # One font for the page and the graph: Mermaid sizes each box by the label it
 # measures, so a label shown in another font is cut at the box edge (#427).
@@ -127,7 +132,8 @@ def page(
     """
     notes = [
         f"<span id='updated' data-at='{html.escape(updated, quote=True)}'>"
-        f"עודכן: {html.escape(updated)}</span>"
+        f"עודכן: {html.escape(updated)}</span>",
+        HOW_TO_REFRESH,
     ]
     if sessions is None:
         notes.append(SESSIONS_NOT_READ)
