@@ -57,6 +57,20 @@ def test_dry_run_prints_the_command(ready):
         assert flag in command
 
 
+def test_file_tools_are_granted_the_worktrees_folder_only(ready):
+    # The worktree of a dev-code case lives in $HOME/worktrees (S-1.68).
+    _, out = ready("--dry-run")
+    command = out.split()
+    start = command.index("--allow-tools") + 1
+    grants = command[start : command.index("--tag")]
+    scoped = [grant for grant in grants if "(" in grant]
+    assert scoped == [
+        "Read(~/worktrees/**)",
+        "Write(~/worktrees/**)",
+        "Edit(~/worktrees/**)",
+    ]
+
+
 def test_model_and_ceiling_are_passed(ready):
     _, out = ready("--dry-run", "--model", "claude-opus-5-5", "--max-cost-usd", "3")
     command = out.split()

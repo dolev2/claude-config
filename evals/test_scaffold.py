@@ -1,6 +1,7 @@
 """scaffold.sh, through a case's setup.sh: the demo repo, its remote and the fake gh."""
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -102,3 +103,45 @@ def test_gate_case_code_agrees_with_its_done_part(tmp_path, name):
     spec = (workspace / "docs" / "specs" / "demo.md").read_text(encoding="utf-8")
     assert "**מצב:** Done (#11)" in spec
     assert "#12" not in spec
+
+
+def grader_matches(workspace: Path, name: str) -> int:
+    """How often a file grader of the web-task case matches its target file."""
+    graders = run.EVALS / "cases" / "dev-code-web-task" / "graders"
+    text = (graders / f"{name}.md").read_text(encoding="utf-8")
+    target = re.search(r"path: ([^ }]+)", text).group(1)
+    pattern = re.search(r"^pattern: '(.*)'$", text, re.MULTILINE).group(1)
+    log = (workspace / target).read_text(encoding="utf-8")
+    return len(re.findall(pattern.replace("''", "'"), log))
+
+
+WORKTREE = "worktrees/demo-issue-12"
+BRANCH = "claude/issue-12-home-page"
+COMMIT = ["git", "commit", "-q", "--allow-empty", "-m", "עבודה"]
+
+
+@pytest.mark.parametrize(
+    ("steps", "matches"),
+    [
+        (
+            [
+                ("", ["git", "worktree", "add", WORKTREE, "-b", BRANCH]),
+                (WORKTREE, COMMIT),
+            ],
+            0,
+        ),
+        ([("cwd", ["git", "checkout", "-q", "-b", BRANCH]), ("cwd", COMMIT)], 2),
+        ([("cwd", COMMIT)], 1),
+    ],
+    ids=["worktree", "branch-in-main-folder", "commit-on-main"],
+)
+def test_worktree_grader_tells_the_main_folder_apart(tmp_path, steps, matches):
+    # S-1.68: a commit in a worktree leaves the main folder's HEAD log alone, and any
+    # switch or commit in the main folder after the case's setup shows up there.
+    workspace, env = setup_case(tmp_path, "dev-code-web-task")
+    home = Path(env["HOME"])
+    for folder, command in steps:
+        command = [str(home / c) if c == WORKTREE else c for c in command]
+        cwd = home / folder if folder else workspace
+        subprocess.run(command, cwd=cwd, env=env, check=True, capture_output=True)
+    assert grader_matches(workspace, "work-in-worktree") == matches

@@ -4,4 +4,4 @@ timeout_seconds: 2400
 allowed_tools: [Skill, Read, Glob, Grep, Bash, Write, Edit, Agent]
 ---
 
-תממש את #12. תעבוד בתיקייה הראשית של הריפו, בלי worktree: התרחיש לא מתיר כתיבה מחוץ לה.
+תממש את #12
