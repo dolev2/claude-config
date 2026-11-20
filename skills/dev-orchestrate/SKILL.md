@@ -90,7 +90,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    prompt, and its state is read from GitHub. `status_bucket` working with `session_status`
    `SESSION_STATUS_IDLE` and no `pending_actions` is also a child that finished its turn:
    `session_status` decides. Only that pair: a failed child (`status_bucket` `failed`) is idle
-   too, and stays failed: not active, and a question in step 5's window (item 5).
+   too, and stays failed: not active, and a question in step 5's window (item 4).
    The active ones' `issue:<N>` tags are the claimed list, and only they count toward the 3.
 2. **The sprint.**
    ```bash
@@ -227,8 +227,8 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       `follow_ups` (step 2's `sprint_state.py`, read by `follow_ups.py` from every hand-off
       under `#### משימות המשך`, open and closed issues alike, minus the ones already asked).
       **One follow-up per window, from all children together**, last in the window; the
-      follow-up of the issue first in the merge queue (step 6) goes first, since its merge
-      waits for it (S-3.13). The question: the kind, what is wanted, why it was not in
+      follow-up of the PR step 6 would merge next (the first ready entry, step 6.1) goes
+      first, since its merge waits for it (S-3.13). The question: the kind, what is wanted, why it was not in
       the Plan (`מוצר`) or what happened (`תהליך`), the issue and `pr`, and for `תהליך`
       the repo it opens in; the options of `reference/follow-ups.md`, "לבקלוג, בלי ספרינט"
       first. After the choice, a comment on the issue, with the marker and on a line of its
@@ -294,7 +294,9 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    `since <now> expect <N>=<status>,... pipeline_sha <sha> session_sha <sha>`: the next check compares against it,
    and step 3 reads `since` and `expect` from it. The `spec_gaps` lines of step 2 come right
    above it, one per gap, and so do its `follow_up_gaps`, "#N: <message>",
-   only for an issue whose hand-off step 3 already verified. Nothing to open and nothing to ask: the line says what the sprint waits
+   only for an issue whose hand-off step 3 already verified. Each `merge_queue` entry with
+   `declined` gets a line of its own in every check, "#N: המיזוג נדחה, מחכה לתיקון או לבקשה מוקלדת",
+   so the wait stays in view. Nothing to open and nothing to ask: the line says what the sprint waits
    for, including a spec ("מחכה לאפיון של #N"). Then, when any child is active, start the background watch: stop the previous one if
    it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
    ```bash

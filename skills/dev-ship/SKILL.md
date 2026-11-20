@@ -170,7 +170,7 @@ gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].n
 For each issue, read its "שאלות פתוחות" section (`issue-body.md`). A spec PR (branch
 `claude/spec-*`) also has that section in its own body: read it there too. A box still unticked: list
 it and ask Dolev whether to merge anyway; stop until he answers. In the run of S-3.13 (from
-`dev-code` or `dev-spec`, or the orchestrator's of S-2.18, with no typed request), an unticked box stops with no question: say
+`dev-code` or `dev-spec`, or from the orchestrator (S-2.18), with no typed request), an unticked box stops with no question: say
 in one line which box is open and that the PR waits for review, and leave the issue in
 `status:in-review`. That caller already checked it, and this is the safety net. Do not tick boxes on his behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
 this is the last look before the merge.
