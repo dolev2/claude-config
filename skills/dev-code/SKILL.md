@@ -305,7 +305,7 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     line: to merge, Dolev says "תמזג את #<N>" in the chat (when the run of S-3.13 below follows,
     the chat message adds that the permission window about to open is the merge question); for a
     fix, he moves the issue to `status:needs-repair` with a comment. An orchestrator's child
-    writes "המיזוג: בחלון של המתזמר" instead.
+    writes "המיזוג: בחלון ההרשאה, מהמתזמר" instead (S-2.18).
 
     **Bring the result to Dolev**, right after the comment, in this order:
     1. **The chat message opens with the link to the PR's changes**,

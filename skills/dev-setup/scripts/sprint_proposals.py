@@ -13,7 +13,7 @@ is tested without a network:
     waiting    no open or merged spec PR, and no child: it gets a spec child
     writing    a child is working on it (--claimed)
     questions  an open spec PR whose "שאלות פתוחות" section has an unticked box
-    review     an open spec PR with no open question: a merge question
+    review     an open spec PR with no open question: in the merge queue
     replan     an open spec part already names it (`פתוח (#N)`), and no open spec PR:
                it is that part's task, sent back to the backlog by the planning gate
                before the part existed. Not broken down and no spec child: the
