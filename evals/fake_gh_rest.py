@@ -154,12 +154,14 @@ def issue_update(state: State, number: int, method: str, body: dict) -> dict:
     if method != "PATCH":
         return read_only(method, lambda: issue_rest(state, number))
     issue = state.issue(number)
-    for key in ("title", "body", "state"):
+    for key in ("title", "body", "state", "state_reason"):
         if key in body:
             issue[key] = body[key]
     if "labels" in body:
         issue["labels"] = []
         state.add_labels(number, list(body["labels"]))
+    if "milestone" in body:
+        state.set_milestone(number, milestone_title(state, body["milestone"]))
     return issue_rest(state, number)
 
 
@@ -184,8 +186,20 @@ def comments_route(state: State, number: int, method: str, body: dict) -> object
     ]
 
 
-def related(state: State, number: int, key: str) -> list[dict]:
-    """sub_issues or dependencies/blocked_by: the listed issues, open or closed."""
+def related(
+    state: State, number: int, key: str, method: str = "GET", body: dict | None = None
+) -> object:
+    """sub_issues or dependencies/blocked_by: GET lists them, open or closed.
+
+    POST adds one, by its REST id: `sub_issue_id` for a sub-issue, `issue_id` for a
+    blocker, as GitHub takes them.
+    """
+    if method == "POST":
+        field = "sub_issue_id" if key == "sub_issues" else "issue_id"
+        state.link(number, key, state.issue_by_id((body or {}).get(field)))
+        return issue_rest(state, number)
+    if method != "GET":
+        raise GhError(f"fake gh: unsupported: {method} here", unsupported=True)
     numbers = state.issue(number).get(key, [])
     return [issue_rest(state, n) for n in numbers if str(n) in state.data["issues"]]
 
@@ -221,8 +235,8 @@ def routes(state: State, method: str, body: dict) -> list[tuple[str, Callable]]:
                 method, lambda: [{"name": x} for x in state.data["labels"]]
             ),
         ),
-        (r"/milestones", lambda m, q: read_only(method, lambda: milestones(state))),
-        (r"/issues", lambda m, q: read_only(method, lambda: issues_list(state, q))),
+        (r"/milestones", lambda m, q: milestones_route(state, method, body)),
+        (r"/issues", lambda m, q: issues_route(state, method, body, q)),
         (r"/issues/(\d+)", lambda m, q: issue_update(state, i(m[1]), method, body)),
         (
             r"/issues/(\d+)/labels",
@@ -238,11 +252,11 @@ def routes(state: State, method: str, body: dict) -> list[tuple[str, Callable]]:
         ),
         (
             r"/issues/(\d+)/sub_issues",
-            lambda m, q: related(state, i(m[1]), "sub_issues"),
+            lambda m, q: related(state, i(m[1]), "sub_issues", method, body),
         ),
         (
             r"/issues/(\d+)/dependencies/blocked_by",
-            lambda m, q: related(state, i(m[1]), "blocked_by"),
+            lambda m, q: related(state, i(m[1]), "blocked_by", method, body),
         ),
         (
             r"/issues/(\d+)/dependencies/blocking",
@@ -274,6 +288,38 @@ def repo_info(state: State, method: str, body: dict) -> dict:
         "visibility": "private",
         "delete_branch_on_merge": settings.get("delete_branch_on_merge", True),
     }
+
+
+def milestones_route(state: State, method: str, body: dict) -> object:
+    """GET milestones lists them; POST opens one and returns it."""
+    if method == "POST":
+        number = state.add_milestone(str(body.get("title", "")))
+        return milestones(state)[number - 1]
+    return read_only(method, lambda: milestones(state))
+
+
+def issues_route(state: State, method: str, body: dict, query: dict) -> object:
+    """GET issues lists them; POST opens one (the milestone by its number)."""
+    if method != "POST":
+        return read_only(method, lambda: issues_list(state, query))
+    number = state.create_issue(
+        title=str(body.get("title", "")),
+        body=str(body.get("body", "")),
+        labels=[str(x) for x in body.get("labels", [])],
+        milestone=milestone_title(state, body.get("milestone")),
+    )
+    return issue_rest(state, number)
+
+
+def milestone_title(state: State, number: object) -> str | None:
+    """The title of milestone N, as REST takes it; None clears, unknown is 422."""
+    if number is None:
+        return None
+    titles = state.milestone_titles()
+    index = int(str(number)) - 1 if str(number).isdigit() else -1
+    if not 0 <= index < len(titles):
+        raise GhError("gh: Validation Failed: milestone (HTTP 422)")
+    return titles[index]
 
 
 def milestones(state: State) -> list[dict]:

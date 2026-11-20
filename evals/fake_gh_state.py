@@ -91,6 +91,9 @@ class State:
             )
             Path(f"{base}.body.md").write_text(issue.get("body", ""), encoding="utf-8")
             Path(f"{base}.state").write_text(issue.get("state", "open") + "\n")
+            Path(f"{base}.milestone").write_text(
+                (issue.get("milestone") or "") + "\n", encoding="utf-8"
+            )
             comments = "\n\n---\n\n".join(issue.get("comments", []))
             Path(f"{base}.comments.md").write_text(comments, encoding="utf-8")
         for key, pull in self.data["pulls"].items():
@@ -207,6 +210,62 @@ class State:
         drop = {x.strip() for x in labels}
         issue["labels"] = [x for x in issue.get("labels", []) if x not in drop]
 
+    def next_number(self) -> int:
+        """The number a new issue or PR gets: one past the highest of both."""
+        return max(self.issue_numbers() + self.pull_numbers(), default=0) + 1
+
+    def milestone_titles(self) -> list[str]:
+        return [m["title"] for m in self.data["milestones"]]
+
+    def create_issue(
+        self, *, title: str, body: str, labels: list[str], milestone: str | None
+    ) -> int:
+        """Open an issue, as gh does: an unknown label or milestone fails it."""
+        if not title:
+            raise GhError("fake gh: no title")
+        if milestone and milestone not in self.milestone_titles():
+            raise GhError(f"could not add to milestone '{milestone}': not found")
+        for label in labels:
+            if label not in self.data["labels"]:
+                raise GhError(f"could not add label: '{label}' not found")
+        number = self.next_number()
+        self.data["issues"][str(number)] = {
+            "title": title,
+            "body": body,
+            "labels": list(dict.fromkeys(labels)),
+            "milestone": milestone,
+            "state": "open",
+        }
+        return number
+
+    def add_milestone(self, title: str) -> int:
+        """Open a milestone; its number follows the last one, as on GitHub."""
+        if not title:
+            raise GhError("gh: Validation Failed (HTTP 422)")
+        if title in self.milestone_titles():
+            raise GhError("gh: Validation Failed: already_exists (HTTP 422)")
+        self.data["milestones"].append({"title": title})
+        return len(self.data["milestones"])
+
+    def issue_by_id(self, issue_id: object) -> int:
+        """The number of the issue whose REST id this is (fake_gh_rest: 1000 + N)."""
+        number = int(str(issue_id)) - 1000 if str(issue_id).isdigit() else -1
+        self.issue(number)
+        return number
+
+    def link(self, number: int, key: str, other: int) -> None:
+        """Add other under the issue's sub_issues or blocked_by, once."""
+        self.issue(other)
+        linked = self.issue(number).setdefault(key, [])
+        if other not in linked:
+            linked.append(other)
+
+    def set_milestone(self, number: int, title: str | None) -> None:
+        """Set or clear an issue's milestone; an unknown title fails, as on GitHub."""
+        if title and title not in self.milestone_titles():
+            raise GhError(f"could not add to milestone '{title}': not found")
+        self.issue(number)["milestone"] = title or None
+
     def set_body(self, number: int, body: str) -> None:
         self.issue(number)["body"] = body
 
@@ -285,8 +344,7 @@ class State:
         """Open a PR; its number follows the highest issue or PR number."""
         if not head:
             raise GhError("fake gh: no head branch")
-        taken = self.issue_numbers() + self.pull_numbers()
-        number = max(taken, default=0) + 1
+        number = self.next_number()
         self.data["pulls"][str(number)] = {
             "title": title,
             "body": body,

@@ -21,7 +21,8 @@ from summary import summarize
         (["skills/dev-setup/reference/pipeline.md"], list(run.SKILLS)),
         (["evals/fake_gh.py"], list(run.SKILLS)),
         (["hooks/x.py", "rules/git.md"], []),
-        (["skills/dev-issue/SKILL.md"], []),
+        (["skills/dev-issue/SKILL.md"], ["dev-issue"]),
+        (["skills/dev-spec/SKILL.md"], []),
         ([], []),
     ],
 )

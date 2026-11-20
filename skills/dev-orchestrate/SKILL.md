@@ -36,7 +36,7 @@ gaps, and which proposal is approved for a spec child), and `process-tasks.md` (
    first after the `billing_flag` notice below: from which session (the prompt's
    `המתזמר הקודם:` line), and why (its `הסיבה:` line). Then one line per approved proposal (`proposals`,
    S-2.14), with its stage in words: `waiting` "מחכה לבן אפיון", `writing` "בכתיבה",
-   `questions` "שאלות", `review` "אפיון לסקירה", `breakdown` "פירוק לאישור", `replan` "חוזרת
+   `questions` "שאלות", `review` "אפיון לסקירה", `breakdown` "מחכה לפירוק", `replan` "חוזרת
    לתכנון" (an open spec part already names it, `parts`: it is that part's task, #334).
    While `sprint_state.py` gives a `billing_flag`, its `notice` is the picture's first line,
    as it is (S-1.53, `reference/git-flow.md`, "דגל החיוב").
@@ -207,6 +207,11 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    אישור בסשן-בן"): open the children of one check, and archive the ones step 3 verified as done,
    in one message, and say before it how many prompts are coming and that they are permission
    prompts, not questions.
+   **A breakdown** (`proposals`, stage `breakdown`: its spec PR merged and the proposal is still
+   open, say because `dev-ship` stopped before the breakdown): `dev-issue` breaks the spec down
+   in this check, with no question ("פירוק אפיון", S-1.66), the new tasks in the proposal's
+   milestone, and closes the proposal; one line in step 6's summary with the links. A split a
+   child proposed opens the same way (`orchestrate.md`, "באג, קישור או פיצול שבן מצא").
 5. **Dolev's window.** Everything that waits for him goes into one `AskUserQuestion` call, up to 4
    questions, most important first (`chat-decisions.md`):
    1. a plan's open questions: the questions themselves. A spec PR's open questions
@@ -218,13 +223,11 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       map, the CI state, and under the map one line from its `overlaps`: "נוגע גם בעבודה של:
       #N (<files>)", or "אין חפיפה עם בנים פעילים". "תמזג את #N" stays first: the line only
       warns. Only one merge question per window. A spec PR (`kind: "spec"`) is an ordinary
-      merge question: its merge is the approval of the "what", and its `dev-ship` offers the
-      breakdown;
-   3. a breakdown to approve (`proposals`, stage `breakdown`): the list of issues `dev-issue`
-      would open, with the proposal's milestone (S-2.14). It is asked again every check until
-      Dolev answers, since a check keeps no memory. A proposal in stage `replan` is asked the
-      same way, never as a breakdown: it is the task of the parts in `parts`, so "להחזיר
-      לתכנון (מומלץ)" first, then "להוריד מהספרינט" (#334);
+      merge question: its merge is the approval of the "what", and its `dev-ship` runs the
+      breakdown with no question (S-1.66);
+   3. a proposal in stage `replan`: it is the task of the parts in `parts`, never a
+      breakdown, so "להחזיר לתכנון (מומלץ)" first, then "להוריד מהספרינט" (#334). A proposal
+      in stage `breakdown` is not a question (S-1.66): step 4 breaks it down;
    4. the coding children held by the WIP gate (step 4): one question, the issues in
       `status:in-review`, and which held issues to open anyway (`multiSelect`, one option
       per issue), with "wait" first;
@@ -255,8 +258,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    the PR body, his words go in a comment on the issue, and a new spec child opens in this
    check (as step 4 says, still one spec at a time: the other proposals stay held while this
    PR is open) to write the answer into the file on the same branch (`dev-spec`,
-   step 8, a revision). Breakdown approved: `dev-issue` breaks the spec down here ("פירוק
-   אפיון"), the new tasks in the proposal's milestone, and closes the proposal. Back to
+   step 8, a revision). Back to
    planning (`replan`): first the body, with the editing rules of `reference/issue-body.md`:
    no `אפיון:` line in "הקשר / קישורים", or one that does not name its parts, gets
    `אפיון: <the spec file> <its parts>` there (without it, the planning gate sends the issue
@@ -277,7 +279,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
    and step 3 reads `since` and `expect` from it. The `spec_gaps` lines of step 2 come right
    above it, one per gap, and so do its `follow_up_gaps`, "#N: <message>",
    only for an issue whose hand-off step 3 already verified. Nothing to open and nothing to ask: the line says what the sprint waits
-   for, including a spec ("מחכה לאפיון של #N") or a breakdown ("מחכה לפירוק של #N"). Then, when any child is active, start the background watch: stop the previous one if
+   for, including a spec ("מחכה לאפיון של #N"). Then, when any child is active, start the background watch: stop the previous one if
    it still runs (`TaskStop`), so two never run, and in Bash with `run_in_background`:
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/watch_children.py" \

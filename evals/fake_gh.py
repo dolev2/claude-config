@@ -6,7 +6,7 @@ every change each issue's labels, body and comments, and each PR's state, are wr
 to plain files the graders read. A command this fake does not know is logged with
 "unsupported" and exits 1, so a case never passes on a call that was not simulated.
 
-Covers what the pipeline skills run: `gh issue view/edit/comment/list`,
+Covers what the pipeline skills run: `gh issue view/edit/comment/list/create`,
 `gh pr view/list/create/checks/merge/edit/comment`, and the REST forms of
 `skills/dev-setup/reference/cloud.md` through `gh api` (fake_gh_rest.py).
 """
@@ -123,9 +123,23 @@ def number_arg(args: list[str], state: State, kind: str) -> int:
     raise GhError(f"fake gh: not a number: {positional[0]}")
 
 
+def labels_arg(args: list[str], flag: str, short: str) -> list[str]:
+    """Every --label (or -l) value, each one split on commas."""
+    values = (take(args, flag, many=True) or []) + (take(args, short, many=True) or [])
+    return [x.strip() for value in values for x in value.split(",") if x.strip()]
+
+
 def issue_command(sub: str, args: list[str], state: State) -> str:
-    """gh issue view / edit / comment / list."""
+    """gh issue view / edit / comment / list / create."""
     fields, jq = take(args, "--json"), take(args, "--jq") or take(args, "-q")
+    if sub == "create":
+        number = state.create_issue(
+            title=take(args, "--title") or take(args, "-t") or "",
+            body=body_arg(args) or "",
+            labels=labels_arg(args, "--label", "-l"),
+            milestone=take(args, "--milestone") or take(args, "-m"),
+        )
+        return state.issue_url(number) + "\n"
     if sub == "list":
         labels = take(args, "--label", many=True) or []
         milestone = take(args, "--milestone")
@@ -147,6 +161,11 @@ def issue_command(sub: str, args: list[str], state: State) -> str:
             state.add_labels(number, label.split(","))
         for label in take(args, "--remove-label", many=True) or []:
             state.remove_labels(number, label.split(","))
+        milestone = take(args, "--milestone") or take(args, "-m")
+        if milestone is not None:
+            state.set_milestone(number, milestone)
+        if has(args, "--remove-milestone"):
+            state.set_milestone(number, None)
         body = body_arg(args)
         if body is not None:
             state.set_body(number, body)

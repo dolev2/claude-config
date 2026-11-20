@@ -26,7 +26,7 @@ from summary import summarize
 
 ROOT = Path(__file__).resolve().parent.parent
 EVALS = ROOT / "evals"
-SKILLS = ("dev-ship", "dev-code", "dev-plan")
+SKILLS = ("dev-ship", "dev-code", "dev-plan", "dev-issue")
 RUN_ALL = ("skills/dev-setup/reference/", "evals/")
 TOOLS = ("claude", "bwrap", "socat", "jq", "git")
 HOME_COPY = ("CLAUDE.md", "rules", "skills", "docs")
