@@ -17,6 +17,7 @@
 | הצעה בבקלוג ששויכה ל-milestone של הספרינט היא הצעה מאושרת: בן אפיון ראשון בתור, אחד בכל פעם, והפירוק שלה נכנס לספרינט שלה (S-2.14) | `specs.md`, "מתי נכתב אפיון" | `orchestrate-spec.md`, `pipeline.md` ("ספרינטים"), `dev-orchestrate`, `dev-spec` צעד 1, `dev-issue` ("פירוק אפיון"), `dev-plan` צעד 2 |
 | שער ה-WIP: שלושה ומעלה ב-`status:in-review`, כולל PR שכבר נסקר; תיקון פטור; בן של המתזמר מדלג | `git-flow.md`, "כמה issues בריצה אחת" | `dev-code` שלב 1 (הפקודה), `orchestrate.md` (המתזמר בודק לפני בן קוד) |
 | החלטה באה רק מדולב עצמו | `chat-decisions.md`, כלל 3 | `pipeline.md`, `dev-plan`, `dev-code`, `dev-ship` |
+| המבחן של "דולב בצ'אט": `AskUserQuestion` בין הכלים של הסשן, בן של מתזמר לא עובר, ומה קורה כשלא עובר (S-1.70) | `chat-decisions.md`, "המבחן של 'דולב בצ'אט'" | `chat-decisions.md` כללים 5 ו-7, `dev-code` שלב 11, `dev-spec` צעדים 5 ו-9, `dev-plan` צעדים 7–8, `dev-ship` ("Relationship to dev-code" וצעד 8), `dev-next` צעד 4, `dev-issue` ("פירוק אפיון"), `follow-ups.md`, `specs.md`, `pipeline.md` |
 | עובדות הסביבה בענן: GraphQL חסום, push שמוחק branch חסום, הרשת דרך proxy | `~/.claude/rules/env-cloud.md` | `cloud.md`, `git-flow.md` |
 | תרגום פקודות `gh` בענן | `cloud.md`, "פקודות GitHub בסשן ענן" | כל סקיל `dev-*` (שלב 0) |
 | צעדי git בענן: ה-branch של המשימה, בלי worktree, החלפת branch בעץ נקי, הניקוי אחרי מיזוג, שם הסשן | `git-flow.md`, "בסשן ענן" | `~/.claude/rules/git.md` (החריג), `cloud.md`, `dev-ship` צעד 7 |

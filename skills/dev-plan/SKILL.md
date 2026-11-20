@@ -249,7 +249,8 @@ keeps them: edit it in the headings it already has.
    gh issue edit <N> --add-label "status:plan-questions" --remove-label "status:explore"
    ```
    **Then, when Dolev is in the chat, ask the same questions in the question window**
-   (`AskUserQuestion`; `reference/chat-decisions.md`): one question
+   (`AskUserQuestion`; "in the chat" is the one test of `reference/chat-decisions.md`,
+   S-1.70): one question
    per open question, at most four per call, your recommendation first with "(מומלץ)". The
    label moves first, so a run nobody answers is still in the right state. His answer in the
    window counts like an answer in the issue: tick the questions in the open-questions section
@@ -270,7 +271,8 @@ keeps them: edit it in the headings it already has.
    moved to `status:ready-to-execute`, one after the other, in the order of `rank_issues.py`,
    each with its own PR and hand-off (`reference/git-flow.md`, "כמה issues בריצה אחת"). There
    is no approval question: Dolev approves the code in the review of the PR, and a comment on
-   the plan after the code started comes there too. A run with nobody in the chat does the same.
+   the plan after the code started comes there too. A run that fails the test of
+   `reference/chat-decisions.md` (S-1.70) does the same.
    Before each, one line in the chat: the plan is written and the code starts, with the issue's
    link. The exceptions below get their own line instead.
    - **Blocked meanwhile** (an open "Blocked by" link on an issue Dolev named and asked to plan
