@@ -107,9 +107,9 @@ Asking Dolev for his step in the question window (step 4) follows `chat-decision
 4. **When the top issue waits for Dolev, do not route around it silently.** Say what it
    waits for (the table above), with a link to the issue, then name the first row in Claude's
    turn below it that step 2 would pick, and ask whether to work on that one meanwhile. Doing
-   his part (answering, merging, relabelling) is never yours. You may ask him for it
-   in the question window and carry out what he chooses there
-   (`reference/chat-decisions.md`); never decide it for him. An answer he gives there sends
+   his part (answering, merging, relabelling) is never yours. When he is in the chat (the one
+   test of `reference/chat-decisions.md`, S-1.70), you may ask him for it in the question
+   window and carry out what he chooses there; never decide it for him. An answer he gives there sends
    the issue back to `status:explore`: route it to `dev-plan`, which finishes the plan and starts
    the code.
 

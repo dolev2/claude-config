@@ -35,7 +35,8 @@ request *is* the go-ahead, so no second confirmation is needed (the merge signal
 `reference/pipeline.md`; what counts as his decision: `reference/chat-decisions.md`).
 Never ship an issue Dolev has not asked about. The one exception is the run of S-3.13: `dev-code`
 (step 11) or `dev-spec` (step 9) runs this skill right after a hand-off in the same session,
-with Dolev in the chat, and the merge's permission window is the question (step 5). The
+with Dolev in the chat (the one test of `reference/chat-decisions.md`, S-1.70), and the
+merge's permission window is the question (step 5). The
 orchestrator's merge of S-2.18 is the same run: one PR per check, after its question window
 (`dev-orchestrate`, step 6). A question like "#12 מוכן?" still runs no merge.
 `status:done` is set here, after the merge, and means "merged", never "approved".
@@ -319,7 +320,8 @@ update: `dev-setup` moves the `אפיון:` lines itself.
 1. **New parts with no issue: the breakdown runs here, at once, with no question** (S-1.66):
    `dev-issue` in its "פירוק אפיון" mode, which opens the issues and reports them.
 2. **Issues to update** (`close` or `explore`), after the breakdown: one question in the
-   question window with the whole list, and for each issue what will happen to it.
+   question window (when Dolev is in the chat, the test of `reference/chat-decisions.md`,
+   S-1.70; otherwise text in the report) with the whole list, and for each issue what will happen to it.
    "לבצע (מומלץ)" runs `dev-issue`'s "עדכון אחרי שינוי באפיון" mode here. "Other" corrects
    the list. The update closes issues, so it stays Dolev's (S-1.34).
 3. **An `ask` issue** (in the code or in review, or with no status label): a question of its
@@ -337,7 +339,7 @@ that issue in this session.
 
 **Process tasks** (`reference/process-tasks.md`), only from steps 1–7 of this run: every one
 that passes the filter, with no limit, each a question in a question window of its own (after
-the update question, when there is one). From the orchestrator, they
+the update question, when there is one), by the same test. From the orchestrator, they
 go into the orchestrator's next window (`dev-orchestrate`, step 5).
 
 ## Reporting back

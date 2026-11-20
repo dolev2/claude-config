@@ -100,10 +100,11 @@ every run.
 5. **Never invent a requirement.** A price, a rule, a value or a choice nobody has made is an
    open question, not text. Collect them for the PR body's "שאלות פתוחות" section, as unticked
    boxes, each with the options you see and your recommendation. Then, when Dolev is in the
-   chat, ask them in the question window (`AskUserQuestion`, `reference/chat-decisions.md`): one
+   chat (the one test of `reference/chat-decisions.md`, S-1.70), ask them in the question
+   window (`AskUserQuestion`): one
    question each, at most four per call, your recommendation first with "(מומלץ)". His answer
-   goes into the file, and its box is ticked with the decision. No window (an automated run):
-   the PR body is where he reads them. A child session of an orchestrator never opens the
+   goes into the file, and its box is ticked with the decision. The test fails: the PR body is
+   where he reads them. A child session of an orchestrator never opens the
    window: it still opens the PR (steps 6–8) with the unticked boxes in its body, then writes
    the questions in a comment on the issue and ends its turn. The orchestrator reads them from
    the PR body (`reference/orchestrate-spec.md`).
@@ -171,15 +172,15 @@ every run.
    message, in Hebrew: the link to the PR's changes first, the parts it adds, the open questions
    left, and the next step: he reads the file in the PR and approves the merge's permission
    window, or asks for fixes in words. **The merge is the approval of the "what".**
-   The merge is not asked in the question window (S-3.13). When Dolev is in the chat (the test:
-   `AskUserQuestion` is among this session's tools; without it, no merge runs), CI is
+   The merge is not asked in the question window (S-3.13). When Dolev is in the chat (the one
+   test of `reference/chat-decisions.md`, S-1.70; when it fails, no merge runs), CI is
    green on the last push (or the billing flag is on, or the repo has no CI, and the local
    checks passed), and no unticked box is left in the PR body's open questions: the chat
    message ends with the PR's number, the CI state (or "ה-CI לא רץ: החיוב חסום") and the fixed
    line "החלון שקופץ עכשיו הוא שאלת המיזוג: אישור ממזג, דחייה משאירה בסקירה", then run `dev-ship`
    on the PR at once; its permission window is the question, and declining it leaves the PR
-   for review (`dev-ship`, step 5). An unticked box: wait for his answer. No window, an
-   automated run, or an orchestrator's child: the message is the hand-off. A fix he asks for in
+   for review (`dev-ship`, step 5). An unticked box: wait for his answer. The test fails (an
+   orchestrator's child among them): the message is the hand-off. A fix he asks for in
    words revises the file on the same branch (step 8, a revision).
 
 ## Golden rules

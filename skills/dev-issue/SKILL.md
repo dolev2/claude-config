@@ -240,10 +240,11 @@ into issues. It opens with no question (step 1, item 1). The rules: `reference/s
    "ספרינטים"); otherwise one that fits the topic, or a new one named for it. A blocker comes
    **only** from a dependency written in the spec ("תלוי ב-S-1.2": blocked by the issue of
    S-1.2, new or existing). **A dependency that seems missing** is never a guessed link: the
-   issues open without it, and after the report it is a question in the question window. "כן"
-   updates the spec first (`dev-spec`), and the link is made only after that merge. No window
-   (an automated run): the question is text in the report (`reference/chat-decisions.md`,
-   rule 6), and the issues are already open.
+   issues open without it, and after the report it is a question in the question window, when
+   Dolev is in the chat (the one test of `reference/chat-decisions.md`, S-1.70). "כן"
+   updates the spec first (`dev-spec`), and the link is made only after that merge. The test
+   fails: the question is text in the report (`reference/chat-decisions.md`, rule 7), and the
+   issues are already open.
 3. **Each body** follows step 2: "מה רוצים" says in a line or two which part it implements and
    how Dolev will know it works, without copying the part; "הקשר / קישורים" links the proposal
    and holds the `תלוי ב:` and `אפיון:` lines. Labels and milestone as step 3 (a task); links
