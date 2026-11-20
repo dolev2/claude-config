@@ -33,6 +33,11 @@ HOME_COPY = ("CLAUDE.md", "rules", "skills", "docs")
 PLUGIN_NAME = "skill-evals"
 DEFAULT_CEILING_USD = 10.0
 RUNS = 2
+# A case runs in $HOME/cwd, so the worktree that git-flow.md puts in
+# "<parent of repo>/worktrees" lands in $HOME/worktrees, outside the folder the file
+# tools may write in. The skill is not changed for the evals (S-1.68): this grant
+# opens that one folder to the file tools, and nothing else.
+WORKTREE_GRANTS = tuple(f"{tool}(~/worktrees/**)" for tool in ("Read", "Write", "Edit"))
 
 
 class BaseMissingError(Exception):
@@ -172,7 +177,7 @@ def eval_command(plugin: Path, args: argparse.Namespace, tags: list[str]) -> lis
     ]
     if args.model:
         command += ["--model", args.model]
-    command += ["--allow-tools", "Bash", "Write", "Edit"]
+    command += ["--allow-tools", "Bash", "Write", "Edit", *WORKTREE_GRANTS]
     if args.case:
         command += ["--case", args.case]
     if tags:
