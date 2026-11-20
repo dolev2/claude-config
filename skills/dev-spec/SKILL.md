@@ -103,8 +103,8 @@ every run.
    chat (the one test of `reference/chat-decisions.md`, S-1.70), ask them in the question
    window (`AskUserQuestion`): one
    question each, at most four per call, your recommendation first with "(מומלץ)". His answer
-   goes into the file, and its box is ticked with the decision. The test fails: the PR body is
-   where he reads them. A child session of an orchestrator never opens the
+   goes into the file, and its box is ticked with the decision. The test fails, or the call is
+   refused: the PR body is where he reads them. A child session of an orchestrator never opens the
    window: it still opens the PR (steps 6–8) with the unticked boxes in its body, then writes
    the questions in a comment on the issue and ends its turn. The orchestrator reads them from
    the PR body (`reference/orchestrate-spec.md`).

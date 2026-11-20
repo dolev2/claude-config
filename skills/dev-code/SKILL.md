@@ -326,8 +326,8 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
     1. **Each follow-up task, one per question window** (`AskUserQuestion`), with the options
        of `reference/follow-ups.md`; each proposal opens with `dev-issue`. After the last one,
        one comment on the issue: each task's kind, what was chosen, and the proposal's link and
-       repo. After each choice, one line in the chat on what changed. No window available, or
-       the run is automated: each task opens as a backlog proposal with no sprint
+       repo. After each choice, one line in the chat on what changed. The test fails, or the
+       call to the window is refused: each task opens as a backlog proposal with no sprint
        (`reference/follow-ups.md`), followed by the same one comment, with the proposals that
        opened. An orchestrator's child opens none: they stay in the comment, for the
        orchestrator's window.
