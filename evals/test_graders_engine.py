@@ -112,3 +112,20 @@ def test_regex_grader_without_pattern_line_fails(tmp_path):
     grader.write_text('---\ntype: regex\npattern: "x"\n---\n', encoding="utf-8")
     with pytest.raises(AssertionError, match="pattern"):
         regex_pattern(grader)
+
+
+@pytest.mark.parametrize("line", ["type: regex", 'type: "regex"', "type: 'regex' "])
+def test_regex_type_in_any_yaml_form(tmp_path, line):
+    grader = tmp_path / "g.md"
+    grader.write_text(f"---\n{line}\npattern: 'x'\n---\n", encoding="utf-8")
+    assert is_regex_grader(grader)
+
+
+def test_other_type_is_not_regex(tmp_path):
+    grader = tmp_path / "g.md"
+    grader.write_text("---\ntype: tool_used\ntool: Edit\n---\n", encoding="utf-8")
+    assert not is_regex_grader(grader)
+
+
+def test_every_flag_gets_a_fix():
+    assert "without the flag" in unsupported("(?x)a b")[0]

@@ -27,6 +27,8 @@ FLAG_FIX = {
     "s": r"[\s\S] in place of .",
     "i": "both cases of each letter, or a character class",
 }
+OTHER_FLAG_FIX = "the pattern without the flag"
+TYPE_REGEX = re.compile(r"""^type:\s*["']?regex["']?\s*$""", re.MULTILINE)
 
 
 def regex_pattern(grader: Path) -> str:
@@ -41,7 +43,7 @@ def regex_pattern(grader: Path) -> str:
 
 def is_regex_grader(grader: Path) -> bool:
     """Whether the grader's front matter says `type: regex`."""
-    return "type: regex" in grader.read_text(encoding="utf-8").splitlines()
+    return bool(TYPE_REGEX.search(grader.read_text(encoding="utf-8")))
 
 
 def unsupported(pattern: str) -> list[str]:
@@ -56,7 +58,7 @@ def unsupported(pattern: str) -> list[str]:
         if not flags:
             continue
         fixes = "; ".join(
-            FLAG_FIX.get(flag, "no flag") for flag in dict.fromkeys(flags)
+            FLAG_FIX.get(flag, OTHER_FLAG_FIX) for flag in dict.fromkeys(flags)
         )
         finds.append(f"inline flag ({group}: write {fixes}")
     return finds
