@@ -315,7 +315,12 @@ Then the repo's **`CLAUDE.md`**: its working rules and its test commands.
        (desktop, phone; on Windows desktop only). On Windows the message also carries the fixed
        "לא צולם ברוחב טלפון" line from `reference/ux.md`. None: the "לא צולם: <למה>" line from
        `reference/ux.md` is in the message instead. A task with no interface has neither.
-    3. **The diff pane:** open it only if the session has a tool for it (`show_pane`); otherwise
+    3. **The `diff` blocks of the `.md` files**, after the bottom line and the change map
+       (S-1.65; the rule: `reference/chat-decisions.md`, "ה-diff של קובצי MD"):
+       `md_diff.py --base origin/<default> --head HEAD --pr-url <the link of item 1>`, pasted as
+       it prints; it prints nothing when no `.md` file changed. An orchestrator's child skips
+       it: it has no chat message.
+    4. **The diff pane:** open it only if the session has a tool for it (`show_pane`); otherwise
        the link above is the way in, with no line about it.
 
     **Then, when Dolev is in the chat: the follow-up tasks first, then the merge** (S-3.13;

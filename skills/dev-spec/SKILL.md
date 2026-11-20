@@ -169,8 +169,10 @@ every run.
    # (or --remove-label "status:needs-repair" on a repair round)
    ```
    A proposal keeps `status:backlog`; the `Refs` line already links the PR to it. Then the chat
-   message, in Hebrew: the link to the PR's changes first, the parts it adds, the open questions
-   left, and the next step: he reads the file in the PR and approves the merge's permission
+   message, in Hebrew: the link to the PR's changes first, the parts it adds, the `diff` blocks
+   of its `.md` files (S-1.65, `reference/chat-decisions.md`, "ה-diff של קובצי MD":
+   `md_diff.py --base origin/<default> --head HEAD --pr-url <that link>`, pasted as it prints;
+   none for an orchestrator's child), the open questions left, and the next step: he reads the file in the PR and approves the merge's permission
    window, or asks for fixes in words. **The merge is the approval of the "what".**
    The merge is not asked in the question window (S-3.13). When Dolev is in the chat (the one
    test of `reference/chat-decisions.md`, S-1.70; when it fails, no merge runs), CI is
