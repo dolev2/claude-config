@@ -21,10 +21,14 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     run_git(tmp_path, "init", "-q", "-b", "base")
     run_git(tmp_path, "config", "user.email", "t@example.com")
     run_git(tmp_path, "config", "user.name", "t")
-    (tmp_path / "doc.md").write_text("שורה אחת\nשורה שתיים\nשורה שלוש\n")
-    (tmp_path / "old name.md").write_text("".join(f"line {i}\n" for i in range(20)))
-    (tmp_path / "gone.md").write_text("ייעלם\n")
-    (tmp_path / "code.py").write_text("x = 1\n")
+    (tmp_path / "doc.md").write_text(
+        "שורה אחת\nשורה שתיים\nשורה שלוש\n", encoding="utf-8"
+    )
+    (tmp_path / "old name.md").write_text(
+        "".join(f"line {i}\n" for i in range(20)), encoding="utf-8"
+    )
+    (tmp_path / "gone.md").write_text("ייעלם\n", encoding="utf-8")
+    (tmp_path / "code.py").write_text("x = 1\n", encoding="utf-8")
     run_git(tmp_path, "add", ".")
     run_git(tmp_path, "commit", "-q", "-m", "base")
     run_git(tmp_path, "checkout", "-q", "-b", "head")
@@ -49,7 +53,7 @@ def output(*extra: str) -> str:
 
 
 def test_changed_file_gets_a_block_with_its_name(repo: Path) -> None:
-    (repo / "doc.md").write_text("שורה אחת\nשורה חדשה\nשורה שלוש\n")
+    (repo / "doc.md").write_text("שורה אחת\nשורה חדשה\nשורה שלוש\n", encoding="utf-8")
     commit(repo)
     text = output()
     assert "הקובץ `doc.md`" in text
@@ -60,11 +64,15 @@ def test_changed_file_gets_a_block_with_its_name(repo: Path) -> None:
 
 
 def test_new_deleted_and_renamed_files(repo: Path) -> None:
-    (repo / "new.md").write_text("חדש\n")
+    (repo / "new.md").write_text("חדש\n", encoding="utf-8")
     (repo / "gone.md").unlink()
     run_git(repo, "mv", "old name.md", "new name.md")
-    lines = (repo / "new name.md").read_text().replace("line 3\n", "line three\n")
-    (repo / "new name.md").write_text(lines)
+    lines = (
+        (repo / "new name.md")
+        .read_text(encoding="utf-8")
+        .replace("line 3\n", "line three\n")
+    )
+    (repo / "new name.md").write_text(lines, encoding="utf-8")
     commit(repo)
     text = output()
     assert "קובץ חדש: `new.md`" in text and "+חדש" in text
@@ -75,7 +83,7 @@ def test_new_deleted_and_renamed_files(repo: Path) -> None:
 
 
 def test_only_code_prints_nothing(repo: Path) -> None:
-    (repo / "code.py").write_text("x = 2\n")
+    (repo / "code.py").write_text("x = 2\n", encoding="utf-8")
     commit(repo)
     assert output() == ""
 
@@ -126,8 +134,35 @@ def test_missing_base_is_exit_two() -> None:
 
 
 def test_fence_is_longer_than_backticks_inside(repo: Path) -> None:
-    (repo / "doc.md").write_text("שורה אחת\n```bash\nls\n```\nשורה שלוש\n")
+    (repo / "doc.md").write_text(
+        "שורה אחת\n```bash\nls\n```\nשורה שלוש\n", encoding="utf-8"
+    )
     commit(repo)
     text = output()
     assert "````diff" in text
     assert text.rstrip().endswith("````")
+
+
+def test_files_without_hunks_still_get_their_heading(repo: Path) -> None:
+    run_git(repo, "mv", "gone.md", "moved.md")
+    (repo / "empty.md").write_text("", encoding="utf-8")
+    commit(repo)
+    text = output()
+    assert "שם שונה: `gone.md` ← `moved.md`" in text
+    assert "קובץ חדש: `empty.md`" in text
+    assert "```diff" not in text
+
+
+def test_a_star_in_a_name_is_not_a_glob(repo: Path) -> None:
+    (repo / "a*.md").write_text("כוכבית\n", encoding="utf-8")
+    (repo / "abc.md").write_text("שכן\n", encoding="utf-8")
+    commit(repo)
+    text = output()
+    star_block = text.split("קובץ חדש: `a*.md`")[1].split("קובץ חדש:")[0]
+    assert "+כוכבית" in star_block and "+שכן" not in star_block
+
+
+def test_bytes_that_are_not_utf8_do_not_crash(repo: Path) -> None:
+    (repo / "doc.md").write_bytes(b"\xff\xfe broken\n")
+    commit(repo)
+    assert "הקובץ `doc.md`" in output()

@@ -277,7 +277,7 @@ not send any (`orchestrate.md`, "איך המתזמר יודע שבן התקדם"
       the link to the PR's changes, the CI state (or "ה-CI לא רץ: החיוב חסום"), one line from
       its `overlaps` ("נוגע גם בעבודה של: #N (<files>)", or "אין חפיפה עם בנים פעילים"), and
       the `diff` blocks of its `.md` files (`chat-decisions.md`, "ה-diff של קובצי MD"; S-1.65:
-      `git fetch origin <branch>`, then `md_diff.py --base origin/<default> --head
+      `git fetch origin <default> <branch>`, then `md_diff.py --base origin/<default> --head
       origin/<branch> --pr-url <the PR's /files link>`, pasted as it prints), and
       the fixed line "החלון שקופץ עכשיו הוא שאלת המיזוג: אישור ממזג, דחייה משאירה בסקירה".
    3. **The run:** `dev-ship` on that issue here (`orchestrate.md`, "מיזוג"). The window holds

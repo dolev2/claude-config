@@ -95,7 +95,7 @@
    ```bash
    python "$HOME/.claude/skills/dev-setup/scripts/md_diff.py" --base origin/<default> --head <ref> --pr-url https://github.com/<repo>/pull/<PR>/files
    ```
-   `<ref>` הוא `HEAD` במסירה, ו-`origin/<branch>` אחרי `git fetch origin <branch>` אצל המתזמר.
+   `<ref>` הוא `HEAD` במסירה, ו-`origin/<branch>` אחרי `git fetch origin <default> <branch>` אצל המתזמר, כדי שה-branch הראשי לא יהיה ישן.
 3. **איפה בהודעה:** אחרי השורה התחתונה ומפת השינויים, ולא במקומן. הקישור לשינויים ב-PR נשאר.
 4. **התקרה, 150 שורות diff,** והמשפט שאחרי החיתוך: הסקריפט כותב אותם. בלי קובץ MD הוא לא מדפיס כלום, וההודעה כמו תמיד.
 5. **ה-diff לא נקרא:** הסקריפט מדפיס משפט אחד עם הקישור, והמסירה או המיזוג ממשיכים.

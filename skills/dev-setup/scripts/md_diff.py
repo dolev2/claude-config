@@ -31,11 +31,22 @@ class Change:
     new: str
 
 
-def git(*args: str) -> subprocess.CompletedProcess:
-    """Runs git and returns the result, without raising on a non-zero exit."""
-    return subprocess.run(
-        ["git", *args], capture_output=True, text=True, encoding="utf-8"
-    )
+def git(*args: str) -> subprocess.CompletedProcess | None:
+    """Runs git and returns the result, or None when git itself cannot start.
+
+    Paths are literal (a `*` in a file name is not a glob), and bytes that are not
+    UTF-8 are replaced, so an odd file never turns into a traceback.
+    """
+    try:
+        return subprocess.run(
+            ["git", "--literal-pathspecs", *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError:
+        return None
 
 
 def parse_name_status(output: str) -> list[Change]:
@@ -68,7 +79,9 @@ def body_lines(patch: str) -> list[str]:
     git's header lines (`diff --git`, `index`, `---`, `+++`) are left out, since the
     heading above the block replaces them.
     """
-    lines = patch.splitlines()
+    lines = patch.split("\n")  # not splitlines(): git ends lines with \n only
+    if lines and not lines[-1]:
+        lines.pop()
     starts = (i for i, line in enumerate(lines) if line.startswith("@@"))
     return lines[next(starts, len(lines)) :]
 
@@ -108,9 +121,8 @@ def render(patches: list[Patch], pr_url: str, limit: int = LINE_LIMIT) -> str:
     """All the blocks, up to `limit` diff lines in all, then the cut sentence."""
     out, used, cut, skipped = [], 0, None, []
     for change, lines in patches:
-        if not lines:
-            if change.status == "R":  # a pure rename: the names alone say it all
-                out.append(heading(change))
+        if not lines:  # a pure rename, an empty file, a mode change or a binary file
+            out.append(heading(change))
             continue
         if used >= limit:
             skipped.append(change.new)
@@ -144,7 +156,9 @@ def unreadable(pr_url: str) -> str:
     return f"ה-diff של קובצי ה-MD לא נקרא.{link}"
 
 
-def file_patch(base: str, head: str, change: Change) -> subprocess.CompletedProcess:
+def file_patch(
+    base: str, head: str, change: Change
+) -> subprocess.CompletedProcess | None:
     """The patch of one file between the two refs, with renames followed."""
     paths = [change.old] if change.old == change.new else [change.old, change.new]
     return git("diff", "-M", "--no-color", f"{base}...{head}", "--", *paths)
@@ -153,12 +167,12 @@ def file_patch(base: str, head: str, change: Change) -> subprocess.CompletedProc
 def collect(base: str, head: str) -> list[Patch] | None:
     """Each changed Markdown file with its diff lines, or None when git failed."""
     listing = git("diff", "--name-status", "-M", "-z", f"{base}...{head}")
-    if listing.returncode != 0:
+    if listing is None or listing.returncode != 0:
         return None
     patches = []
     for change in filter(is_markdown, parse_name_status(listing.stdout)):
         patch = file_patch(base, head, change)
-        if patch.returncode != 0:
+        if patch is None or patch.returncode != 0:
             return None
         patches.append((change, body_lines(patch.stdout)))
     return patches
