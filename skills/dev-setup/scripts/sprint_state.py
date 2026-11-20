@@ -49,7 +49,9 @@ The keys:
                      not yet, ask again next check (cloud.md). overlaps: the other
                      work in flight that shares a file the PR changes,
                      [{number, files}]. A spec PR ready for review is here too,
-                     with "kind": "spec"
+                     with "kind": "spec". declined: Dolev declined this merge at
+                     this head in the orchestrator's permission window (S-2.18,
+                     merge_declines.py); a new head brings the PR back
     on_hold          costs-money, until Dolev approves the expense
     paused           Claude's turn, but labelled `paused`: only Dolev pauses and resumes
                      an issue (S-1.3). Not in on_hold, which work_status.py reads as
@@ -92,6 +94,7 @@ from pathlib import Path
 
 import billing_flag
 import follow_ups
+import merge_declines
 from audit_sprint import SprintIssue, audit, is_shared_doc, sprint_issue
 from gh_rest import api, current_repo, open_issue_nodes
 from issue_body import SPECS_DIR, plan_branch, sections
@@ -141,6 +144,10 @@ def shared_files(a: set[str], b: set[str]) -> list[str]:
 def no_files(_: object) -> set[str]:
     """The default reader of changed files: nothing read from GitHub."""
     return set()
+
+
+def never_declined(_number: int, _head_sha: str) -> bool:
+    return False
 
 
 def no_prs(_: int) -> list[dict]:
@@ -224,6 +231,7 @@ def state(
     spec_prs_of: Callable[[int], list[dict]] = no_prs,
     spec_file: str = SPECS_DIR,
     open_parts: dict[int, list[str]] | None = None,
+    declined_of: Callable[[int, str], bool] = never_declined,
 ) -> dict:
     """The sprint's state, with what it reads from GitHub passed in as functions.
 
@@ -231,6 +239,7 @@ def state(
     files a branch changed, `files_of_pr(number)` the files a PR changes, and
     `spec_prs_of(number)` the spec PRs that link an issue (sprint_github.py).
     `open_parts` maps an issue to the open spec parts that name it (open_parts()).
+    `declined_of(number, head_sha)` says whether Dolev declined that merge (S-2.18).
     """
     in_sprint = [
         n for n in nodes if n["milestone"] and n["milestone"]["title"] == sprint
@@ -274,6 +283,8 @@ def state(
         if i.status == "in-review"
         for pr in by_number[i.number]["closingPullRequests"]
     ] + spec_merge_queue(found, spec_file, status_of)
+    for entry in merge_queue:
+        entry["declined"] = declined_of(entry["number"], entry["head_sha"])
     return {
         "sprint": sprint,
         "dispatch": spec_dispatch + dispatch,
@@ -459,6 +470,9 @@ def main(argv: list[str] | None = None) -> None:
     # Read on every run, not only with --spec: a proposal an open part already names
     # is a task to replan, not a spec to write (#334).
     files, unread = specs_or_warning(base)
+    # One read of the comments, for the follow-ups and the declined merges.
+    issues, comments, pulls = follow_ups.fetch(repo, sprint)
+    declined = merge_declines.declined_heads(comments)
     result = state(
         nodes,
         sprint,
@@ -469,10 +483,11 @@ def main(argv: list[str] | None = None) -> None:
         lambda number: spec_prs(repo, number),
         f"{SPECS_DIR}{repo.split('/')[-1]}.md",
         open_parts(files),
+        lambda number, sha: merge_declines.is_declined(declined, number, sha),
     )
     result |= pipeline_shas(CACHE)
     result["billing_flag"] = billing_flag.current(CACHE)
-    result |= follow_ups.follow_ups(repo, sprint)
+    result |= follow_ups.collect(issues, comments, pulls)
     if args.spec:
         warning = {"path": None, "line": None, "message": unread}
         result["spec_gaps"] = [warning] if unread else spec_gaps(nodes, files)

@@ -191,6 +191,15 @@ def milestone_of(repo: str, title: str) -> dict:
 
 def follow_ups(repo: str, sprint: str) -> dict:
     """The two keys for the milestone named `sprint`, read from GitHub."""
+    return collect(*fetch(repo, sprint))
+
+
+def fetch(repo: str, sprint: str) -> tuple[list[dict], list[dict], list[dict]]:
+    """The sprint's issues, the repo's comments since it began, and recent PRs.
+
+    sprint_state.py reads the comments once and passes them to collect() and to
+    merge_declines.py.
+    """
     milestone = milestone_of(repo, sprint)
     issues = api_list(f"repos/{repo}/issues?milestone={milestone['number']}&state=all")
     # An issue carried in from an earlier sprint may have handed off before this one.
@@ -200,7 +209,7 @@ def follow_ups(repo: str, sprint: str) -> dict:
     pulls = api(
         f"repos/{repo}/pulls?state=all&sort=updated&direction=desc&per_page=100"
     )
-    return collect(issues, comments, pulls)
+    return issues, comments, pulls
 
 
 def main(argv: list[str] | None = None) -> None:

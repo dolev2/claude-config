@@ -35,8 +35,9 @@ request *is* the go-ahead, so no second confirmation is needed (the merge signal
 `reference/pipeline.md`; what counts as his decision: `reference/chat-decisions.md`).
 Never ship an issue Dolev has not asked about. The one exception is the run of S-3.13: `dev-code`
 (step 11) or `dev-spec` (step 9) runs this skill right after a hand-off in the same session,
-with Dolev in the chat, and the merge's permission window is the question (step 5). A question
-like "#12 מוכן?" still runs no merge.
+with Dolev in the chat, and the merge's permission window is the question (step 5). The
+orchestrator's merge of S-2.18 is the same run: one PR per check, after its question window
+(`dev-orchestrate`, step 6). A question like "#12 מוכן?" still runs no merge.
 `status:done` is set here, after the merge, and means "merged", never "approved".
 
 ## Step 0b: Entry from an issue (pipeline repos only)
@@ -169,7 +170,7 @@ gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].n
 For each issue, read its "שאלות פתוחות" section (`issue-body.md`). A spec PR (branch
 `claude/spec-*`) also has that section in its own body: read it there too. A box still unticked: list
 it and ask Dolev whether to merge anyway; stop until he answers. In the run of S-3.13 (from
-`dev-code` or `dev-spec`, with no typed request), an unticked box stops with no question: say
+`dev-code` or `dev-spec`, or the orchestrator's of S-2.18, with no typed request), an unticked box stops with no question: say
 in one line which box is open and that the PR waits for review, and leave the issue in
 `status:in-review`. That caller already checked it, and this is the safety net. Do not tick boxes on his behalf. The open-questions gate already warned when the issue moved to `status:in-review`;
 this is the last look before the merge.
@@ -211,6 +212,9 @@ run the merge and let the window ask.
 **Declined:** stop, say in one line that the PR waits for review, and leave the issue in
 `status:in-review`; never merge another way. Do not run the same merge again on your own: it
 comes up again only after a new hand-off of that PR (a repair round), or on his typed request.
+From the orchestrator (S-2.18), the orchestrator writes the decline down with the
+`expectedHeadSha` this step sent (`dev-orchestrate`, step 6), so give it that sha; do not write
+the comment here.
 
 If the merge is blocked (required reviews, protection, conflicts), stop and report the exact
 reason `gh` or the MCP tool gives. Do not retry blindly and do not force anything.

@@ -77,6 +77,7 @@ def run(
     pr_files=None,
     spec_prs=None,
     open_parts=None,
+    declined_of=sprint_state.never_declined,
 ):
     branches = branches or {}
     pr_files = pr_files or {}
@@ -91,6 +92,7 @@ def run(
         lambda number: spec_prs.get(number, []),
         SPEC,
         open_parts=open_parts,
+        declined_of=declined_of,
     )
 
 
@@ -274,9 +276,30 @@ def test_merge_queue_carries_the_pr_head_and_its_checks():
             "mergeable_state": "behind",
             "ci": "pending",
             "overlaps": [],
+            "declined": False,
         }
     ]
     assert seen == [{"number": 40, "headSha": "sha40"}]
+
+
+def test_a_merge_dolev_declined_at_this_head_is_marked():
+    asked = []
+
+    def declined_of(number, head_sha):
+        asked.append((number, head_sha))
+        return number == 1
+
+    result = run(
+        node(1, "in-review", prs=[40]),
+        node(2, "in-review", prs=[41]),
+        status_of=clean,
+        declined_of=declined_of,
+    )
+    assert [(q["number"], q["declined"]) for q in result["merge_queue"]] == [
+        (1, True),
+        (2, False),
+    ]
+    assert asked == [(1, "sha40"), (2, "sha41")]
 
 
 def test_a_manual_task_waits_for_dolev_and_is_never_dispatched():
@@ -403,13 +426,18 @@ def test_ci_summary(runs, summary):
 FOLLOW_UPS = {"follow_ups": [{"issue": 1, "key": "0123456789"}], "follow_up_gaps": []}
 
 
-def fake_github(monkeypatch, nodes):
+def fake_github(monkeypatch, nodes, comments=()):
     monkeypatch.setattr(sprint_state, "current_repo", lambda: "acme/widgets")
     monkeypatch.setattr(sprint_state, "open_issue_nodes", lambda repo, with_body: nodes)
     monkeypatch.setattr(sprint_state, "api", lambda path: {"default_branch": "main"})
     monkeypatch.setattr(sprint_state, "repo_specs", lambda base: {})
     monkeypatch.setattr(sprint_state, "spec_prs", lambda repo, number: [])
-    monkeypatch.setattr(follow_ups, "follow_ups", lambda repo, sprint: FOLLOW_UPS)
+    monkeypatch.setattr(sprint_state, "pr_status", lambda repo, pr: clean(pr))
+    monkeypatch.setattr(sprint_state, "pr_files", lambda repo, number: set())
+    monkeypatch.setattr(
+        follow_ups, "fetch", lambda repo, sprint: ([], list(comments), [])
+    )
+    monkeypatch.setattr(follow_ups, "collect", lambda issues, found, pulls: FOLLOW_UPS)
 
 
 def test_a_failing_git_leaves_null_shas_and_the_rest_of_the_state(
@@ -462,6 +490,23 @@ def test_main_adds_the_follow_ups_and_keeps_the_other_keys(
         "session_sha",
         "billing_flag",
     }
+
+
+def test_main_reads_a_declined_merge_from_the_comments_it_already_has(
+    tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(pipeline_shas, "PIPELINE_URL", str(tmp_path / "missing"))
+    monkeypatch.setattr(sprint_state, "CACHE", tmp_path / "cache.git")
+    declined = {
+        "issue_url": "https://api.github.com/repos/acme/widgets/issues/1",
+        "body": "<!-- orchestrator -->\n<!-- merge-declined: abc1234 -->",
+    }
+    nodes = [node(1, "in-review", prs=[40]), node(2, "in-review", prs=[41])]
+    nodes[0]["closingPullRequests"][0]["headSha"] = "abc1234" + "0" * 33
+    fake_github(monkeypatch, nodes, [declined])
+    sprint_state.main([])
+    queue = json.loads(capsys.readouterr().out)["merge_queue"]
+    assert [(q["number"], q["declined"]) for q in queue] == [(1, True), (2, False)]
 
 
 def test_main_without_an_open_milestone_exits(monkeypatch):
@@ -671,6 +716,7 @@ def test_a_spec_pr_ready_for_review_is_in_the_merge_queue():
             "mergeable_state": "clean",
             "ci": "success",
             "overlaps": [{"number": 4, "files": [SPEC]}],
+            "declined": False,
         }
     ]
 
