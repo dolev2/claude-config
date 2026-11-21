@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 
 import pytest
+from graders import regex_pattern
 
 GRADERS = Path(__file__).parent / "cases" / "dev-plan-explore-issue" / "graders"
 BRIEF = (
@@ -20,10 +21,7 @@ BRIEF = (
 
 def pattern_of(name: str) -> re.Pattern:
     """The grader's regex, read from the single-quoted `pattern:` line of its file."""
-    for line in (GRADERS / f"{name}.md").read_text(encoding="utf-8").splitlines():
-        if line.startswith("pattern: '") and line.endswith("'"):
-            return re.compile(line[len("pattern: '") : -1].replace("''", "'"))
-    raise AssertionError(f"{name}: no pattern line")
+    return re.compile(regex_pattern(GRADERS / f"{name}.md"))
 
 
 def failing(body: str) -> set[str]:

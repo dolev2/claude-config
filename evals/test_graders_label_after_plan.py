@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 import pytest
+from graders import regex_pattern
 
 GRADER = (
     Path(__file__).parent
@@ -21,10 +22,7 @@ GRADER = (
 
 def pattern() -> re.Pattern:
     """The grader's regex, read from the single-quoted `pattern:` line of its file."""
-    for line in GRADER.read_text(encoding="utf-8").splitlines():
-        if line.startswith("pattern: '") and line.endswith("'"):
-            return re.compile(line[len("pattern: '") : -1].replace("''", "'"))
-    raise AssertionError("label-after-plan: no pattern line")
+    return re.compile(regex_pattern(GRADER))
 
 
 def labels_file(*labels: str) -> str:
