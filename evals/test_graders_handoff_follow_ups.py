@@ -49,8 +49,17 @@ def test_a_good_section_passes_both(first_item):
     assert failing(handoff(first_item)) == set()
 
 
-def test_a_missing_heading_fails_only_the_structure_grader():
-    assert failing(handoff(None)) == {STRUCTURE}
+@pytest.mark.parametrize(
+    "comments",
+    [
+        handoff(None),
+        handoff(None).replace("סקירת קוד", "#### משימות המשך: סקירת קוד"),
+        handoff(None) + "ראו #### משימות המשך בהערה הקודמת.\n",
+    ],
+    ids=["no heading", "heading with text after it", "heading mid-line"],
+)
+def test_a_missing_heading_fails_only_the_structure_grader(comments):
+    assert failing(comments) == {STRUCTURE}
 
 
 @pytest.mark.parametrize(
