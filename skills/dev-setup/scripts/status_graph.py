@@ -9,13 +9,17 @@ other labels (S-1.58); an arrow from each open blocker to the issue that waits f
 An open blocker outside the sprint (another milestone or repo) is a dashed node.
 A closed blocker blocks nothing, so it is left out.
 An issue with an active session comes first in its row, marked "פעיל" (S-1.57).
+
+A closed sprint's graph, only on request (`closed_sprint`, S-1.74), keeps every issue
+of the sprint and every arrow: a closed issue is marked "גמור", or "בוטל" when it was
+closed as not planned. /status never asks for it.
 """
 
 import re
 from collections.abc import Callable, Collection, Sequence
 from itertools import pairwise
 
-from rank_issues import parse_issue
+from rank_issues import is_local, outside_ref, parse_issue
 from status_sessions import ACTIVE_MARK
 
 StatusHe = Callable[[str | None], str]
@@ -25,6 +29,9 @@ TITLE_LIMIT = 30
 NO_SPRINT = "אין ספרינט פתוח."
 EMPTY = "אין."
 OTHER_REPO = "ריפו אחר"
+# A closed issue in a closed sprint's graph: words no open status uses (S-1.74).
+DONE_WORD = "גמור"
+CANCELLED_WORD = "בוטל"
 OUTSIDE_STYLE = "classDef outside stroke-dasharray: 5 5"
 # Mermaid reads #name; as an entity, and the label is HTML: these are written as codes.
 LABEL_SEPARATOR = " · "
@@ -139,6 +146,56 @@ def node_status(ref: str, by_ref: dict[str, dict], status_he: StatusHe) -> str:
     return status_he(parse_issue(found).status if found else None)
 
 
+def closed_word(item: dict) -> str | None:
+    """DONE_WORD or CANCELLED_WORD for a closed issue or reference, None for an open
+    one.
+
+    An item without `state` reads as open, so a node built before S-1.74 still draws.
+    """
+    if item.get("state", "OPEN") == "OPEN":
+        return None
+    return CANCELLED_WORD if item.get("stateReason") == "NOT_PLANNED" else DONE_WORD
+
+
+def blocker_ref(blocker: dict) -> str:
+    """`#N` for a blocker of this repo, `owner/name#N` for another's."""
+    return f"#{blocker['number']}" if is_local(blocker) else outside_ref(blocker)
+
+
+def every_blocker(node: dict) -> list[dict]:
+    """All the issue's blockers, open or closed: this repo's by number, then the
+    others' by ref, as parse_issue orders the open ones."""
+    blockers = node["blockedBy"]["nodes"]
+    local = sorted((b for b in blockers if is_local(b)), key=lambda b: b["number"])
+    other = sorted((b for b in blockers if not is_local(b)), key=outside_ref)
+    return local + other
+
+
+def closed_edges(sprint_nodes: list[dict]) -> tuple[list, dict[str, str]]:
+    """The arrows of a closed sprint, from every blocker, and the closed word of each
+    closed ref.
+
+    A sprint issue's own state wins over the copy a blocker's reference carries.
+    """
+    edges = [
+        (blocker_ref(b), f"#{n['number']}")
+        for n in sprint_nodes
+        for b in every_blocker(n)
+    ]
+    words = {
+        blocker_ref(b): word
+        for n in sprint_nodes
+        for b in n["blockedBy"]["nodes"]
+        if (word := closed_word(b))
+    }
+    for n in sprint_nodes:
+        ref = f"#{n['number']}"
+        words.pop(ref, None)
+        if word := closed_word(n):
+            words[ref] = word
+    return edges, words
+
+
 def node_labels(ref: str, by_ref: dict[str, dict]) -> list[str]:
     """The labels of a node in GitHub's order, without the status label.
 
@@ -156,6 +213,7 @@ def layout(
     nodes: list[dict],
     status_he: StatusHe,
     active: Collection[int] = (),
+    closed_sprint: bool = False,
 ) -> dict:
     """The graph as data: the refs, the blockers outside the sprint, the arrows, and
     each ref's title, status and labels.
@@ -166,16 +224,24 @@ def layout(
     same order among themselves, and their status is marked; a blocker outside the
     sprint is marked but stays where it is. The chat graph and the page
     (status_page.py) both draw from this.
+
+    `closed_sprint` (S-1.74): `sprint_nodes` are all the sprint's issues, each with its
+    `state` and `stateReason`; every blocker draws an arrow, open or closed, and a
+    closed issue or blocker shows DONE_WORD or CANCELLED_WORD instead of its status.
     """
     by_ref = {f"#{n['number']}": n for n in nodes}
     sprint_nodes = sorted(sprint_nodes, key=lambda n: n["number"] not in active)
-    issues = [parse_issue(n) for n in sprint_nodes]
-    refs = [f"#{i.number}" for i in issues]
-    edges = [
-        (blocker, f"#{i.number}")
-        for i in issues
-        for blocker in [f"#{b}" for b in i.open_blockers] + i.outside_blockers
-    ]
+    refs = [f"#{n['number']}" for n in sprint_nodes]
+    words: dict[str, str] = {}
+    if closed_sprint:
+        by_ref |= {f"#{n['number']}": n for n in sprint_nodes}
+        edges, words = closed_edges(sprint_nodes)
+    else:
+        edges = [
+            (blocker, f"#{i.number}")
+            for i in map(parse_issue, sprint_nodes)
+            for blocker in [f"#{b}" for b in i.open_blockers] + i.outside_blockers
+        ]
     outside = list(dict.fromkeys(b for b, _ in edges if b not in refs))
     return {
         "refs": refs,
@@ -185,7 +251,7 @@ def layout(
             r: by_ref[r]["title"] if r in by_ref else "" for r in refs + outside
         },
         "statuses": {
-            r: node_status(r, by_ref, status_he)
+            r: (words.get(r) or node_status(r, by_ref, status_he))
             + (ACTIVE_MARK if r.startswith("#") and int(r[1:]) in active else "")
             for r in refs + outside
         },

@@ -384,6 +384,21 @@ def test_a_link_to_another_repo_carries_its_repo(monkeypatch):
     ]
 
 
+@pytest.mark.parametrize(
+    ("item", "expected"),
+    [
+        ({"state": "closed", "state_reason": "not_planned"}, "NOT_PLANNED"),
+        ({"state": "closed", "state_reason": "completed"}, "COMPLETED"),
+        ({"state": "open", "state_reason": None}, None),
+        ({"state": "closed"}, None),
+    ],
+)
+def test_a_reference_carries_its_state_reason_when_it_has_one(item, expected):
+    # A closed sprint's graph tells a done blocker from a cancelled one (S-1.74).
+    [ref] = gh_rest.refs(REPO, [{"number": 4} | item])["nodes"]
+    assert ref.get("stateReason") == expected
+
+
 def closed(number, closed_at, pull=False):
     issue = {"number": number, "title": f"issue {number}", "closed_at": closed_at}
     return issue | ({"pull_request": {}} if pull else {})

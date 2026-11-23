@@ -166,10 +166,14 @@ def refs(repo: str, items: list[dict]) -> dict:
 
     A reference to an issue of another repo also carries its `repository` (owner/name):
     its number alone would read as the issue of `repo` with that number (#164).
+    A closed one also carries its `stateReason`, so a closed sprint's graph can tell a
+    done blocker from a cancelled one (S-1.74).
     """
     nodes = []
     for item in items:
         node = {"number": item["number"], "state": item["state"].upper()}
+        if item.get("state_reason"):
+            node["stateReason"] = item["state_reason"].upper()
         other = other_repo(repo, item.get("repository_url"))
         if other:
             node["repository"] = other
