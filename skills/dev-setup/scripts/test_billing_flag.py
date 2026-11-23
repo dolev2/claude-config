@@ -187,3 +187,53 @@ def test_check_exits_1_when_the_flag_was_not_written(
     assert billing_flag.main(["check", "--sha", "abc1234", "--repo", "o/r"]) == 1
     out = capsys.readouterr().out.splitlines()
     assert out[0] == f"billing {URL}" and out[1].startswith("not-written ")
+
+
+def broken_name_branch(bare):
+    """The branch as a Windows write left it: the file named `billing.json\\r`."""
+    flag = {"blocked": True, "since": "2026-11-18T08:00:00", "source": "auto"}
+    content = json.dumps(flag | {"run": URL}) + "\r\n"
+    blob = sh_input(bare, content.encode(), "hash-object", "-w", "--stdin")
+    entry = f"100644 blob {blob}\tbilling.json\r\n".encode()
+    tree = sh_input(bare, entry, "mktree")
+    author = ("-c", "user.name=t", "-c", "user.email=t@e")
+    commit = sh(bare, *author, "commit-tree", tree, "-m", "billing flag on (auto)")
+    sh(bare, "update-ref", billing_flag.REF, commit.strip())
+
+
+def sh_input(repo, data, *args):
+    """git with `data` as raw bytes on stdin; its stdout, stripped."""
+    done = subprocess.run(
+        ["git", "-C", str(repo), *args], input=data, check=True, capture_output=True
+    )
+    return done.stdout.decode().strip()
+
+
+def test_a_name_ending_in_cr_is_read(remote, cache):
+    broken_name_branch(remote)
+    flag = billing_flag.read(cache)
+    assert billing_flag.status_line(flag) == f"on 2026-11-18T08:00:00 auto {URL}"
+
+
+def test_the_next_write_restores_the_name(remote, cache):
+    broken_name_branch(remote)
+    billing_flag.turn_off(cache)
+    names = sh(remote, "ls-tree", "-z", "--name-only", billing_flag.REF)
+    assert names == f"{billing_flag.FILE}\0"
+    assert on_github(remote) == billing_flag.OFF
+
+
+def test_mktree_gets_no_line_break(remote, cache, monkeypatch):
+    """Windows text mode would turn a "\\n" into "\\r\\n" inside the name."""
+    seen = {}
+    real_git = billing_flag.git
+
+    def recording(*args, stdin=None):
+        if "mktree" in args:
+            seen["stdin"] = stdin
+        return real_git(*args, stdin=stdin)
+
+    monkeypatch.setattr(billing_flag, "git", recording)
+    billing_flag.turn_on(cache, "manual", None, lambda: "2026-11-15T10:00:00")
+    assert "\n" not in seen["stdin"]
+    assert on_github(remote)["blocked"] is True

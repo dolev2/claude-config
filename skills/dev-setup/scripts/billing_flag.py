@@ -71,7 +71,21 @@ def read(cache: Path = CACHE) -> dict:
     """The flag as on GitHub now; OFF when there is no branch. Raises when git fails."""
     if not fetch(cache):
         return dict(OFF)
-    return json.loads(git("-C", str(cache), "show", f"{REF}:{FILE}"))
+    return json.loads(git("-C", str(cache), "cat-file", "blob", flag_blob(cache)))
+
+
+def flag_blob(cache: Path) -> str:
+    """The sha of the flag's file on the branch. Raises ValueError when it is not there.
+
+    A name that ends in a line break counts too: a write from Windows once passed the
+    name to mktree in text mode, and it was stored as `billing.json\\r` (claude-config
+    #541). Text-mode output reads that `\\r` back as `\\n`.
+    """
+    for entry in git("-C", str(cache), "ls-tree", "-z", REF).split("\0"):
+        meta, _, name = entry.partition("\t")
+        if name.rstrip("\r\n") == FILE:
+            return meta.split()[2]
+    raise ValueError(f"{FILE} is not on {BRANCH}")
 
 
 def write(cache: Path, flag: dict, message: str) -> None:
@@ -80,7 +94,10 @@ def write(cache: Path, flag: dict, message: str) -> None:
         has_branch = fetch(cache)
         repo = ("-C", str(cache))
         blob = git(*repo, "hash-object", "-w", "--stdin", stdin=json.dumps(flag) + "\n")
-        tree = git(*repo, "mktree", stdin=f"100644 blob {blob.strip()}\t{FILE}\n")
+        # -z: a NUL ends the entry. Text mode on Windows turns a "\n" into "\r\n", and
+        # mktree kept the "\r" as part of the name (claude-config #541).
+        entry = f"100644 blob {blob.strip()}\t{FILE}\0"
+        tree = git(*repo, "mktree", "-z", stdin=entry)
         parent = ("-p", REF) if has_branch else ()
         commit = git(
             *AUTHOR, *repo, "commit-tree", tree.strip(), *parent, "-m", message
