@@ -32,6 +32,8 @@ OTHER_REPO = "ריפו אחר"
 # A closed issue in a closed sprint's graph: words no open status uses (S-1.74).
 DONE_WORD = "גמור"
 CANCELLED_WORD = "בוטל"
+# Closed without being built: as not planned, or as a duplicate of another issue.
+CANCELLED_REASONS = frozenset({"NOT_PLANNED", "DUPLICATE"})
 OUTSIDE_STYLE = "classDef outside stroke-dasharray: 5 5"
 # Mermaid reads #name; as an entity, and the label is HTML: these are written as codes.
 LABEL_SEPARATOR = " · "
@@ -151,10 +153,12 @@ def closed_word(item: dict) -> str | None:
     one.
 
     An item without `state` reads as open, so a node built before S-1.74 still draws.
+    Both fields are read in any case, as REST (`closed`, `not_planned`) or GraphQL.
     """
-    if item.get("state", "OPEN") == "OPEN":
+    if str(item.get("state") or "OPEN").upper() == "OPEN":
         return None
-    return CANCELLED_WORD if item.get("stateReason") == "NOT_PLANNED" else DONE_WORD
+    reason = str(item.get("stateReason") or "").upper()
+    return CANCELLED_WORD if reason in CANCELLED_REASONS else DONE_WORD
 
 
 def blocker_ref(blocker: dict) -> str:
@@ -171,7 +175,9 @@ def every_blocker(node: dict) -> list[dict]:
     return local + other
 
 
-def closed_edges(sprint_nodes: list[dict]) -> tuple[list, dict[str, str]]:
+def closed_edges(
+    sprint_nodes: list[dict],
+) -> tuple[list[tuple[str, str]], dict[str, str]]:
     """The arrows of a closed sprint, from every blocker, and the closed word of each
     closed ref.
 

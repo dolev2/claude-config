@@ -296,3 +296,23 @@ def test_without_the_request_the_graph_is_as_before():
     assert as_before == mermaid_lines(layout([nodes[1]], nodes, status_he))
     assert not [line for line in as_before if "n1" in line]
     assert not [line for line in as_before if DONE_WORD in line]
+
+
+@pytest.mark.parametrize("reason", ["NOT_PLANNED", "DUPLICATE", "not_planned"])
+def test_closed_without_being_built_is_cancelled(reason):
+    lines = closed_lines([closed(1, reason)])
+    assert f'  n1["#1<br>issue 1<br>{CANCELLED_WORD}<br>task"]' in lines
+
+
+def test_rest_spelling_of_an_open_issue_reads_as_open():
+    lines = closed_lines([node(1, "explore") | {"state": "open"}])
+    assert '  n1["#1<br>issue 1<br>בתכנון<br>task"]' in lines
+
+
+def test_an_open_blocker_in_another_repo_keeps_other_repo():
+    waiting = closed(2)
+    waiting["blockedBy"]["nodes"] = [
+        {"number": 7, "state": "OPEN", "repository": "acme/other"}
+    ]
+    lines = closed_lines([waiting])
+    assert f'  nacme_other_7["acme/other#7<br>{OTHER_REPO}"]' in lines
