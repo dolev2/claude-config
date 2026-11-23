@@ -7,12 +7,16 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from status_graph import (  # noqa: E402
+    CANCELLED_WORD,
+    DONE_WORD,
     EMPTY,
     NO_SPRINT,
     OTHER_REPO,
     TITLE_LIMIT,
     graph,
     labels_text,
+    layout,
+    mermaid_lines,
 )
 from test_sprint_state import node  # noqa: E402
 
@@ -212,3 +216,103 @@ def test_an_active_blocker_outside_the_sprint_is_marked_and_stays():
 def test_no_active_set_keeps_the_graph_as_it_was():
     nodes = [node(1), node(2)]
     assert active_draw(nodes, set()) == mermaid(draw(nodes))
+
+
+# A closed sprint's graph (S-1.74): only on request, with every issue and arrow.
+
+
+def closed(number, reason="COMPLETED", **kwargs) -> dict:
+    """A sprint issue closed with `reason`."""
+    return node(number, "done", **kwargs) | {"state": "CLOSED", "stateReason": reason}
+
+
+def closed_lines(sprint_nodes: list[dict], nodes: list[dict] = ()) -> list[str]:
+    """The Mermaid lines of a closed sprint's graph."""
+    shape = layout(sprint_nodes, list(nodes), status_he, closed_sprint=True)
+    return mermaid_lines(shape)
+
+
+def test_a_done_blocker_shows_done_with_its_arrow():
+    lines = closed_lines([closed(1), closed(2, blocked_by=[(1, "CLOSED")])])
+    assert f'  n1["#1<br>issue 1<br>{DONE_WORD}<br>task"]' in lines
+    assert f'  n2["#2<br>issue 2<br>{DONE_WORD}<br>task"]' in lines
+    assert "  n1 --> n2" in lines
+
+
+def test_a_cancelled_issue_shows_cancelled_with_its_arrows():
+    sprint = [closed(1, "NOT_PLANNED"), closed(2, blocked_by=[(1, "CLOSED")])]
+    lines = closed_lines(sprint)
+    assert f'  n1["#1<br>issue 1<br>{CANCELLED_WORD}<br>task"]' in lines
+    assert "  n1 --> n2" in lines
+
+
+def test_a_sprint_with_no_blocking_has_no_arrow():
+    lines = closed_lines([closed(1), closed(2)])
+    assert not [line for line in lines if "-->" in line]
+
+
+def test_a_reopened_issue_shows_its_usual_status():
+    reopened = node(1, "explore") | {"state": "OPEN", "stateReason": "REOPENED"}
+    lines = closed_lines([reopened, closed(2, blocked_by=[(1, "OPEN")])])
+    assert '  n1["#1<br>issue 1<br>בתכנון<br>task"]' in lines
+    assert "  n1 --> n2" in lines
+
+
+def test_a_node_without_state_reads_as_open():
+    lines = closed_lines([node(1, "explore")])
+    assert '  n1["#1<br>issue 1<br>בתכנון<br>task"]' in lines
+
+
+def test_closed_blockers_outside_the_sprint_are_dashed_and_marked():
+    waiting = closed(3)
+    waiting["blockedBy"]["nodes"] = [
+        {"number": 1, "state": "CLOSED", "stateReason": "COMPLETED"},
+        {
+            "number": 7,
+            "state": "CLOSED",
+            "stateReason": "NOT_PLANNED",
+            "repository": "acme/other",
+        },
+    ]
+    lines = closed_lines([waiting])
+    assert f'  n1["#1<br>{DONE_WORD}"]' in lines
+    assert f'  nacme_other_7["acme/other#7<br>{CANCELLED_WORD}"]' in lines
+    assert "  n1 --> n3" in lines and "  nacme_other_7 --> n3" in lines
+    assert "  class n1,nacme_other_7 outside" in lines
+
+
+def test_an_open_blocker_outside_the_sprint_keeps_its_status():
+    other_milestone = node(1, "explore", milestone="W2")
+    lines = closed_lines([closed(2, blocked_by=[(1, "OPEN")])], nodes=[other_milestone])
+    assert '  n1["#1<br>issue 1<br>בתכנון<br>task"]' in lines
+
+
+def test_without_the_request_the_graph_is_as_before():
+    nodes = [
+        node(1, milestone="W2") | {"state": "CLOSED"},
+        node(2, blocked_by=[(1, "CLOSED")]),
+    ]
+    as_before = mermaid(draw(nodes))
+    assert as_before == mermaid_lines(layout([nodes[1]], nodes, status_he))
+    assert not [line for line in as_before if "n1" in line]
+    assert not [line for line in as_before if DONE_WORD in line]
+
+
+@pytest.mark.parametrize("reason", ["NOT_PLANNED", "DUPLICATE", "not_planned"])
+def test_closed_without_being_built_is_cancelled(reason):
+    lines = closed_lines([closed(1, reason)])
+    assert f'  n1["#1<br>issue 1<br>{CANCELLED_WORD}<br>task"]' in lines
+
+
+def test_rest_spelling_of_an_open_issue_reads_as_open():
+    lines = closed_lines([node(1, "explore") | {"state": "open"}])
+    assert '  n1["#1<br>issue 1<br>בתכנון<br>task"]' in lines
+
+
+def test_an_open_blocker_in_another_repo_keeps_other_repo():
+    waiting = closed(2)
+    waiting["blockedBy"]["nodes"] = [
+        {"number": 7, "state": "OPEN", "repository": "acme/other"}
+    ]
+    lines = closed_lines([waiting])
+    assert f'  nacme_other_7["acme/other#7<br>{OTHER_REPO}"]' in lines
