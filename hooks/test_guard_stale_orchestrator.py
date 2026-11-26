@@ -292,6 +292,7 @@ def test_the_hook_from_the_command_line(tmp_path, stale):
     env = {
         **os.environ,
         "HOME": str(tmp_path / "home"),
+        "USERPROFILE": str(tmp_path / "home"),  # Windows reads the home from here
         "TMPDIR": str(tmp_path / "tmp"),
         "CLAUDE_CODE_REMOTE": "true",
     }

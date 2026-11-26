@@ -153,6 +153,7 @@ def test_files_without_hunks_still_get_their_heading(repo: Path) -> None:
     assert "```diff" not in text
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows forbids * in a file name")
 def test_a_star_in_a_name_is_not_a_glob(repo: Path) -> None:
     (repo / "a*.md").write_text("כוכבית\n", encoding="utf-8")
     (repo / "abc.md").write_text("שכן\n", encoding="utf-8")

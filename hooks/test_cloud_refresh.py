@@ -53,7 +53,8 @@ def setup(tmp_path: Path):
     commit(work, "v1\n")
     home = tmp_path / "home"
     home.mkdir()
-    git(home, "clone", "-q", str(remote), ".claude")
+    # Forward slashes, so the URL has dolev2/claude-config in it on Windows too.
+    git(home, "clone", "-q", remote.as_posix(), ".claude")
     return home, work
 
 
@@ -166,7 +167,7 @@ def test_report_with_uncommitted_changes(monkeypatch, setup, capsys):
 def test_report_with_an_unreachable_remote(monkeypatch, setup, tmp_path, capsys):
     home, _ = setup
     missing = tmp_path / "dolev2" / "claude-config-missing.git"
-    git(home / ".claude", "remote", "set-url", "origin", str(missing))
+    git(home / ".claude", "remote", "set-url", "origin", missing.as_posix())
 
     assert run_main(monkeypatch, home, argv=["--report"]) == 1
 
@@ -187,7 +188,12 @@ def test_report_from_the_command_line(setup, tmp_path):
     home, work = setup
     commit(work, "v2\n")
     (home / ".claude" / "CLAUDE.md").write_text("edited\n", encoding="utf-8")
-    env = {**os.environ, "HOME": str(home), "CLAUDE_CODE_REMOTE": "true"}
+    env = {
+        **os.environ,
+        "HOME": str(home),
+        "USERPROFILE": str(home),  # Windows reads the home from here
+        "CLAUDE_CODE_REMOTE": "true",
+    }
 
     run = subprocess.run(
         [sys.executable, str(SCRIPT), "--report"],

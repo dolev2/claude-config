@@ -6,11 +6,15 @@ results.
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 import run
 from summary import summarize
+
+# The sandbox's /tmp paths exist on Linux only, where the evals run.
+LINUX_ONLY = pytest.mark.skipif(sys.platform == "win32", reason="evals run on Linux")
 
 
 @pytest.mark.parametrize(
@@ -105,7 +109,11 @@ def test_missing_tools_exit_2(ready, monkeypatch):
 
 @pytest.mark.parametrize(
     ("folder", "blocked"),
-    [("/tmp/x", True), ("/var/tmp/x", True), (str(Path.home() / "x"), True)],
+    [
+        pytest.param("/tmp/x", True, marks=LINUX_ONLY),
+        pytest.param("/var/tmp/x", True, marks=LINUX_ONLY),
+        (str(Path.home() / "x"), True),
+    ],
 )
 def test_work_folder_under_tmp_or_home_is_refused(folder, blocked):
     assert (run.unreachable(Path(folder)) is not None) == blocked
@@ -167,7 +175,7 @@ def test_summary_failure_names_the_rule(tmp_path):
     graders = tmp_path / "evals" / "dev-ship-status" / "graders"
     graders.mkdir(parents=True)
     (graders / "no-merge.md").write_text(
-        "---\ntype: regex\n---\nנקרא מיזוג בלי בקשה.\n"
+        "---\ntype: regex\n---\nנקרא מיזוג בלי בקשה.\n", encoding="utf-8"
     )
     failing = {"name": "no-merge", "passed": False, "scored": True, "explanation": "x"}
     result = {"cases": [case("dev-ship-status", 0, [failing], "evals/dev-ship-status")]}
@@ -206,8 +214,11 @@ def test_changed_files_unknown_base_raises():
 
 def fake_eval(monkeypatch, exit_code, result=None):
     """A stand-in `claude plugin eval`: writes result.json, exits with exit_code."""
+    real_run = subprocess.run
 
     def fake(command, **kwargs):
+        if command[0] != "claude":  # git, for the copy of the skills
+            return real_run(command, **kwargs)
         if result is not None:
             target = Path(command[command.index("--json") + 1])
             target.write_text(json.dumps(result), encoding="utf-8")
@@ -265,3 +276,24 @@ def test_run_beside_one_that_started_the_same_second(ready, tmp_path, same_secon
     assert code == 0
     assert out.startswith("claude plugin eval")
     assert (busy / "marker").is_dir()
+
+
+def test_the_copy_leaves_out_what_git_ignores(tmp_path):
+    """A local folder git ignores (skills/synced/ on Dolev's computer) is not copied."""
+    repo = tmp_path / "repo"
+    (repo / "skills" / "a").mkdir(parents=True)
+    (repo / "skills" / "synced").mkdir()
+    (repo / ".gitignore").write_text("skills/synced/\n", encoding="utf-8")
+    (repo / "skills" / "a" / "SKILL.md").write_text("tracked\n", encoding="utf-8")
+    (repo / "skills" / "new.md").write_text("not added yet\n", encoding="utf-8")
+    (repo / "skills" / "synced" / "local.md").write_text("ignored\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "add", "skills/a"], check=True)
+
+    run.copy_repo_folder(repo, "skills", tmp_path / "copy")
+
+    copied = sorted(
+        p.relative_to(tmp_path / "copy").as_posix()
+        for p in (tmp_path / "copy").rglob("*.md")
+    )
+    assert copied == ["a/SKILL.md", "new.md"]

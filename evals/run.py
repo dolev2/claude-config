@@ -109,6 +109,29 @@ def new_run_dir(work_dir: Path) -> Path:
             return folder
 
 
+def copy_repo_folder(root: Path, name: str, target: Path) -> None:
+    """Copy root/name to target, only the files git does not ignore.
+
+    A local folder git ignores (like skills/synced/ on Dolev's computer) has no place
+    in the plugin, and its long paths break the copy on Windows.
+    """
+    listed = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z", "--cached", "--others"]
+        + ["--exclude-standard", "--", name],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=True,
+    )
+    for relative in filter(None, listed.stdout.split("\0")):
+        source = root / relative
+        if not source.is_file():  # tracked, but deleted in the working tree
+            continue
+        destination = target / Path(relative).relative_to(name)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+
+
 def build_plugin(work: Path, holdout: bool) -> Path:
     """The temporary plugin: skills, plugin.json, the cases, and a ~/.claude copy.
 
@@ -116,7 +139,7 @@ def build_plugin(work: Path, holdout: bool) -> Path:
     the fake gh in work/fake must stay readable.
     """
     plugin = work / "plugin" / PLUGIN_NAME
-    shutil.copytree(ROOT / "skills", plugin / "skills")
+    copy_repo_folder(ROOT, "skills", plugin / "skills")
     manifest = plugin / ".claude-plugin" / "plugin.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(
@@ -131,7 +154,7 @@ def build_plugin(work: Path, holdout: bool) -> Path:
         source = ROOT / name
         target = plugin / "claude-home" / name
         if source.is_dir():
-            shutil.copytree(source, target)
+            copy_repo_folder(ROOT, name, target)
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(source, target)

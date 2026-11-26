@@ -1,6 +1,8 @@
 """billing_flag.py: the account-wide flag that says GitHub billing is blocked."""
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -115,7 +117,14 @@ def test_check_prints_billing_or_not(url, expected, monkeypatch, capsys):
 
 
 def test_script_on_and_off_with_exit_codes(remote, tmp_path):
-    env = {"HOME": str(tmp_path), "PATH": "/usr/bin:/bin"}
+    git_dir = str(Path(shutil.which("git")).parent)
+    env = {
+        "HOME": str(tmp_path),
+        "USERPROFILE": str(tmp_path),  # Windows reads the home from here
+        "PATH": os.pathsep.join(["/usr/bin", "/bin", git_dir]),
+    }
+    if "SYSTEMROOT" in os.environ:  # Python on Windows cannot start without it
+        env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
     script = HERE / "billing_flag.py"
     # The script's own PIPELINE_URL is GitHub's; a wrapper points it at the remote.
     runner = tmp_path / "run.py"
