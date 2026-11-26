@@ -10,7 +10,11 @@ from pathlib import Path
 import pytest
 import run
 
-pytestmark = pytest.mark.skipif(not shutil.which("git"), reason="needs git")
+pytestmark = [
+    pytest.mark.skipif(not shutil.which("git"), reason="needs git"),
+    # scaffold.sh runs the fake gh as a shebang script, inside the Linux-only evals.
+    pytest.mark.skipif(sys.platform == "win32", reason="evals run on Linux"),
+]
 
 
 def setup_case(tmp_path: Path, name: str) -> tuple[Path, dict]:

@@ -221,7 +221,9 @@ def test_cd_into_main_folder_is_followed(monkeypatch, root, tmp_path):
     ],
 )
 def test_other_ways_into_main_folder_are_blocked(monkeypatch, root, tmp_path, template):
-    command = template.format(root=root)
+    # Unquoted, a Windows backslash path is mangled by the shell itself, so no
+    # real command writes it that way; Git Bash takes the forward-slash form.
+    command = template.format(root=root.as_posix())
     assert run_hook(monkeypatch, shell(command, tmp_path))[0] == 2
 
 

@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -45,6 +46,9 @@ def folder(tmp_path, monkeypatch):
 
 def gh(capsys, *argv):
     """Run one fake gh call; return (exit code, stdout, stderr)."""
+    # On Linux jq is one of the evals' tools (run.TOOLS), so a missing jq still fails.
+    if "--jq" in argv and sys.platform == "win32" and not shutil.which("jq"):
+        pytest.skip("--jq needs jq, which the evals install on Linux")
     code = fake_gh.main(list(argv))
     out = capsys.readouterr()
     return code, out.out, out.err
@@ -254,6 +258,9 @@ def test_no_state_fails(tmp_path, monkeypatch, capsys):
     assert ".fake-gh-state" in capsys.readouterr().err
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="a shebang script; evals run on Linux"
+)
 def test_the_gh_wrapper_runs_it(folder, tmp_path):
     """The shell wrapper run.py puts on PATH, with its exit code."""
     fake = tmp_path / "fake"

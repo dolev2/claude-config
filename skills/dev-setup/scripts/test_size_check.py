@@ -113,6 +113,7 @@ def test_a_moved_file_already_over_the_limit_does_not_warn(repo):
     assert found == []
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows forbids : in a file name")
 def test_a_path_with_a_space_and_a_colon_is_checked_and_escaped(repo):
     found = run(repo, {}, {"my app:v2.py": lines(301)})
     assert found == [("my app:v2.py", None, 301, size_check.CODE_RULE)]

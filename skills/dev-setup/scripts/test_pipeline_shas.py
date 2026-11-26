@@ -1,6 +1,8 @@
 """pipeline_shas.py: the two shas that tell the orchestrator its pipeline changed."""
 
+import os
 import shutil
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -84,12 +86,18 @@ def test_a_group_without_commits_is_null(pipeline, cache):
     assert shas(cache) == (sha, None)
 
 
+def remove_read_only(function, path, _error):
+    """git writes its objects read-only, and Windows refuses to delete those."""
+    os.chmod(path, stat.S_IWRITE)
+    function(path)
+
+
 def test_a_failing_fetch_on_an_existing_cache_leaves_null_shas(
     pipeline, cache, tmp_path, capsys
 ):
     pipeline("skills")
     shas(cache)
-    shutil.rmtree(tmp_path / "remote")
+    shutil.rmtree(tmp_path / "remote", onexc=remove_read_only)
     result = pipeline_shas.pipeline_shas(cache)
     out = capsys.readouterr()
     assert result["pipeline_sha"] is None and result["session_sha"] is None
