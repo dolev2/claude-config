@@ -227,6 +227,23 @@ def test_other_ways_into_main_folder_are_blocked(monkeypatch, root, tmp_path, te
     assert run_hook(monkeypatch, shell(command, tmp_path))[0] == 2
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Backslash paths exist on Windows")
+@pytest.mark.parametrize(
+    "template",
+    [
+        'git --git-dir "{root}\\.git" checkout feature',
+        'git --work-tree "{root}" reset --hard',
+        'GIT_DIR="{root}\\.git" git checkout feature',
+        'GIT_WORK_TREE="{root}" git restore .',
+    ],
+)
+def test_quoted_windows_path_into_main_folder_is_blocked(
+    monkeypatch, root, tmp_path, template
+):
+    command = template.format(root=root)
+    assert run_hook(monkeypatch, shell(command, tmp_path))[0] == 2
+
+
 def test_dash_c_into_main_folder_is_blocked(monkeypatch, root, tmp_path):
     command = f'git -C "{root}" switch feature'
     assert run_hook(monkeypatch, shell(command, tmp_path, "PowerShell"))[0] == 2
