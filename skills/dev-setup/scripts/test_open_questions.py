@@ -1,0 +1,88 @@
+"""The shared reader of open questions (S-1.75)."""
+
+import pytest
+from open_questions import is_blocking, open_questions
+
+
+def body(section: str, extra: str = "") -> str:
+    """An issue body whose open-questions section is `section`."""
+    return f"### מה רוצים\nמשהו\n\n### שאלות פתוחות\n{section}\n{extra}"
+
+
+def test_open_box_is_a_question_and_ticked_box_is_not():
+    text = body("- [ ] האם להחיל?\n- [x] איזה מטבע? — הוחלט: שקל.")
+    assert open_questions(text) == ["האם להחיל?"]
+
+
+def test_question_with_its_options_is_one_question():
+    text = body(
+        "- [ ] **מה התיקון?** האפשרויות:\n"
+        "  1. להריץ דרך python -m.\n"
+        "  2. לבדוק שוב את הגרסה.\n"
+        "- [ ] שאלה שנייה"
+    )
+    assert open_questions(text) == [
+        "**מה התיקון?** האפשרויות:\n"
+        "  1. להריץ דרך python -m.\n  2. לבדוק שוב את הגרסה.",
+        "שאלה שנייה",
+    ]
+
+
+def test_options_stop_at_an_unindented_line():
+    text = body("- [ ] שאלה\n  אפשרות\nהערה בלי הזחה")
+    assert open_questions(text) == ["שאלה\n  אפשרות"]
+
+
+def test_indented_ticked_box_is_not_part_of_the_open_question():
+    text = body("- [ ] שאלה\n  - [x] תת-שאלה שנענתה")
+    assert open_questions(text) == ["שאלה"]
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["אין.", "אין", "- אין.", "אין שאלות פתוחות.", "**אין.**", "None", "none."],
+)
+def test_a_line_that_says_none_is_not_a_question(line):
+    assert open_questions(body(line)) == []
+
+
+def test_lenient_section_still_reads_a_real_question_next_to_none():
+    assert open_questions(body("אין.\nומה עם המטבע?")) == ["ומה עם המטבע?"]
+
+
+def test_a_question_that_starts_with_the_word_none_is_a_question():
+    assert open_questions(body("אין לנו מחיר: מה המחיר?")) == [
+        "אין לנו מחיר: מה המחיר?"
+    ]
+
+
+@pytest.mark.parametrize("text", ["", None, "### מה רוצים\nמשהו\n"])
+def test_no_section_or_no_body_has_no_questions(text):
+    assert open_questions(text) == []
+
+
+def test_empty_section_has_no_questions():
+    assert open_questions(body("_אין שאלות פתוחות._")) == []
+
+
+def test_boxes_only_skips_the_trailer_of_a_spec_pr_body():
+    text = body("_אין שאלות פתוחות._", "\nRefs #550\n\n🤖 Generated with Claude Code\n")
+    assert open_questions(text) == ["Refs #550", "🤖 Generated with Claude Code"]
+    assert open_questions(text, boxes_only=True) == []
+
+
+def test_boxes_only_still_reads_an_open_box():
+    text = body("- [ ] מה הסף?", "\nRefs #550\n")
+    assert open_questions(text, boxes_only=True) == ["מה הסף?"]
+
+
+@pytest.mark.parametrize(
+    ("labels", "expected"),
+    [
+        (["task", "status:plan-questions"], True),
+        (["task", "status:explore"], False),
+        ([], False),
+    ],
+)
+def test_questions_block_only_an_issue_waiting_for_dolev(labels, expected):
+    assert is_blocking(labels) is expected
