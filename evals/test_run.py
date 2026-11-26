@@ -288,7 +288,10 @@ def test_the_copy_leaves_out_what_git_ignores(tmp_path):
     (repo / "skills" / "new.md").write_text("not added yet\n", encoding="utf-8")
     (repo / "skills" / "synced" / "local.md").write_text("ignored\n", encoding="utf-8")
     subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    (repo / "skills" / "gone.md").write_text("deleted\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(repo), "add", "skills/a"], check=True)
+    subprocess.run(["git", "-C", str(repo), "add", "skills/gone.md"], check=True)
+    (repo / "skills" / "gone.md").unlink()  # tracked, but no longer in the tree
 
     run.copy_repo_folder(repo, "skills", tmp_path / "copy")
 

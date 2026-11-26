@@ -125,7 +125,8 @@ def copy_repo_folder(root: Path, name: str, target: Path) -> None:
     )
     for relative in filter(None, listed.stdout.split("\0")):
         source = root / relative
-        if not source.is_file():  # tracked, but deleted in the working tree
+        # Tracked but deleted in the working tree, or not a regular file (a submodule).
+        if not source.is_file():
             continue
         destination = target / Path(relative).relative_to(name)
         destination.parent.mkdir(parents=True, exist_ok=True)

@@ -46,8 +46,9 @@ def folder(tmp_path, monkeypatch):
 
 def gh(capsys, *argv):
     """Run one fake gh call; return (exit code, stdout, stderr)."""
-    if "--jq" in argv and not shutil.which("jq"):
-        pytest.skip("--jq needs jq, which the evals install on Linux (run.TOOLS)")
+    # On Linux jq is one of the evals' tools (run.TOOLS), so a missing jq still fails.
+    if "--jq" in argv and sys.platform == "win32" and not shutil.which("jq"):
+        pytest.skip("--jq needs jq, which the evals install on Linux")
     code = fake_gh.main(list(argv))
     out = capsys.readouterr()
     return code, out.out, out.err
