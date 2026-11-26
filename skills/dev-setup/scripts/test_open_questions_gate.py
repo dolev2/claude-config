@@ -105,6 +105,12 @@ def test_gate_italic_placeholder_is_not_a_question(line):
     assert load_gate().open_questions(body) == []
 
 
+def test_gate_a_line_that_says_none_is_not_a_question():
+    # #523: its section read "אין." and the gate counted it (S-1.75).
+    body = "### שאלות פתוחות\nאין.\n"
+    assert load_gate().open_questions(body) == []
+
+
 def test_gate_two_dashes_are_still_a_question():
     # Not a rule in Markdown, so the generous legacy reading keeps it.
     body = "### שאלות פתוחות\n--\n"

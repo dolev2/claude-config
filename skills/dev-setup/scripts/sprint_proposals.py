@@ -22,19 +22,16 @@ is tested without a network:
                broken down, which the orchestrator does with no question (S-1.66)
 """
 
-import re
 from collections.abc import Callable
 
-from issue_body import section, sections
+from open_questions import open_questions
 from rank_issues import parse_issue
 from sprint_github import SPEC_BRANCH
 
 BACKLOG = "backlog"
 SPEC_PROMPT = "תכתוב אפיון ל-#{}"
-QUESTION_HEADINGS = ("שאלות פתוחות", "open questions")
 # A spec in these stages is being written: its open PR, or a child, holds the file.
 IN_FLIGHT = ("writing", "questions", "review")
-UNTICKED = re.compile(r"^\s*[-*+]\s*\[\s\]", re.MULTILINE)
 
 
 def is_proposal(node: dict, sprint: str) -> bool:
@@ -56,8 +53,11 @@ def is_proposal(node: dict, sprint: str) -> bool:
 
 
 def has_open_question(pr_body: str) -> bool:
-    """True when the PR body's "שאלות פתוחות" section has an unticked box."""
-    return bool(UNTICKED.search(section(sections(pr_body), QUESTION_HEADINGS)))
+    """True when the PR body's "שאלות פתוחות" section holds an open question.
+
+    The same reader as the gate's (S-1.75), so the two never disagree.
+    """
+    return bool(open_questions(pr_body, boxes_only=True))
 
 
 def stage(
