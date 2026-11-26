@@ -103,6 +103,7 @@ gh api graphql -f query='mutation($id:ID!,$f:String!){updateProjectV2View(input:
 `skills/dev-setup/actions/open-questions-gate/`. כל ריפו מחזיק רק workflow קצר שקורא ל-
 `dolev2/claude-config/skills/dev-setup/actions/open-questions-gate@main`. הנתיב כולל `skills/` כי
 הריפו `claude-config` הוא התיקייה `~/.claude` כולה.
+הסקריפט קורא את השאלות דרך הכלל המשותף, `skills/dev-setup/scripts/open_questions.py` (S-1.75), ולכן שינוי שם או מקום שלו שובר את השער בכל הריפואים יחד.
 
 תיקון שנכנס ל-main כאן מגיע לכל הריפואים מיד, ותקלה שנכנסת לשם שוברת את כולם יחד; לכן הבדיקות
 ב-CI.

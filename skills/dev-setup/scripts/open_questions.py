@@ -132,8 +132,10 @@ def open_questions(body: str | None, boxes_only: bool = False) -> list[str]:
             found.append(m.group(1))
             in_open_box = True
             continue
-        if structured and in_open_box and line[:1].isspace() and not is_skipped(line):
-            found[-1] += "\n" + line.rstrip()
+        if structured and in_open_box and (line[:1].isspace() or not line.strip()):
+            # Its options: indented lines, past a blank line or an answered sub-box.
+            if not is_skipped(line):
+                found[-1] += "\n" + line.rstrip()
             continue
         in_open_box = False
         if structured or is_skipped(line) or says_none(line):
