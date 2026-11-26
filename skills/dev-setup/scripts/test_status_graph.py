@@ -102,6 +102,28 @@ def test_the_title_is_short_and_quotes_do_not_break_the_label():
     assert "#quot;" in line and "…" in line
 
 
+LONG_TITLE = "כותרת ארוכה מאוד שלא נכנסת בשלושים התווים של הגרף בצ'אט"
+
+
+def lines_with_limit(**limit: int | None) -> str:
+    """The node line of one issue with LONG_TITLE, drawn with `title_limit` if given."""
+    issue = node(1)
+    issue["title"] = LONG_TITLE
+    shape = layout([issue], [issue], status_he)
+    return mermaid_lines(shape, **limit)[1]
+
+
+def test_title_limit_none_keeps_the_whole_title():
+    assert LONG_TITLE in lines_with_limit(title_limit=None)
+    assert "…" not in lines_with_limit(title_limit=None)
+
+
+def test_title_limit_cuts_where_asked_and_the_default_stays_the_chats():
+    assert "…" in lines_with_limit(title_limit=40)
+    assert lines_with_limit() == lines_with_limit(title_limit=TITLE_LIMIT)
+    assert LONG_TITLE[: TITLE_LIMIT - 1].rstrip() + "…" in lines_with_limit()
+
+
 @pytest.mark.parametrize(
     "nodes, sprint, expected",
     [

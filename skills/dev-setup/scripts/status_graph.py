@@ -71,15 +71,22 @@ def labels_text(labels: Sequence[str]) -> str:
 
 
 def node_line(
-    ref: str, title: str, status: str, extra: str = "", labels: Sequence[str] = ()
+    ref: str,
+    title: str,
+    status: str,
+    extra: str = "",
+    labels: Sequence[str] = (),
+    title_limit: int | None = TITLE_LIMIT,
 ) -> str:
     """One node: the number, the short title, the status and the labels, each on its
     own line.
 
     The number has a line of its own so a Hebrew title never flips it to the far side.
     `extra`, already safe for a label, goes on a line under the labels.
+    `title_limit` is how many characters of the title to keep; None keeps all of it.
     """
-    name = f"{ref}<br>{label_text(title)}" if title else ref
+    limit = len(title) if title_limit is None else title_limit
+    name = f"{ref}<br>{label_text(title, limit=limit)}" if title else ref
     tail = "".join(f"<br>{part}" for part in (labels_text(labels), extra) if part)
     return f'  {node_id(ref)}["{name}<br>{status}{tail}"]'
 
@@ -265,11 +272,16 @@ def layout(
     }
 
 
-def mermaid_lines(shape: dict, extra: Callable[[str], str] | None = None) -> list[str]:
+def mermaid_lines(
+    shape: dict,
+    extra: Callable[[str], str] | None = None,
+    title_limit: int | None = TITLE_LIMIT,
+) -> list[str]:
     """The lines of the Mermaid flowchart for a layout().
 
     `extra` adds raw label text under a node's labels (the page's links); without it,
-    the lines are the chat graph's.
+    the lines are the chat graph's. `title_limit` is passed to node_line: None keeps
+    each title whole, for a page whose boxes grow with their text (dolev-hub).
     """
     refs, outside, edges = shape["refs"], shape["outside"], shape["edges"]
     lines = [
@@ -279,6 +291,7 @@ def mermaid_lines(shape: dict, extra: Callable[[str], str] | None = None) -> lis
             shape["statuses"][ref],
             extra(ref) if extra else "",
             shape["labels"][ref],
+            title_limit,
         )
         for ref in refs + outside
     ]
